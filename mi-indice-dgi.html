@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Mi Índice DGI</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#080b14">
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#080b14;color:#c8d0e0;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+    input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+    input[type=number]{-moz-appearance:textfield;}
+    input[type=file]{display:none;}
+    ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:#1a2035;border-radius:2px;}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useMemo, useRef } = React;
+
+const SECTORS = {
+  general: { label:"General", color:"#818cf8", desc:"Consumo, Salud, Industrial, Tecnología", metrics:[
+
+  { id:"yield_pct", label:"Yield actual", short:"Yield", unit:"%", placeholder:"3.5", autoFetch:true,
+    hint:"Rentabilidad por dividendo actual. Óptimo DGI: 3-6%. Por encima del 10% puede indicar riesgo de recorte.",
+    skipRanges:true,
+    score: v => { const n=parseFloat(v); if(isNaN(n)) return null;
+      if(n>=4&&n<5) return 10; if(n>=5&&n<6) return 9; if(n>=3&&n<4) return 8;
+      if(n>=6&&n<8) return 7;  if(n>=2&&n<3) return 6; if(n>=8&&n<10) return 5;
+      if(n>=1&&n<2) return 4;  if(n>=10&&n<12) return 3; if(n>=0.5&&n<1) return 2; return 1; },
+    ranges:[] },
+    { id:"div_years",   label:"Años div. consecutivos", short:"Historial", unit:"años", placeholder:"23", hint:"Años consecutivos subiendo el dividendo",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>=36)return 10;if(n>=26)return 9;if(n>=21)return 8;if(n>=16)return 7;if(n>=12)return 6;if(n>=9)return 5;if(n>=6)return 4;if(n>=4)return 3;if(n>=2)return 2;return 1;},
+      ranges:[">36","26-35","21-25","16-20","12-15","9-11","6-8","4-5","2-3","<2"]},
+    { id:"div_cagr5",   label:"CAGR dividendo 5a", short:"Crec.Div.", unit:"%", placeholder:"7.5", hint:"Tasa de crecimiento anual del dividendo a 5 años",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>17)return 10;if(n>13)return 9;if(n>10)return 8;if(n>8)return 7;if(n>6)return 6;if(n>4)return 5;if(n>3)return 4;if(n>2)return 3;if(n>0)return 2;return 1;},
+      ranges:[">17%","13-17","10-13","8-10","6-8","4-6","3-4","2-3","0-2","<0"]},
+    { id:"payout_fcf",  label:"Payout sobre FCF", short:"Payout", unit:"%", placeholder:"45", hint:"Dividendo / Free Cash Flow × 100",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<20)return 10;if(n<30)return 9;if(n<40)return 8;if(n<50)return 7;if(n<60)return 6;if(n<70)return 5;if(n<80)return 4;if(n<90)return 3;if(n<100)return 2;return 1;},
+      ranges:["<20%","20-30","30-40","40-50","50-60","60-70","70-80","80-90","90-100",">100"]},
+    { id:"fcf_cagr5",   label:"CAGR FCF/acc. 5a", short:"Crec.FCF", unit:"%", placeholder:"8", hint:"Crecimiento anual del Free Cash Flow por acción",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>17)return 10;if(n>13)return 9;if(n>10)return 8;if(n>8)return 7;if(n>6)return 6;if(n>4)return 5;if(n>2)return 4;if(n>0)return 3;if(n>-5)return 2;return 1;},
+      ranges:[">17%","13-17","10-13","8-10","6-8","4-6","2-4","0-2","-5-0","<-5"]},
+    { id:"debt_ebitda", label:"Deuda neta/EBITDA", short:"Deuda", unit:"x", placeholder:"1.5", hint:"Deuda neta / EBITDA",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<0.5)return 10;if(n<1)return 9;if(n<2)return 8;if(n<2.5)return 7;if(n<3)return 6;if(n<3.5)return 5;if(n<4)return 4;if(n<5)return 3;if(n<6)return 2;return 1;},
+      ranges:["<0.5x","0.5-1","1-2","2-2.5","2.5-3","3-3.5","3.5-4","4-5","5-6",">6x"]},
+    { id:"interest_cov",label:"Cobertura intereses", short:"Cobertura", unit:"x", placeholder:"12", hint:"EBIT / Gastos financieros",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>25)return 10;if(n>15)return 9;if(n>10)return 8;if(n>7)return 7;if(n>5)return 6;if(n>4)return 5;if(n>3)return 4;if(n>2)return 3;if(n>1)return 2;return 1;},
+      ranges:[">25x","15-25","10-15","7-10","5-7","4-5","3-4","2-3","1-2","<1x"]},
+    { id:"roic",        label:"ROIC", short:"ROIC", unit:"%", placeholder:"18", hint:"Return on Invested Capital",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>35)return 10;if(n>25)return 9;if(n>20)return 8;if(n>16)return 7;if(n>13)return 6;if(n>11)return 5;if(n>9)return 4;if(n>7)return 3;if(n>5)return 2;return 1;},
+      ranges:[">35%","25-35","20-25","16-20","13-16","11-13","9-11","7-9","5-7","<5"]},
+    { id:"p_fcf",       label:"Precio / FCF", short:"P/FCF", unit:"x", placeholder:"22", hint:"Capitalización bursátil / Free Cash Flow",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<10)return 10;if(n<12)return 9;if(n<15)return 8;if(n<20)return 7;if(n<25)return 6;if(n<30)return 5;if(n<35)return 4;if(n<40)return 3;if(n<50)return 2;return 1;},
+      ranges:["<10x","10-12","12-15","15-20","20-25","25-30","30-35","35-40","40-50",">50x"]},
+  ]},
+  aseguradora: { label:"Aseguradora", color:"#f59e0b", desc:"Munich Re, Hannover Re, Allianz...", metrics:[
+
+  { id:"yield_pct", label:"Yield actual", short:"Yield", unit:"%", placeholder:"3.5", autoFetch:true,
+    hint:"Rentabilidad por dividendo actual. Óptimo DGI: 3-6%. Por encima del 10% puede indicar riesgo de recorte.",
+    skipRanges:true,
+    score: v => { const n=parseFloat(v); if(isNaN(n)) return null;
+      if(n>=4&&n<5) return 10; if(n>=5&&n<6) return 9; if(n>=3&&n<4) return 8;
+      if(n>=6&&n<8) return 7;  if(n>=2&&n<3) return 6; if(n>=8&&n<10) return 5;
+      if(n>=1&&n<2) return 4;  if(n>=10&&n<12) return 3; if(n>=0.5&&n<1) return 2; return 1; },
+    ranges:[] },
+    { id:"div_years",   label:"Años div. consecutivos", short:"Historial", unit:"años", placeholder:"20", hint:"Años consecutivos subiendo el dividendo",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>=36)return 10;if(n>=26)return 9;if(n>=21)return 8;if(n>=16)return 7;if(n>=12)return 6;if(n>=9)return 5;if(n>=6)return 4;if(n>=4)return 3;if(n>=2)return 2;return 1;},
+      ranges:[">36","26-35","21-25","16-20","12-15","9-11","6-8","4-5","2-3","<2"]},
+    { id:"div_cagr5",   label:"CAGR dividendo 5a", short:"Crec.Div.", unit:"%", placeholder:"7", hint:"Tasa de crecimiento anual del dividendo a 5 años",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>17)return 10;if(n>13)return 9;if(n>10)return 8;if(n>8)return 7;if(n>6)return 6;if(n>4)return 5;if(n>3)return 4;if(n>2)return 3;if(n>0)return 2;return 1;},
+      ranges:[">17%","13-17","10-13","8-10","6-8","4-6","3-4","2-3","0-2","<0"]},
+    { id:"payout_earn", label:"Payout s/beneficio", short:"Payout", unit:"%", placeholder:"40", hint:"Dividendo / Beneficio neto × 100",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<25)return 10;if(n<35)return 9;if(n<40)return 8;if(n<50)return 7;if(n<60)return 6;if(n<70)return 5;if(n<80)return 4;if(n<90)return 3;if(n<100)return 2;return 1;},
+      ranges:["<25%","25-35","35-40","40-50","50-60","60-70","70-80","80-90","90-100",">100"]},
+    { id:"combined",    label:"Combined ratio", short:"Combined", unit:"%", placeholder:"94", hint:"Siniestros+gastos/primas. Por debajo de 100% = negocio rentable",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<88)return 10;if(n<91)return 9;if(n<94)return 8;if(n<97)return 7;if(n<100)return 6;if(n<103)return 5;if(n<106)return 4;if(n<110)return 3;if(n<115)return 2;return 1;},
+      ranges:["<88%","88-91","91-94","94-97","97-100","100-103","103-106","106-110","110-115",">115%"]},
+    { id:"solvency2",   label:"Solvency II ratio", short:"Solvency", unit:"%", placeholder:"220", hint:"Capital disponible / capital requerido. Mínimo regulatorio: 100%",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>250)return 10;if(n>220)return 9;if(n>190)return 8;if(n>170)return 7;if(n>150)return 6;if(n>130)return 5;if(n>115)return 4;if(n>105)return 3;if(n>100)return 2;return 1;},
+      ranges:[">250%","220-250","190-220","170-190","150-170","130-150","115-130","105-115","100-105","<100%"]},
+    { id:"roe",         label:"ROE", short:"ROE", unit:"%", placeholder:"15", hint:"Return on Equity",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>20)return 10;if(n>17)return 9;if(n>14)return 8;if(n>12)return 7;if(n>10)return 6;if(n>8)return 5;if(n>6)return 4;if(n>4)return 3;if(n>2)return 2;return 1;},
+      ranges:[">20%","17-20","14-17","12-14","10-12","8-10","6-8","4-6","2-4","<2%"]},
+    { id:"eps_cagr5",   label:"CAGR BPA 5 años", short:"Crec.BPA", unit:"%", placeholder:"8", hint:"Crecimiento anual del beneficio por acción a 5 años",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>17)return 10;if(n>13)return 9;if(n>10)return 8;if(n>8)return 7;if(n>6)return 6;if(n>4)return 5;if(n>2)return 4;if(n>0)return 3;if(n>-5)return 2;return 1;},
+      ranges:[">17%","13-17","10-13","8-10","6-8","4-6","2-4","0-2","-5-0","<-5"]},
+    { id:"p_book",      label:"Precio / Book", short:"P/Book", unit:"x", placeholder:"1.5", hint:"Precio de mercado / Valor en libros por acción",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<0.8)return 10;if(n<1.0)return 9;if(n<1.2)return 8;if(n<1.5)return 7;if(n<1.8)return 6;if(n<2.2)return 5;if(n<2.8)return 4;if(n<3.5)return 3;if(n<4.5)return 2;return 1;},
+      ranges:["<0.8x","0.8-1","1-1.2","1.2-1.5","1.5-1.8","1.8-2.2","2.2-2.8","2.8-3.5","3.5-4.5",">4.5x"]},
+  ]},
+  banco: { label:"Banco", color:"#60a5fa", desc:"JPMorgan, BNP, BBVA, Santander...", metrics:[
+
+  { id:"yield_pct", label:"Yield actual", short:"Yield", unit:"%", placeholder:"3.5", autoFetch:true,
+    hint:"Rentabilidad por dividendo actual. Óptimo DGI: 3-6%. Por encima del 10% puede indicar riesgo de recorte.",
+    skipRanges:true,
+    score: v => { const n=parseFloat(v); if(isNaN(n)) return null;
+      if(n>=4&&n<5) return 10; if(n>=5&&n<6) return 9; if(n>=3&&n<4) return 8;
+      if(n>=6&&n<8) return 7;  if(n>=2&&n<3) return 6; if(n>=8&&n<10) return 5;
+      if(n>=1&&n<2) return 4;  if(n>=10&&n<12) return 3; if(n>=0.5&&n<1) return 2; return 1; },
+    ranges:[] },
+    { id:"div_years",   label:"Años div. consecutivos", short:"Historial", unit:"años", placeholder:"15", hint:"Años consecutivos subiendo el dividendo",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>=36)return 10;if(n>=26)return 9;if(n>=21)return 8;if(n>=16)return 7;if(n>=12)return 6;if(n>=9)return 5;if(n>=6)return 4;if(n>=4)return 3;if(n>=2)return 2;return 1;},
+      ranges:[">36","26-35","21-25","16-20","12-15","9-11","6-8","4-5","2-3","<2"]},
+    { id:"div_cagr5",   label:"CAGR dividendo 5a", short:"Crec.Div.", unit:"%", placeholder:"6", hint:"Tasa de crecimiento anual del dividendo a 5 años",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>17)return 10;if(n>13)return 9;if(n>10)return 8;if(n>8)return 7;if(n>6)return 6;if(n>4)return 5;if(n>3)return 4;if(n>2)return 3;if(n>0)return 2;return 1;},
+      ranges:[">17%","13-17","10-13","8-10","6-8","4-6","3-4","2-3","0-2","<0"]},
+    { id:"payout_earn", label:"Payout s/beneficio", short:"Payout", unit:"%", placeholder:"45", hint:"Dividendo / Beneficio neto × 100",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<25)return 10;if(n<35)return 9;if(n<40)return 8;if(n<50)return 7;if(n<60)return 6;if(n<70)return 5;if(n<80)return 4;if(n<90)return 3;if(n<100)return 2;return 1;},
+      ranges:["<25%","25-35","35-40","40-50","50-60","60-70","70-80","80-90","90-100",">100"]},
+    { id:"cet1",        label:"CET1 ratio", short:"CET1", unit:"%", placeholder:"13", hint:"Capital de máxima calidad / activos ponderados por riesgo. Mínimo ~8%",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>18)return 10;if(n>16)return 9;if(n>14)return 8;if(n>13)return 7;if(n>12)return 6;if(n>11)return 5;if(n>10)return 4;if(n>9)return 3;if(n>8)return 2;return 1;},
+      ranges:[">18%","16-18","14-16","13-14","12-13","11-12","10-11","9-10","8-9","<8%"]},
+    { id:"roe",         label:"ROE", short:"ROE", unit:"%", placeholder:"12", hint:"Return on Equity",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>18)return 10;if(n>15)return 9;if(n>13)return 8;if(n>11)return 7;if(n>9)return 6;if(n>7)return 5;if(n>5)return 4;if(n>3)return 3;if(n>1)return 2;return 1;},
+      ranges:[">18%","15-18","13-15","11-13","9-11","7-9","5-7","3-5","1-3","<1%"]},
+    { id:"efficiency",  label:"Ratio de eficiencia", short:"Eficiencia", unit:"%", placeholder:"55", hint:"Costes / ingresos. Menor es mejor. Por debajo del 50% es excelente",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<40)return 10;if(n<45)return 9;if(n<50)return 8;if(n<55)return 7;if(n<60)return 6;if(n<65)return 5;if(n<70)return 4;if(n<75)return 3;if(n<80)return 2;return 1;},
+      ranges:["<40%","40-45","45-50","50-55","55-60","60-65","65-70","70-75","75-80",">80%"]},
+    { id:"npl",         label:"Ratio de morosidad", short:"Morosidad", unit:"%", placeholder:"2", hint:"Préstamos en mora / total préstamos. Menor es mejor",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<0.5)return 10;if(n<1)return 9;if(n<1.5)return 8;if(n<2)return 7;if(n<3)return 6;if(n<4)return 5;if(n<5)return 4;if(n<7)return 3;if(n<10)return 2;return 1;},
+      ranges:["<0.5%","0.5-1","1-1.5","1.5-2","2-3","3-4","4-5","5-7","7-10",">10%"]},
+    { id:"p_book",      label:"Precio / Book", short:"P/Book", unit:"x", placeholder:"1.0", hint:"Precio / Valor en libros. La banca suele cotizar cerca de 1x",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<0.6)return 10;if(n<0.8)return 9;if(n<1.0)return 8;if(n<1.2)return 7;if(n<1.5)return 6;if(n<1.8)return 5;if(n<2.0)return 4;if(n<2.5)return 3;if(n<3.0)return 2;return 1;},
+      ranges:["<0.6x","0.6-0.8","0.8-1.0","1.0-1.2","1.2-1.5","1.5-1.8","1.8-2.0","2.0-2.5","2.5-3.0",">3.0x"]},
+  ]},
+  reit: { label:"REIT", color:"#34d399", desc:"Realty Income, VICI, Agree Realty...", metrics:[
+
+  { id:"yield_pct", label:"Yield actual", short:"Yield", unit:"%", placeholder:"3.5", autoFetch:true,
+    hint:"Rentabilidad por dividendo actual. Óptimo DGI: 3-6%. Por encima del 10% puede indicar riesgo de recorte.",
+    skipRanges:true,
+    score: v => { const n=parseFloat(v); if(isNaN(n)) return null;
+      if(n>=4&&n<5) return 10; if(n>=5&&n<6) return 9; if(n>=3&&n<4) return 8;
+      if(n>=6&&n<8) return 7;  if(n>=2&&n<3) return 6; if(n>=8&&n<10) return 5;
+      if(n>=1&&n<2) return 4;  if(n>=10&&n<12) return 3; if(n>=0.5&&n<1) return 2; return 1; },
+    ranges:[] },
+    { id:"div_years",   label:"Años div. consecutivos", short:"Historial", unit:"años", placeholder:"20", hint:"Años consecutivos subiendo el dividendo",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>=36)return 10;if(n>=26)return 9;if(n>=21)return 8;if(n>=16)return 7;if(n>=12)return 6;if(n>=9)return 5;if(n>=6)return 4;if(n>=4)return 3;if(n>=2)return 2;return 1;},
+      ranges:[">36","26-35","21-25","16-20","12-15","9-11","6-8","4-5","2-3","<2"]},
+    { id:"div_cagr5",   label:"CAGR dividendo 5a", short:"Crec.Div.", unit:"%", placeholder:"4", hint:"Tasa de crecimiento anual del dividendo a 5 años",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>17)return 10;if(n>13)return 9;if(n>10)return 8;if(n>8)return 7;if(n>6)return 6;if(n>4)return 5;if(n>3)return 4;if(n>2)return 3;if(n>0)return 2;return 1;},
+      ranges:[">17%","13-17","10-13","8-10","6-8","4-6","3-4","2-3","0-2","<0"]},
+    { id:"payout_affo", label:"Payout sobre AFFO", short:"Payout", unit:"%", placeholder:"75", hint:"Dividendo / AFFO × 100. Los REITs distribuyen la mayor parte; umbral más alto que en general",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<70)return 10;if(n<75)return 9;if(n<80)return 8;if(n<83)return 7;if(n<86)return 6;if(n<89)return 5;if(n<92)return 4;if(n<95)return 3;if(n<100)return 2;return 1;},
+      ranges:["<70%","70-75","75-80","80-83","83-86","86-89","89-92","92-95","95-100",">100%"]},
+    { id:"affo_cagr5",  label:"CAGR AFFO/acc. 5a", short:"Crec.AFFO", unit:"%", placeholder:"5", hint:"Crecimiento anual del AFFO por acción a 5 años",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>17)return 10;if(n>13)return 9;if(n>10)return 8;if(n>8)return 7;if(n>6)return 6;if(n>4)return 5;if(n>2)return 4;if(n>0)return 3;if(n>-5)return 2;return 1;},
+      ranges:[">17%","13-17","10-13","8-10","6-8","4-6","2-4","0-2","-5-0","<-5"]},
+    { id:"debt_ebitda", label:"Deuda neta/EBITDA", short:"Deuda", unit:"x", placeholder:"5.5", hint:"Los REITs tienen más deuda estructuralmente. Umbrales ajustados",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<3)return 10;if(n<4)return 9;if(n<5)return 8;if(n<6)return 7;if(n<7)return 6;if(n<8)return 5;if(n<9)return 4;if(n<10)return 3;if(n<12)return 2;return 1;},
+      ranges:["<3x","3-4","4-5","5-6","6-7","7-8","8-9","9-10","10-12",">12x"]},
+    { id:"ltv",         label:"Loan-to-Value", short:"LTV", unit:"%", placeholder:"35", hint:"Deuda total / valor de los activos inmobiliarios",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<25)return 10;if(n<30)return 9;if(n<35)return 8;if(n<40)return 7;if(n<45)return 6;if(n<50)return 5;if(n<55)return 4;if(n<60)return 3;if(n<65)return 2;return 1;},
+      ranges:["<25%","25-30","30-35","35-40","40-45","45-50","50-55","55-60","60-65",">65%"]},
+    { id:"interest_cov",label:"Cobertura intereses", short:"Cobertura", unit:"x", placeholder:"4", hint:"EBIT / Gastos financieros",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>25)return 10;if(n>15)return 9;if(n>10)return 8;if(n>7)return 7;if(n>5)return 6;if(n>4)return 5;if(n>3)return 4;if(n>2)return 3;if(n>1)return 2;return 1;},
+      ranges:[">25x","15-25","10-15","7-10","5-7","4-5","3-4","2-3","1-2","<1x"]},
+    { id:"p_affo",      label:"Precio / AFFO", short:"P/AFFO", unit:"x", placeholder:"16", hint:"Precio de mercado / AFFO por acción",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<10)return 10;if(n<12)return 9;if(n<15)return 8;if(n<18)return 7;if(n<20)return 6;if(n<22)return 5;if(n<25)return 4;if(n<28)return 3;if(n<35)return 2;return 1;},
+      ranges:["<10x","10-12","12-15","15-18","18-20","20-22","22-25","25-28","28-35",">35x"]},
+  ]},
+  bdc: { label:"BDC", color:"#f472b6", desc:"MAIN, Ares Capital, Hercules...", metrics:[
+
+  { id:"yield_pct", label:"Yield actual", short:"Yield", unit:"%", placeholder:"3.5", autoFetch:true,
+    hint:"Rentabilidad por dividendo actual. Óptimo DGI: 3-6%. Por encima del 10% puede indicar riesgo de recorte.",
+    skipRanges:true,
+    score: v => { const n=parseFloat(v); if(isNaN(n)) return null;
+      if(n>=4&&n<5) return 10; if(n>=5&&n<6) return 9; if(n>=3&&n<4) return 8;
+      if(n>=6&&n<8) return 7;  if(n>=2&&n<3) return 6; if(n>=8&&n<10) return 5;
+      if(n>=1&&n<2) return 4;  if(n>=10&&n<12) return 3; if(n>=0.5&&n<1) return 2; return 1; },
+    ranges:[] },
+    { id:"div_years",   label:"Años div. consecutivos", short:"Historial", unit:"años", placeholder:"10", hint:"Años consecutivos manteniendo o subiendo el dividendo",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>=36)return 10;if(n>=26)return 9;if(n>=21)return 8;if(n>=16)return 7;if(n>=12)return 6;if(n>=9)return 5;if(n>=6)return 4;if(n>=4)return 3;if(n>=2)return 2;return 1;},
+      ranges:[">36","26-35","21-25","16-20","12-15","9-11","6-8","4-5","2-3","<2"]},
+    { id:"div_cagr5",   label:"CAGR dividendo 5a", short:"Crec.Div.", unit:"%", placeholder:"5", hint:"Tasa de crecimiento anual del dividendo a 5 años",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>17)return 10;if(n>13)return 9;if(n>10)return 8;if(n>8)return 7;if(n>6)return 6;if(n>4)return 5;if(n>3)return 4;if(n>2)return 3;if(n>0)return 2;return 1;},
+      ranges:[">17%","13-17","10-13","8-10","6-8","4-6","3-4","2-3","0-2","<0"]},
+    { id:"nii_cover",   label:"Cobertura NII", short:"NII/Div.", unit:"x", placeholder:"1.15", hint:"Net Investment Income / Dividendo. Por encima de 1x el dividendo está cubierto",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>1.4)return 10;if(n>1.3)return 9;if(n>1.2)return 8;if(n>1.15)return 7;if(n>1.1)return 6;if(n>1.05)return 5;if(n>1.0)return 4;if(n>0.95)return 3;if(n>0.9)return 2;return 1;},
+      ranges:[">1.4x","1.3-1.4","1.2-1.3","1.15-1.2","1.1-1.15","1.05-1.1","1.0-1.05","0.95-1.0","0.9-0.95","<0.9x"]},
+    { id:"nii_cagr5",   label:"CAGR NII/acc. 5a", short:"Crec.NII", unit:"%", placeholder:"6", hint:"Crecimiento anual del Net Investment Income por acción",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>17)return 10;if(n>13)return 9;if(n>10)return 8;if(n>8)return 7;if(n>6)return 6;if(n>4)return 5;if(n>2)return 4;if(n>0)return 3;if(n>-5)return 2;return 1;},
+      ranges:[">17%","13-17","10-13","8-10","6-8","4-6","2-4","0-2","-5-0","<-5"]},
+    { id:"leverage",    label:"Apalancamiento D/E", short:"D/E", unit:"x", placeholder:"1.1", hint:"Deuda / Patrimonio neto. El límite regulatorio en EE.UU. es 2x",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<0.5)return 10;if(n<0.7)return 9;if(n<0.9)return 8;if(n<1.1)return 7;if(n<1.3)return 6;if(n<1.5)return 5;if(n<1.7)return 4;if(n<1.9)return 3;if(n<2.1)return 2;return 1;},
+      ranges:["<0.5x","0.5-0.7","0.7-0.9","0.9-1.1","1.1-1.3","1.3-1.5","1.5-1.7","1.7-1.9","1.9-2.1",">2.1x"]},
+    { id:"nonaccrual",  label:"Non-accruals", short:"No-acru.", unit:"%", placeholder:"1.5", hint:"Préstamos en non-accrual como % de la cartera. Menor es mejor",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<0.5)return 10;if(n<1)return 9;if(n<1.5)return 8;if(n<2)return 7;if(n<3)return 6;if(n<4)return 5;if(n<5)return 4;if(n<7)return 3;if(n<10)return 2;return 1;},
+      ranges:["<0.5%","0.5-1","1-1.5","1.5-2","2-3","3-4","4-5","5-7","7-10",">10%"]},
+    { id:"p_nav",       label:"Precio / NAV", short:"P/NAV", unit:"x", placeholder:"1.05", hint:"Precio / Valor Neto del Activo. Cerca de 1x es razonable",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n<1.0)return 10;if(n<1.05)return 9;if(n<1.1)return 8;if(n<1.15)return 7;if(n<1.2)return 6;if(n<1.3)return 5;if(n<1.4)return 4;if(n<1.5)return 3;if(n<1.7)return 2;return 1;},
+      ranges:["<1.0x","1.0-1.05","1.05-1.1","1.1-1.15","1.15-1.2","1.2-1.3","1.3-1.4","1.4-1.5","1.5-1.7",">1.7x"]},
+    { id:"roe_nav",     label:"ROE sobre NAV", short:"ROE", unit:"%", placeholder:"12", hint:"Rentabilidad sobre el patrimonio neto (NAV)",
+      score:v=>{const n=parseFloat(v);if(isNaN(n))return null;if(n>18)return 10;if(n>15)return 9;if(n>13)return 8;if(n>11)return 7;if(n>9)return 6;if(n>7)return 5;if(n>5)return 4;if(n>3)return 3;if(n>1)return 2;return 1;},
+      ranges:[">18%","15-18","13-15","11-13","9-11","7-9","5-7","3-5","1-3","<1%"]},
+  ]},
+};
+
+const COUNTRIES = [
+  {code:"US",flag:"🇺🇸",name:"EE.UU."},
+  {code:"ES",flag:"🇪🇸",name:"España"},
+  {code:"FR",flag:"🇫🇷",name:"Francia"},
+  {code:"DE",flag:"🇩🇪",name:"Alemania"},
+  {code:"GB",flag:"🇬🇧",name:"Reino Unido"},
+  {code:"NL",flag:"🇳🇱",name:"Países Bajos"},
+  {code:"DK",flag:"🇩🇰",name:"Dinamarca"},
+  {code:"SE",flag:"🇸🇪",name:"Suecia"},
+  {code:"CH",flag:"🇨🇭",name:"Suiza"},
+  {code:"IE",flag:"🇮🇪",name:"Irlanda"},
+  {code:"IT",flag:"🇮🇹",name:"Italia"},
+  {code:"JP",flag:"🇯🇵",name:"Japón"},
+  {code:"AU",flag:"🇦🇺",name:"Australia"},
+  {code:"CA",flag:"🇨🇦",name:"Canadá"},
+  {code:"OTHER",flag:"🌍",name:"Otro"},
+];
+function getCountry(code){ return COUNTRIES.find(c=>c.code===code)||{code:"OTHER",flag:"🌍",name:"Otro"}; }
+
+function scoreColor(s){if(s==null)return"#3a4260";if(s>=8)return"#34d399";if(s>=6.5)return"#86efac";if(s>=5)return"#fbbf24";if(s>=3)return"#f97316";return"#f87171";}
+function scoreBg(s){if(s==null)return"rgba(42,48,69,0.4)";if(s>=8)return"rgba(52,211,153,0.13)";if(s>=6.5)return"rgba(134,239,172,0.1)";if(s>=5)return"rgba(251,191,36,0.1)";if(s>=3)return"rgba(249,115,22,0.1)";return"rgba(248,113,113,0.1)";}
+function scoreLabel(s){if(!s)return"Sin datos";if(s>=8)return"Excelente";if(s>=6.5)return"Buena";if(s>=5)return"Aceptable";if(s>=3)return"Débil";return"Muy débil";}
+function rankColor(rank,total,type){const top=Math.ceil(total*0.25),bot=Math.floor(total*0.75);if(rank<=top)return"#34d399";if(type==="portfolio"&&rank>bot)return"#f87171";return"#c8d0e0";}
+function getMetrics(sector){return(SECTORS[sector]||SECTORS.general).metrics;}
+function calcScores(values,sector){
+  const metrics=getMetrics(sector);let total=0,count=0;const scores={};
+  metrics.forEach(m=>{const v=values[m.id];if(v!==undefined&&v!==""){const s=m.score(v);if(s!==null){scores[m.id]=s;total+=s;count++;}}});
+  return{scores,total:count>0?total/count:0,count};
+}
+
+async function fetchYahoo(ticker){
+  const res=await fetch("https://query1.finance.yahoo.com/v7/finance/quote?symbols="+encodeURIComponent(ticker)+"&lang=en&corsDomain=finance.yahoo.com",{signal:AbortSignal.timeout(8000)});
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  const json=await res.json();
+  const q=json?.quoteResponse?.result?.[0];
+  if(!q)throw new Error("Ticker no encontrado");
+  return{
+    price:q.regularMarketPrice??null,
+    yieldPct:q.trailingAnnualDividendYield?(q.trailingAnnualDividendYield*100):null,
+    dividendRate:q.trailingAnnualDividendRate??null,
+    currency:q.currency??"",
+    updated:new Date().toLocaleString("es-ES")
+  };
+}
+
+function RadarChart({scores,sector,color}){
+  const metrics=getMetrics(sector);
+  const cx=120,cy=120,r=82,n=metrics.length;
+  const pt=(i,rad)=>{const a=(Math.PI*2*i/n)-Math.PI/2;return[cx+rad*Math.cos(a),cy+rad*Math.sin(a)];};
+  const poly=metrics.map((_,i)=>{const[x,y]=pt(i,(scores[metrics[i].id]||0)/10*r);return x+","+y;}).join(" ");
+  return(
+    <svg viewBox="0 0 240 240" style={{width:"100%",maxWidth:220,display:"block",margin:"0 auto"}}>
+      {[2,4,6,8,10].map(l=><polygon key={l} points={Array.from({length:n},(_,i)=>pt(i,l/10*r).join(",")).join(" ")} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>)}
+      {Array.from({length:n},(_,i)=>{const[x,y]=pt(i,r);return<line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>;} )}
+      <polygon points={poly} fill={color} fillOpacity="0.15" stroke={color} strokeWidth="2"/>
+      {metrics.map((m,i)=>{const[x,y]=pt(i,r+14);return<text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle" fontSize="7" fill="#4a5270" fontFamily="Inter,sans-serif">{m.short}</text>;})}
+      {metrics.map((m,i)=>{const[x,y]=pt(i,(scores[m.id]||0)/10*r);return<circle key={i} cx={x} cy={y} r="2.5" fill={color}/>;} )}
+    </svg>
+  );
+}
+
+const BTN={border:"none",borderRadius:9,padding:"10px 14px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"};
+const INP={width:"100%",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"9px 12px",color:"#fff",fontSize:14,outline:"none",fontFamily:"'Inter',sans-serif"};
+
+function CompanyRow({company,rank,total,type,selected,onSelect,onEdit,onDelete}){
+  const rc=rankColor(rank,total,type);
+  const metrics=getMetrics(company.sector);
+  const sc=SECTORS[company.sector]||SECTORS.general;
+  const ct=getCountry(company.country);
+  const ld=company.liveData;
+  return(
+    <div style={{borderRadius:13,border:"1px solid "+(selected?"rgba(255,255,255,0.1)":"rgba(255,255,255,0.04)"),background:"rgba(255,255,255,0.025)",overflow:"hidden"}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer"}} onClick={onSelect}>
+        <span style={{fontFamily:"'Syne',sans-serif",fontSize:15,fontWeight:800,color:rc,width:28,textAlign:"right",flexShrink:0}}>{rank}</span>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+            <span style={{fontFamily:"'Syne',sans-serif",fontSize:15,fontWeight:700,color:"#e0e8f0"}}>{company.name}</span>
+            {company.ticker&&<span style={{fontSize:10,color:"#3a4260",background:"rgba(255,255,255,0.04)",padding:"2px 6px",borderRadius:4}}>{company.ticker}</span>}
+            <span style={{fontSize:9,color:sc.color,background:sc.color+"15",padding:"1px 6px",borderRadius:4,border:"1px solid "+sc.color+"30"}}>{sc.label}</span>
+            {ct&&ct.code!=="OTHER"&&<span style={{fontSize:12}}>{ct.flag}</span>}
+          </div>
+          {ld&&<div style={{fontSize:11,color:"#4a5270",marginTop:3,display:"flex",gap:10}}>
+            {ld.price!=null&&<span style={{color:"#c8d0e0"}}>{ld.price.toFixed(2)} {ld.currency}</span>}
+            {ld.dividendRate!=null&&<span>Div: {ld.dividendRate.toFixed(2)}</span>}
+            {ld.yieldPct!=null&&<span style={{color:"#fbbf24"}}>{ld.yieldPct.toFixed(2)}%</span>}
+            <span style={{color:"#2a3045"}}>{ld.updated}</span>
+          </div>}
+          <div style={{display:"flex",gap:3,marginTop:5,flexWrap:"wrap"}}>
+            {metrics.map(m=><div key={m.id} style={{width:18,height:18,borderRadius:3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,background:scoreBg(company.scores[m.id]),color:scoreColor(company.scores[m.id])}}>{company.scores[m.id]!=null?company.scores[m.id]:"·"}</div>)}
+          </div>
+        </div>
+        <div style={{textAlign:"right",flexShrink:0}}>
+          <div style={{fontFamily:"'Syne',sans-serif",fontSize:24,fontWeight:800,color:scoreColor(company.total),lineHeight:1}}>{company.total.toFixed(1)}</div>
+          <div style={{fontSize:9,color:"#3a4260",marginTop:2}}>{scoreLabel(company.total)}</div>
+        </div>
+      </div>
+      {selected&&(
+        <div style={{borderTop:"1px solid rgba(255,255,255,0.05)",padding:"14px"}}>
+          <RadarChart scores={company.scores} sector={company.sector} color={scoreColor(company.total)}/>
+          <div style={{marginTop:10}}>
+            {metrics.map(m=>{const v=company.values[m.id],s=company.scores[m.id];return(
+              <div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,0.03)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontSize:11,color:"#5a6480"}}>{m.label}</span>
+                  {m.autoFetch&&<span style={{fontSize:9,color:"#3a4260",background:"rgba(255,255,255,0.04)",padding:"1px 4px",borderRadius:3}}>auto</span>}
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:11,color:"#3a4260"}}>{(v!==undefined&&v!=="")?(v+m.unit):"—"}</span>
+                  <div style={{width:26,height:26,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontSize:12,fontWeight:700,background:scoreBg(s),color:scoreColor(s)}}>{s!=null?s:"—"}</div>
+                </div>
+              </div>
+            );})}
+          </div>
+          <div style={{display:"flex",gap:8,marginTop:14}}>
+            <button onClick={onEdit} style={{...BTN,flex:1,fontSize:12,background:"rgba(99,102,241,0.15)",color:"#818cf8"}}>Editar</button>
+            <button onClick={onDelete} style={{...BTN,fontSize:12,background:"rgba(248,113,113,0.1)",color:"#f87171"}}>Eliminar</button>
+          </div>
+          <p style={{fontSize:10,color:"#2a3045",textAlign:"right",marginTop:8}}>Actualizado {company.date}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GroupedRanking({groups,labelKey,getLabel,getColor,emptyMsg}){
+  const [sel,setSel]=useState(null);
+  const sorted=Object.entries(groups).sort((a,b)=>b[1].length-a[1].length);
+  if(sorted.length===0)return<p style={{color:"#3a4260",fontSize:13,textAlign:"center",padding:"40px 0"}}>{emptyMsg}</p>;
+  return(
+    <div style={{display:"grid",gap:20}}>
+      {sorted.map(([key,comps])=>{
+        const label=getLabel(key);const color=getColor(key);
+        const avg=comps.reduce((a,b)=>a+b.total,0)/comps.length;
+        return(
+          <div key={key}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,paddingBottom:8,borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:18}}>{label.flag||""}</span>
+                <span style={{fontFamily:"'Syne',sans-serif",fontSize:14,fontWeight:700,color:color||"#c8d0e0"}}>{label.name}</span>
+                <span style={{fontSize:10,color:"#3a4260"}}>{comps.length} empresa{comps.length>1?"s":""}</span>
+              </div>
+              <span style={{fontFamily:"'Syne',sans-serif",fontSize:16,fontWeight:800,color:scoreColor(avg)}}>{"Ø"+avg.toFixed(1)}</span>
+            </div>
+            <div style={{display:"grid",gap:5}}>
+              {comps.map((c,i)=>(
+                <div key={c.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:"rgba(255,255,255,0.02)",borderRadius:9,border:"1px solid rgba(255,255,255,0.03)",cursor:"pointer"}}
+                  onClick={()=>setSel(sel===c.id?null:c.id)}>
+                  <span style={{fontFamily:"'Syne',sans-serif",fontSize:12,fontWeight:800,color:rankColor(i+1,comps.length,"portfolio"),width:22,textAlign:"right",flexShrink:0}}>{i+1}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{fontSize:13,color:"#e0e8f0",fontWeight:500}}>{c.name}</span>
+                      {c.ticker&&<span style={{fontSize:10,color:"#3a4260"}}>{c.ticker}</span>}
+                      <span style={{fontSize:9,color:c.type==="portfolio"?"#818cf8":"#4a5270",marginLeft:"auto",flexShrink:0}}>{c.type==="portfolio"?"cartera":"watchlist"}</span>
+                    </div>
+                    {sel===c.id&&(
+                      <div style={{marginTop:6,display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:4}}>
+                        {getMetrics(c.sector).map(m=>{const v=c.values[m.id],s=c.scores[m.id];return(
+                          <div key={m.id} style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#4a5270",padding:"2px 0"}}>
+                            <span>{m.short}</span>
+                            <span style={{color:scoreColor(s),fontWeight:600}}>{s!=null?s+"/10":"—"}</span>
+                          </div>
+                        );})}
+                      </div>
+                    )}
+                  </div>
+                  <span style={{fontFamily:"'Syne',sans-serif",fontSize:20,fontWeight:800,color:scoreColor(c.total),flexShrink:0}}>{c.total.toFixed(1)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Form({initial,editingId,onSave,onCancel}){
+  const[form,setForm]=useState(initial);
+  const[openHint,setOpenHint]=useState(null);
+  const[showRanges,setShowRanges]=useState(null);
+  const metrics=useMemo(()=>getMetrics(form.sector),[form.sector]);
+  const live=useMemo(()=>calcScores(form.values,form.sector),[form.values,form.sector]);
+  const sc=SECTORS[form.sector]||SECTORS.general;
+  function changeSector(s){if(s!==form.sector)setForm(f=>({...f,sector:s,values:{}}));}
+  const setVal=(id,v)=>setForm(f=>({...f,values:{...f.values,[id]:v}}));
+  return(
+    <div style={{background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:16,padding:"20px 16px"}}>
+      <p style={{margin:"0 0 14px",fontSize:10,color:"#4a5270",letterSpacing:"0.16em",textTransform:"uppercase",fontWeight:600}}>{editingId?"Editando empresa":"Nueva empresa"}</p>
+      <div style={{display:"flex",gap:0,marginBottom:14,borderRadius:10,overflow:"hidden",border:"1px solid rgba(255,255,255,0.07)",width:"fit-content"}}>
+        {["portfolio","watchlist"].map(t=>(
+          <button key={t} onClick={()=>setForm(f=>({...f,type:t}))} style={{...BTN,borderRadius:0,padding:"7px 16px",fontSize:12,background:form.type===t?"rgba(99,102,241,0.5)":"transparent",color:form.type===t?"#fff":"#4a5270"}}>
+            {t==="portfolio"?"En cartera":"Candidata"}
+          </button>
+        ))}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+        <div><label style={{display:"block",fontSize:10,color:"#4a5270",marginBottom:5,textTransform:"uppercase",letterSpacing:"0.1em"}}>Nombre</label><input style={INP} placeholder="ej: Munich Re" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></div>
+        <div><label style={{display:"block",fontSize:10,color:"#4a5270",marginBottom:5,textTransform:"uppercase",letterSpacing:"0.1em"}}>Ticker</label><input style={INP} placeholder="ej: MUV2" value={form.ticker} onChange={e=>setForm(f=>({...f,ticker:e.target.value}))}/></div>
+      </div>
+      <div style={{marginBottom:10}}>
+        <label style={{display:"block",fontSize:10,color:"#4a5270",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.1em"}}>País</label>
+        <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+          {COUNTRIES.map(c=>(
+            <button key={c.code} onClick={()=>setForm(f=>({...f,country:c.code}))}
+              style={{...BTN,padding:"5px 10px",fontSize:11,background:form.country===c.code?"rgba(99,102,241,0.4)":"rgba(255,255,255,0.04)",color:form.country===c.code?"#fff":"#5a6480",border:"1px solid "+(form.country===c.code?"rgba(99,102,241,0.5)":"rgba(255,255,255,0.06)"),borderRadius:8}}>
+              {c.flag} {c.name}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{marginBottom:14}}>
+        <label style={{display:"block",fontSize:10,color:"#4a5270",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.1em"}}>Sector</label>
+        <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+          {Object.entries(SECTORS).map(([k,s])=>(
+            <button key={k} onClick={()=>changeSector(k)}
+              style={{...BTN,padding:"6px 12px",fontSize:11,background:form.sector===k?s.color+"25":"rgba(255,255,255,0.04)",color:form.sector===k?s.color:"#5a6480",border:"1px solid "+(form.sector===k?s.color+"50":"rgba(255,255,255,0.06)"),borderRadius:8}}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <p style={{fontSize:11,color:"#3a4260",marginTop:5,fontStyle:"italic"}}>{sc.desc}</p>
+      </div>
+      <div style={{display:"grid",gap:7}}>
+        {metrics.map(m=>{
+          const s=live.scores[m.id];const has=form.values[m.id]!==undefined&&form.values[m.id]!=="";
+          return(
+            <div key={m.id} style={{padding:"10px 12px",background:"rgba(255,255,255,0.02)",border:"1px solid "+(has?scoreColor(s)+"30":"rgba(255,255,255,0.04)"),borderRadius:9}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                    <span style={{fontSize:12,color:"#8090a8",fontWeight:500}}>{m.label}</span>
+                    {m.autoFetch&&<span style={{fontSize:9,color:"#818cf8",background:"rgba(99,102,241,0.1)",padding:"1px 5px",borderRadius:3}}>Yahoo</span>}
+                    <button style={{background:"none",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"50%",color:"#4a5270",width:15,height:15,fontSize:8,cursor:"pointer",padding:0,lineHeight:"15px"}} onClick={()=>setOpenHint(openHint===m.id?null:m.id)}>?</button>
+                  </div>
+                  {openHint===m.id&&<p style={{fontSize:11,color:"#4a5270",fontStyle:"italic",marginBottom:3}}>{m.hint}</p>}
+                  {!m.skipRanges&&<button style={{background:"none",border:"none",color:"#2a3a55",fontSize:10,cursor:"pointer",padding:0}} onClick={()=>setShowRanges(showRanges===m.id?null:m.id)}>{showRanges===m.id?"ocultar rangos":"ver rangos"}</button>}
+                  {m.skipRanges&&<p style={{fontSize:10,color:"#2a3050"}}>Bell curve: óptimo 4-5% | bueno 3-6% | alto riesgo &gt;10%</p>}
+                  {!m.skipRanges&&showRanges===m.id&&(
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:3,marginTop:6}}>
+                      {m.ranges.map((r,i)=>(
+                        <div key={i} style={{background:scoreBg(10-i),borderRadius:5,padding:"3px 2px",textAlign:"center",display:"flex",flexDirection:"column",gap:1}}>
+                          <span style={{fontFamily:"'Syne',sans-serif",fontSize:11,fontWeight:800,color:scoreColor(10-i)}}>{10-i}</span>
+                          <span style={{fontSize:9,color:scoreColor(10-i),opacity:0.75}}>{r}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+                  <div style={{position:"relative"}}>
+                    <input style={{...INP,width:80,padding:"7px 28px 7px 8px",fontSize:14}} type="number" step="any" placeholder={m.placeholder} value={form.values[m.id]??""} onChange={e=>setVal(m.id,e.target.value)}/>
+                    <span style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",fontSize:10,color:"#3a4260",pointerEvents:"none"}}>{m.unit}</span>
+                  </div>
+                  <div style={{width:30,height:30,borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontSize:13,fontWeight:700,flexShrink:0,background:scoreBg(s),color:scoreColor(s),opacity:has?1:0.25}}>{has?(s!=null?s:"—"):"—"}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {live.count>0&&(
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:16,padding:"14px 18px",borderRadius:12,border:"1px solid "+scoreColor(live.total)+"40",background:scoreBg(live.total)}}>
+          <div>
+            <p style={{fontSize:11,color:"#4a5270"}}>Nota media — {live.count}/{metrics.length} métricas</p>
+            <p style={{fontSize:11,color:"#4a5270",fontStyle:"italic",marginTop:2}}>{scoreLabel(live.total)}</p>
+          </div>
+          <span style={{fontFamily:"'Syne',sans-serif",fontSize:38,fontWeight:800,color:scoreColor(live.total)}}>{live.total.toFixed(1)}</span>
+        </div>
+      )}
+      <div style={{display:"flex",gap:10,marginTop:14}}>
+        <button onClick={()=>onSave(form)} disabled={!form.name.trim()} style={{...BTN,flex:1,background:"rgba(99,102,241,0.8)",opacity:!form.name.trim()?0.4:1}}>{editingId?"Guardar cambios":"Añadir al índice"}</button>
+        <button onClick={onCancel} style={{...BTN,background:"rgba(255,255,255,0.05)"}}>Cancelar</button>
+      </div>
+    </div>
+  );
+}
+
+const EMPTY={name:"",ticker:"",type:"portfolio",sector:"general",country:"US",values:{}};
+
+function App(){
+  const[companies,setCompanies]=useState([]);
+  const[tab,setTab]=useState("index");
+  const[view,setView]=useState("list");
+  const[editData,setEditData]=useState(null);
+  const[editingId,setEditingId]=useState(null);
+  const[selected,setSelected]=useState(null);
+  const[refreshing,setRefreshing]=useState(false);
+  const[refreshMsg,setRefreshMsg]=useState("");
+  const fileRef=useRef();
+
+  useEffect(()=>{try{const s=localStorage.getItem("dgi-v5");if(s)setCompanies(JSON.parse(s));}catch(e){};},[]);
+  function persist(l){try{localStorage.setItem("dgi-v5",JSON.stringify(l));}catch(e){}}
+
+  function handleSave(form){
+    const{scores,total,count}=calcScores(form.values,form.sector);
+    const c={id:editingId||Date.now().toString(),name:form.name.trim(),ticker:form.ticker.trim().toUpperCase(),type:form.type,sector:form.sector||"general",country:form.country||"US",values:{...form.values},scores,total:parseFloat(total.toFixed(2)),count,date:new Date().toLocaleDateString("es-ES"),liveData:null};
+    const nl=editingId?companies.map(x=>x.id===editingId?{...c,liveData:x.liveData}:x):[...companies,c];
+    nl.sort((a,b)=>b.total-a.total);setCompanies(nl);persist(nl);setEditData(null);setEditingId(null);setView("list");setSelected(c);
+  }
+  function handleEdit(c){setEditData({...c,values:{...c.values}});setEditingId(c.id);setTab("index");setView("form");setSelected(null);}
+  function handleDelete(id){if(!confirm("¿Eliminar esta empresa?"))return;const nl=companies.filter(c=>c.id!==id);setCompanies(nl);persist(nl);if(selected&&selected.id===id)setSelected(null);}
+  function handleExport(){const blob=new Blob([JSON.stringify({version:5,exportDate:new Date().toISOString(),companies},null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="mi-indice-dgi.json";a.click();URL.revokeObjectURL(url);}
+  function handleImport(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{try{const data=JSON.parse(ev.target.result);const list=data.companies||data;if(!Array.isArray(list))throw new Error("Formato incorrecto");if(confirm("Importar "+list.length+" empresas? Se reemplazarán los datos actuales.")){list.sort((a,b)=>b.total-a.total);setCompanies(list);persist(list);setSelected(null);}}catch(err){alert("Error: "+err.message);}};reader.readAsText(file);e.target.value="";}
+
+  async function handleRefresh(){
+    const withTicker=companies.filter(c=>c.ticker);
+    if(withTicker.length===0){setRefreshMsg("Ninguna empresa tiene ticker asignado.");return;}
+    setRefreshing(true);setRefreshMsg("Actualizando "+withTicker.length+" empresas...");
+    let ok=0,fail=0;
+    const updated=[...companies];
+    await Promise.all(withTicker.map(async c=>{
+      try{
+        const ld=await fetchYahoo(c.ticker);
+        const idx=updated.findIndex(x=>x.id===c.id);
+        if(idx>=0){
+          const newValues={...updated[idx].values};
+          if(ld.yieldPct!=null)newValues["yield_pct"]=ld.yieldPct.toFixed(2);
+          const{scores,total,count}=calcScores(newValues,updated[idx].sector);
+          updated[idx]={...updated[idx],values:newValues,scores,total:parseFloat(total.toFixed(2)),count,liveData:ld};
+        }
+        ok++;
+      }catch(err){fail++;}
+    }));
+    updated.sort((a,b)=>b.total-a.total);
+    setCompanies(updated);persist(updated);setRefreshing(false);
+    setRefreshMsg("✓ "+ok+" actualizadas"+(fail>0?" · "+fail+" fallidas (CORS o ticker inválido)":"")+".");
+    setTimeout(()=>setRefreshMsg(""),6000);
+  }
+
+  const portfolio=useMemo(()=>companies.filter(c=>c.type==="portfolio").sort((a,b)=>b.total-a.total),[companies]);
+  const watchlist=useMemo(()=>companies.filter(c=>c.type==="watchlist"||!c.type).sort((a,b)=>b.total-a.total),[companies]);
+  const avgP=portfolio.length?portfolio.reduce((a,b)=>a+b.total,0)/portfolio.length:0;
+  const rotAlert=useMemo(()=>{if(portfolio.length<2||watchlist.length<1)return null;const worst=portfolio[portfolio.length-1],best=watchlist[0];return best.total-worst.total>=2?{worst,best}:null;},[portfolio,watchlist]);
+
+  const bySector=useMemo(()=>{const g={};companies.forEach(c=>{const s=c.sector||"general";if(!g[s])g[s]=[];g[s].push(c);});Object.values(g).forEach(a=>a.sort((a,b)=>b.total-a.total));return g;},[companies]);
+  const byCountry=useMemo(()=>{const g={};companies.forEach(c=>{const ct=c.country||"OTHER";if(!g[ct])g[ct]=[];g[ct].push(c);});Object.values(g).forEach(a=>a.sort((a,b)=>b.total-a.total));return g;},[companies]);
+
+  const TABS=[{id:"index",label:"Índice"},{id:"sectores",label:"Sectores"},{id:"paises",label:"Países"}];
+
+  return(
+    <div style={{minHeight:"100vh",padding:"20px 16px 80px",backgroundImage:"radial-gradient(ellipse at 70% 0%, rgba(60,30,140,0.14) 0%, transparent 50%)"}}>
+      <div style={{maxWidth:640,margin:"0 auto 18px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+        <div>
+          <p style={{fontSize:10,letterSpacing:"0.25em",color:"#818cf8",textTransform:"uppercase",marginBottom:3,fontWeight:500}}>DGI · Scoring System</p>
+          <h1 style={{fontFamily:"'Syne',sans-serif",fontSize:28,fontWeight:800,color:"#fff",letterSpacing:"-0.02em",lineHeight:1}}>Mi Índice</h1>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
+          {portfolio.length>0&&<div style={{display:"flex",gap:8,alignItems:"center",padding:"5px 10px",background:"rgba(255,255,255,0.03)",borderRadius:8,border:"1px solid rgba(255,255,255,0.05)"}}><span style={{fontSize:10,color:"#3a4260"}}>{portfolio.length} en cartera</span><span style={{fontFamily:"'Syne',sans-serif",fontSize:16,fontWeight:800,color:scoreColor(avgP)}}>{"Ø"+avgP.toFixed(1)}</span></div>}
+          <div style={{display:"flex",gap:5,flexWrap:"wrap",justifyContent:"flex-end"}}>
+            <button onClick={handleRefresh} disabled={refreshing} style={{...BTN,fontSize:11,padding:"6px 10px",background:"rgba(99,102,241,0.15)",color:"#818cf8",opacity:refreshing?0.5:1}}>{refreshing?"⏳ Actualizando...":"↺ Yahoo Finance"}</button>
+            <button onClick={handleExport} disabled={companies.length===0} style={{...BTN,fontSize:11,padding:"6px 10px",background:"rgba(255,255,255,0.05)",color:"#6a7090",opacity:companies.length===0?0.3:1}}>Exportar</button>
+            <button onClick={()=>fileRef.current.click()} style={{...BTN,fontSize:11,padding:"6px 10px",background:"rgba(255,255,255,0.05)",color:"#6a7090"}}>Importar</button>
+            <input ref={fileRef} type="file" accept=".json" onChange={handleImport}/>
+            <button onClick={()=>{setEditData(EMPTY);setEditingId(null);setTab("index");setView(view==="form"?"list":"form");}} style={{...BTN,fontSize:12,padding:"7px 12px",background:view==="form"?"rgba(255,255,255,0.06)":"rgba(99,102,241,0.8)"}}>{view==="form"?"Cancelar":"+ Añadir"}</button>
+          </div>
+        </div>
+      </div>
+
+      {refreshMsg&&<div style={{maxWidth:640,margin:"0 auto 14px",padding:"8px 14px",background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:10,fontSize:12,color:"#818cf8"}}>{refreshMsg}{refreshMsg.includes("CORS")&&<span style={{color:"#f97316"}}> — Para que funcione, aloja el fichero en GitHub Pages o similar.</span>}</div>}
+
+      {view==="form"&&<div style={{maxWidth:640,margin:"0 auto 20px"}}><Form initial={editData||EMPTY} editingId={editingId} onSave={handleSave} onCancel={()=>{setEditData(null);setEditingId(null);setView("list");}}/></div>}
+
+      <div style={{maxWidth:640,margin:"0 auto 20px",display:"flex",gap:0,background:"rgba(255,255,255,0.03)",borderRadius:10,padding:3,border:"1px solid rgba(255,255,255,0.06)"}}>
+        {TABS.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{...BTN,flex:1,padding:"8px 0",fontSize:12,borderRadius:8,background:tab===t.id?"rgba(99,102,241,0.4)":"transparent",color:tab===t.id?"#fff":"#4a5270"}}>{t.label}</button>)}
+      </div>
+
+      <div style={{maxWidth:640,margin:"0 auto"}}>
+        {tab==="index"&&(
+          companies.length===0?(
+            <div style={{textAlign:"center",padding:"60px 20px"}}><p style={{fontSize:36,marginBottom:12}}>📊</p><p style={{color:"#4a5270",fontSize:14}}>Tu índice está vacío.</p><p style={{color:"#2a3045",fontSize:12,marginTop:6}}>Pulsa “+ Añadir” para empezar.</p></div>
+          ):(
+            <>
+              {portfolio.length>0&&<>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                  <div><p style={{margin:0,fontSize:10,color:"#4a5270",letterSpacing:"0.16em",textTransform:"uppercase",fontWeight:600}}>Cartera actual</p>
+                  <div style={{display:"flex",gap:10,marginTop:4}}>{[{l:"Q1 top 25%",c:"#34d399"},{l:"Q2-Q3",c:"#c8d0e0"},{l:"Q4 peor 25%",c:"#f87171"}].map(x=><span key={x.l} style={{fontSize:10,color:x.c,opacity:0.8}}>{"● "+x.l}</span>)}</div></div>
+                  <span style={{fontSize:11,color:"#2a3045"}}>{portfolio.length} empresas</span>
+                </div>
+                <div style={{display:"grid",gap:7,marginBottom:8}}>
+                  {portfolio.map((c,i)=><CompanyRow key={c.id} company={c} rank={i+1} total={portfolio.length} type="portfolio" selected={selected&&selected.id===c.id} onSelect={()=>setSelected(selected&&selected.id===c.id?null:c)} onEdit={()=>handleEdit(c)} onDelete={()=>handleDelete(c.id)}/>)}
+                </div>
+              </>}
+              {portfolio.length>0&&watchlist.length>0&&<div style={{margin:"28px 0 22px",display:"flex",alignItems:"center",gap:12}}><div style={{flex:1,height:1,background:"rgba(255,255,255,0.05)"}}/><span style={{fontSize:11,color:"#2a3045",letterSpacing:"0.15em",textTransform:"uppercase",flexShrink:0}}>Candidatas al índice</span><div style={{flex:1,height:1,background:"rgba(255,255,255,0.05)"}}/></div>}
+              {watchlist.length>0&&<>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                  <div style={{display:"flex",gap:10}}>{[{l:"Top 25%",c:"#34d399"},{l:"Resto",c:"#c8d0e0"}].map(x=><span key={x.l} style={{fontSize:10,color:x.c,opacity:0.8}}>{"● "+x.l}</span>)}</div>
+                  <span style={{fontSize:11,color:"#2a3045"}}>{watchlist.length} candidatas</span>
+                </div>
+                <div style={{display:"grid",gap:7}}>
+                  {watchlist.map((c,i)=><CompanyRow key={c.id} company={c} rank={i+1} total={watchlist.length} type="watchlist" selected={selected&&selected.id===c.id} onSelect={()=>setSelected(selected&&selected.id===c.id?null:c)} onEdit={()=>handleEdit(c)} onDelete={()=>handleDelete(c.id)}/>)}
+                </div>
+              </>}
+              {rotAlert&&<div style={{marginTop:20,background:"rgba(251,191,36,0.06)",border:"1px solid rgba(251,191,36,0.15)",borderRadius:12,padding:"12px 16px"}}><p style={{fontSize:12,color:"#fbbf24",fontWeight:600,marginBottom:4}}>Candidata a rotación</p><p style={{fontSize:12,color:"#7a6030",lineHeight:1.5}}><strong style={{color:"#f87171"}}>{rotAlert.worst.name} ({rotAlert.worst.total.toFixed(1)})</strong>{" tiene 2+ puntos menos que la candidata "}<strong style={{color:"#34d399"}}>{rotAlert.best.name} ({rotAlert.best.total.toFixed(1)})</strong>.</p></div>}
+            </>
+          )
+        )}
+
+        {tab==="sectores"&&(
+          <GroupedRanking groups={bySector}
+            getLabel={k=>{const s=SECTORS[k]||SECTORS.general;return{name:s.label,flag:""};}}
+            getColor={k=>(SECTORS[k]||SECTORS.general).color}
+            emptyMsg="Añade empresas para ver el ranking por sector."/>
+        )}
+
+        {tab==="paises"&&(
+          <GroupedRanking groups={byCountry}
+            getLabel={k=>getCountry(k)}
+            getColor={()=>"#c8d0e0"}
+            emptyMsg="Añade empresas con país para ver el ranking geográfico."/>
+        )}
+      </div>
+
+      <p style={{textAlign:"center",fontSize:10,color:"#1a2030",marginTop:28,maxWidth:640,margin:"28px auto 0"}}>
+        Mi Índice DGI · Yahoo Finance requiere servidor web para funcionar · Exporta regularmente
+      </p>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
