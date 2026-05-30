@@ -3,6 +3,7 @@ import { createClient as authClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/PublicNav'
 import CompanyDetailPage from '@/components/CompanyDetailPage'
 import { DICT } from '@/data/dict'
+import { getCompanyQuote } from '@/lib/company-quote'
 import {
   getCompanyDetail,
   computeHealthScore,
@@ -56,27 +57,33 @@ export default async function EmpresaPage({ params }) {
 
   const [name, , country, currency, sector, subsector, type] = entry
 
-  const [plan, detail] = await Promise.all([getUserPlan(), getCompanyDetail(t)])
+  const [plan, detail, liveQuote] = await Promise.all([
+    getUserPlan(),
+    getCompanyDetail(t),
+    getCompanyQuote(t),
+  ])
 
   const isPremium = plan === 'premium'
 
-  // ── Campos de display ──────────────────────────────────────────────────
-  const price   = detail?.current_price  ?? null
-  const yld     = price > 0 && detail?.dps != null ? detail.dps / price : null
-  const divRate = detail?.dps            ?? null
-  const low52   = detail?.week52_low     ?? null
-  const high52  = detail?.week52_high    ?? null
-  const pe      = detail?.pe_trailing    ?? detail?.pe_forward ?? null
-  const eps     = detail?.eps_trailing   ?? null
-  const payout  = detail?.payout_fcf != null ? detail.payout_fcf / 100
-                : detail?.payout_eps != null ? detail.payout_eps / 100 : null
-  const mktCap  = detail?.market_cap_m   != null ? detail.market_cap_m * 1e6 : null
-  const divHistory = detail?.divHistory  ?? []
-  const streak  = detail?.div_streak     ?? 0
-  const cagr    = detail?.div_cagr5      != null ? detail.div_cagr5 / 100 : null
-  const updatedAt = detail?.updated_at   ?? null
+  const price      = liveQuote?.price       ?? detail?.current_price  ?? null
+  const change     = liveQuote?.change      ?? null
+  const changePct  = liveQuote?.pct         ?? null
+  const yld        = price > 0 && detail?.dps != null ? detail.dps / price : null
+  const divRate    = detail?.dps            ?? null
+  const low52      = detail?.week52_low     ?? null
+  const high52     = detail?.week52_high    ?? null
+  const peTrailing = detail?.pe_trailing    ?? null
+  const peForward  = detail?.pe_forward     ?? null
+  const evEbitda   = detail?.ev_ebitda      ?? null
+  const eps        = detail?.eps_trailing   ?? null
+  const payout     = detail?.payout_fcf != null ? detail.payout_fcf / 100
+                   : detail?.payout_eps != null ? detail.payout_eps / 100 : null
+  const mktCap     = detail?.market_cap_m   != null ? detail.market_cap_m * 1e6 : null
+  const divHistory = detail?.divHistory     ?? []
+  const streak     = detail?.div_streak     ?? 0
+  const cagr       = detail?.div_cagr5      != null ? detail.div_cagr5 / 100 : null
+  const updatedAt  = detail?.updated_at     ?? null
 
-  // ── Métricas calculadas ─────────────────────────────────────────────────
   const health     = computeHealthScore(detail, type)
   const moat       = computeMoat(detail, streak)
   const dcf        = computeDCF(detail, moat?.width ?? 'none')
@@ -98,11 +105,15 @@ export default async function EmpresaPage({ params }) {
         isPremium={isPremium}
         hasData={detail != null}
         price={price}
+        change={change}
+        changePct={changePct}
         yld={yld}
         divRate={divRate}
         low52={low52}
         high52={high52}
-        pe={pe}
+        peTrailing={peTrailing}
+        peForward={peForward}
+        evEbitda={evEbitda}
         eps={eps}
         payout={payout}
         mktCap={mktCap}

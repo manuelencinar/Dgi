@@ -410,6 +410,7 @@ def process_ticker(ticker: str) -> Optional[dict]:
             "pe_trailing":      clean(info.get("trailingPE")),
             "pe_forward":       clean(info.get("forwardPE")),
             "ev_ebitda":        clean(info.get("enterpriseToEbitda")),
+            "price_to_book":    clean(info.get("priceToBook")),
             "beta":             clean(info.get("beta")),
             "week52_high":      clean(info.get("fiftyTwoWeekHigh")),
             "week52_low":       clean(info.get("fiftyTwoWeekLow")),
