@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+  <title>Mi Índice DGI</title>
+  <meta name="theme-color" content="#080b14">
+
+  <!-- React -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+  <!-- Babel (compila JSX en el navegador) -->
+  <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js" crossorigin="anonymous"></script>
+
+  <!-- Fuente -->
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#080b14;color:#c8d0e0;font-family:'Figtree',sans-serif;-webkit-font-smoothing:antialiased;}
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+    input[type=number]{-moz-appearance:textfield;}
+    textarea,select{font-family:'Figtree',sans-serif;color:#fff;}
+    ::-webkit-scrollbar{width:4px;}
+    ::-webkit-scrollbar-thumb{background:#1a2035;border-radius:2px;}
+    table{font-family:'Figtree',sans-serif;}
+    th,td{color:inherit;}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- 1. Diccionario de empresas (JS puro, sin JSX) -->
+  <script src="data/dict.js"></script>
+
+  <!-- 2-5. Lógica y componentes (JSX, compilado por Babel) -->
+  <script type="text/babel"
+    data-presets="react"
+    data-plugins="transform-optional-chaining,transform-nullish-coalescing-operator,transform-logical-assignment-operators"
+    src="js/helpers.js">
+  </script>
+  <script type="text/babel"
+    data-presets="react"
+    data-plugins="transform-optional-chaining,transform-nullish-coalescing-operator,transform-logical-assignment-operators"
+    src="js/analysis.js">
+  </script>
+  <script type="text/babel"
+    data-presets="react"
+    data-plugins="transform-optional-chaining,transform-nullish-coalescing-operator,transform-logical-assignment-operators"
+    src="js/components.js">
+  </script>
+  <script type="text/babel"
+    data-presets="react"
+    data-plugins="transform-optional-chaining,transform-nullish-coalescing-operator,transform-logical-assignment-operators"
+    src="js/app.js">
+  </script>
+
+</body>
+</html>

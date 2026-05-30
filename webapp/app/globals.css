@@ -1,0 +1,10 @@
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{-webkit-font-smoothing:antialiased;}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+input[type=number]{-moz-appearance:textfield;}
+textarea,select{font-family:inherit;color:#fff;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:#1a2035;border-radius:2px;}
+table{font-family:inherit;}
+th,td{color:inherit;}
