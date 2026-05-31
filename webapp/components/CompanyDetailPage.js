@@ -811,6 +811,76 @@ function KeyRatiosCard({ eps, payout, mktCap, updatedAt }) {
   )
 }
 
+// ── ROIC card (reportado vs tangible) ──────────────────────────────────────
+
+function RoicCard({ roicData, isPremium }) {
+  if (!roicData) return null
+
+  // Sector sin ROIC → métrica alternativa
+  if (roicData.roic_not_applicable) {
+    const content = (
+      <Card>
+        <SectionTitle>Rentabilidad sobre capital</SectionTitle>
+        <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 8 }}>{roicData.roic_method}</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 13, color: '#8090a8' }}>{roicData.alternative_label || '—'}</span>
+          <span style={{ fontSize: 18, fontWeight: 800, color: '#818cf8' }}>
+            {roicData.alternative_value != null ? roicData.alternative_value.toFixed(1) + '%' : '—'}
+          </span>
+        </div>
+      </Card>
+    )
+    return isPremium ? content : <PremiumGate label="ROIC (Premium)">{content}</PremiumGate>
+  }
+
+  const { roic_reported, roic_tangible, roic_warning, roic_method } = roicData
+  if (roic_reported == null && roic_tangible == null) {
+    if (roic_method?.startsWith('N/A')) {
+      return (
+        <Card>
+          <SectionTitle>ROIC</SectionTitle>
+          <p style={{ fontSize: 13, color: '#4a5270' }}>N/A — balance atípico</p>
+        </Card>
+      )
+    }
+    return null
+  }
+
+  const col = v => v == null ? '#4a5270' : v >= 15 ? '#34d399' : v >= 8 ? '#fbbf24' : '#f87171'
+
+  const content = (
+    <Card>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <SectionTitle>ROIC</SectionTitle>
+        {roic_warning && (
+          <span title={roic_warning} style={{ fontSize: 13, cursor: 'help' }}>⚠️</span>
+        )}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+          <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Reportado</p>
+          <p style={{ fontSize: 20, fontWeight: 800, color: col(roic_reported) }}>{roic_reported != null ? roic_reported.toFixed(1) + '%' : '—'}</p>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+            <p style={{ fontSize: 10, color: '#4a5270' }}>Tangible</p>
+            <span title="ROIC excluyendo goodwill e intangibles — refleja mejor la rentabilidad operativa real." style={{ fontSize: 9, color: '#4a5270', cursor: 'help' }}>ⓘ</span>
+          </div>
+          <p style={{ fontSize: 20, fontWeight: 800, color: col(roic_tangible) }}>{roic_tangible != null ? roic_tangible.toFixed(1) + '%' : '—'}</p>
+        </div>
+      </div>
+      {roic_warning && (
+        <p style={{ fontSize: 10, color: '#fbbf24', marginTop: 10, lineHeight: 1.5 }}>⚠ {roic_warning}</p>
+      )}
+      {roic_method && !roic_warning && roic_method !== 'Precalculado' && (
+        <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10 }}>{roic_method}</p>
+      )}
+    </Card>
+  )
+
+  return isPremium ? content : <PremiumGate label="ROIC (Premium)" hint="Rentabilidad sobre el capital invertido, reportado y tangible.">{content}</PremiumGate>
+}
+
 // ── tooltip ───────────────────────────────────────────────────────────────
 
 function Tooltip({ text }) {
@@ -943,7 +1013,7 @@ export default function CompanyDetailPage({
   yld, divRate, low52, high52,
   peTrailing, peForward, evEbitda, eps, payout, mktCap,
   divHistory, cagr, streak, updatedAt,
-  health, moat, dcf, projection, dgiScore, insights,
+  health, moat, dcf, projection, dgiScore, insights, roicData,
   badges,
   buybacks,
   revenueHistory, netIncomeHistory, fcfHistory, epsHistory,
@@ -1093,6 +1163,7 @@ export default function CompanyDetailPage({
           <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} />
 
           {/* Métricas rápidas */}
+          <RoicCard roicData={roicData} isPremium={isPremium} />
           <KeyRatiosCard eps={eps} payout={payout} mktCap={mktCap} updatedAt={updatedAt} />
         </div>
       </div>

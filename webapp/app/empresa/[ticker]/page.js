@@ -4,6 +4,7 @@ import PublicNav from '@/components/PublicNav'
 import CompanyDetailPage from '@/components/CompanyDetailPage'
 import { DICT } from '@/data/dict'
 import { getCompanyQuote } from '@/lib/company-quote'
+import { calculateROIC } from '@/lib/metrics'
 import {
   getCompanyDetail,
   computeHealthScore,
@@ -86,6 +87,7 @@ export default async function EmpresaPage({ params }) {
   const cagr       = detail?.div_cagr5      != null ? detail.div_cagr5 / 100 : null
   const updatedAt  = detail?.updated_at     ?? null
 
+  const roicData   = detail ? calculateROIC({ ...detail, type }, currency) : null
   const health     = computeHealthScore(detail, type)
   const moat       = computeMoat(detail, streak)
   const dcf        = computeValuation(detail, moat?.width ?? 'none', type, currency)
@@ -126,6 +128,7 @@ export default async function EmpresaPage({ params }) {
         streak={streak}
         updatedAt={updatedAt}
         health={health}
+        roicData={roicData}
         moat={moat}
         dcf={dcf}
         projection={projection}

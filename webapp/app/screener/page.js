@@ -40,10 +40,10 @@ async function buildCompanies() {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY,
     )
-    const { data: rows } = await sb
-      .from('market_charts')
-      .select('data')
-      .eq('range', 'fundamentals')
+    const [{ data: rows }, { data: roicRows }] = await Promise.all([
+      sb.from('market_charts').select('data').eq('range', 'fundamentals'),
+      sb.from('company_fundamentals').select('ticker, roic_reported, roic_tangible'),
+    ])
 
     // Flatten all markets' fundamentals into one ticker map (first-seen wins)
     const fundMap = {}
@@ -52,9 +52,11 @@ async function buildCompanies() {
         if (!fundMap[ticker]) fundMap[ticker] = f
       }
     }
+    const roicMap = Object.fromEntries((roicRows || []).map(r => [r.ticker, r]))
 
     return DICT.map(([name, ticker, country, , sector, , type]) => {
       const f = fundMap[ticker] ?? null
+      const rc = roicMap[ticker] ?? null
       return {
         n:  name,
         t:  ticker,
@@ -67,6 +69,8 @@ async function buildCompanies() {
         pt: f?.payout ?? null,
         ep: f?.eps    ?? null,
         sc: f ? scoreCompany(f) : null,
+        rr: rc?.roic_reported ?? null,
+        rt: rc?.roic_tangible ?? null,
       }
     })
   } catch {

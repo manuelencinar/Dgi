@@ -200,60 +200,109 @@ def compute_div_cagr5(div_history):
 
 # ── Derived metrics ────────────────────────────────────────────────────────
 
-def compute_roic(income_df, balance_df):
+ROIC_HIGH_WARNING = ("ROIC muy elevado — puede reflejar estructura de capital con bajo patrimonio "
+                     "contable por recompras de acciones o intangibles no capitalizados. Comparar con peers del sector.")
+ROIC_ADQ_WARNING  = "Gran diferencia entre ROIC con y sin goodwill — crecimiento basado en adquisiciones."
+
+def _bal(df, names):
+    import pandas as pd
+    for r in names:
+        if r in df.index:
+            v = df.loc[r].iloc[0]
+            if not pd.isna(v):
+                return float(v)
+    return None
+
+def compute_roic_full(income_df, balance_df, currency, sector, industry):
+    """ROIC corregido: capital invertido real, reportado y tangible.
+    Devuelve dict con roic_reported, roic_tangible, roic_warning, nopat,
+    invested_capital, invested_capital_tangible, tax_rate_effective."""
+    blank = {
+        "roic_reported": None, "roic_tangible": None, "roic_warning": None,
+        "nopat": None, "invested_capital": None, "invested_capital_tangible": None,
+        "tax_rate_effective": None,
+    }
+
+    # Sectores donde el ROIC no aplica
+    s = (sector or "").lower()
+    i = (industry or "").lower()
+    if "bank" in i or "savings" in i or "insur" in i or "reit" in i or "real estate investment" in i:
+        return blank
+
     try:
         import pandas as pd
 
-        ebit = None
-        for r in ["Ebit", "EBIT", "Operating Income"]:
-            if r in income_df.index:
-                v = income_df.loc[r].iloc[0]
-                if not pd.isna(v):
-                    ebit = float(v)
-                    break
+        ebit = _bal(income_df, ["Ebit", "EBIT", "Operating Income"])
         if ebit is None:
-            return None
+            return blank
+        total_assets = _bal(balance_df, ["Total Assets"])
+        if total_assets is None or total_assets <= 0:
+            return blank
 
-        tax_rate = 0.25
-        for tr, pr in [("Tax Provision", "Pretax Income"), ("Income Tax Expense", "Income Before Tax")]:
-            if tr in income_df.index and pr in income_df.index:
-                t = income_df.loc[tr].iloc[0]
-                p = income_df.loc[pr].iloc[0]
-                if not pd.isna(t) and not pd.isna(p) and float(p) != 0:
-                    tax_rate = min(0.40, max(0, float(t) / float(p)))
-                    break
+        # Tasa impositiva efectiva
+        def_tax = 0.21 if currency == "USD" else 0.25 if currency == "EUR" else 0.23
+        tax_prov = _bal(income_df, ["Tax Provision", "Income Tax Expense"])
+        pretax   = _bal(income_df, ["Pretax Income", "Income Before Tax"])
+        tax_rate = (tax_prov / pretax) if (tax_prov is not None and pretax and pretax > 0) else def_tax
+        if tax_rate < 0 or tax_rate > 0.50:
+            tax_rate = def_tax
 
-        equity = None
-        for r in ["Stockholders Equity", "Total Stockholder Equity", "Common Stock Equity"]:
-            if r in balance_df.index:
-                v = balance_df.loc[r].iloc[0]
-                if not pd.isna(v):
-                    equity = float(v)
-                    break
-        if equity is None:
-            return None
+        nopat = ebit * (1 - tax_rate)
 
-        debt = cash = 0.0
-        for r in ["Total Debt", "Long Term Debt And Capital Lease Obligation"]:
-            if r in balance_df.index:
-                v = balance_df.loc[r].iloc[0]
-                if not pd.isna(v):
-                    debt = float(v)
-                    break
-        for r in ["Cash And Cash Equivalents", "Cash Cash Equivalents And Short Term Investments"]:
-            if r in balance_df.index:
-                v = balance_df.loc[r].iloc[0]
-                if not pd.isna(v):
-                    cash = float(v)
-                    break
+        revenue = _bal(income_df, ["Total Revenue", "Total Revenues"]) or 0.0
+        cash    = _bal(balance_df, ["Cash And Cash Equivalents", "Cash Cash Equivalents And Short Term Investments"]) or 0.0
+        excess_cash = max(0.0, cash - 0.02 * revenue)
 
-        ic = equity + debt - cash
-        if ic <= 0:
-            return None
-        roic = ebit * (1 - tax_rate) / ic * 100
-        return safe2(roic)
+        current_liab = _bal(balance_df, ["Current Liabilities", "Total Current Liabilities"])
+        short_debt   = _bal(balance_df, ["Current Debt", "Short Long Term Debt", "Current Debt And Capital Lease Obligation"])
+        non_fin_liab = 0.0
+        if current_liab is not None:
+            non_fin_liab = (current_liab - short_debt) if short_debt is not None else current_liab * 0.60
+
+        invested = total_assets - excess_cash - non_fin_liab
+
+        # Ajuste 2 — capital invertido negativo
+        if invested < 0:
+            return {**blank, "nopat": safe2(nopat), "invested_capital": safe2(invested),
+                    "tax_rate_effective": safe2(tax_rate, 3)}
+
+        # Ajuste 1 — mínimo 10% de activos
+        floor = 0.10 * total_assets
+        if invested < floor:
+            invested = floor
+
+        roic_reported = nopat / invested * 100
+
+        gw = _bal(balance_df, ["Goodwill"])
+        intang = _bal(balance_df, ["Other Intangible Assets"])
+        if gw is None and intang is None:
+            gw = _bal(balance_df, ["Goodwill And Other Intangible Assets"]) or 0.0
+            intang = 0.0
+        gw = gw or 0.0
+        intang = intang or 0.0
+
+        ic_tangible = invested - gw - intang
+        if ic_tangible < floor:
+            ic_tangible = floor
+        roic_tangible = nopat / ic_tangible * 100
+
+        warning = None
+        if roic_reported > 60 or roic_tangible > 60:
+            warning = ROIC_HIGH_WARNING
+        if abs(roic_reported - roic_tangible) > 10:
+            warning = (warning + " " + ROIC_ADQ_WARNING) if warning else ROIC_ADQ_WARNING
+
+        return {
+            "roic_reported": safe2(roic_reported),
+            "roic_tangible": safe2(roic_tangible),
+            "roic_warning": warning,
+            "nopat": safe2(nopat),
+            "invested_capital": safe2(invested),
+            "invested_capital_tangible": safe2(ic_tangible),
+            "tax_rate_effective": safe2(tax_rate, 3),
+        }
     except Exception:
-        return None
+        return blank
 
 def build_history(df, row_names):
     """Dict {YYYY: valor} desde un DataFrame."""
@@ -588,10 +637,17 @@ def fetch_ticker(sym):
             if ebit_v and ie_v and ie_v > 0:
                 int_cov = safe2(ebit_v / ie_v)
 
-        # ── ROIC ─────────────────────────────────────────────────────────
-        roic = None
+        # ── ROIC (corregido: reportado + tangible) ────────────────────────
+        roic_full = {
+            "roic_reported": None, "roic_tangible": None, "roic_warning": None,
+            "nopat": None, "invested_capital": None, "invested_capital_tangible": None,
+            "tax_rate_effective": None,
+        }
         if not income.empty and not balance.empty:
-            roic = compute_roic(income, balance)
+            roic_full = compute_roic_full(income, balance, info.get("currency"),
+                                          info.get("sector"), info.get("industry"))
+        # Legacy roic = tangible preferido (mantiene moat/insights con valor correcto)
+        roic = roic_full["roic_tangible"] if roic_full["roic_tangible"] is not None else roic_full["roic_reported"]
 
         # ── CAGR ─────────────────────────────────────────────────────────
         rev_cagr5 = cagr_from_df(income,   ["Total Revenue", "Total Revenues"])
@@ -658,6 +714,13 @@ def fetch_ticker(sym):
             "intrinsic_value":       intrinsic_value,
             "valuation_warning":     valuation_warning,
             "growth_input_used":     growth_input_used,
+            "roic_reported":             roic_full["roic_reported"],
+            "roic_tangible":             roic_full["roic_tangible"],
+            "roic_warning":              roic_full["roic_warning"],
+            "nopat":                     roic_full["nopat"],
+            "invested_capital":          roic_full["invested_capital"],
+            "invested_capital_tangible": roic_full["invested_capital_tangible"],
+            "tax_rate_effective":        roic_full["tax_rate_effective"],
             "income_statement_annual":    df_to_stmt(income, 4),
             "balance_sheet_annual":       df_to_stmt(balance, 4),
             "cashflow_annual":            df_to_stmt(cashflow, 4),

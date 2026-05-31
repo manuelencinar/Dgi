@@ -1,4 +1,5 @@
 // DGI Scoring System v2 — lógica completa sector-aware
+import { roicForScoring } from '@/lib/metrics'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -231,7 +232,7 @@ function marginTrendScore(delta) {
 
 function buildQuality(data, sectorType, industryType) {
   const v = {
-    roic: n(data.roic), gm: n(data.gross_margin), om: n(data.operating_margin),
+    roic: roicForScoring(data) ?? n(data.roic), gm: n(data.gross_margin), om: n(data.operating_margin),
     nm: n(data.net_margin), roe: n(data.roe), roa: n(data.roa),
     revCagr: n(data.revenue_cagr5), fcfCagr: n(data.fcf_cagr5),
     debtEbitda: n(data.debt_ebitda),

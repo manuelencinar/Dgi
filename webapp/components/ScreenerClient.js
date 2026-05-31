@@ -191,6 +191,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
   const [page,    setPage]    = useState(1)
   const [search,  setSearch]  = useState('')
   const [carteraBanner, setCarteraBanner] = useState(null)
+  const [roicMode, setRoicMode] = useState('tangible')  // 'tangible' | 'reported'
 
   // Preconfigurar filtros desde URL (detector de empresas de la cartera)
   useEffect(() => {
@@ -225,10 +226,14 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       if (filters.zona  !== 'all'     && co.r !== filters.zona)                       return false
       if (filters.sector !== 'all'    && co.s !== filters.sector)                     return false
       if (isPremium && filters.score  > 0 && (co.sc == null || co.sc < filters.score)) return false
-      // streak, cagr, debt, roic, moat: no data yet → always pass
+      if (isPremium && filters.roic   > 0) {
+        const rv = roicMode === 'tangible' ? co.rt : co.rr
+        if (rv == null || rv < filters.roic) return false
+      }
+      // streak, cagr, debt, moat: no data yet → always pass
       return true
     })
-  }, [companies, filters, isPremium, search])
+  }, [companies, filters, isPremium, search, roicMode])
 
   const sorted = useMemo(() => {
     const arr = [...filtered]
@@ -318,7 +323,37 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
           <Chips label="Racha"        opts={STREAK_OPTS} value={filters.streak} onChange={v => set('streak', v)} locked={!isPremium} soon={true} />
           <Chips label="CAGR Div 5A"  opts={CAGR_OPTS}   value={filters.cagr}   onChange={v => set('cagr', v)}   locked={!isPremium} soon={true} />
           <Chips label="Deuda/EBITDA" opts={DEBT_OPTS}   value={filters.debt}   onChange={v => set('debt', v)}   locked={!isPremium} soon={true} />
-          <Chips label="ROIC"         opts={ROIC_OPTS}   value={filters.roic}   onChange={v => set('roic', v)}   locked={!isPremium} soon={true} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: isPremium ? '#4a5270' : '#2e3a55', textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>ROIC</p>
+              {!isPremium && <span style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', background: 'rgba(99,102,241,0.12)', padding: '1px 6px', borderRadius: 4 }}>PREMIUM</span>}
+              {isPremium && (
+                <div style={{ display: 'flex', gap: 2 }}>
+                  {[['tangible', 'Tangible'], ['reported', 'Reportado']].map(([v, l]) => (
+                    <button key={v} onClick={() => setRoicMode(v)} style={{
+                      fontSize: 9, padding: '1px 6px', borderRadius: 4, border: 'none', cursor: 'pointer',
+                      background: roicMode === v ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)',
+                      color: roicMode === v ? '#818cf8' : '#4a5270', fontWeight: roicMode === v ? 700 : 400,
+                    }}>{l}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {ROIC_OPTS.map(o => {
+                const active = filters.roic === o.v
+                return (
+                  <button key={o.v} onClick={() => isPremium && set('roic', o.v)} disabled={!isPremium} style={{
+                    fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid',
+                    borderColor: active && isPremium ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.07)',
+                    background: active && isPremium ? 'rgba(99,102,241,0.2)' : 'transparent',
+                    color: !isPremium ? '#2a3045' : (active ? '#818cf8' : '#4a5270'),
+                    cursor: isPremium ? 'pointer' : 'not-allowed', fontFamily: 'inherit', fontWeight: active ? 700 : 400,
+                  }}>{o.l}</button>
+                )
+              })}
+            </div>
+          </div>
           <Chips label="Foso"         opts={MOAT_OPTS}   value={filters.moat}   onChange={v => set('moat', v)}   locked={!isPremium} soon={true} />
         </div>
       </div>

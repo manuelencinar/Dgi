@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { roicForScoring } from '@/lib/metrics'
 
 function sb() {
   return createClient(
@@ -129,7 +130,7 @@ export function computeHealthScore(data, type) {
   const cr      = n(data.current_ratio)
   const fcfPos  = data.fcf_per_share != null ? data.fcf_per_share > 0 : null
   const fcfCagr = n(data.fcf_cagr5)
-  const roic    = n(data.roic)
+  const roic    = roicForScoring(data) ?? n(data.roic)
   const intCov  = n(data.interest_coverage)
   const payout  = data.payout_fcf != null ? n(data.payout_fcf)
                 : data.payout_eps != null ? n(data.payout_eps) : null
