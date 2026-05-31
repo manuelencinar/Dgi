@@ -25,8 +25,9 @@ WEBAPP_DIR  = SCRIPT_DIR.parent / "webapp"
 DICT_PATH   = WEBAPP_DIR / "data" / "dict.js"
 ENV_PATH    = WEBAPP_DIR / ".env.local"
 DEFAULT_TTL = 7
-BATCH_SIZE  = 50
-BATCH_DELAY = 2.0
+BATCH_SIZE       = 50
+BATCH_DELAY      = 2.0
+PER_TICKER_DELAY = 1.5   # segundos entre tickers para no saturar yfinance
 
 # ── Entorno ────────────────────────────────────────────────────────────────
 
@@ -740,12 +741,15 @@ def is_fresh(sb, ticker, ttl_days):
     try:
         resp = (
             sb.table("company_fundamentals")
-            .select("updated_at")
+            .select("updated_at, current_price, revenue_cagr5")
             .eq("ticker", ticker)
             .maybe_single()
             .execute()
         )
         if not resp.data or not resp.data.get("updated_at"):
+            return False
+        # Fila stub/incompleta (yfinance devolvió vacío) → reintentar aunque sea reciente
+        if resp.data.get("current_price") is None or resp.data.get("revenue_cagr5") is None:
             return False
         updated = datetime.fromisoformat(resp.data["updated_at"].replace("Z", "+00:00"))
         return (datetime.now(timezone.utc) - updated).days < ttl_days
@@ -826,6 +830,10 @@ def main():
         elif r == "skip": skip += 1
         else:             err += 1; failed_tickers.append(ticker)
 
+        # Pausa entre tickers que tocan yfinance (no en los omitidos) para evitar rate limiting
+        if r != "skip":
+            time.sleep(PER_TICKER_DELAY)
+        # Pausa adicional cada lote
         if i % BATCH_SIZE == 0:
             print(f"\n  --- Pausa {BATCH_DELAY}s (lote {i // BATCH_SIZE}) ---\n")
             time.sleep(BATCH_DELAY)
