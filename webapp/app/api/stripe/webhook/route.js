@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
@@ -37,7 +37,7 @@ export async function POST(request) {
 
   let event
   try {
-    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET)
+    event = getStripe().webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET)
   } catch (err) {
     return NextResponse.json({ error: `Webhook inválido: ${err.message}` }, { status: 400 })
   }
@@ -49,7 +49,7 @@ export async function POST(request) {
       if (obj.mode !== 'subscription') break
       const userId = obj.metadata?.supabase_user_id
       if (!userId) break
-      const sub = await stripe.subscriptions.retrieve(obj.subscription)
+      const sub = await getStripe().subscriptions.retrieve(obj.subscription)
       await upsertSubscription(userId, {
         plan:           'premium',
         premiumUntil:   periodEnd(sub),
@@ -87,7 +87,7 @@ export async function POST(request) {
     case 'invoice.payment_failed': {
       const subId = obj.subscription
       if (!subId) break
-      const sub    = await stripe.subscriptions.retrieve(subId)
+      const sub    = await getStripe().subscriptions.retrieve(subId)
       const userId = sub.metadata?.supabase_user_id
       if (!userId) break
       // Mantener premium hasta fin de periodo actual

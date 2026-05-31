@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as serviceClient } from '@supabase/supabase-js'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(request) {
   const supabase = await createClient()
@@ -22,7 +24,7 @@ export async function POST(request) {
   if (!customerId) return NextResponse.json({ error: 'Sin suscripción activa' }, { status: 400 })
 
   const origin = request.headers.get('origin') || 'http://localhost:3000'
-  const portalSession = await stripe.billingPortal.sessions.create({
+  const portalSession = await getStripe().billingPortal.sessions.create({
     customer:   customerId,
     return_url: `${origin}/pricing`,
   })
