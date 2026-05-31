@@ -1,11 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import PriceChart from '@/components/empresa/PriceChart'
 import HealthGauge from '@/components/empresa/HealthGauge'
 import DividendBars from '@/components/empresa/DividendBars'
 import FinancialTables from '@/components/empresa/FinancialTables'
 import KeyMetricsChart from '@/components/empresa/KeyMetricsChart'
+import { recomputeValuation } from '@/lib/valuation'
 
 // ── helpers ───────────────────────────────────────────────────────────────
 
@@ -331,37 +332,138 @@ function ValuationBar({ price, iv }) {
   )
 }
 
+// ── valuation input field (editable mode) ─────────────────────────────────
+
+function toDisplay(field, raw) {
+  if (raw == null || isNaN(raw)) return ''
+  if (field.pct)   return Math.round(raw * 1000) / 10
+  if (field.scale) return Math.round(raw / field.scale * 100) / 100
+  return Math.round(raw * 10000) / 10000
+}
+function fromDisplay(field, disp) {
+  const num = parseFloat(disp)
+  if (isNaN(num)) return 0
+  if (field.pct)   return num / 100
+  if (field.scale) return num * field.scale
+  return num
+}
+
+function ValuationField({ field, raw, autoRaw, onChange }) {
+  const modified = Math.abs((raw ?? 0) - (autoRaw ?? 0)) > 1e-9
+  const disp = toDisplay(field, raw)
+  const bg = modified ? 'rgba(251,146,60,0.1)' : 'rgba(255,255,255,0.03)'
+  const border = modified ? '1px solid rgba(251,146,60,0.35)' : '1px solid rgba(255,255,255,0.07)'
+
+  return (
+    <div style={{ background: bg, border, borderRadius: 8, padding: '8px 10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+        <span style={{ fontSize: 10, color: modified ? '#fb923c' : '#4a5270' }}>{field.label}</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: modified ? '#fb923c' : '#c8d0e0' }}>
+          {disp}{field.unit ? ` ${field.unit}` : ''}
+        </span>
+      </div>
+      {field.type === 'slider' ? (
+        <input type="range" min={field.min} max={field.max} step={field.step} value={disp}
+          onChange={e => onChange(field.key, fromDisplay(field, e.target.value))}
+          style={{ width: '100%', accentColor: modified ? '#fb923c' : '#818cf8' }} />
+      ) : (
+        <input type="number" value={disp} step="any"
+          onChange={e => onChange(field.key, fromDisplay(field, e.target.value))}
+          style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '5px 8px', color: '#c8d0e0', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+      )}
+    </div>
+  )
+}
+
 // ── dcf + valuation section ───────────────────────────────────────────────
 
-function DCFSection({ dcf, peTrailing, peForward, evEbitda, isPremium }) {
+function DCFSection({ dcf, ticker, peTrailing, peForward, evEbitda, isPremium }) {
   const [expanded, setExpanded] = useState(false)
+  const [mode, setMode]         = useState('auto')      // 'auto' | 'custom'
+  const [custom, setCustom]     = useState(null)        // params object
+  const [userNotes, setUserNotes] = useState('')
+  const storageKey = `valuation:${ticker}`
 
-  const mosCol = dcf?.mos != null
-    ? (dcf.mos > 0.1 ? '#34d399' : dcf.mos > -0.1 ? '#fbbf24' : '#f87171')
-    : '#4a5270'
-  const mosLbl = dcf?.mos != null
-    ? (dcf.mos > 0.25 ? 'Zona de compra' : dcf.mos > 0.05 ? 'Ligero descuento' : dcf.mos > -0.1 ? 'Precio justo' : 'Sobrecomprado')
-    : ''
+  // Cargar inputs personalizados de localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined' || !dcf?.params) return
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || 'null')
+      if (saved?.params) { setCustom(saved.params); setUserNotes(saved.notes || ''); setMode('custom') }
+    } catch {}
+  }, [ticker])
+
+  // Guardar en localStorage en modo personalizado
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (mode === 'custom' && custom) {
+      localStorage.setItem(storageKey, JSON.stringify({ params: custom, notes: userNotes }))
+    }
+  }, [mode, custom, userNotes])
+
+  const activeParams = mode === 'custom' && custom ? custom : dcf?.params
+  const live = useMemo(() => {
+    if (!dcf?.available) return null
+    if (mode === 'custom' && custom && dcf.engine) return recomputeValuation(dcf.engine, custom, dcf.price)
+    return { intrinsicValue: dcf.intrinsicValue, mos: dcf.mos, projection: dcf.projection }
+  }, [dcf, mode, custom])
+
+  const iv  = live?.intrinsicValue
+  const mos = live?.mos
+
+  const mosCol = mos != null ? (mos > 0.1 ? '#34d399' : mos > -0.1 ? '#fbbf24' : '#f87171') : '#4a5270'
+  const mosLbl = mos != null ? (mos > 0.25 ? 'Zona de compra' : mos > 0.05 ? 'Ligero descuento' : mos > -0.1 ? 'Precio justo' : 'Sobrecomprado') : ''
+
+  const enterCustom = () => {
+    if (!custom && dcf?.params) setCustom({ ...dcf.params })
+    setMode('custom')
+  }
+  const resetAuto = () => {
+    setCustom(dcf?.params ? { ...dcf.params } : null)
+    setUserNotes('')
+    setMode('auto')
+    if (typeof window !== 'undefined') localStorage.removeItem(storageKey)
+  }
+  const changeParam = (key, val) => setCustom(p => ({ ...(p || dcf.params), [key]: val }))
 
   const content = (
     <Card>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
         <SectionTitle>Valoración</SectionTitle>
-        {dcf?.methodLabel && (
-          <span style={{ fontSize: 10, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.12)', padding: '2px 8px', borderRadius: 5 }}>
-            {dcf.methodLabel}
-          </span>
-        )}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {mode === 'custom' && (
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#fb923c', background: 'rgba(251,146,60,0.12)', padding: '2px 8px', borderRadius: 5 }}>
+              Valoración personalizada
+            </span>
+          )}
+          {dcf?.methodLabel && (
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.12)', padding: '2px 8px', borderRadius: 5 }}>
+              {dcf.methodLabel}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Valuation numbers */}
       {dcf?.available ? (
         <>
+          {/* Coherence warnings (antes de los números) */}
+          {dcf.warnings?.length > 0 && (
+            <div style={{ marginBottom: 12, display: 'grid', gap: 6 }}>
+              {dcf.warnings.map((w, i) => (
+                <div key={i} style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 8, padding: '9px 12px', display: 'flex', gap: 8 }}>
+                  <span style={{ color: '#fbbf24', flexShrink: 0 }}>⚠</span>
+                  <p style={{ fontSize: 11, color: '#fbbf24', lineHeight: 1.5 }}>{w}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Valuation numbers */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
               <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Valor intrínseco</p>
-              <p style={{ fontSize: 18, fontWeight: 800, color: '#c8d0e0' }}>{fmt(dcf.intrinsicValue)}</p>
+              <p style={{ fontSize: 18, fontWeight: 800, color: '#c8d0e0' }}>{fmt(iv)}</p>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
               <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Precio actual</p>
@@ -370,20 +472,48 @@ function DCFSection({ dcf, peTrailing, peForward, evEbitda, isPremium }) {
             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
               <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Margen seguridad</p>
               <p style={{ fontSize: 18, fontWeight: 800, color: mosCol }}>
-                {dcf.mos > 0 ? '+' : ''}{(dcf.mos * 100).toFixed(1)}%
+                {mos != null ? (mos > 0 ? '+' : '') + (mos * 100).toFixed(1) + '%' : '—'}
               </p>
             </div>
           </div>
 
-          {/* Badge label */}
           {mosLbl && (
             <div style={{ textAlign: 'center', marginBottom: 4 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: mosCol, background: `${mosCol}18`, padding: '3px 10px', borderRadius: 5 }}>{mosLbl}</span>
             </div>
           )}
 
-          {/* Visual bar */}
-          <ValuationBar price={dcf.price} iv={dcf.intrinsicValue} />
+          <ValuationBar price={dcf.price} iv={iv} />
+
+          {/* Toggle auto/custom */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 3 }}>
+              <button onClick={resetAuto} style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: mode === 'auto' ? 'rgba(99,102,241,0.2)' : 'transparent', color: mode === 'auto' ? '#818cf8' : '#4a5270' }}>Automático</button>
+              <button onClick={enterCustom} style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: mode === 'custom' ? 'rgba(251,146,60,0.2)' : 'transparent', color: mode === 'custom' ? '#fb923c' : '#4a5270' }}>Personalizado</button>
+            </div>
+            {mode === 'custom' && (
+              <button onClick={resetAuto} style={{ fontSize: 11, color: '#4a5270', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                Restablecer valores automáticos
+              </button>
+            )}
+          </div>
+
+          {/* Editable inputs */}
+          {mode === 'custom' && dcf.editable?.length > 0 && activeParams && (
+            <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
+              {dcf.editable.map(field => (
+                <ValuationField key={field.key} field={field}
+                  raw={activeParams[field.key]} autoRaw={dcf.params[field.key]} onChange={changeParam} />
+              ))}
+            </div>
+          )}
+
+          {/* Notas del usuario (modo personalizado) */}
+          {mode === 'custom' && (
+            <textarea value={userNotes} onChange={e => setUserNotes(e.target.value)}
+              placeholder="Anota tu razonamiento (ej: uso revenue_cagr5 negativo porque los ingresos llevan 4 años cayendo)…"
+              style={{ marginTop: 8, width: '100%', minHeight: 54, resize: 'vertical', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 10px', color: '#c8d0e0', fontSize: 12, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+          )}
 
           {/* FCF years for energy */}
           {dcf.fcfYears?.length > 0 && (
@@ -405,15 +535,11 @@ function DCFSection({ dcf, peTrailing, peForward, evEbitda, isPremium }) {
           )}
 
           {/* Expandable details */}
-          <button
-            onClick={() => setExpanded(e => !e)}
-            style={{
-              marginTop: 12, width: '100%', background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8,
-              padding: '8px 12px', cursor: 'pointer', color: '#818cf8',
-              fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            }}
-          >
+          <button onClick={() => setExpanded(e => !e)} style={{
+            marginTop: 12, width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8,
+            padding: '8px 12px', cursor: 'pointer', color: '#818cf8', fontSize: 11, fontWeight: 700,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
             <span>Ver cálculo detallado</span>
             <span>{expanded ? '▲' : '▼'}</span>
           </button>
@@ -425,17 +551,53 @@ function DCFSection({ dcf, peTrailing, peForward, evEbitda, isPremium }) {
                 <tbody>
                   {dcf.inputs.map((inp, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      <td style={{ padding: '5px 0', color: '#4a5270' }}>{inp.label}</td>
-                      <td style={{ padding: '5px 0', color: '#c8d0e0', textAlign: 'right', fontWeight: 600 }}>{inp.value}</td>
+                      <td style={{ padding: '5px 0', color: inp.danger ? '#f87171' : '#4a5270' }}>{inp.label}</td>
+                      <td style={{ padding: '5px 0', color: inp.danger ? '#f87171' : '#c8d0e0', textAlign: 'right', fontWeight: 600 }}>{inp.value}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
+              {/* Projection table (DCF) */}
+              {live?.projection?.length > 0 && (
+                <div style={{ marginBottom: 10 }}>
+                  <p style={{ fontSize: 10, color: '#4a5270', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Proyección FCF descontado (10 años)</p>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
+                      <thead>
+                        <tr>
+                          {['Año', 'FCF proyectado', 'FCF descontado'].map(h => (
+                            <th key={h} style={{ padding: '4px 6px', textAlign: h === 'Año' ? 'left' : 'right', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {live.projection.map(y => (
+                          <tr key={y.year} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                            <td style={{ padding: '4px 6px', color: '#8090a8' }}>{y.year}</td>
+                            <td style={{ padding: '4px 6px', textAlign: 'right', color: '#8090a8' }}>{fmtCap(y.cf)}</td>
+                            <td style={{ padding: '4px 6px', textAlign: 'right', color: '#c8d0e0' }}>{fmtCap(y.pv)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {/* Notes */}
               {dcf.notes?.map((note, i) => (
                 <p key={i} style={{ fontSize: 10, color: '#8090a8', marginBottom: 4 }}>ℹ {note}</p>
               ))}
+
+              {/* Formula explained */}
+              <p style={{ fontSize: 10, color: '#4a5270', marginTop: 6, lineHeight: 1.5 }}>
+                {dcf.engine === 'ddm'
+                  ? 'Se descuentan los dividendos proyectados a 5 años más un valor terminal (modelo de Gordon), al coste de equity.'
+                  : dcf.engine === 'affo'
+                  ? 'El valor se estima como AFFO por acción (OCF / acciones) multiplicado por un múltiplo objetivo según el tipo de REIT.'
+                  : 'Se proyecta el flujo de caja 10 años (dos fases) y se descuenta a valor presente, sumando un valor terminal. El total se divide entre las acciones en circulación.'}
+              </p>
 
               {/* Tooltip / explanation */}
               {dcf.tooltip && (
@@ -892,7 +1054,7 @@ export default function CompanyDetailPage({
           <BuybackSection buybacks={buybacks} />
 
           {/* ── 7. DCF Y VALORACIÓN ── */}
-          <DCFSection dcf={dcf} peTrailing={peTrailing} peForward={peForward} evEbitda={evEbitda} isPremium={isPremium} />
+          <DCFSection dcf={dcf} ticker={ticker} peTrailing={peTrailing} peForward={peForward} evEbitda={evEbitda} isPremium={isPremium} />
 
           {/* ── PROYECCIÓN 10 AÑOS ── */}
           <ProjectionSection projection={projection} cagr={cagr} isPremium={isPremium} />
