@@ -1,0 +1,554 @@
+#!/usr/bin/env python3
+"""
+Descarga fundamentales de yfinance y escribe en company_fundamentals (Supabase).
+
+Uso:
+  python update_fundamentals.py               # todos los tickers del DICT
+  python update_fundamentals.py --ticker AAPL # un solo ticker
+  python update_fundamentals.py --force       # ignorar caché de 7 días
+  python update_fundamentals.py --ttl 14      # TTL personalizado en días
+"""
+
+import argparse
+import math
+import os
+import re
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+# ── Rutas ─────────────────────────────────────────────────────────────────
+
+SCRIPT_DIR  = Path(__file__).parent
+WEBAPP_DIR  = SCRIPT_DIR.parent / "webapp"
+DICT_PATH   = WEBAPP_DIR / "data" / "dict.js"
+ENV_PATH    = WEBAPP_DIR / ".env.local"
+DEFAULT_TTL = 7
+BATCH_SIZE  = 50
+BATCH_DELAY = 2.0
+
+# ── Entorno ────────────────────────────────────────────────────────────────
+
+def load_env():
+    env = {}
+    if ENV_PATH.exists():
+        for line in ENV_PATH.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                env[k.strip()] = v.strip()
+    for k in ("NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"):
+        if k in os.environ:
+            env[k] = os.environ[k]
+    return env
+
+def get_supabase(env):
+    try:
+        from supabase import create_client
+    except ImportError:
+        sys.exit("ERROR: pip install supabase yfinance pandas")
+    url = env.get("NEXT_PUBLIC_SUPABASE_URL", "")
+    key = env.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    if not url or not key:
+        sys.exit("ERROR: faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY")
+    return create_client(url, key)
+
+# ── DICT ──────────────────────────────────────────────────────────────────
+
+def load_dict_tickers():
+    text = DICT_PATH.read_text(encoding="utf-8")
+    return re.findall(r'\["[^"]*","([^"]+)"', text)
+
+# ── Sanitize ──────────────────────────────────────────────────────────────
+
+def sanitize(obj):
+    if isinstance(obj, float):
+        return None if (math.isnan(obj) or math.isinf(obj)) else obj
+    if isinstance(obj, dict):
+        return {k: sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize(v) for v in obj]
+    return obj
+
+def safe(v, scale=1.0):
+    try:
+        f = float(v) * scale
+        return None if (math.isnan(f) or math.isinf(f)) else round(f, 4)
+    except (TypeError, ValueError):
+        return None
+
+def safe2(v, decimals=2):
+    try:
+        f = float(v)
+        return None if (math.isnan(f) or math.isinf(f)) else round(f, decimals)
+    except (TypeError, ValueError):
+        return None
+
+# ── Traducciones para el frontend ─────────────────────────────────────────
+# El frontend busca por nombre — mapeamos los más críticos al español
+# y también dejamos el inglés para que sRow() los encuentre por ambos nombres.
+
+TRANSLATIONS = {
+    "Repurchase Of Capital Stock":                "Recompra de Acciones",
+    "Common Stock Repurchased":                   "Recompra de Acciones",
+    "Total Revenue":                              "Ingresos Totales",
+    "Operating Income":                           "EBIT / Bº Operativo",
+    "Ebit":                                       "EBIT / Bº Operativo",
+    "Research And Development":                   "I+D",
+    "Goodwill":                                   "Fondo de Comercio",
+    "Total Assets":                               "Activos Totales",
+    "Total Debt":                                 "Deuda Total",
+    "Cash And Cash Equivalents":                  "Caja y Equivalentes",
+    "Cash Cash Equivalents And Short Term Investments": "Caja y Equivalentes",
+    "Operating Cash Flow":                        "Cash Flow Operativo",
+    "Total Cash From Operating Activities":       "Cash Flow Operativo",
+    "Cash Flow From Continuing Operating Activities": "Cash Flow Operativo",
+    "Dividends Paid":                             "Dividendos Pagados",
+    "Common Stock Dividend Paid":                 "Dividendos Pagados",
+    "Free Cash Flow":                             "Flujo de Caja Libre",
+    "Net Income":                                 "Beneficio Neto",
+    "Net Income Common Stockholders":             "Beneficio Neto",
+    "Gross Profit":                               "Beneficio Bruto",
+    "Capital Expenditure":                        "Capex",
+    "Basic EPS":                                  "BPA Básico",
+    "Diluted EPS":                                "BPA Diluido",
+    "Total Stockholder Equity":                   "Patrimonio Neto",
+    "Stockholders Equity":                        "Patrimonio Neto",
+    "Common Stock Equity":                        "Patrimonio Neto",
+}
+
+# ── Financial statements ──────────────────────────────────────────────────
+
+def df_to_stmt(df, n=4):
+    """DataFrame yfinance → {columns: [], data: {campo: [v0, v1, v2, v3]}}"""
+    if df is None or df.empty:
+        return None
+    try:
+        import pandas as pd
+        cols = df.columns[:n]
+        col_labels = [str(c)[:10] for c in cols]
+        data = {}
+        for row_key in df.index:
+            english = str(row_key)
+            spanish = TRANSLATIONS.get(english)
+            vals = []
+            for c in cols:
+                v = df.loc[row_key, c]
+                vals.append(None if pd.isna(v) else float(v))
+            # Guardar con nombre español (principal) y también inglés
+            if spanish:
+                data[spanish] = vals
+            data[english] = vals
+        return {"columns": col_labels, "data": sanitize(data)}
+    except Exception:
+        return None
+
+# ── Dividend history ───────────────────────────────────────────────────────
+
+def build_div_history(dividends_series):
+    if dividends_series is None or len(dividends_series) == 0:
+        return []
+    try:
+        import pandas as pd
+        by_year = dividends_series.groupby(dividends_series.index.year).sum()
+        current_year = datetime.now().year
+        result = []
+        years = sorted(by_year.index)
+        for i, year in enumerate(years):
+            dps = float(by_year[year])
+            prev = float(by_year[years[i - 1]]) if i > 0 else None
+            growth = round((dps - prev) / prev, 4) if (prev and prev > 0) else None
+            result.append({
+                "year":      int(year),
+                "dps":       round(dps, 4),
+                "growth":    growth,
+                "isPartial": year == current_year,
+            })
+        return result
+    except Exception:
+        return []
+
+def compute_streak(div_history):
+    full = [h for h in div_history if not h.get("isPartial") and h.get("growth") is not None]
+    if not full:
+        return 0
+    streak = 0
+    for h in reversed(full):
+        if h["growth"] >= 0:
+            streak += 1
+        else:
+            break
+    return streak
+
+def compute_div_cagr5(div_history):
+    full = [h for h in div_history if not h.get("isPartial") and h.get("dps", 0) > 0]
+    if len(full) < 2:
+        return None
+    n = min(5, len(full) - 1)
+    v0, vn = full[-1 - n]["dps"], full[-1]["dps"]
+    if v0 <= 0:
+        return None
+    try:
+        r = ((vn / v0) ** (1 / n) - 1) * 100
+        return safe2(r)
+    except Exception:
+        return None
+
+# ── Derived metrics ────────────────────────────────────────────────────────
+
+def compute_roic(income_df, balance_df):
+    try:
+        import pandas as pd
+
+        ebit = None
+        for r in ["Ebit", "EBIT", "Operating Income"]:
+            if r in income_df.index:
+                v = income_df.loc[r].iloc[0]
+                if not pd.isna(v):
+                    ebit = float(v)
+                    break
+        if ebit is None:
+            return None
+
+        tax_rate = 0.25
+        for tr, pr in [("Tax Provision", "Pretax Income"), ("Income Tax Expense", "Income Before Tax")]:
+            if tr in income_df.index and pr in income_df.index:
+                t = income_df.loc[tr].iloc[0]
+                p = income_df.loc[pr].iloc[0]
+                if not pd.isna(t) and not pd.isna(p) and float(p) != 0:
+                    tax_rate = min(0.40, max(0, float(t) / float(p)))
+                    break
+
+        equity = None
+        for r in ["Stockholders Equity", "Total Stockholder Equity", "Common Stock Equity"]:
+            if r in balance_df.index:
+                v = balance_df.loc[r].iloc[0]
+                if not pd.isna(v):
+                    equity = float(v)
+                    break
+        if equity is None:
+            return None
+
+        debt = cash = 0.0
+        for r in ["Total Debt", "Long Term Debt And Capital Lease Obligation"]:
+            if r in balance_df.index:
+                v = balance_df.loc[r].iloc[0]
+                if not pd.isna(v):
+                    debt = float(v)
+                    break
+        for r in ["Cash And Cash Equivalents", "Cash Cash Equivalents And Short Term Investments"]:
+            if r in balance_df.index:
+                v = balance_df.loc[r].iloc[0]
+                if not pd.isna(v):
+                    cash = float(v)
+                    break
+
+        ic = equity + debt - cash
+        if ic <= 0:
+            return None
+        roic = ebit * (1 - tax_rate) / ic * 100
+        return safe2(roic)
+    except Exception:
+        return None
+
+def build_history(df, row_names):
+    """Dict {YYYY: valor} desde un DataFrame."""
+    try:
+        import pandas as pd
+        for r in row_names:
+            if r in df.index:
+                series = df.loc[r]
+                result = {}
+                for col, val in series.items():
+                    if not pd.isna(val):
+                        result[str(col)[:4]] = float(val)
+                if result:
+                    return dict(sorted(result.items()))
+    except Exception:
+        pass
+    return None
+
+def cagr_from_df(df, row_names, years=5):
+    h = build_history(df, row_names)
+    if not h or len(h) < 2:
+        return None
+    keys = sorted(h.keys())
+    n = min(years, len(keys) - 1)
+    v0, vn = h[keys[-1 - n]], h[keys[-1]]
+    if not v0 or v0 == 0 or not vn:
+        return None
+    try:
+        r = ((vn / v0) ** (1 / n) - 1) * 100
+        return safe2(r)
+    except Exception:
+        return None
+
+# ── Fetch ─────────────────────────────────────────────────────────────────
+
+def fetch_ticker(sym):
+    try:
+        import yfinance as yf
+        import pandas as pd
+
+        tk = yf.Ticker(sym)
+        info = tk.info or {}
+
+        # DataFrames financieros — silenciar errores individuales
+        def safe_df(fn):
+            try:
+                return fn()
+            except Exception:
+                return pd.DataFrame()
+
+        income    = safe_df(lambda: tk.income_stmt)
+        q_income  = safe_df(lambda: tk.quarterly_income_stmt)
+        balance   = safe_df(lambda: tk.balance_sheet)
+        q_balance = safe_df(lambda: tk.quarterly_balance_sheet)
+        cashflow  = safe_df(lambda: tk.cashflow)
+        q_cashflow= safe_df(lambda: tk.quarterly_cashflow)
+        dividends = safe_df(lambda: tk.dividends)
+
+        # ── Info básica ───────────────────────────────────────────────────
+        price      = safe(info.get("currentPrice") or info.get("regularMarketPrice"))
+        mkt_cap_m  = safe(info.get("marketCap"), 1 / 1e6)
+        shares     = safe(info.get("sharesOutstanding") or info.get("impliedSharesOutstanding"))
+        beta       = safe(info.get("beta"))
+        pe_trail   = safe(info.get("trailingPE"))
+        pe_fwd     = safe(info.get("forwardPE"))
+        pb         = safe(info.get("priceToBook"))
+        ev_ebitda  = safe(info.get("enterpriseToEbitda"))
+        eps        = safe(info.get("trailingEps"))
+        week52h    = safe(info.get("fiftyTwoWeekHigh"))
+        week52l    = safe(info.get("fiftyTwoWeekLow"))
+        cr         = safe(info.get("currentRatio"))
+        roe        = safe(info.get("returnOnEquity"),   100)
+        roa        = safe(info.get("returnOnAssets"),   100)
+        gm         = safe(info.get("grossMargins"),     100)
+        om         = safe(info.get("operatingMargins"), 100)
+        nm         = safe(info.get("profitMargins"),    100)
+        rev_growth = safe(info.get("revenueGrowth"),    100)
+        ear_growth = safe(info.get("earningsGrowth"),   100)
+        payout_eps = safe(info.get("payoutRatio"),      100)
+        ebitda_v   = info.get("ebitda")
+
+        # ── Dividendos ────────────────────────────────────────────────────
+        div_history = build_div_history(dividends)
+        div_streak  = compute_streak(div_history)
+        div_cagr5   = compute_div_cagr5(div_history)
+
+        dps = safe(info.get("dividendRate") or info.get("lastDividendValue"))
+        if dps is None and div_history:
+            full = [h for h in div_history if not h.get("isPartial")]
+            if full:
+                dps = full[-1]["dps"]
+
+        # ── FCF per share ─────────────────────────────────────────────────
+        fcf_ps = None
+        if not cashflow.empty and shares:
+            for r in ["Free Cash Flow"]:
+                if r in cashflow.index:
+                    v = cashflow.loc[r].iloc[0]
+                    if not pd.isna(v) and shares > 0:
+                        fcf_ps = safe2(float(v) / shares)
+                    break
+
+        # ── Payout FCF ────────────────────────────────────────────────────
+        payout_fcf = None
+        if dps and shares and shares > 0 and not cashflow.empty:
+            for r in ["Free Cash Flow"]:
+                if r in cashflow.index:
+                    v = cashflow.loc[r].iloc[0]
+                    if not pd.isna(v) and float(v) > 0:
+                        payout_fcf = safe2(dps * shares / float(v) * 100)
+                    break
+
+        # ── Deuda ─────────────────────────────────────────────────────────
+        net_debt = debt_ebitda = net_debt_eb = int_cov = None
+
+        if not balance.empty:
+            debt_v = cash_v = None
+            for r in ["Total Debt"]:
+                if r in balance.index:
+                    v = balance.loc[r].iloc[0]
+                    if not pd.isna(v):
+                        debt_v = float(v)
+                    break
+            for r in ["Cash And Cash Equivalents", "Cash Cash Equivalents And Short Term Investments"]:
+                if r in balance.index:
+                    v = balance.loc[r].iloc[0]
+                    if not pd.isna(v):
+                        cash_v = float(v)
+                    break
+            if debt_v is not None:
+                nd = (debt_v or 0) - (cash_v or 0)
+                net_debt = safe2(nd / 1e6)
+                if ebitda_v and float(ebitda_v) > 0:
+                    debt_ebitda = safe2(nd / float(ebitda_v))
+                    net_debt_eb = debt_ebitda
+
+        if not income.empty:
+            ebit_v = ie_v = None
+            for r in ["Ebit", "EBIT", "Operating Income"]:
+                if r in income.index:
+                    v = income.loc[r].iloc[0]
+                    if not pd.isna(v):
+                        ebit_v = float(v)
+                    break
+            for r in ["Interest Expense", "Interest Expense Non Operating"]:
+                if r in income.index:
+                    v = income.loc[r].iloc[0]
+                    if not pd.isna(v):
+                        ie_v = abs(float(v))
+                    break
+            if ebit_v and ie_v and ie_v > 0:
+                int_cov = safe2(ebit_v / ie_v)
+
+        # ── ROIC ─────────────────────────────────────────────────────────
+        roic = None
+        if not income.empty and not balance.empty:
+            roic = compute_roic(income, balance)
+
+        # ── CAGR ─────────────────────────────────────────────────────────
+        rev_cagr5 = cagr_from_df(income,   ["Total Revenue", "Total Revenues"])
+        fcf_cagr5 = cagr_from_df(cashflow, ["Free Cash Flow"])
+
+        # ── Historiales ──────────────────────────────────────────────────
+        rev_history = build_history(income,   ["Total Revenue", "Total Revenues"])
+        ni_history  = build_history(income,   ["Net Income", "Net Income Common Stockholders"])
+        fcf_history = build_history(cashflow, ["Free Cash Flow"])
+        eps_history = build_history(income,   ["Basic EPS", "Diluted EPS"])
+
+        # ── Estados financieros ───────────────────────────────────────────
+        return sanitize({
+            "ticker":           sym,
+            "current_price":    price,
+            "dps":              dps,
+            "div_streak":       div_streak,
+            "div_cagr5":        div_cagr5,
+            "div_history":      div_history,
+            "payout_fcf":       payout_fcf,
+            "payout_eps":       payout_eps,
+            "fcf_per_share":    fcf_ps,
+            "fcf_cagr5":        fcf_cagr5,
+            "debt_ebitda":      debt_ebitda,
+            "net_debt":         net_debt,
+            "net_debt_ebitda":  net_debt_eb,
+            "interest_coverage": int_cov,
+            "roic":             roic,
+            "roe":              roe,
+            "roa":              roa,
+            "operating_margin": om,
+            "net_margin":       nm,
+            "gross_margin":     gm,
+            "current_ratio":    cr,
+            "revenue_cagr5":    rev_cagr5,
+            "pe_trailing":      pe_trail,
+            "pe_forward":       pe_fwd,
+            "ev_ebitda":        ev_ebitda,
+            "price_to_book":    pb,
+            "beta":             beta,
+            "week52_high":      week52h,
+            "week52_low":       week52l,
+            "market_cap_m":     mkt_cap_m,
+            "eps_trailing":     eps,
+            "sector":           info.get("sector"),
+            "industry":         info.get("industry"),
+            "country":          info.get("country"),
+            "revenue_growth_yoy":    rev_growth,
+            "earnings_growth_yoy":   ear_growth,
+            "revenue_history":       rev_history,
+            "net_income_history":    ni_history,
+            "fcf_history":           fcf_history,
+            "eps_history":           eps_history,
+            "income_statement_annual":    df_to_stmt(income, 4),
+            "balance_sheet_annual":       df_to_stmt(balance, 4),
+            "cashflow_annual":            df_to_stmt(cashflow, 4),
+            "income_statement_quarterly": df_to_stmt(q_income, 4),
+            "balance_sheet_quarterly":    df_to_stmt(q_balance, 4),
+            "cashflow_quarterly":         df_to_stmt(q_cashflow, 4),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        })
+
+    except Exception as exc:
+        print(f"    fetch error: {exc}")
+        return None
+
+# ── TTL check ─────────────────────────────────────────────────────────────
+
+def is_fresh(sb, ticker, ttl_days):
+    try:
+        resp = (
+            sb.table("company_fundamentals")
+            .select("updated_at")
+            .eq("ticker", ticker)
+            .maybe_single()
+            .execute()
+        )
+        if not resp.data or not resp.data.get("updated_at"):
+            return False
+        updated = datetime.fromisoformat(resp.data["updated_at"].replace("Z", "+00:00"))
+        return (datetime.now(timezone.utc) - updated).days < ttl_days
+    except Exception:
+        return False
+
+# ── Upsert ────────────────────────────────────────────────────────────────
+
+def upsert_company(sb, ticker, ttl_days, force):
+    if not force and is_fresh(sb, ticker, ttl_days):
+        print(f"  [{ticker}] omitido (datos recientes)")
+        return "skip"
+
+    data = fetch_ticker(ticker)
+    if data is None:
+        print(f"  [{ticker}] ERROR: no se pudieron descargar datos")
+        return "error"
+
+    try:
+        sb.table("company_fundamentals").upsert(data, on_conflict="ticker").execute()
+        price  = data.get("current_price", "?")
+        streak = data.get("div_streak", 0)
+        cagr   = data.get("div_cagr5", "?")
+        print(f"  [{ticker}] OK — precio={price}  racha={streak}a  div_cagr5={cagr}%")
+        return "ok"
+    except Exception as exc:
+        print(f"  [{ticker}] ERROR upsert: {exc}")
+        return "error"
+
+# ── CLI ───────────────────────────────────────────────────────────────────
+
+def main():
+    env = load_env()
+    sb  = get_supabase(env)
+
+    parser = argparse.ArgumentParser(description="yfinance → company_fundamentals")
+    parser.add_argument("--ticker", help="Un solo ticker, ej: AAPL")
+    parser.add_argument("--force",  action="store_true", help="Ignorar caché TTL")
+    parser.add_argument("--ttl",    type=int, default=DEFAULT_TTL)
+    args = parser.parse_args()
+
+    if args.ticker:
+        tickers = [args.ticker.upper()]
+    else:
+        tickers = load_dict_tickers()
+        print(f"  {len(tickers)} tickers en el DICT")
+
+    print(f"\nProcesando {len(tickers)} tickers (TTL={args.ttl}d, force={args.force})…\n")
+
+    ok = err = skip = 0
+    for i, ticker in enumerate(tickers, 1):
+        print(f"[{i}/{len(tickers)}]", end=" ")
+        r = upsert_company(sb, ticker, args.ttl, args.force)
+        if r == "ok":     ok += 1
+        elif r == "skip": skip += 1
+        else:             err += 1
+
+        if i % BATCH_SIZE == 0:
+            print(f"\n  --- Pausa {BATCH_DELAY}s (lote {i // BATCH_SIZE}) ---\n")
+            time.sleep(BATCH_DELAY)
+
+    print(f"\n{'─'*40}")
+    print(f"Finalizado: {ok} OK  ·  {skip} omitidos  ·  {err} errores")
+
+if __name__ == "__main__":
+    main()

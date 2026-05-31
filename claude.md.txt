@@ -1,0 +1,43 @@
+# Contexto del proyecto
+
+## Qué es esta app
+Plataforma web freemium de análisis DGI (Dividend Growth Investing).
+Cubre 43 mercados globales, casi 2000 empresas de más de 30 países.
+
+## Stack técnico
+- Frontend: Next.js con TypeScript
+- Base de datos y auth: Supabase
+- Pagos: Stripe
+- Hosting: Vercel
+- Emails: Resend
+- Datos financieros: yfinance via script Python en GitHub Actions
+
+## Estructura de la app
+- Landing page pública con los 43 mercados
+- Página de cada mercado con empresas y análisis DGI
+- Screener avanzado transversal con filtros DGI
+- Página de detalle de cada empresa con gauge de salud financiera, DCF, historial dividendos, estados financieros completos
+- Sistema freemium: plan gratuito permanente y plan premium 9,99€/mes o 59,90€/año via Stripe
+
+## Planes
+- Gratuito: acceso básico sin tarjeta
+- Premium mensual: 9,99€/mes
+- Premium anual: 59,90€/año
+
+## Base de datos Supabase
+Tablas principales:
+- portfolios — cartera del usuario
+- user_settings — configuración, stripe_customer_id, stripe_subscription_id
+- company_fundamentals — datos financieros de todas las empresas actualizados semanalmente
+
+## Datos financieros
+Script Python en scripts/update_fundamentals.py
+Se ejecuta automáticamente cada domingo via GitHub Actions
+Descarga de yfinance: precio, dividendos, estados financieros completos 4 años anuales y trimestrales
+Escribe en Supabase via service role key
+
+## Reglas importantes
+- No tocar componentes que funcionan sin pedirlo explícitamente
+- Hacer git commit antes de cambios grandes
+- El diseño es oscuro — fondo #080b14, tipografía Figtree
+- Preguntar antes de crear ficheros nuevos fuera de la estructura existente
