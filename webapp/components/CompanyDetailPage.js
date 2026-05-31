@@ -165,7 +165,7 @@ function MoatSection({ moat, isPremium }) {
         </span>
       </div>
       {moat.signals?.length > 0 && (
-        <div style={{ display: 'grid', gap: 6, marginBottom: moat.negative?.length ? 12 : 0 }}>
+        <div style={{ display: 'grid', gap: 6, marginBottom: moat.negative?.length || moat.sources?.length ? 12 : 0 }}>
           {moat.signals.map((s, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#8090a8', alignItems: 'flex-start' }}>
               <span style={{ color: '#34d399', flexShrink: 0, marginTop: 1 }}>+</span>{s}
@@ -174,12 +174,22 @@ function MoatSection({ moat, isPremium }) {
         </div>
       )}
       {moat.negative?.length > 0 && (
-        <div style={{ display: 'grid', gap: 6 }}>
+        <div style={{ display: 'grid', gap: 6, marginBottom: moat.sources?.length ? 12 : 0 }}>
           {moat.negative.map((s, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#8090a8', alignItems: 'flex-start' }}>
               <span style={{ color: '#f87171', flexShrink: 0, marginTop: 1 }}>−</span>{s}
             </div>
           ))}
+        </div>
+      )}
+      {moat.sources?.length > 0 && (
+        <div style={{ marginTop: 10, padding: '10px 12px', background: 'rgba(99,102,241,0.06)', borderRadius: 8 }}>
+          <p style={{ fontSize: 10, color: '#4a5270', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Origen del foso</p>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {moat.sources.map((s, i) => (
+              <span key={i} style={{ fontSize: 11, color: '#818cf8', background: 'rgba(99,102,241,0.1)', padding: '2px 8px', borderRadius: 5 }}>{s}</span>
+            ))}
+          </div>
         </div>
       )}
       {!moat.signals?.length && !moat.negative?.length && (
@@ -335,8 +345,8 @@ function DCFSection({ dcf, peTrailing, peForward, evEbitda, isPremium }) {
 
 function InsightsSection({ insights, isPremium }) {
   if (!insights?.length) return null
-  const typeIcon  = { positive: '↑', neutral: '·', negative: '↓' }
-  const typeColor = { positive: '#34d399', neutral: '#fbbf24', negative: '#f87171' }
+  const typeIcon  = { positive: '↑', neutral: '·', negative: '↓', green: '↑', yellow: '·', red: '↓' }
+  const typeColor = { positive: '#34d399', neutral: '#fbbf24', negative: '#f87171', green: '#34d399', yellow: '#fbbf24', red: '#f87171' }
   const catLabel  = { dividendo: 'Dividendo', valoracion: 'Valoración', mercado: 'Empresa' }
   const cats      = [...new Set(insights.map(i => i.cat))]
 
@@ -438,6 +448,129 @@ function KeyRatiosCard({ eps, payout, mktCap, updatedAt }) {
   )
 }
 
+// ── tooltip ───────────────────────────────────────────────────────────────
+
+function Tooltip({ text }) {
+  return (
+    <span style={{ position: 'relative', display: 'inline-block' }}>
+      <span
+        style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 16, height: 16, borderRadius: '50%', fontSize: 10, fontWeight: 700,
+          color: '#4a5270', border: '1px solid rgba(255,255,255,0.1)',
+          cursor: 'help', verticalAlign: 'middle', marginLeft: 5,
+          userSelect: 'none',
+        }}
+        title={text}
+      >
+        ?
+      </span>
+    </span>
+  )
+}
+
+// ── buyback section ───────────────────────────────────────────────────────
+
+function BuybackSection({ buybacks }) {
+  if (!buybacks) return null
+
+  const { years, streak, avgYield, isCannibal, isActiveBuyback, isDilutive } = buybacks
+
+  const badgeStyle = isCannibal
+    ? { color: '#34d399', bg: 'rgba(52,211,153,0.1)', border: 'rgba(52,211,153,0.3)' }
+    : isDilutive
+    ? { color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.3)' }
+    : { color: '#818cf8', bg: 'rgba(99,102,241,0.1)', border: 'rgba(99,102,241,0.3)' }
+
+  const tooltipBuyback = 'La empresa usa sus beneficios para recomprar acciones propias, reduciendo las que están en circulación. Cada acción restante vale más. Es una señal de que la dirección confía en que la acción está barata.'
+  const tooltipCannibal = 'Empresas que recompran más del 5% de su capitalización anualmente. Charlie Munger y Warren Buffett consideran esto una de las mejores señales de calidad: la dirección te devuelve capital de forma eficiente sin que tengas que hacer nada.'
+  const tooltipDilution = 'La empresa emite nuevas acciones, lo que diluye el valor de las que ya tienes. Puede ser necesario para financiar crecimiento, pero reduce tu participación proporcional en el negocio si no compras más acciones.'
+
+  const tooltip = isCannibal ? tooltipCannibal : isDilutive ? tooltipDilution : tooltipBuyback
+
+  const label = isCannibal
+    ? 'Caníbal de recompras'
+    : isActiveBuyback
+    ? 'Recompra activa'
+    : isDilutive
+    ? 'Dilución activa'
+    : 'Sin recompras recientes'
+
+  return (
+    <Card>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <SectionTitle>Recompras de acciones</SectionTitle>
+          <Tooltip text={tooltip} />
+        </div>
+        {(isCannibal || isActiveBuyback || isDilutive) && (
+          <span style={{
+            fontSize: 12, fontWeight: 700, color: badgeStyle.color,
+            background: badgeStyle.bg, border: `1px solid ${badgeStyle.border}`,
+            padding: '3px 10px', borderRadius: 6,
+          }}>
+            {label}
+          </span>
+        )}
+      </div>
+
+      {/* Summary row */}
+      <div style={{ display: 'flex', gap: 20, marginBottom: 16, flexWrap: 'wrap' }}>
+        {streak > 0 && (
+          <div>
+            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Años consecutivos</p>
+            <p style={{ fontSize: 18, fontWeight: 800, color: streak >= 3 ? '#34d399' : '#c8d0e0' }}>{streak}</p>
+          </div>
+        )}
+        {avgYield != null && (
+          <div>
+            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Yield recompra medio</p>
+            <p style={{ fontSize: 18, fontWeight: 800, color: avgYield > 5 ? '#34d399' : avgYield > 2 ? '#fbbf24' : '#c8d0e0' }}>
+              {avgYield.toFixed(1)}%
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Year by year bars */}
+      {years.length > 0 && (
+        <div>
+          <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 8 }}>Últimos años (M)</p>
+          <div style={{ display: 'grid', gap: 6 }}>
+            {years.map(y => {
+              const absM = y.amount != null ? Math.abs(y.amount) / 1e6 : 0
+              const maxM = Math.max(...years.map(z => Math.abs(z.amount ?? 0) / 1e6))
+              const barPct = maxM > 0 ? (absM / maxM) * 100 : 0
+              const col = y.isBuyback ? '#34d399' : '#f87171'
+              return (
+                <div key={y.year} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 11, color: '#4a5270', width: 36, flexShrink: 0 }}>{y.year}</span>
+                  <div style={{ flex: 1, height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${barPct}%`, background: col, borderRadius: 4 }} />
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: col, width: 70, textAlign: 'right', flexShrink: 0 }}>
+                    {y.isBuyback ? '−' : '+'}{absM >= 1000
+                      ? `${(absM / 1000).toFixed(1)}B`
+                      : `${absM.toFixed(0)}M`}
+                  </span>
+                  {y.yield != null && (
+                    <span style={{ fontSize: 10, color: '#4a5270', width: 40, textAlign: 'right', flexShrink: 0 }}>
+                      {y.yield.toFixed(1)}%
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8 }}>
+            Verde = recompra · Rojo = emisión · % = yield sobre cap. bursátil
+          </p>
+        </div>
+      )}
+    </Card>
+  )
+}
+
 // ── main component ────────────────────────────────────────────────────────
 
 export default function CompanyDetailPage({
@@ -448,6 +581,8 @@ export default function CompanyDetailPage({
   peTrailing, peForward, evEbitda, eps, payout, mktCap,
   divHistory, cagr, streak, updatedAt,
   health, moat, dcf, projection, dgiScore, insights,
+  badges,
+  buybacks,
   financials,
 }) {
   const isUp       = changePct != null ? changePct >= 0 : null
@@ -483,6 +618,16 @@ export default function CompanyDetailPage({
               <span style={{ fontSize: 11, color: '#4a5270', background: 'rgba(255,255,255,0.04)', padding: '2px 8px', borderRadius: 5 }}>{country}</span>
               {sector && <span style={{ fontSize: 11, color: '#818cf8', background: 'rgba(99,102,241,0.1)', padding: '2px 8px', borderRadius: 5 }}>{sector}</span>}
               {subsector && <span style={{ fontSize: 11, color: '#4a5270', background: 'rgba(255,255,255,0.04)', padding: '2px 8px', borderRadius: 5 }}>{subsector}</span>}
+              {badges?.map(b => (
+                <span key={b.id} style={{ fontSize: 11, fontWeight: 700, color: b.color, background: b.bg, padding: '2px 8px', borderRadius: 5 }} title={b.title}>
+                  {b.label}
+                </span>
+              ))}
+              {buybacks?.isCannibal && (
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.3)', padding: '2px 8px', borderRadius: 5 }}>
+                  🔥 Caníbal de recompras
+                </span>
+              )}
             </div>
           </div>
 
@@ -541,10 +686,13 @@ export default function CompanyDetailPage({
           {/* ── 5. HISTORIAL DIVIDENDOS ── */}
           <DividendSection divHistory={divHistory} streak={streak} cagr={cagr} isPremium={isPremium} />
 
-          {/* ── 6. DCF Y VALORACIÓN ── */}
+          {/* ── 6. RECOMPRAS ── */}
+          <BuybackSection buybacks={buybacks} />
+
+          {/* ── 7. DCF Y VALORACIÓN ── */}
           <DCFSection dcf={dcf} peTrailing={peTrailing} peForward={peForward} evEbitda={evEbitda} isPremium={isPremium} />
 
-          {/* ── 7. PROYECCIÓN 10 AÑOS ── */}
+          {/* ── PROYECCIÓN 10 AÑOS ── */}
           <ProjectionSection projection={projection} cagr={cagr} isPremium={isPremium} />
 
           {/* ── 8. INSIGHTS ── */}

@@ -17,7 +17,7 @@ function enrichDivHistory(history) {
     .map(h => ({ ...h, isPartial: h.year === currentYear }))
 }
 
-// ── Main fetcher — lee de company_fundamentals (poblado por Python) ────────
+// ── Main fetcher ───────────────────────────────────────────────────────────
 
 export async function getCompanyDetail(ticker) {
   try {
@@ -27,118 +27,211 @@ export async function getCompanyDetail(ticker) {
       .eq('ticker', ticker)
       .single()
     if (!data) return null
-    return {
-      ...data,
-      divHistory: enrichDivHistory(data.div_history ?? []),
-    }
+    return { ...data, divHistory: enrichDivHistory(data.div_history ?? []) }
   } catch {
     return null
   }
 }
 
-// ── Compute functions — usan el formato plano de company_fundamentals ──────
-// Todos los campos de margen/retorno están en % (ej: roe=15.2 = 15.2%)
-// Ratios en crudo (ej: debt_ebitda=2.1, current_ratio=1.5)
-// payout_fcf / payout_eps en % (ej: 65 = 65%)
+// ── helpers ────────────────────────────────────────────────────────────────
+
+function n(v) { return v != null && !isNaN(v) ? parseFloat(v) : null }
+function weighted(items) {
+  const total = items.reduce((s, i) => s + i.s * i.w, 0)
+  const wt    = items.reduce((s, i) => s + i.w, 0)
+  return wt > 0 ? Math.round(total / wt) : null
+}
+
+// ── 1. HEALTH SCORE ────────────────────────────────────────────────────────
+// Campos en %: roe, roa, operating_margin, gross_margin, net_margin, roic
+// Ratios crudos: debt_ebitda, current_ratio, interest_coverage
+// Payout en %: payout_fcf, payout_eps
 
 export function computeHealthScore(data, type) {
   if (!data) return null
 
-  const debtEbitda = data.debt_ebitda     ?? null
-  const roe        = data.roe              ?? null
-  const roa        = data.roa              ?? null
-  const opMargin   = data.operating_margin ?? null
-  const grMargin   = data.gross_margin     ?? null
-  const curRatio   = data.current_ratio    ?? null
-  const fcfPos     = data.fcf_per_share != null ? data.fcf_per_share > 0 : null
-  const payout     = data.payout_fcf != null ? data.payout_fcf / 100
-                   : data.payout_eps != null ? data.payout_eps / 100 : null
+  const debt    = n(data.debt_ebitda)
+  const roe     = n(data.roe)
+  const roa     = n(data.roa)
+  const opM     = n(data.operating_margin)
+  const grM     = n(data.gross_margin)
+  const netM    = n(data.net_margin)
+  const cr      = n(data.current_ratio)
+  const fcfPos  = data.fcf_per_share != null ? data.fcf_per_share > 0 : null
+  const fcfCagr = n(data.fcf_cagr5)
+  const roic    = n(data.roic)
+  const intCov  = n(data.interest_coverage)
+  const payout  = data.payout_fcf != null ? n(data.payout_fcf)
+                : data.payout_eps != null ? n(data.payout_eps) : null
 
   const items = []
-  const push  = (s, w) => items.push({ s, w })
+  const push = (s, w) => items.push({ s, w })
 
   if (type === 'banco' || type === 'aseguradora') {
-    if (roe      != null) push(roe  > 15 ? 90 : roe  > 10 ? 70 : roe  > 5  ? 50 : 20, 3)
-    if (roa      != null) push(roa  > 2  ? 90 : roa  > 1  ? 70 : roa  > 0.5 ? 50 : 20, 3)
-    if (payout   != null) push(payout < 0.4 ? 90 : payout < 0.65 ? 70 : payout < 0.85 ? 50 : 20, 2)
-    if (opMargin != null) push(opMargin > 30 ? 85 : opMargin > 18 ? 70 : opMargin > 8 ? 55 : 25, 2)
+    if (roe    != null) push(roe > 18 ? 95 : roe > 14 ? 80 : roe > 10 ? 65 : roe > 6 ? 45 : 20, 3)
+    if (roa    != null) push(roa > 2  ? 95 : roa > 1.5 ? 80 : roa > 1  ? 65 : roa > 0.5 ? 45 : 20, 3)
+    if (payout != null) push(payout < 35 ? 95 : payout < 50 ? 80 : payout < 65 ? 65 : payout < 80 ? 40 : 15, 2)
+    if (opM    != null) push(opM > 35 ? 90 : opM > 22 ? 75 : opM > 12 ? 55 : opM > 5 ? 35 : 15, 2)
   } else if (type === 'reit' || type === 'bdc') {
-    if (debtEbitda != null) push(debtEbitda < 5 ? 85 : debtEbitda < 7 ? 65 : debtEbitda < 9 ? 45 : 20, 2)
-    if (roe        != null) push(roe > 8 ? 85 : roe > 5 ? 70 : roe > 2 ? 50 : 20, 2)
-    if (payout     != null) push(payout < 0.85 ? 85 : payout < 1.0 ? 65 : payout < 1.2 ? 45 : 15, 2)
-    if (grMargin   != null) push(grMargin > 60 ? 85 : grMargin > 40 ? 70 : grMargin > 20 ? 50 : 25, 1)
+    // Deuda permisiva hasta 10x
+    if (debt   != null) push(debt < 3 ? 90 : debt < 5 ? 75 : debt < 7 ? 55 : debt < 10 ? 35 : 15, 2)
+    if (roe    != null) push(roe  > 10 ? 85 : roe > 7  ? 70 : roe > 4  ? 50 : 20, 2)
+    if (payout != null) push(payout < 70 ? 90 : payout < 80 ? 75 : payout < 90 ? 55 : payout < 100 ? 35 : 15, 2)
+    if (grM    != null) push(grM  > 70 ? 90 : grM > 50 ? 75 : grM > 30 ? 55 : 25, 1)
   } else {
-    const isUtility = type === 'utilities'
-    const debtCap   = isUtility ? 7 : 5
-    if (debtEbitda != null) push(debtEbitda < 1.5 ? 95 : debtEbitda < 2.5 ? 80 : debtEbitda < 3.5 ? 60 : debtEbitda < debtCap ? 40 : 15, 2)
-    if (opMargin   != null) push(opMargin > 25 ? 90 : opMargin > 15 ? 75 : opMargin > 5 ? 55 : 20, 2)
-    if (roe        != null) push(roe > 20 ? 90 : roe > 15 ? 75 : roe > 8 ? 55 : 25, 2)
-    if (!isUtility && fcfPos != null) push(fcfPos ? 85 : 15, 2)
-    if (payout     != null) push(payout < 0.5 ? 90 : payout < 0.7 ? 70 : payout < 0.9 ? 45 : 10, 2)
-    if (curRatio   != null) push(curRatio > 2 ? 90 : curRatio > 1.5 ? 75 : curRatio > 1 ? 55 : curRatio > 0.5 ? 35 : 15, 1)
-    if (grMargin   != null) push(grMargin > 50 ? 90 : grMargin > 30 ? 75 : grMargin > 15 ? 55 : 25, 1)
+    const isUtility  = type === 'utilities'
+    const debtCap    = isUtility ? 8 : 5
+    // Deuda
+    if (debt   != null) push(debt < 1 ? 98 : debt < 2 ? 85 : debt < 3 ? 68 : debt < debtCap ? 40 : 12, 2)
+    // Cobertura intereses
+    if (intCov != null) push(intCov > 20 ? 95 : intCov > 10 ? 82 : intCov > 5 ? 65 : intCov > 3 ? 42 : 15, 2)
+    // Margen operativo
+    if (opM    != null) push(opM > 30 ? 95 : opM > 20 ? 80 : opM > 10 ? 62 : opM > 4 ? 38 : 15, 2)
+    // ROIC
+    if (roic   != null) push(roic > 25 ? 98 : roic > 18 ? 85 : roic > 12 ? 68 : roic > 6 ? 42 : 15, 2)
+    // ROE
+    if (roe    != null) push(roe > 22 ? 95 : roe > 16 ? 80 : roe > 10 ? 62 : roe > 5 ? 38 : 15, 2)
+    // FCF positivo (no penaliza utilities)
+    if (!isUtility && fcfPos != null) push(fcfPos ? 88 : 10, 2)
+    // FCF CAGR
+    if (fcfCagr != null) push(fcfCagr > 15 ? 95 : fcfCagr > 8 ? 80 : fcfCagr > 3 ? 62 : fcfCagr > 0 ? 45 : 18, 1.5)
+    // Payout
+    if (payout != null) push(payout < 35 ? 95 : payout < 55 ? 80 : payout < 70 ? 62 : payout < 85 ? 38 : 10, 2)
+    // Liquidez
+    if (cr     != null) push(cr > 2.5 ? 90 : cr > 1.8 ? 75 : cr > 1.2 ? 55 : cr > 0.8 ? 32 : 12, 1)
+    // Margen bruto
+    if (grM    != null) push(grM > 60 ? 90 : grM > 40 ? 75 : grM > 20 ? 55 : 22, 1)
   }
 
-  if (!items.length) return null
-  const total = items.reduce((s, i) => s + i.s * i.w, 0)
-  const wt    = items.reduce((s, i) => s + i.w, 0)
-  return Math.round(total / wt)
+  return items.length ? weighted(items) : null
 }
 
+// ── 2. MOAT — sistema de puntuación 0–100 ─────────────────────────────────
+// Adaptado del original: ROIC (35pts) + margen bruto (25pts) + FCF CAGR (20pts)
+// + margen operativo nivel como proxy de estabilidad (20pts)
+// Wide ≥60 · Narrow ≥35
+
 export function computeMoat(data, streak) {
-  if (!data) return { width: 'none', label: 'Sin datos', signals: [], negative: [] }
+  if (!data) return { width: 'none', label: 'Sin datos', signals: [], negative: [], sources: [] }
 
-  const roe      = data.roe              ?? null
-  const grMargin = data.gross_margin     ?? null
-  const opMargin = data.operating_margin ?? null
-  const rg       = data.revenue_growth_yoy != null ? data.revenue_growth_yoy / 100 : null
+  const roic    = n(data.roic)
+  const grM     = n(data.gross_margin)
+  const opM     = n(data.operating_margin)
+  const fcfCagr = n(data.fcf_cagr5)
+  const revCagr = n(data.revenue_cagr5)
+  const rg      = data.revenue_growth_yoy != null ? n(data.revenue_growth_yoy) : null
 
+  let score = 0
   const signals  = []
   const negative = []
 
-  if (roe      != null && roe  > 20)     signals.push(`ROE del ${roe.toFixed(1)}% — retornos excepcionales sobre el capital`)
-  if (roe      != null && roe  < 0)      negative.push(`ROE negativo (${roe.toFixed(1)}%) — destrucción de valor`)
-  if (grMargin != null && grMargin > 50) signals.push(`Margen bruto del ${grMargin.toFixed(1)}% — fuerte poder de fijación de precios`)
-  if (grMargin != null && grMargin < 20) negative.push(`Margen bruto bajo (${grMargin.toFixed(1)}%) — poca diferenciación`)
-  if (opMargin != null && opMargin > 20) signals.push(`Margen operativo sólido (${opMargin.toFixed(1)}%)`)
-  if (opMargin != null && opMargin < 3)  negative.push(`Margen operativo muy bajo (${opMargin.toFixed(1)}%)`)
-  if (streak >= 10)  signals.push(`${streak} años consecutivos aumentando el dividendo`)
-  else if (streak >= 5) signals.push(`${streak} años consecutivos de dividendo creciente`)
-  if (rg != null && rg < -0.08) negative.push(`Ingresos en contracción (${(rg * 100).toFixed(1)}% interanual)`)
+  // ROIC: hasta 35 pts
+  if (roic != null) {
+    if      (roic > 25) { score += 35; signals.push(`ROIC excepcional (${roic.toFixed(1)}%) — retornos muy superiores al coste de capital`) }
+    else if (roic > 20) { score += 28; signals.push(`ROIC muy elevado (${roic.toFixed(1)}%)`) }
+    else if (roic > 15) { score += 20; signals.push(`ROIC sólido (${roic.toFixed(1)}%)`) }
+    else if (roic > 10) { score += 10 }
+    else if (roic <  6)   negative.push(`ROIC bajo (${roic.toFixed(1)}%) — rentabilidad sobre capital insuficiente`)
+  }
 
-  if (roe != null && grMargin != null && roe > 20 && grMargin > 50 && streak >= 10) {
-    return { width: 'wide',   label: 'Foso ancho',         signals, negative }
+  // Margen bruto: hasta 25 pts
+  if (grM != null) {
+    if      (grM > 60) { score += 25; signals.push(`Alto poder de fijación de precios (${grM.toFixed(0)}% margen bruto)`) }
+    else if (grM > 45) { score += 18; signals.push(`Márgenes brutos sólidos (${grM.toFixed(0)}%)`) }
+    else if (grM > 30)   score += 10
+    else if (grM > 20)   score += 5
+    else if (grM < 15)   negative.push(`Margen bruto bajo (${grM.toFixed(0)}%) — poca diferenciación de producto`)
   }
-  if (signals.length >= 2) {
-    return { width: 'narrow', label: 'Foso estrecho',      signals, negative }
+
+  // Margen operativo nivel como proxy de estabilidad: hasta 20 pts
+  if (opM != null) {
+    if      (opM > 30) { score += 20; signals.push(`Margen operativo excepcional (${opM.toFixed(1)}%)`) }
+    else if (opM > 20) { score += 14; signals.push(`Margen operativo sólido (${opM.toFixed(1)}%)`) }
+    else if (opM > 12)   score += 8
+    else if (opM > 5)    score += 3
+    else if (opM < 3)    negative.push(`Margen operativo muy bajo (${opM.toFixed(1)}%) — escaso colchón operativo`)
   }
-  return   { width: 'none',   label: 'Sin foso detectado', signals, negative }
+
+  // FCF CAGR: hasta 20 pts
+  if (fcfCagr != null) {
+    if      (fcfCagr > 12) { score += 20; signals.push(`FCF creciendo con fuerza (CAGR ${fcfCagr.toFixed(1)}%)`) }
+    else if (fcfCagr >  6)   score += 12
+    else if (fcfCagr >  0)   score += 6
+    else if (fcfCagr < -5)   negative.push(`FCF cayendo (CAGR ${fcfCagr.toFixed(1)}%)`)
+  }
+
+  // Racha de dividendos (señal de estabilidad del negocio)
+  if (streak >= 20) signals.push(`${streak} años consecutivos aumentando el dividendo`)
+  else if (streak >= 10) signals.push(`${streak} años consecutivos de dividendo creciente`)
+
+  // Ingresos en contracción
+  if (rg != null && rg < -8) negative.push(`Ingresos en contracción (${rg.toFixed(1)}% interanual)`)
+
+  // Clasificación
+  const width = score >= 60 ? 'wide' : score >= 35 ? 'narrow' : 'none'
+  if (width === 'none' && signals.length === 0) {
+    return { width: 'none', label: 'Sin foso detectado', signals: [], negative, sources: [], score }
+  }
+
+  const label = width === 'wide'   ? 'Foso ancho'
+              : width === 'narrow' ? 'Foso estrecho'
+              :                      'Sin foso detectado'
+
+  // Fuentes del foso
+  const sources = []
+  if (grM != null && grM > 50 && roic != null && roic > 15) sources.push('Activos intangibles / marca reconocida')
+  else if (grM != null && grM > 50) sources.push('Poder de fijación de precios')
+  if (roic != null && roic > 20 && grM != null && grM < 40) sources.push('Ventaja de costes o escala')
+  if (revCagr != null && revCagr > 8 && roic != null && roic > 15) sources.push('Posible efecto red o costes de cambio')
+  if (opM != null && opM > 25) sources.push('Eficiencia operativa superior al sector')
+
+  return { width, label, signals, negative, sources, score }
 }
+
+// ── 3. DCF — 2 fases con transición ───────────────────────────────────────
+// Fase 1: 5 años al CAGR histórico
+// Fase 2: 5 años en transición hasta crecimiento terminal
+// Terminal: cap 20× FCF final · Descuento según foso: 8/10/12%
 
 export function computeDCF(data, moatWidth) {
   if (!data) return null
 
-  const eps   = data.eps_trailing ?? null
-  const price = data.current_price ?? null
+  const eps   = n(data.eps_trailing)
+  const price = n(data.current_price)
   if (!eps || eps <= 0 || !price) return null
 
   const discount  = moatWidth === 'wide' ? 0.08 : moatWidth === 'narrow' ? 0.10 : 0.12
-  const eg        = data.earnings_growth_yoy ?? data.revenue_growth_yoy ?? null
-  const rawGrowth = eg != null ? eg / 100 : 0.05
-  const growth    = Math.min(0.25, Math.max(0, rawGrowth))
+  const eg        = data.earnings_growth_yoy ?? data.revenue_growth_yoy
+  const rawGrowth = eg != null ? n(eg) / 100 : 0.05
+  const growth    = Math.min(0.25, Math.max(0, rawGrowth ?? 0.05))
+  const terminal  = Math.max(0.02, discount - 0.06)   // ~2–4% según descuento
 
-  let value = 0, e = eps
-  for (let y = 1; y <= 10; y++) {
-    const g = y <= 5 ? growth : growth * 0.6
-    e *= (1 + g)
-    value += e / Math.pow(1 + discount, y)
+  let value = 0
+  let e     = eps
+
+  // Fase 1: años 1–5 al CAGR
+  for (let i = 1; i <= 5; i++) {
+    e *= (1 + growth)
+    value += e / Math.pow(1 + discount, i)
   }
-  value += (e * 15) / Math.pow(1 + discount, 10)
+
+  // Fase 2: años 6–10 en transición al crecimiento terminal
+  for (let i = 1; i <= 5; i++) {
+    const g = growth - (growth - terminal) * (i / 5)
+    e *= (1 + g)
+    value += e / Math.pow(1 + discount, 5 + i)
+  }
+
+  // Valor terminal: cap a 20× FCF final
+  const tvMultiple = Math.min(1 / (discount - terminal), 20)
+  value += e * tvMultiple / Math.pow(1 + discount, 10)
 
   const intrinsicValue = Math.round(value * 100) / 100
   const mos = (intrinsicValue - price) / intrinsicValue
-  return { intrinsicValue, price, mos, discount, growth }
+  return { intrinsicValue, price, mos, discount, growth, terminal }
 }
+
+// ── 4. PROJECTION ─────────────────────────────────────────────────────────
 
 export function computeProjection(history, cagr) {
   const full = history.filter(h => !h.isPartial)
@@ -154,107 +247,266 @@ export function computeProjection(history, cagr) {
   }))
 }
 
+// ── 5. DGI SCORE ──────────────────────────────────────────────────────────
+// 4 dimensiones: dividendo (35%), calidad (30%), valoración (20%), momentum (15%)
+
 export function computeDGIScore(data, streak, cagr) {
   if (!data) return null
 
-  const yld    = data.current_price > 0 ? (data.dps ?? 0) / data.current_price : null
-  const payout = data.payout_fcf != null ? data.payout_fcf / 100
-               : data.payout_eps != null ? data.payout_eps / 100 : null
-  const roe    = data.roe              ?? null
-  const opM    = data.operating_margin ?? null
-  const pe     = data.pe_trailing      ?? data.pe_forward ?? null
-  const fcfPos = data.fcf_per_share != null ? data.fcf_per_share > 0 : null
-  const pb     = data.price_to_book   ?? null
-  const rg     = data.revenue_growth_yoy  != null ? data.revenue_growth_yoy  / 100 : null
-  const eg     = data.earnings_growth_yoy != null ? data.earnings_growth_yoy / 100 : null
-  const eps    = data.eps_trailing ?? null
+  const price   = n(data.current_price)
+  const dpsVal  = n(data.dps)
+  const yld     = price > 0 && dpsVal != null ? dpsVal / price : null
+  const payout  = data.payout_fcf != null ? n(data.payout_fcf) / 100
+                : data.payout_eps != null ? n(data.payout_eps) / 100 : null
+  const roe     = n(data.roe)
+  const opM     = n(data.operating_margin)
+  const pe      = n(data.pe_trailing) ?? n(data.pe_forward)
+  const fcfPos  = data.fcf_per_share != null ? data.fcf_per_share > 0 : null
+  const pb      = n(data.price_to_book)
+  const rg      = data.revenue_growth_yoy  != null ? n(data.revenue_growth_yoy)  / 100 : null
+  const eg      = data.earnings_growth_yoy != null ? n(data.earnings_growth_yoy) / 100 : null
+  const eps     = n(data.eps_trailing)
+  const roic    = n(data.roic)
 
+  // ── Dividendo (0–10) ──────────────────────────────────────────────────
   let div = 0
-  if (yld    != null) div += yld >= 0.04 ? 3 : yld >= 0.025 ? 2 : yld >= 0.015 ? 1 : 0
-  if (payout != null) div += payout < 0.5 ? 3 : payout < 0.75 ? 1.5 : 0
-  if (cagr   != null) div += cagr >= 0.10 ? 2 : cagr >= 0.05 ? 1 : 0
-  div += streak >= 10 ? 2 : streak >= 5 ? 1 : 0
+  if (yld    != null) div += yld >= 0.05 ? 3 : yld >= 0.035 ? 2.5 : yld >= 0.025 ? 2 : yld >= 0.015 ? 1 : 0
+  if (payout != null) div += payout < 0.40 ? 3 : payout < 0.60 ? 2 : payout < 0.75 ? 1 : 0
+  if (cagr   != null) div += cagr >= 0.12 ? 2.5 : cagr >= 0.07 ? 2 : cagr >= 0.03 ? 1 : 0
+  div += streak >= 25 ? 1.5 : streak >= 10 ? 1 : streak >= 5 ? 0.5 : 0
   div  = Math.min(10, div)
 
+  // ── Calidad (0–10) ────────────────────────────────────────────────────
   let cal = 0
-  if (roe    != null) cal += roe > 20 ? 3 : roe > 12 ? 2 : roe > 5 ? 1 : 0
-  if (opM    != null) cal += opM > 20 ? 3 : opM > 10 ? 2 : opM > 0 ? 1 : 0
+  if (roic   != null) cal += roic > 25 ? 3   : roic > 18 ? 2.5 : roic > 12 ? 1.5 : roic > 6 ? 0.5 : 0
+  if (opM    != null) cal += opM  > 25 ? 2.5 : opM  > 15 ? 2   : opM  > 8  ? 1   : opM  > 3  ? 0.5 : 0
   if (fcfPos != null) cal += fcfPos ? 2 : 0
-  if (eps    != null) cal += eps > 0 ? 2 : 0
+  if (eps    != null) cal += eps > 0 ? 1.5 : 0
+  if (roe    != null) cal += roe > 20 ? 1 : roe > 12 ? 0.5 : 0
   cal = Math.min(10, cal)
 
+  // ── Valoración (0–10) ─────────────────────────────────────────────────
   let val = 0
-  if (pe  != null && pe > 0) val += pe < 15 ? 4 : pe < 20 ? 3 : pe < 25 ? 2 : pe < 35 ? 1 : 0
-  if (yld != null)            val += yld >= 0.04 ? 3 : yld >= 0.025 ? 2 : yld >= 0.015 ? 1 : 0
-  if (pb  != null && pb > 0) val += pb < 2 ? 3 : pb < 4 ? 2 : pb < 8 ? 1 : 0
+  if (pe  != null && pe > 0) val += pe < 12 ? 4 : pe < 17 ? 3 : pe < 22 ? 2 : pe < 30 ? 1 : 0
+  if (yld != null)            val += yld >= 0.05 ? 3 : yld >= 0.035 ? 2 : yld >= 0.02 ? 1 : 0
+  if (pb  != null && pb > 0) val += pb < 1.5 ? 3 : pb < 3 ? 2 : pb < 6 ? 1 : 0
   val = Math.min(10, val)
 
+  // ── Momentum (0–10) ───────────────────────────────────────────────────
   let mom = 0
-  if (rg != null) mom += rg > 0.1 ? 3 : rg > 0.05 ? 2 : rg > 0 ? 1 : 0
-  if (eg != null) mom += eg > 0.1 ? 3 : eg > 0.05 ? 2 : eg > 0 ? 1 : 0
-  mom += streak >= 10 ? 4 : streak >= 5 ? 2 : streak > 0 ? 1 : 0
+  if (rg != null) mom += rg > 0.12 ? 3 : rg > 0.06 ? 2 : rg > 0 ? 1 : 0
+  if (eg != null) mom += eg > 0.12 ? 3 : eg > 0.06 ? 2 : eg > 0 ? 1 : 0
+  mom += streak >= 25 ? 4 : streak >= 10 ? 2.5 : streak >= 5 ? 1 : 0
   mom = Math.min(10, mom)
 
   const total = parseFloat((div * 0.35 + cal * 0.30 + val * 0.20 + mom * 0.15).toFixed(1))
   return {
     total,
     breakdown: [
-      { key: 'dividendo',  label: 'Dividendo',  score: div, max: 10, weight: '35%' },
-      { key: 'calidad',    label: 'Calidad',     score: cal, max: 10, weight: '30%' },
-      { key: 'valoracion', label: 'Valoración',  score: val, max: 10, weight: '20%' },
-      { key: 'momentum',   label: 'Momentum',    score: mom, max: 10, weight: '15%' },
+      { key: 'dividendo',  label: 'Dividendo',   score: Math.round(div * 10) / 10, max: 10, weight: '35%' },
+      { key: 'calidad',    label: 'Calidad',      score: Math.round(cal * 10) / 10, max: 10, weight: '30%' },
+      { key: 'valoracion', label: 'Valoración',   score: Math.round(val * 10) / 10, max: 10, weight: '20%' },
+      { key: 'momentum',   label: 'Momentum',     score: Math.round(mom * 10) / 10, max: 10, weight: '15%' },
     ],
   }
 }
 
+// ── 6. INSIGHTS — 25+ señales green/yellow/red ────────────────────────────
+
 export function buildInsights(data, streak, cagr, dcf) {
   if (!data) return []
 
-  const yld    = data.current_price > 0 ? (data.dps ?? 0) / data.current_price : null
-  const payout = data.payout_fcf != null ? data.payout_fcf / 100
-               : data.payout_eps != null ? data.payout_eps / 100 : null
-  const roe    = data.roe              ?? null
-  const opM    = data.operating_margin ?? null
-  const rg     = data.revenue_growth_yoy  != null ? data.revenue_growth_yoy  / 100 : null
-  const eg     = data.earnings_growth_yoy != null ? data.earnings_growth_yoy / 100 : null
-  const fcfPos = data.fcf_per_share != null ? data.fcf_per_share > 0 : null
+  const yld     = data.current_price > 0 ? (n(data.dps) ?? 0) / data.current_price : null
+  const payout  = data.payout_fcf != null ? n(data.payout_fcf)
+                : data.payout_eps != null ? n(data.payout_eps) : null
+  const roe     = n(data.roe)
+  const opM     = n(data.operating_margin)
+  const grM     = n(data.gross_margin)
+  const netM    = n(data.net_margin)
+  const roic    = n(data.roic)
+  const rg      = data.revenue_growth_yoy  != null ? n(data.revenue_growth_yoy)  : null
+  const eg      = data.earnings_growth_yoy != null ? n(data.earnings_growth_yoy) : null
+  const fcfPos  = data.fcf_per_share != null ? data.fcf_per_share > 0 : null
+  const fcfCagr = n(data.fcf_cagr5)
+  const nd      = n(data.net_debt)      // en M€/$
+  const nde     = n(data.net_debt_ebitda)
+  const intCov  = n(data.interest_coverage)
+  const beta    = n(data.beta)
+  const price   = n(data.current_price)
+  const high52  = n(data.week52_high)
+  const low52   = n(data.week52_low)
 
   const insights = []
   const add = (cat, type, text) => insights.push({ cat, type, text })
 
+  // ── DIVIDENDO ─────────────────────────────────────────────────────────
   if (yld != null) {
-    if (yld >= 0.05)        add('dividendo', 'positive', `Yield del ${(yld*100).toFixed(2)}% — atractivo para renta inmediata.`)
+    if      (yld >= 0.07)   add('dividendo', 'positive', `Yield del ${(yld*100).toFixed(2)}% — rentabilidad inmediata muy elevada.`)
+    else if (yld >= 0.04)   add('dividendo', 'positive', `Yield del ${(yld*100).toFixed(2)}% — atractivo para renta inmediata.`)
     else if (yld >= 0.025)  add('dividendo', 'neutral',  `Yield del ${(yld*100).toFixed(2)}% — razonable para una empresa DGI de calidad.`)
-    else if (yld > 0)       add('dividendo', 'neutral',  `Yield del ${(yld*100).toFixed(2)}% — bajo hoy, depende del crecimiento futuro.`)
+    else if (yld >= 0.01)   add('dividendo', 'neutral',  `Yield del ${(yld*100).toFixed(2)}% — bajo hoy, depende del crecimiento futuro del dividendo.`)
+    else if (yld > 0)       add('dividendo', 'negative', `Yield residual del ${(yld*100).toFixed(2)}% — prácticamente sin renta.`)
     else                    add('dividendo', 'negative', 'No paga dividendo actualmente.')
   }
-  if (payout != null) {
-    if (payout > 1.0)       add('dividendo', 'negative', `Payout del ${(payout*100).toFixed(0)}% — supera los beneficios. Dividendo en riesgo.`)
-    else if (payout > 0.8)  add('dividendo', 'neutral',  `Payout del ${(payout*100).toFixed(0)}% — elevado, poco margen para seguir subiendo.`)
-    else if (payout < 0.45) add('dividendo', 'positive', `Payout del ${(payout*100).toFixed(0)}% — amplio margen de seguridad para el dividendo.`)
+
+  if (payout != null && payout > 0) {
+    if      (payout > 100)  add('dividendo', 'negative', `Payout del ${payout.toFixed(0)}% — supera los beneficios. Dividendo en riesgo inminente.`)
+    else if (payout > 85)   add('dividendo', 'negative', `Payout del ${payout.toFixed(0)}% — muy elevado. Poco margen antes de un recorte.`)
+    else if (payout > 70)   add('dividendo', 'neutral',  `Payout del ${payout.toFixed(0)}% — alto, pero sostenible si el negocio es estable.`)
+    else if (payout < 35)   add('dividendo', 'positive', `Payout del ${payout.toFixed(0)}% — amplio margen de seguridad para el dividendo.`)
+    else if (payout < 55)   add('dividendo', 'positive', `Payout del ${payout.toFixed(0)}% — razonable y con margen de crecimiento.`)
   }
+
   if (cagr != null) {
-    if (cagr >= 0.10)       add('dividendo', 'positive', `CAGR del dividendo del ${(cagr*100).toFixed(1)}% — crecimiento excepcional.`)
-    else if (cagr >= 0.05)  add('dividendo', 'positive', `CAGR del dividendo del ${(cagr*100).toFixed(1)}% — crecimiento sólido.`)
-    else if (cagr > 0)      add('dividendo', 'neutral',  `CAGR del dividendo del ${(cagr*100).toFixed(1)}% — crecimiento moderado.`)
-    else                    add('dividendo', 'negative', 'El dividendo no ha crecido en los últimos años.')
+    if      (cagr >= 0.12)  add('dividendo', 'positive', `CAGR del dividendo del ${(cagr*100).toFixed(1)}% — crecimiento excepcional a doble dígito.`)
+    else if (cagr >= 0.07)  add('dividendo', 'positive', `CAGR del dividendo del ${(cagr*100).toFixed(1)}% — crecimiento sólido y consistente.`)
+    else if (cagr >= 0.03)  add('dividendo', 'neutral',  `CAGR del dividendo del ${(cagr*100).toFixed(1)}% — crecimiento moderado.`)
+    else if (cagr > 0)      add('dividendo', 'neutral',  `CAGR del dividendo del ${(cagr*100).toFixed(1)}% — crecimiento muy lento.`)
+    else                    add('dividendo', 'negative', 'El dividendo no ha crecido en los últimos 5 años.')
   }
-  if (streak >= 10) add('dividendo', 'positive', `${streak} años consecutivos de dividendo creciente — rasgo de empresa Aristócrata.`)
+
+  if      (streak >= 35) add('dividendo', 'positive', `${streak} años consecutivos subiendo el dividendo — Aristócrata del dividendo consolidado.`)
+  else if (streak >= 25) add('dividendo', 'positive', `${streak} años consecutivos de dividendo creciente — historial excepcional.`)
+  else if (streak >= 10) add('dividendo', 'positive', `${streak} años seguidos aumentando el dividendo — historial sólido.`)
+  else if (streak >= 5)  add('dividendo', 'neutral',  `${streak} años subiendo el dividendo — historial en construcción.`)
+
+  // ── DEUDA Y LIQUIDEZ ──────────────────────────────────────────────────
+  if (nd != null && nd < 0)     add('valoracion', 'positive', `Tiene más efectivo que deuda neta — posición financiera de fortaleza.`)
+
+  if (nde != null) {
+    if      (nde < 0)    add('valoracion', 'positive', `Caja neta positiva (deuda neta ${nde.toFixed(1)}× EBITDA) — balance muy sólido.`)
+    else if (nde < 1)    add('valoracion', 'positive', `Deuda neta muy controlada (${nde.toFixed(1)}× EBITDA).`)
+    else if (nde < 2.5)  add('valoracion', 'neutral',  `Deuda moderada (${nde.toFixed(1)}× EBITDA).`)
+    else if (nde > 4)    add('valoracion', 'negative', `Deuda elevada (${nde.toFixed(1)}× EBITDA) — riesgo financiero relevante.`)
+    else if (nde > 3)    add('valoracion', 'neutral',  `Deuda alta (${nde.toFixed(1)}× EBITDA) — vigilar evolución.`)
+  }
+
+  if (intCov != null && intCov > 0) {
+    if      (intCov > 20)   add('valoracion', 'positive', `Cobertura de intereses excelente (${intCov.toFixed(1)}×) — la deuda no supone presión.`)
+    else if (intCov > 8)    add('valoracion', 'positive', `Buena cobertura de intereses (${intCov.toFixed(1)}×).`)
+    else if (intCov < 3)    add('valoracion', 'negative', `Cobertura de intereses baja (${intCov.toFixed(1)}×) — el negocio cubre con dificultad sus intereses.`)
+  }
+
+  // ── VALORACIÓN ────────────────────────────────────────────────────────
   if (dcf?.mos != null) {
     const p = (Math.abs(dcf.mos) * 100).toFixed(1)
-    if (dcf.mos > 0.25)      add('valoracion', 'positive', `Descuento del ${p}% respecto al valor intrínseco estimado — zona de compra potencial.`)
-    else if (dcf.mos > 0.05) add('valoracion', 'positive', `Cotiza ligeramente por debajo del valor intrínseco (${p}% de margen).`)
-    else if (dcf.mos > -0.1) add('valoracion', 'neutral',  `Cotiza cerca de su valor intrínseco estimado.`)
-    else                     add('valoracion', 'negative', `Cotiza un ${p}% por encima del valor intrínseco estimado. Precio exigente.`)
+    if      (dcf.mos > 0.30)  add('valoracion', 'positive', `Descuento del ${p}% respecto al valor intrínseco estimado — zona de compra con margen de seguridad amplio.`)
+    else if (dcf.mos > 0.10)  add('valoracion', 'positive', `Cotiza por debajo del valor intrínseco estimado (${p}% de margen de seguridad).`)
+    else if (dcf.mos > -0.10) add('valoracion', 'neutral',  `Cotiza cerca de su valor intrínseco estimado.`)
+    else if (dcf.mos > -0.25) add('valoracion', 'neutral',  `Cotiza ligeramente por encima del valor intrínseco (${p}% de prima).`)
+    else                      add('valoracion', 'negative', `Cotiza un ${p}% por encima del valor intrínseco estimado — precio exigente.`)
   }
-  if (roe != null) {
-    if (roe > 20)  add('mercado', 'positive', `ROE del ${roe.toFixed(1)}% — genera mucho valor por cada euro de capital propio.`)
-    else if (roe < 0) add('mercado', 'negative', `ROE negativo (${roe.toFixed(1)}%) — está destruyendo valor.`)
+
+  // Precio vs rango 52 semanas
+  if (price != null && high52 != null && low52 != null && high52 > low52) {
+    const distHigh = ((high52 - price) / high52) * 100
+    const distLow  = ((price - low52)  / price)  * 100
+    if      (distHigh > 25) add('valoracion', 'positive', `El precio está un ${distHigh.toFixed(1)}% por debajo de su máximo anual — posible zona de entrada.`)
+    else if (distHigh < 5)  add('valoracion', 'neutral',  `Cotiza cerca de máximos anuales (${distHigh.toFixed(1)}% por debajo del máximo de 52 semanas).`)
+    if      (distLow  < 8)  add('valoracion', 'neutral',  `Cerca de mínimos anuales — vigilar si es debilidad temporal o problema estructural.`)
   }
-  if (opM != null && opM < 5)    add('mercado', 'negative', `Margen operativo del ${opM.toFixed(1)}% — muy estrecho.`)
-  if (rg  != null && rg < -0.08) add('mercado', 'negative', `Ingresos cayendo (${(rg*100).toFixed(1)}% interanual) — presión sobre el dividendo futuro.`)
-  if (eg  != null && eg > 0.10)  add('mercado', 'positive', `Beneficios creciendo al ${(eg*100).toFixed(1)}% — momentum positivo.`)
-  if (fcfPos === false)          add('mercado', 'negative', 'Flujo de caja libre negativo — el dividendo podría no estar cubierto por caja.')
+
+  // ── MERCADO / CALIDAD ─────────────────────────────────────────────────
+  if (roic != null) {
+    if      (roic > 40)   add('mercado', 'neutral',  `ROIC del ${roic.toFixed(1)}% — muy elevado, puede reflejar intangibles no capitalizados.`)
+    else if (roic > 25)   add('mercado', 'positive', `ROIC del ${roic.toFixed(1)}% — genera valor excepcional por cada euro de capital invertido.`)
+    else if (roic > 15)   add('mercado', 'positive', `ROIC del ${roic.toFixed(1)}% — negocio rentable con ventajas competitivas visibles.`)
+    else if (roic <  6)   add('mercado', 'neutral',  `ROIC del ${roic.toFixed(1)}% — rentabilidad sobre capital por debajo de la media.`)
+  }
+
+  if (grM != null) {
+    if      (grM > 65)    add('mercado', 'positive', `Margen bruto del ${grM.toFixed(0)}% — poder de fijación de precios excepcional.`)
+    else if (grM > 45)    add('mercado', 'positive', `Margen bruto del ${grM.toFixed(0)}% — producto o servicio diferenciado.`)
+    else if (grM < 18)    add('mercado', 'neutral',  `Margen bruto del ${grM.toFixed(0)}% — negocio de bajo margen, la eficiencia es clave.`)
+  }
+
+  if (opM != null && opM < 5 && opM >= 0) add('mercado', 'negative', `Margen operativo del ${opM.toFixed(1)}% — muy estrecho, vulnerable a shocks de costes.`)
+
+  if (fcfPos === false) add('mercado', 'negative', 'Flujo de caja libre negativo — el dividendo podría no estar cubierto por generación de caja.')
+  if (fcfCagr != null && fcfCagr > 12) add('mercado', 'positive', `FCF creciendo al ${fcfCagr.toFixed(1)}% anual — la capacidad de generar caja se acelera.`)
+
+  if (rg != null)  {
+    if      (rg < -8)   add('mercado', 'negative', `Ingresos cayendo (${rg.toFixed(1)}% interanual) — presión sobre los dividendos futuros.`)
+    else if (rg >  12)  add('mercado', 'positive', `Ingresos creciendo al ${rg.toFixed(1)}% — momentum top-line sólido.`)
+  }
+
+  if (eg != null && eg > 15)   add('mercado', 'positive', `Beneficios creciendo al ${eg.toFixed(1)}% — momentum positivo en la cuenta de resultados.`)
+  if (eg != null && eg < -15)  add('mercado', 'negative', `Beneficios cayendo el ${Math.abs(eg).toFixed(1)}% — deterioro de la rentabilidad.`)
+
+  if (beta != null) {
+    if      (beta < 0.5)  add('mercado', 'positive', `Beta muy baja (${beta.toFixed(2)}) — acción muy defensiva, oscila poco con el mercado.`)
+    else if (beta < 0.85) add('mercado', 'positive', `Beta baja (${beta.toFixed(2)}) — comportamiento defensivo, menor volatilidad que el mercado.`)
+    else if (beta > 1.5)  add('mercado', 'neutral',  `Beta elevada (${beta.toFixed(2)}) — acción más volátil que el mercado.`)
+  }
 
   return insights
+}
+
+// ── 7. BADGES ─────────────────────────────────────────────────────────────
+// Devuelve array de { id, label, color, bg, title } para mostrar en cabecera
+
+export function computeBadges(data, streak, cagr, moat) {
+  const badges = []
+
+  // Streak
+  if      (streak >= 35) badges.push({ id: 'streak50', label: '🥇 Aristócrata', color: '#fbbf24', bg: 'rgba(251,191,36,0.12)', title: `${streak} años consecutivos subiendo el dividendo` })
+  else if (streak >= 25) badges.push({ id: 'streak25', label: '🥈 Aristócrata', color: '#fbbf24', bg: 'rgba(251,191,36,0.12)', title: `${streak} años consecutivos de dividendo creciente` })
+  else if (streak >= 10) badges.push({ id: 'streak10', label: '🥉 Campeón DGI', color: '#86efac', bg: 'rgba(134,239,172,0.12)', title: `${streak} años consecutivos de dividendo creciente` })
+
+  // Regla 10/10: yield + CAGR dividendo ≥ 10%
+  if (data && cagr != null) {
+    const price = n(data.current_price)
+    const dpsV  = n(data.dps)
+    const yld   = price > 0 && dpsV != null ? (dpsV / price) * 100 : 0
+    const cagrP = cagr * 100
+    if (yld > 0 && cagrP > 0 && yld + cagrP >= 10) {
+      badges.push({ id: '1010', label: '⚡ Regla 10/10', color: '#818cf8', bg: 'rgba(99,102,241,0.12)', title: `Yield (${yld.toFixed(1)}%) + CAGR dividendo (${cagrP.toFixed(1)}%) ≥ 10% — retorno total estimado excelente` })
+    }
+  }
+
+  // Foso económico
+  if (moat?.width === 'wide')   badges.push({ id: 'moat-wide',   label: '🏰 Foso ancho',    color: '#34d399', bg: 'rgba(52,211,153,0.12)', title: `Moat score: ${moat.score}/100` })
+  else if (moat?.width === 'narrow') badges.push({ id: 'moat-narrow', label: '🧱 Foso estrecho', color: '#86efac', bg: 'rgba(134,239,172,0.12)', title: `Moat score: ${moat.score}/100` })
+
+  return badges
+}
+
+// ── 8. BUYBACKS ───────────────────────────────────────────────────────────
+
+export function computeBuybacks(data) {
+  if (!data) return null
+
+  const cf   = data.cashflow_annual
+  const rows = cf?.data?.['Recompra de Acciones']
+  const cols = cf?.columns
+  if (!rows?.length || !cols?.length) return null
+
+  const marketCap = data.market_cap_m != null ? data.market_cap_m * 1e6 : null
+
+  const years = cols.map((col, i) => {
+    const amount = rows[i]
+    if (amount == null) return null
+    const isBuyback = amount < 0
+    const yld = (marketCap && isBuyback) ? (Math.abs(amount) / marketCap) * 100 : null
+    return { year: col.substring(0, 4), amount, isBuyback, yield: yld }
+  }).filter(Boolean)
+
+  if (!years.length) return null
+
+  let streak = 0
+  for (const y of years) {
+    if (y.isBuyback) streak++
+    else break
+  }
+
+  const buybackYears = years.slice(0, streak)
+  const avgYield = (buybackYears.length && buybackYears.every(y => y.yield != null))
+    ? buybackYears.reduce((s, y) => s + y.yield, 0) / buybackYears.length
+    : null
+
+  const isCannibal      = streak >= 3 && avgYield != null && avgYield > 5
+  const isActiveBuyback = streak >= 3 && !isCannibal
+  const isDilutive      = !years[0]?.isBuyback && years[0]?.amount > 0
+
+  return { years: years.slice(0, 4), streak, avgYield, isCannibal, isActiveBuyback, isDilutive }
 }

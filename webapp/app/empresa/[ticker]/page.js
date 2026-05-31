@@ -12,6 +12,8 @@ import {
   computeProjection,
   computeDGIScore,
   buildInsights,
+  computeBadges,
+  computeBuybacks,
 } from '@/lib/company-detail'
 
 export const dynamic = 'force-dynamic'
@@ -90,6 +92,8 @@ export default async function EmpresaPage({ params }) {
   const projection = computeProjection(divHistory, cagr)
   const dgiScore   = computeDGIScore(detail, streak, cagr)
   const insights   = buildInsights(detail, streak, cagr, dcf)
+  const badges     = computeBadges(detail, streak, cagr, moat)
+  const buybacks   = computeBuybacks(detail)
 
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>
@@ -127,6 +131,8 @@ export default async function EmpresaPage({ params }) {
         projection={projection}
         dgiScore={dgiScore}
         insights={insights}
+        badges={badges}
+        buybacks={buybacks}
         financials={{
           income_statement_annual:    detail?.income_statement_annual    ?? null,
           balance_sheet_annual:       detail?.balance_sheet_annual       ?? null,
