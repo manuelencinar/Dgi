@@ -273,48 +273,7 @@ export function computeMoat(data, streak) {
   return { width, label, signals, negative, sources, score }
 }
 
-// ── 3. DCF — 2 fases con transición ───────────────────────────────────────
-// Fase 1: 5 años al CAGR histórico
-// Fase 2: 5 años en transición hasta crecimiento terminal
-// Terminal: cap 20× FCF final · Descuento según foso: 8/10/12%
-
-export function computeDCF(data, moatWidth) {
-  if (!data) return null
-
-  const eps   = n(data.eps_trailing)
-  const price = n(data.current_price)
-  if (!eps || eps <= 0 || !price) return null
-
-  const discount  = moatWidth === 'wide' ? 0.08 : moatWidth === 'narrow' ? 0.10 : 0.12
-  const eg        = data.earnings_growth_yoy ?? data.revenue_growth_yoy
-  const rawGrowth = eg != null ? n(eg) / 100 : 0.05
-  const growth    = Math.min(0.25, Math.max(0, rawGrowth ?? 0.05))
-  const terminal  = Math.max(0.02, discount - 0.06)   // ~2–4% según descuento
-
-  let value = 0
-  let e     = eps
-
-  // Fase 1: años 1–5 al CAGR
-  for (let i = 1; i <= 5; i++) {
-    e *= (1 + growth)
-    value += e / Math.pow(1 + discount, i)
-  }
-
-  // Fase 2: años 6–10 en transición al crecimiento terminal
-  for (let i = 1; i <= 5; i++) {
-    const g = growth - (growth - terminal) * (i / 5)
-    e *= (1 + g)
-    value += e / Math.pow(1 + discount, 5 + i)
-  }
-
-  // Valor terminal: cap a 20× FCF final
-  const tvMultiple = Math.min(1 / (discount - terminal), 20)
-  value += e * tvMultiple / Math.pow(1 + discount, 10)
-
-  const intrinsicValue = Math.round(value * 100) / 100
-  const mos = (intrinsicValue - price) / intrinsicValue
-  return { intrinsicValue, price, mos, discount, growth, terminal }
-}
+// ── 3. VALORACIÓN — delegado a lib/valuation.js ───────────────────────────
 
 // ── 4. PROJECTION ─────────────────────────────────────────────────────────
 
@@ -331,6 +290,10 @@ export function computeProjection(history, cagr) {
     optimistic:   parseFloat((baseDps * Math.pow(1 + g * 1.4, i + 1)).toFixed(4)),
   }))
 }
+
+// ── 4b. VALORACIÓN ────────────────────────────────────────────────────────
+
+export { computeValuation } from '@/lib/valuation'
 
 // ── 5. DGI SCORE — delegado a lib/dgi-score.js ────────────────────────────
 

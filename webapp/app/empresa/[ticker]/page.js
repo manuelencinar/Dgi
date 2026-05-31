@@ -8,7 +8,7 @@ import {
   getCompanyDetail,
   computeHealthScore,
   computeMoat,
-  computeDCF,
+  computeValuation,
   computeProjection,
   computeDGIScore,
   buildInsights,
@@ -88,7 +88,7 @@ export default async function EmpresaPage({ params }) {
 
   const health     = computeHealthScore(detail, type)
   const moat       = computeMoat(detail, streak)
-  const dcf        = computeDCF(detail, moat?.width ?? 'none')
+  const dcf        = computeValuation(detail, moat?.width ?? 'none', type, currency)
   const projection = computeProjection(divHistory, cagr)
   const dgiScore   = computeDGIScore(detail, streak, cagr, dcf, type)
   const insights   = buildInsights(detail, streak, cagr, dcf)

@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
 import PriceChart from '@/components/empresa/PriceChart'
 import HealthGauge from '@/components/empresa/HealthGauge'
@@ -278,49 +279,184 @@ function ProjectionSection({ projection, cagr, isPremium }) {
   )
 }
 
+// ── valuation bar ─────────────────────────────────────────────────────────
+
+function ValuationBar({ price, iv }) {
+  if (!price || !iv || price <= 0 || iv <= 0) return null
+  const lo   = Math.min(price, iv) * 0.88
+  const hi   = Math.max(price, iv) * 1.12
+  const span = hi - lo
+  const pPct = Math.max(0, Math.min(100, (price - lo) / span * 100))
+  const iPct = Math.max(0, Math.min(100, (iv    - lo) / span * 100))
+  const left = Math.min(pPct, iPct), right = Math.max(pPct, iPct)
+  const col  = iv > price ? '#34d399' : '#f87171'
+
+  return (
+    <div style={{ marginTop: 14, marginBottom: 4 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontSize: 10, color: '#4a5270' }}>
+        <span>Precio: {price.toLocaleString('es-ES', { maximumFractionDigits: 2 })}</span>
+        <span>Val. intrínseco: {iv.toLocaleString('es-ES', { maximumFractionDigits: 2 })}</span>
+      </div>
+      <div style={{ position: 'relative', height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 4 }}>
+        {/* gap coloreado */}
+        <div style={{
+          position: 'absolute', top: 0, height: '100%',
+          left: `${left}%`, width: `${right - left}%`,
+          background: `${col}40`, borderRadius: 4,
+        }} />
+        {/* marcador precio */}
+        <div style={{
+          position: 'absolute', top: '50%', left: `${pPct}%`,
+          transform: 'translate(-50%,-50%)',
+          width: 12, height: 12, borderRadius: '50%',
+          background: '#c8d0e0', border: '2px solid #080b14',
+        }} />
+        {/* marcador IV */}
+        <div style={{
+          position: 'absolute', top: '50%', left: `${iPct}%`,
+          transform: 'translate(-50%,-50%)',
+          width: 12, height: 12, borderRadius: '50%',
+          background: col, border: '2px solid #080b14',
+        }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 9, color: '#4a5270' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#c8d0e0' }} /> Precio actual
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: col }} /> Valor intrínseco
+        </span>
+      </div>
+    </div>
+  )
+}
+
 // ── dcf + valuation section ───────────────────────────────────────────────
 
 function DCFSection({ dcf, peTrailing, peForward, evEbitda, isPremium }) {
+  const [expanded, setExpanded] = useState(false)
+
+  const mosCol = dcf?.mos != null
+    ? (dcf.mos > 0.1 ? '#34d399' : dcf.mos > -0.1 ? '#fbbf24' : '#f87171')
+    : '#4a5270'
+  const mosLbl = dcf?.mos != null
+    ? (dcf.mos > 0.25 ? 'Zona de compra' : dcf.mos > 0.05 ? 'Ligero descuento' : dcf.mos > -0.1 ? 'Precio justo' : 'Sobrecomprado')
+    : ''
+
   const content = (
     <Card>
-      <SectionTitle>DCF y valoración</SectionTitle>
-      {dcf ? (
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+        <SectionTitle>Valoración</SectionTitle>
+        {dcf?.methodLabel && (
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.12)', padding: '2px 8px', borderRadius: 5 }}>
+            {dcf.methodLabel}
+          </span>
+        )}
+      </div>
+
+      {/* Valuation numbers */}
+      {dcf?.available ? (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '12px' }}>
-              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 4 }}>Valor intrínseco</p>
-              <p style={{ fontSize: 22, fontWeight: 800, color: '#c8d0e0' }}>{fmt(dcf.intrinsicValue)}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Valor intrínseco</p>
+              <p style={{ fontSize: 18, fontWeight: 800, color: '#c8d0e0' }}>{fmt(dcf.intrinsicValue)}</p>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '12px' }}>
-              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 4 }}>Precio actual</p>
-              <p style={{ fontSize: 22, fontWeight: 800, color: '#c8d0e0' }}>{fmt(dcf.price)}</p>
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Precio actual</p>
+              <p style={{ fontSize: 18, fontWeight: 800, color: '#c8d0e0' }}>{fmt(dcf.price)}</p>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Margen seguridad</p>
+              <p style={{ fontSize: 18, fontWeight: 800, color: mosCol }}>
+                {dcf.mos > 0 ? '+' : ''}{(dcf.mos * 100).toFixed(1)}%
+              </p>
             </div>
           </div>
-          {dcf.mos != null && (() => {
-            const mosCol  = dcf.mos > 0.1 ? '#34d399' : dcf.mos > -0.1 ? '#fbbf24' : '#f87171'
-            const mosLbl  = dcf.mos > 0.25 ? 'Zona de compra' : dcf.mos > 0.05 ? 'Ligero descuento' : dcf.mos > -0.1 ? 'Precio justo' : 'Sobrecomprado'
-            return (
-              <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <div>
-                  <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Margen de seguridad</p>
-                  <p style={{ fontSize: 22, fontWeight: 800, color: mosCol }}>
-                    {dcf.mos > 0 ? '+' : ''}{(dcf.mos * 100).toFixed(1)}%
-                  </p>
-                </div>
-                <span style={{ fontSize: 12, fontWeight: 700, color: mosCol, background: `${mosCol}18`, padding: '4px 10px', borderRadius: 6 }}>{mosLbl}</span>
+
+          {/* Badge label */}
+          {mosLbl && (
+            <div style={{ textAlign: 'center', marginBottom: 4 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: mosCol, background: `${mosCol}18`, padding: '3px 10px', borderRadius: 5 }}>{mosLbl}</span>
+            </div>
+          )}
+
+          {/* Visual bar */}
+          <ValuationBar price={dcf.price} iv={dcf.intrinsicValue} />
+
+          {/* FCF years for energy */}
+          {dcf.fcfYears?.length > 0 && (
+            <div style={{ marginTop: 12, padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: 8 }}>
+              <p style={{ fontSize: 10, color: '#4a5270', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>FCF por año (base normalizada)</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+                {dcf.fcfYears.map(y => (
+                  <div key={y.year} style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: 10, color: '#4a5270' }}>{y.year}</p>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: y.value >= 0 ? '#34d399' : '#f87171' }}>
+                      {Math.abs(y.value) >= 1e9 ? (y.value/1e9).toFixed(1)+'B'
+                        : Math.abs(y.value) >= 1e6 ? (y.value/1e6).toFixed(0)+'M'
+                        : y.value.toFixed(0)}
+                    </p>
+                  </div>
+                ))}
               </div>
-            )
-          })()}
-          <p style={{ fontSize: 10, color: '#2e3a55', marginBottom: 12 }}>
-            Descuento: {(dcf.discount * 100).toFixed(0)}% · Crecimiento: {(dcf.growth * 100).toFixed(1)}%
-          </p>
+            </div>
+          )}
+
+          {/* Expandable details */}
+          <button
+            onClick={() => setExpanded(e => !e)}
+            style={{
+              marginTop: 12, width: '100%', background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8,
+              padding: '8px 12px', cursor: 'pointer', color: '#818cf8',
+              fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}
+          >
+            <span>Ver cálculo detallado</span>
+            <span>{expanded ? '▲' : '▼'}</span>
+          </button>
+
+          {expanded && (
+            <div style={{ marginTop: 8, padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: 8 }}>
+              {/* Inputs table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginBottom: 10 }}>
+                <tbody>
+                  {dcf.inputs.map((inp, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                      <td style={{ padding: '5px 0', color: '#4a5270' }}>{inp.label}</td>
+                      <td style={{ padding: '5px 0', color: '#c8d0e0', textAlign: 'right', fontWeight: 600 }}>{inp.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Notes */}
+              {dcf.notes?.map((note, i) => (
+                <p key={i} style={{ fontSize: 10, color: '#8090a8', marginBottom: 4 }}>ℹ {note}</p>
+              ))}
+
+              {/* Tooltip / explanation */}
+              {dcf.tooltip && (
+                <p style={{ fontSize: 10, color: '#4a5270', marginTop: 6, fontStyle: 'italic' }}>{dcf.tooltip}</p>
+              )}
+
+              {/* Disclaimer */}
+              <p style={{ fontSize: 9, color: '#2e3a55', marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                ⚠ El valor intrínseco es una estimación basada en datos históricos y proyecciones. No constituye asesoramiento financiero.
+              </p>
+            </div>
+          )}
         </>
       ) : (
-        <p style={{ fontSize: 13, color: '#4a5270', marginBottom: 14 }}>DCF no disponible (requiere EPS positivo)</p>
+        <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 12 }}>
+          {dcf?.unavailableReason ?? 'Datos insuficientes para calcular el valor intrínseco'}
+        </p>
       )}
 
       {/* Ratios */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 14 }}>
         {[
           { label: 'PER trailing', value: fmt(peTrailing, 1) },
           { label: 'PER forward',  value: fmt(peForward, 1)  },
@@ -336,7 +472,7 @@ function DCFSection({ dcf, peTrailing, peForward, evEbitda, isPremium }) {
   )
 
   return isPremium ? content : (
-    <PremiumGate label="Valoración DCF (Premium)" hint="Valor intrínseco, margen de seguridad y múltiplos de valoración.">
+    <PremiumGate label="Valoración (Premium)" hint="Valor intrínseco, margen de seguridad y múltiplos de valoración adaptados al sector.">
       {content}
     </PremiumGate>
   )
