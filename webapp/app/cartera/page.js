@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/PublicNav'
+import CarteraNav from '@/components/cartera/CarteraNav'
 import PortfolioPage from '@/components/cartera/PortfolioPage'
 
 const ADMIN_EMAIL = 'vayaebookk@gmail.com'
@@ -33,6 +34,7 @@ export default async function CarteraPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>
       <PublicNav active="/cartera" />
+      <CarteraNav />
       <PortfolioPage isPremium={plan === 'premium'} />
     </div>
   )
