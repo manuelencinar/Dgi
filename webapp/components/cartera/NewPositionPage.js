@@ -65,28 +65,31 @@ export default function NewPositionPage() {
     if (!user) { setError('Sesión expirada'); setSaving(false); return }
 
     // Insert transaction
-    await sb.from('transactions').insert({
+    const { error: txErr } = await sb.from('transactions').insert({
       user_id: user.id, ticker: selected.ticker,
       type: form.type, shares, price, date: form.date, notes: form.notes || null,
     })
+    if (txErr) { setError('Error al guardar transacción: ' + txErr.message); setSaving(false); return }
 
     // Update or insert position
-    const { data: existing } = await sb
+    const { data: existing, error: selErr } = await sb
       .from('positions').select('*').eq('user_id', user.id).eq('ticker', selected.ticker).maybeSingle()
+    if (selErr) { setError('Error al leer posición: ' + selErr.message); setSaving(false); return }
 
     if (form.type === 'buy') {
       if (existing) {
         const newShares  = existing.shares + shares
         const newAvgCost = weightedAvgCost(existing.shares, existing.avg_cost, shares, price)
-        await sb.from('positions').update({ shares: newShares, avg_cost: newAvgCost, updated_at: new Date().toISOString() }).eq('id', existing.id)
+        const { error: updErr } = await sb.from('positions').update({ shares: newShares, avg_cost: newAvgCost, updated_at: new Date().toISOString() }).eq('id', existing.id)
+        if (updErr) { setError('Error al actualizar posición: ' + updErr.message); setSaving(false); return }
       } else {
-        await sb.from('positions').insert({
+        const { error: insErr } = await sb.from('positions').insert({
           user_id: user.id, ticker: selected.ticker,
           shares, avg_cost: price, currency: selected.currency,
         })
+        if (insErr) { setError('Error al crear posición: ' + insErr.message); setSaving(false); return }
       }
     } else {
-      // sell
       if (existing) {
         const remaining = existing.shares - shares
         if (remaining <= 0) {
