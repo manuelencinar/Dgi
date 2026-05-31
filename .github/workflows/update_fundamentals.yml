@@ -19,16 +19,16 @@ jobs:
         with:
           python-version: '3.11'
           cache: pip
-          cache-dependency-path: webapp/scripts/requirements.txt
+          cache-dependency-path: scripts/requirements.txt
 
       - name: Instalar dependencias
-        run: pip install -r webapp/scripts/requirements.txt
+        run: pip install -r scripts/requirements.txt
 
       - name: Ejecutar script
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python webapp/scripts/update_fundamentals.py
+        run: python scripts/update_fundamentals.py
 
       - name: Notificar fallo
         if: failure()

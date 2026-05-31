@@ -41,6 +41,9 @@ def load_env():
     for k in ("NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"):
         if k in os.environ:
             env[k] = os.environ[k]
+    # En CI (GitHub Actions) el secret se llama SUPABASE_URL
+    if "NEXT_PUBLIC_SUPABASE_URL" not in env and "SUPABASE_URL" in os.environ:
+        env["NEXT_PUBLIC_SUPABASE_URL"] = os.environ["SUPABASE_URL"]
     return env
 
 def get_supabase(env):
