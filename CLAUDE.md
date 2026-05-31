@@ -28,6 +28,35 @@ URL del repositorio: https://github.com/manuelencinar/Dgi
 - Página de cada mercado individual — empresas del índice con análisis DGI
 - Screener avanzado — filtros DGI transversales entre los 43 mercados
 - Página de detalle de cada empresa — gauge salud financiera, DCF, historial dividendos, estados financieros
+- Módulo de cartera completo (app/cartera/) — ver sección "Módulo de cartera"
+
+## Módulo de cartera (app/cartera/)
+Implementado en tres partes. Páginas:
+- `/cartera` — resumen, posiciones, concentración, diversificación, dividendos en riesgo, coste fiscal, Score DGI con benchmark, detector de empresas que encajan
+- `/cartera/nueva-posicion` — alta de operación (compra/venta) con recálculo de precio medio ponderado
+- `/cartera/proyeccion` — proyección de renta con CAGR real por empresa (3 escenarios) + análisis DRIP
+- `/cartera/calendario` — calendario de dividendos personal (vista calendario y lista)
+- `/cartera/simulador` — what-if: añadir posición, recorte de dividendo, reinversión DRIP, independencia financiera
+- `/cartera/historial` — operaciones, dividendos cobrados, yield on cost histórico (export CSV)
+- `/cartera/alertas` — alertas personalizadas configurables + toggles de email y resumen mensual
+
+Lógica en `lib/portfolio.js`, `lib/portfolio-calc.js`, `lib/dgi-score.js`, `lib/valuation.js`.
+Navegación entre secciones en `components/cartera/CarteraNav.js`.
+
+### Tablas Supabase del módulo de cartera
+- `positions` — posiciones del usuario (ticker, shares, avg_cost, currency)
+- `transactions` — historial de operaciones compra/venta
+- `dividends_received` — dividendos cobrados registrados por el usuario
+- Las tres con RLS por `auth.uid() = user_id`
+- Columnas añadidas a `user_settings`: `monthly_summary boolean`, `alert_config jsonb`, `alert_dismissed jsonb`
+  (SQL en `webapp/sql/cartera_parte3.sql` — ejecutar en Supabase)
+
+### Resumen mensual por email
+- API route: `app/api/resumen-mensual/route.js` (GET)
+- Cron job Vercel configurado en `webapp/vercel.json`: día 1 de cada mes a las 8:00 UTC
+- Envío vía Resend — PENDIENTE de configurar (RESEND_API_KEY, RESEND_FROM). Sin la key el endpoint calcula pero no envía.
+- Seguridad opcional del cron: env var CRON_SECRET (si se define, el endpoint la exige).
+- Resend también pendiente para los emails de alertas.
 
 ## Planes y precios
 - Gratuito: acceso permanente sin tarjeta con funciones básicas
