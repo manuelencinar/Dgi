@@ -7,6 +7,8 @@ const TABS = [
   { href: '/cartera/proyeccion', label: 'Proyección' },
   { href: '/cartera/calendario', label: 'Calendario' },
   { href: '/cartera/simulador',  label: 'Simulador'  },
+  { href: '/cartera/historial',  label: 'Historial'  },
+  { href: '/cartera/alertas',    label: 'Alertas'    },
 ]
 
 export default function CarteraNav() {
@@ -18,7 +20,7 @@ export default function CarteraNav() {
       borderBottom: '1px solid rgba(255,255,255,0.06)',
       padding: '0 16px',
     }}>
-      <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', gap: 2, height: 42, alignItems: 'center' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', gap: 2, height: 42, alignItems: 'center', overflowX: 'auto', scrollbarWidth: 'none' }}>
         {TABS.map(t => {
           const active = t.exact ? path === t.href : path.startsWith(t.href)
           return (
@@ -26,6 +28,7 @@ export default function CarteraNav() {
               fontSize: 13, fontWeight: active ? 700 : 500, padding: '5px 13px', borderRadius: 7,
               textDecoration: 'none', color: active ? '#818cf8' : '#4a5270',
               background: active ? 'rgba(99,102,241,0.12)' : 'transparent',
+              whiteSpace: 'nowrap', flexShrink: 0,
             }}>
               {t.label}
             </Link>
