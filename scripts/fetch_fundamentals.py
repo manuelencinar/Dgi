@@ -118,6 +118,18 @@ def is_fresh(sb, ticker: str, ttl_days: int) -> bool:
     except Exception:
         return False
 
+# ── Sanitize — elimina NaN e Infinity que JSON no admite ──────────────────
+
+def sanitize(obj):
+    import math
+    if isinstance(obj, float):
+        return None if (math.isnan(obj) or math.isinf(obj)) else obj
+    if isinstance(obj, dict):
+        return {k: sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize(v) for v in obj]
+    return obj
+
 # ── Upsert ─────────────────────────────────────────────────────────────────
 
 def upsert_company(sb, ticker: str, raw: dict, ttl_days: int, force: bool) -> bool:
@@ -125,11 +137,11 @@ def upsert_company(sb, ticker: str, raw: dict, ttl_days: int, force: bool) -> bo
         print(f"  [{ticker}] omitido (datos recientes)")
         return True
     try:
-        payload = {
+        payload = sanitize({
             **raw,  # todos los campos de funds.json
             "divHistory": enrich_div_history(raw.get("divHistory") or []),
             "syncedAt":   int(datetime.now(timezone.utc).timestamp() * 1000),
-        }
+        })
         sb.table("market_charts").upsert(
             {
                 "symbol":     ticker,

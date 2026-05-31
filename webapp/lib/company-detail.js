@@ -36,6 +36,76 @@ export async function getCompanyDetail(ticker) {
 // ── helpers ────────────────────────────────────────────────────────────────
 
 function n(v) { return v != null && !isNaN(v) ? parseFloat(v) : null }
+
+function findStmtRow(stmtData, ...keys) {
+  if (!stmtData) return null
+  for (const k of keys) { if (stmtData[k] != null) return stmtData[k] }
+  return null
+}
+
+// ── Detección de crecimiento vía adquisiciones ─────────────────────────────
+// Activa cuando ≥2 de: adquisiciones recurrentes, goodwill creció >30%,
+// goodwill >40% de activos, deuda neta creció con los ingresos.
+
+export function detectAcquisitions(data) {
+  if (!data) return null
+
+  const cfData = data.cashflow_annual?.data
+  const bsData = data.balance_sheet_annual?.data
+
+  if (!cfData && !bsData) return null
+
+  const conditions = []
+
+  // ── Goodwill como % de activos totales ─────────────────────────────────
+  const gwRow = findStmtRow(bsData,
+    'Fondo de Comercio', 'Goodwill',
+    'Fondo de Comercio e Intangibles', 'Goodwill And Other Intangible Assets')
+  const atRow = findStmtRow(bsData, 'Activos Totales', 'Total Assets')
+
+  let goodwillPct  = null
+  let goodwillGrow = null
+
+  if (gwRow?.length && atRow?.length) {
+    const gw = gwRow[0], at = atRow[0]
+    if (gw != null && at != null && at > 0) {
+      goodwillPct = (gw / at) * 100
+      if (goodwillPct > 40) conditions.push('goodwill_high')
+    }
+
+    // Crecimiento de goodwill en los últimos 4 años disponibles
+    const valid = gwRow.slice(0, 4).filter(v => v != null)
+    if (valid.length >= 2) {
+      const recent = valid[0], older = valid[valid.length - 1]
+      if (older > 0) {
+        goodwillGrow = ((recent / older) - 1) * 100
+        if (goodwillGrow > 30) conditions.push('goodwill_grew')
+      }
+    }
+  }
+
+  // ── Gasto en adquisiciones vs FCF ──────────────────────────────────────
+  const bizRow = findStmtRow(cfData,
+    'Adquisición de Negocios', 'Purchase Of Business',
+    'Compraventa Neta de Negocios', 'Net Business Purchase And Sale')
+  const fcfRow = findStmtRow(cfData,
+    'Flujo de Caja Libre', 'Free Cash Flow')
+
+  if (bizRow?.length && fcfRow?.length) {
+    const n = Math.min(bizRow.length, fcfRow.length, 4)
+    let heavyYears = 0
+    for (let i = 0; i < n; i++) {
+      const acq = bizRow[i], fcf = fcfRow[i]
+      if (acq != null && fcf != null && acq < 0 && fcf > 0 && Math.abs(acq) / fcf > 0.15) {
+        heavyYears++
+      }
+    }
+    if (heavyYears >= 2) conditions.push('acq_spending')
+  }
+
+  if (conditions.length < 2) return null
+  return { conditions, goodwillPct, goodwillGrow }
+}
 function weighted(items) {
   const total = items.reduce((s, i) => s + i.s * i.w, 0)
   const wt    = items.reduce((s, i) => s + i.w, 0)
@@ -103,7 +173,18 @@ export function computeHealthScore(data, type) {
     if (grM    != null) push(grM > 60 ? 90 : grM > 40 ? 75 : grM > 20 ? 55 : 22, 1)
   }
 
-  return items.length ? weighted(items) : null
+  if (!items.length) return null
+  let score = weighted(items)
+
+  // Penalización si goodwill > 50% de activos totales
+  const gwRow2 = findStmtRow(data.balance_sheet_annual?.data, 'Fondo de Comercio', 'Goodwill', 'Fondo de Comercio e Intangibles')
+  const atRow2 = findStmtRow(data.balance_sheet_annual?.data, 'Activos Totales', 'Total Assets')
+  if (gwRow2?.[0] != null && atRow2?.[0] != null && atRow2[0] > 0) {
+    const gwPct = (gwRow2[0] / atRow2[0]) * 100
+    if (gwPct > 50) score = Math.max(0, score - 5)
+  }
+
+  return score
 }
 
 // ── 2. MOAT — sistema de puntuación 0–100 ─────────────────────────────────
@@ -159,6 +240,10 @@ export function computeMoat(data, streak) {
     else if (fcfCagr >  0)   score += 6
     else if (fcfCagr < -5)   negative.push(`FCF cayendo (CAGR ${fcfCagr.toFixed(1)}%)`)
   }
+
+  // Crecimiento vía adquisiciones
+  const acq = detectAcquisitions(data)
+  if (acq) negative.push('Crecimiento basado en adquisiciones — verificar sostenibilidad orgánica')
 
   // Racha de dividendos (señal de estabilidad del negocio)
   if (streak >= 20) signals.push(`${streak} años consecutivos aumentando el dividendo`)
@@ -247,69 +332,9 @@ export function computeProjection(history, cagr) {
   }))
 }
 
-// ── 5. DGI SCORE ──────────────────────────────────────────────────────────
-// 4 dimensiones: dividendo (35%), calidad (30%), valoración (20%), momentum (15%)
+// ── 5. DGI SCORE — delegado a lib/dgi-score.js ────────────────────────────
 
-export function computeDGIScore(data, streak, cagr) {
-  if (!data) return null
-
-  const price   = n(data.current_price)
-  const dpsVal  = n(data.dps)
-  const yld     = price > 0 && dpsVal != null ? dpsVal / price : null
-  const payout  = data.payout_fcf != null ? n(data.payout_fcf) / 100
-                : data.payout_eps != null ? n(data.payout_eps) / 100 : null
-  const roe     = n(data.roe)
-  const opM     = n(data.operating_margin)
-  const pe      = n(data.pe_trailing) ?? n(data.pe_forward)
-  const fcfPos  = data.fcf_per_share != null ? data.fcf_per_share > 0 : null
-  const pb      = n(data.price_to_book)
-  const rg      = data.revenue_growth_yoy  != null ? n(data.revenue_growth_yoy)  / 100 : null
-  const eg      = data.earnings_growth_yoy != null ? n(data.earnings_growth_yoy) / 100 : null
-  const eps     = n(data.eps_trailing)
-  const roic    = n(data.roic)
-
-  // ── Dividendo (0–10) ──────────────────────────────────────────────────
-  let div = 0
-  if (yld    != null) div += yld >= 0.05 ? 3 : yld >= 0.035 ? 2.5 : yld >= 0.025 ? 2 : yld >= 0.015 ? 1 : 0
-  if (payout != null) div += payout < 0.40 ? 3 : payout < 0.60 ? 2 : payout < 0.75 ? 1 : 0
-  if (cagr   != null) div += cagr >= 0.12 ? 2.5 : cagr >= 0.07 ? 2 : cagr >= 0.03 ? 1 : 0
-  div += streak >= 25 ? 1.5 : streak >= 10 ? 1 : streak >= 5 ? 0.5 : 0
-  div  = Math.min(10, div)
-
-  // ── Calidad (0–10) ────────────────────────────────────────────────────
-  let cal = 0
-  if (roic   != null) cal += roic > 25 ? 3   : roic > 18 ? 2.5 : roic > 12 ? 1.5 : roic > 6 ? 0.5 : 0
-  if (opM    != null) cal += opM  > 25 ? 2.5 : opM  > 15 ? 2   : opM  > 8  ? 1   : opM  > 3  ? 0.5 : 0
-  if (fcfPos != null) cal += fcfPos ? 2 : 0
-  if (eps    != null) cal += eps > 0 ? 1.5 : 0
-  if (roe    != null) cal += roe > 20 ? 1 : roe > 12 ? 0.5 : 0
-  cal = Math.min(10, cal)
-
-  // ── Valoración (0–10) ─────────────────────────────────────────────────
-  let val = 0
-  if (pe  != null && pe > 0) val += pe < 12 ? 4 : pe < 17 ? 3 : pe < 22 ? 2 : pe < 30 ? 1 : 0
-  if (yld != null)            val += yld >= 0.05 ? 3 : yld >= 0.035 ? 2 : yld >= 0.02 ? 1 : 0
-  if (pb  != null && pb > 0) val += pb < 1.5 ? 3 : pb < 3 ? 2 : pb < 6 ? 1 : 0
-  val = Math.min(10, val)
-
-  // ── Momentum (0–10) ───────────────────────────────────────────────────
-  let mom = 0
-  if (rg != null) mom += rg > 0.12 ? 3 : rg > 0.06 ? 2 : rg > 0 ? 1 : 0
-  if (eg != null) mom += eg > 0.12 ? 3 : eg > 0.06 ? 2 : eg > 0 ? 1 : 0
-  mom += streak >= 25 ? 4 : streak >= 10 ? 2.5 : streak >= 5 ? 1 : 0
-  mom = Math.min(10, mom)
-
-  const total = parseFloat((div * 0.35 + cal * 0.30 + val * 0.20 + mom * 0.15).toFixed(1))
-  return {
-    total,
-    breakdown: [
-      { key: 'dividendo',  label: 'Dividendo',   score: Math.round(div * 10) / 10, max: 10, weight: '35%' },
-      { key: 'calidad',    label: 'Calidad',      score: Math.round(cal * 10) / 10, max: 10, weight: '30%' },
-      { key: 'valoracion', label: 'Valoración',   score: Math.round(val * 10) / 10, max: 10, weight: '20%' },
-      { key: 'momentum',   label: 'Momentum',     score: Math.round(mom * 10) / 10, max: 10, weight: '15%' },
-    ],
-  }
-}
+export { computeDGIScore } from '@/lib/dgi-score'
 
 // ── 6. INSIGHTS — 25+ señales green/yellow/red ────────────────────────────
 
@@ -424,6 +449,13 @@ export function buildInsights(data, streak, cagr, dcf) {
 
   if (fcfPos === false) add('mercado', 'negative', 'Flujo de caja libre negativo — el dividendo podría no estar cubierto por generación de caja.')
   if (fcfCagr != null && fcfCagr > 12) add('mercado', 'positive', `FCF creciendo al ${fcfCagr.toFixed(1)}% anual — la capacidad de generar caja se acelera.`)
+
+  // Crecimiento vía adquisiciones
+  const acq = detectAcquisitions(data)
+  if (acq) {
+    const gwStr = acq.goodwillPct != null ? ` El goodwill representa el ${acq.goodwillPct.toFixed(0)}% de los activos totales.` : ''
+    add('mercado', 'neutral', `El crecimiento de ingresos puede estar inflado por adquisiciones.${gwStr} Verificar sostenibilidad orgánica.`)
+  }
 
   if (rg != null)  {
     if      (rg < -8)   add('mercado', 'negative', `Ingresos cayendo (${rg.toFixed(1)}% interanual) — presión sobre los dividendos futuros.`)

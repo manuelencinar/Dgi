@@ -4,6 +4,7 @@ import PriceChart from '@/components/empresa/PriceChart'
 import HealthGauge from '@/components/empresa/HealthGauge'
 import DividendBars from '@/components/empresa/DividendBars'
 import FinancialTables from '@/components/empresa/FinancialTables'
+import KeyMetricsChart from '@/components/empresa/KeyMetricsChart'
 
 // ── helpers ───────────────────────────────────────────────────────────────
 
@@ -382,39 +383,103 @@ function InsightsSection({ insights, isPremium }) {
   )
 }
 
-// ── dgi score sidebar card ────────────────────────────────────────────────
+// ── dgi score card ────────────────────────────────────────────────────────
+
+function MetricRow({ m }) {
+  const barW = m.score != null ? `${(m.score / 10) * 100}%` : '0%'
+  const col  = scoreColor(m.score)
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+        <span style={{ fontSize: 11, color: m.available ? '#8090a8' : '#4a5270', flex: 1, minWidth: 0 }}>{m.name}</span>
+        {m.tooltip && (
+          <span
+            title={m.tooltip}
+            style={{ fontSize: 9, fontWeight: 700, color: '#4a5270', border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '50%', width: 14, height: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'help', flexShrink: 0 }}>?</span>
+        )}
+        <span style={{ fontSize: 11, color: '#4a5270', width: 36, textAlign: 'right', flexShrink: 0 }}>{m.value}</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: col, width: 22, textAlign: 'right', flexShrink: 0 }}>
+          {m.score != null ? m.score : '—'}
+        </span>
+      </div>
+      <div style={{ height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: barW, background: col, borderRadius: 2 }} />
+      </div>
+    </div>
+  )
+}
 
 function DGIScoreCard({ dgiScore, isPremium }) {
   if (!dgiScore) return null
 
   const content = (
     <Card>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
         <SectionTitle>Score DGI</SectionTitle>
-        <span style={{ fontSize: 32, fontWeight: 900, color: scoreColor(dgiScore.total), lineHeight: 1 }}>
-          {dgiScore.total}
+        <span style={{ fontSize: 36, fontWeight: 900, color: scoreColor(dgiScore.total), lineHeight: 1 }}>
+          {dgiScore.total ?? '—'}
         </span>
       </div>
-      <div style={{ display: 'grid', gap: 10 }}>
-        {dgiScore.breakdown.map(b => (
-          <div key={b.key}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 12, color: '#4a5270' }}>{b.label}</span>
-              <span style={{ fontSize: 12, color: '#c8d0e0', fontWeight: 600 }}>
-                {b.score.toFixed(1)}<span style={{ color: '#2e3a55' }}>/{b.max} ({b.weight})</span>
-              </span>
+      {!dgiScore.hasData && (
+        <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 12 }}>Datos insuficientes para calcular el score.</p>
+      )}
+
+      {/* Categories */}
+      <div style={{ display: 'grid', gap: 16 }}>
+        {dgiScore.categories?.map(cat => (
+          <div key={cat.key}>
+            {/* Category header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#c8d0e0' }}>{cat.name}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 10, color: '#4a5270' }}>{Math.round(cat.weight * 100)}%</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color: scoreColor(cat.score) }}>
+                  {cat.score?.toFixed(1) ?? '—'}
+                </span>
+              </div>
             </div>
-            <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${(b.score / b.max) * 100}%`, background: scoreColor(b.score), borderRadius: 2 }} />
+            {/* Category bar */}
+            <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden', marginBottom: 8 }}>
+              <div style={{ height: '100%', width: cat.score != null ? `${(cat.score/10)*100}%` : '0%', background: scoreColor(cat.score), borderRadius: 2 }} />
+            </div>
+            {/* Metrics */}
+            <div style={{ paddingLeft: 8, borderLeft: '2px solid rgba(255,255,255,0.04)' }}>
+              {cat.metrics?.filter(m => m.available).map(m => <MetricRow key={m.key} m={m} />)}
+              {cat.metrics?.filter(m => !m.available).length > 0 && (
+                <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 2 }}>
+                  {cat.metrics.filter(m => !m.available).length} métrica(s) sin datos — peso redistribuido
+                </p>
+              )}
             </div>
           </div>
         ))}
       </div>
+
+      {/* Penalties */}
+      {dgiScore.penalties?.length > 0 && (
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Penalizaciones</p>
+          {dgiScore.penalties.map((p, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#f87171', marginBottom: 4 }}>
+              <span>{p.reason}</span>
+              <span style={{ flexShrink: 0, marginLeft: 8 }}>−{p.amount.toFixed(1)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Methodology */}
+      {dgiScore.methodology && (
+        <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 12 }}>{dgiScore.methodology}</p>
+      )}
     </Card>
   )
 
   return isPremium ? content : (
-    <PremiumGate label="Score DGI (Premium)" hint="Nota 0–10 con desglose por dividendo, calidad, valoración y momentum.">
+    <PremiumGate label="Score DGI (Premium)" hint="Nota 0–10 con desglose completo por categoría y métrica, adaptado al sector.">
       {content}
     </PremiumGate>
   )
@@ -583,6 +648,7 @@ export default function CompanyDetailPage({
   health, moat, dcf, projection, dgiScore, insights,
   badges,
   buybacks,
+  revenueHistory, netIncomeHistory, fcfHistory, epsHistory,
   financials,
 }) {
   const isUp       = changePct != null ? changePct >= 0 : null
@@ -698,9 +764,19 @@ export default function CompanyDetailPage({
           {/* ── 8. INSIGHTS ── */}
           <InsightsSection insights={insights} isPremium={isPremium} />
 
-          {/* ── 9. ESTADOS FINANCIEROS ── */}
+          {/* ── MÉTRICAS HISTÓRICAS ── */}
           <Card>
-            <SectionTitle>Estados financieros</SectionTitle>
+            <SectionTitle>Evolución de métricas clave</SectionTitle>
+            <KeyMetricsChart
+              revenueHistory={revenueHistory}
+              netIncomeHistory={netIncomeHistory}
+              fcfHistory={fcfHistory}
+              epsHistory={epsHistory}
+            />
+          </Card>
+
+          {/* ── ESTADOS FINANCIEROS (acordeón) ── */}
+          <Card>
             <FinancialTables
               isPremium={isPremium}
               income_statement_annual={financials?.income_statement_annual}

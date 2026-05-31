@@ -90,7 +90,7 @@ export default async function EmpresaPage({ params }) {
   const moat       = computeMoat(detail, streak)
   const dcf        = computeDCF(detail, moat?.width ?? 'none')
   const projection = computeProjection(divHistory, cagr)
-  const dgiScore   = computeDGIScore(detail, streak, cagr)
+  const dgiScore   = computeDGIScore(detail, streak, cagr, dcf, type)
   const insights   = buildInsights(detail, streak, cagr, dcf)
   const badges     = computeBadges(detail, streak, cagr, moat)
   const buybacks   = computeBuybacks(detail)
@@ -133,6 +133,10 @@ export default async function EmpresaPage({ params }) {
         insights={insights}
         badges={badges}
         buybacks={buybacks}
+        revenueHistory={detail?.revenue_history    ?? null}
+        netIncomeHistory={detail?.net_income_history ?? null}
+        fcfHistory={detail?.fcf_history            ?? null}
+        epsHistory={detail?.eps_history            ?? null}
         financials={{
           income_statement_annual:    detail?.income_statement_annual    ?? null,
           balance_sheet_annual:       detail?.balance_sheet_annual       ?? null,

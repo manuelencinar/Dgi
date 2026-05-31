@@ -1,4 +1,4 @@
-import { getChartData } from '@/lib/market-charts'
+import { getCompanyChartData } from '@/lib/company-chart'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +13,7 @@ export async function GET(request, { params }) {
   }
 
   try {
-    const data = await getChartData(decodeURIComponent(ticker), range)
+    const data = await getCompanyChartData(decodeURIComponent(ticker), range)
     return Response.json(data)
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 })
