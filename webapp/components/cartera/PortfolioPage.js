@@ -8,6 +8,8 @@ import {
   enrichPositions, calcSummary, calcConcentration, calcAlerts,
   calcDiversificationScore, calcDividendRisks, calcFiscal,
 } from '@/lib/portfolio'
+import PortfolioDGIScore from '@/components/cartera/PortfolioDGIScore'
+import CompanyDetector from '@/components/cartera/CompanyDetector'
 
 // ── Design tokens ──────────────────────────────────────────────────────────
 const CARD   = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
@@ -516,6 +518,12 @@ export default function PortfolioPage({ isPremium }) {
 
       {/* Section 1: Summary */}
       {enriched.length > 0 && <SummarySection summary={summary} />}
+
+      {/* Module 1: Score DGI de la cartera con benchmark */}
+      {enriched.length > 0 && <PortfolioDGIScore enriched={enriched} isPremium={isPremium} />}
+
+      {/* Module 2: Detector de empresas que encajan */}
+      {enriched.length > 0 && <CompanyDetector enriched={enriched} isPremium={isPremium} />}
 
       {/* Section 2: Positions */}
       <PositionsTable

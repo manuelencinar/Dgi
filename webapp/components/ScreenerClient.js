@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { getCountry } from '@/lib/helpers'
 
@@ -190,6 +190,22 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
   const [sort,    setSort]    = useState({ col: 'sc', dir: 'desc' })
   const [page,    setPage]    = useState(1)
   const [search,  setSearch]  = useState('')
+  const [carteraBanner, setCarteraBanner] = useState(null)
+
+  // Preconfigurar filtros desde URL (detector de empresas de la cartera)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const p = new URLSearchParams(window.location.search)
+    if (![...p.keys()].length) return
+    const next = {}
+    if (p.get('yield'))  next.yield  = parseFloat(p.get('yield'))  || 0
+    if (p.get('zona'))   next.zona   = p.get('zona')
+    if (p.get('sector')) next.sector = p.get('sector')
+    if (p.get('score'))  next.score  = parseFloat(p.get('score'))  || 0
+    if (p.get('cagr'))   next.cagr   = parseFloat(p.get('cagr'))   || 0
+    if (Object.keys(next).length) setFilters(f => ({ ...f, ...next }))
+    if (p.get('from') === 'cartera') setCarteraBanner(p.get('hueco') || 'tu cartera')
+  }, [])
 
   const set = useCallback((key, val) => {
     setFilters(f => ({ ...f, [key]: val }))
@@ -246,6 +262,22 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
           {withData > 0 && <> · <span style={{ color: '#4a5270' }}>{withData.toLocaleString('es-ES')} con datos fundamentales</span></>}
         </p>
       </div>
+
+      {/* Banner cartera */}
+      {carteraBanner && (
+        <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <p style={{ fontSize: 13, color: '#c8d0e0' }}>
+            <span style={{ fontWeight: 700, color: '#818cf8' }}>Resultados personalizados para tu cartera</span>
+            {' '}— buscando {carteraBanner}
+          </p>
+          <button
+            onClick={() => { setFilters(INIT_FILTERS); setSearch(''); setPage(1); setCarteraBanner(null) }}
+            style={{ fontSize: 11, color: '#4a5270', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline', flexShrink: 0 }}
+          >
+            Quitar filtro de cartera
+          </button>
+        </div>
+      )}
 
       {/* Buscador */}
       <div style={{ position: 'relative', marginBottom: 16 }}>
