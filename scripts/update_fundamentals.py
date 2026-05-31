@@ -284,6 +284,187 @@ def cagr_from_df(df, row_names, years=5):
     except Exception:
         return None
 
+# ── Valoración (misma lógica corregida que lib/valuation.js) ──────────────
+
+def _series(df, names, n=5):
+    import pandas as pd
+    for nm in names:
+        if nm in df.index:
+            return [None if pd.isna(v) else float(v) for v in df.loc[nm].iloc[:n]]
+    return []
+
+def _first(df, names):
+    vals = _series(df, names, 1)
+    return vals[0] if vals else None
+
+def _revenue_declining_3y(income):
+    rev = _series(income, ["Total Revenue", "Total Revenues"], 5)
+    if len([v for v in rev if v is not None]) < 4:
+        return False
+    declines = 0
+    for i in range(3):
+        if rev[i] is not None and rev[i + 1] is not None and rev[i] < rev[i + 1]:
+            declines += 1
+        else:
+            break
+    return declines >= 3
+
+def _business_growth(rev_cagr5, fcf_cagr5, revenue_only=False):
+    # Corrección 1 — nunca usa div_cagr5
+    if revenue_only:
+        return (rev_cagr5, "revenue_cagr5") if rev_cagr5 is not None else (0.0, "cero_por_declive")
+    if rev_cagr5 is not None and fcf_cagr5 is not None:
+        return (rev_cagr5 + fcf_cagr5) / 2, "media_fcf_revenue"
+    if fcf_cagr5 is not None:
+        return fcf_cagr5, "fcf_cagr5"
+    if rev_cagr5 is not None:
+        return rev_cagr5, "revenue_cagr5"
+    return 0.0, "cero_por_declive"
+
+def _run_dcf(base, g1, g2, gT, r):
+    total, cf = 0.0, base
+    for i in range(1, 6):
+        cf *= (1 + g1); total += cf / ((1 + r) ** i)
+    for i in range(1, 6):
+        cf *= (1 + g2); total += cf / ((1 + r) ** (5 + i))
+    if r > gT:
+        total += cf * (1 + gT) / (r - gT) / ((1 + r) ** 10)
+    return total
+
+def _reit_multiple(industry):
+    i = (industry or "").lower()
+    if "office" in i: return 14
+    if "retail" in i or "commercial" in i or "shopping" in i: return 13
+    if "residential" in i or "apartment" in i: return 18
+    if "industrial" in i or "logistic" in i or "warehouse" in i: return 20
+    if "healthcare" in i or "medical" in i: return 16
+    return 15
+
+def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_cagr5,
+                      div_cagr5, dps, sector, industry, roic, streak, currency):
+    """Devuelve (intrinsic_value, valuation_warning, growth_input_used)."""
+    s = (sector or "").lower()
+    i = (industry or "").lower()
+    if "bank" in i or "savings" in i:                      st = "bank"
+    elif "insur" in i:                                     st = "insurer"
+    elif "reit" in i or "real estate investment" in i:     st = "reit"
+    elif s == "utilities":                                 st = "utilities"
+    elif s in ("energy", "basic materials"):               st = "energy"
+    elif "drug" in i or "biotech" in i or "pharma" in i or (s == "healthcare" and "plan" not in i):
+        st = "pharma"
+    else:                                                  st = "general"
+
+    moat = "none"
+    if roic is not None and streak is not None:
+        if roic > 25 and streak >= 20:   moat = "wide"
+        elif roic > 15 and streak >= 10: moat = "narrow"
+
+    eur = currency == "EUR"
+
+    # Aviso de coherencia dividendo vs negocio (Corrección 1 paso 4)
+    warning = None
+    if div_cagr5 is not None and rev_cagr5 is not None and (div_cagr5 - rev_cagr5) > 5:
+        warning = ("El dividendo crece más rápido que el negocio — refleja expansión del "
+                   "payout, no crecimiento real de la empresa.")
+        if rev_cagr5 < 0:
+            warning += " Empresa con ingresos en declive — valoración conservadora aplicada."
+
+    # ── DDM (bancos, aseguradoras) ────────────────────────────────────────
+    if st in ("bank", "insurer"):
+        if not dps or dps <= 0:
+            return None, warning, "div_cagr5"
+        g  = max(0.0, min((div_cagr5 / 100 if div_cagr5 is not None else 0.03), 0.15))
+        ke = (0.09 if eur else 0.10) if st == "bank" else (0.08 if eur else 0.09)
+        gT = 0.02 if eur else 0.025
+        if ke <= gT:
+            return None, warning, "div_cagr5"
+        value, div = 0.0, dps
+        for k in range(1, 6):
+            div *= (1 + g); value += div / ((1 + ke) ** k)
+        value += div * (1 + gT) / (ke - gT) / ((1 + ke) ** 5)
+        return safe2(value), warning, "div_cagr5"
+
+    # ── AFFO (REITs) ──────────────────────────────────────────────────────
+    if st == "reit":
+        ocf = _first(cashflow, ["Operating Cash Flow", "Total Cash From Operating Activities",
+                                "Cash Flow From Continuing Operating Activities"])
+        if not ocf or ocf <= 0 or not shares:
+            return None, warning, None
+        mult = _reit_multiple(industry)
+        if moat == "wide":   mult = round(mult * 1.1, 1)
+        elif moat == "none": mult = round(mult * 0.9, 1)
+        return safe2(ocf / shares * mult), warning, None
+
+    # ── DCF (general, utilities, energy, pharma) ──────────────────────────
+    revenue_only = st in ("utilities", "energy")
+    base = None
+
+    if st == "utilities":
+        base = _first(cashflow, ["Operating Cash Flow", "Total Cash From Operating Activities",
+                                 "Cash Flow From Continuing Operating Activities"])
+        if not base or base <= 0:
+            return None, warning, None
+        cap, gT = 0.08, 0.02
+        disc = 0.06 if moat == "wide" else 0.075 if moat == "narrow" else 0.09
+    elif st == "energy":
+        vals = [v for v in _series(cashflow, ["Free Cash Flow"], 4) if v is not None]
+        if len(vals) < 2:
+            return None, warning, None
+        base = sum(vals) / len(vals)
+        if base <= 0:
+            return None, warning, None
+        cap, gT = 0.10, 0.02
+        disc = 0.10 if moat == "wide" else 0.12 if moat == "narrow" else 0.14
+    else:
+        # general / pharma — FCF base con fallback a media 4 años (Corrección 4)
+        vals   = _series(cashflow, ["Free Cash Flow"], 4)
+        nonnan = [v for v in vals if v is not None]
+        recent = vals[0] if vals else None
+        if recent is not None and recent > 0:
+            base = recent
+        elif nonnan and sum(nonnan) / len(nonnan) > 0:
+            base = sum(nonnan) / len(nonnan)
+        else:
+            return None, warning, None
+        gT = 0.025 if eur else 0.030
+        if st == "pharma":
+            cap  = 0.15
+            disc = 0.10 if moat == "wide" else 0.12 if moat == "narrow" else 0.14
+            gw = _first(balance, ["Goodwill"]); at = _first(balance, ["Total Assets"])
+            if gw and at and at > 0 and gw / at > 0.50:
+                base *= 0.90
+            rd = _first(income, ["Research And Development"]); rv = _first(income, ["Total Revenue"])
+            if rd and rv and rv > 0 and abs(rd) / rv > 0.20:
+                disc -= 0.01
+        else:
+            cap  = 0.20
+            disc = 0.08 if moat == "wide" else 0.10 if moat == "narrow" else 0.12
+
+    if not shares:
+        return None, warning, None
+
+    gpct, src = _business_growth(rev_cagr5, fcf_cagr5, revenue_only)
+    # Corrección 3 — límites
+    g1 = max(-0.15, min(gpct / 100, cap))
+    if g1 >= 0:        g2 = g1 / 2
+    elif g1 < -0.10:   g2 = -0.05
+    else:              g2 = g1 / 2
+
+    # Corrección 2 — penalización por declive
+    r = disc
+    if rev_cagr5 is not None and rev_cagr5 < 0 and fcf_cagr5 is not None and fcf_cagr5 < 0:
+        r += 0.03
+    elif rev_cagr5 is not None and rev_cagr5 < 0:
+        r += 0.02
+
+    used = src
+    if _revenue_declining_3y(income):
+        gT = 0.0
+        used = "cero_por_declive"
+
+    iv = _run_dcf(base, g1, g2, gT, r) / shares
+    return safe2(iv), warning, used
+
 # ── Fetch ─────────────────────────────────────────────────────────────────
 
 def fetch_ticker(sym):
@@ -419,6 +600,16 @@ def fetch_ticker(sym):
         fcf_history = build_history(cashflow, ["Free Cash Flow"])
         eps_history = build_history(income,   ["Basic EPS", "Diluted EPS"])
 
+        # ── Valoración (intrinsic value precalculado) ─────────────────────
+        intrinsic_value = valuation_warning = growth_input_used = None
+        try:
+            intrinsic_value, valuation_warning, growth_input_used = compute_valuation(
+                income, balance, cashflow, shares, price, rev_cagr5, fcf_cagr5,
+                div_cagr5, dps, info.get("sector"), info.get("industry"),
+                roic, div_streak, info.get("currency"))
+        except Exception:
+            pass
+
         # ── Estados financieros ───────────────────────────────────────────
         return sanitize({
             "ticker":           sym,
@@ -461,6 +652,9 @@ def fetch_ticker(sym):
             "net_income_history":    ni_history,
             "fcf_history":           fcf_history,
             "eps_history":           eps_history,
+            "intrinsic_value":       intrinsic_value,
+            "valuation_warning":     valuation_warning,
+            "growth_input_used":     growth_input_used,
             "income_statement_annual":    df_to_stmt(income, 4),
             "balance_sheet_annual":       df_to_stmt(balance, 4),
             "cashflow_annual":            df_to_stmt(cashflow, 4),
