@@ -26,6 +26,30 @@ export async function proxy(request) {
   const { pathname } = request.nextUrl
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register')
   const isAppPage = pathname.startsWith('/app')
+  const isDashboard = pathname.startsWith('/dashboard')
+
+  // Panel de administración — solo admin, redirección silenciosa
+  if (isDashboard) {
+    if (!user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+    let isAdmin = user.email === 'vayaebookk@gmail.com'
+    if (!isAdmin) {
+      const { data } = await supabase
+        .from('user_settings')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      isAdmin = data?.role === 'admin'
+    }
+    if (!isAdmin) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
+  }
 
   if (!user && isAppPage) {
     const url = request.nextUrl.clone()

@@ -688,6 +688,27 @@ def is_fresh(sb, ticker, ttl_days):
 
 # ── Upsert ────────────────────────────────────────────────────────────────
 
+def write_admin_log(sb, ok, err, skip, failed_tickers, duration_s):
+    """Registra el resultado del run en admin_logs."""
+    try:
+        status = "error" if err > 0 else "ok"
+        mins = int(duration_s // 60)
+        secs = int(duration_s % 60)
+        sb.table("admin_logs").insert({
+            "event_type": "yfinance_run",
+            "description": f"{ok} actualizadas · {skip} omitidas · {err} errores",
+            "details": {
+                "updated": ok,
+                "skipped": skip,
+                "failed": err,
+                "failed_tickers": failed_tickers[:100],
+                "duration": f"{mins}m {secs}s",
+            },
+            "status": status,
+        }).execute()
+    except Exception as exc:
+        print(f"  (no se pudo escribir admin_logs: {exc})")
+
 def upsert_company(sb, ticker, ttl_days, force):
     if not force and is_fresh(sb, ticker, ttl_days):
         print(f"  [{ticker}] omitido (datos recientes)")
@@ -729,20 +750,27 @@ def main():
 
     print(f"\nProcesando {len(tickers)} tickers (TTL={args.ttl}d, force={args.force})…\n")
 
+    start = time.time()
     ok = err = skip = 0
+    failed_tickers = []
     for i, ticker in enumerate(tickers, 1):
         print(f"[{i}/{len(tickers)}]", end=" ")
         r = upsert_company(sb, ticker, args.ttl, args.force)
         if r == "ok":     ok += 1
         elif r == "skip": skip += 1
-        else:             err += 1
+        else:             err += 1; failed_tickers.append(ticker)
 
         if i % BATCH_SIZE == 0:
             print(f"\n  --- Pausa {BATCH_DELAY}s (lote {i // BATCH_SIZE}) ---\n")
             time.sleep(BATCH_DELAY)
 
+    duration = time.time() - start
     print(f"\n{'─'*40}")
     print(f"Finalizado: {ok} OK  ·  {skip} omitidos  ·  {err} errores")
+
+    # Registrar en admin_logs (solo en runs completos, no por ticker individual)
+    if not args.ticker:
+        write_admin_log(sb, ok, err, skip, failed_tickers, duration)
 
 if __name__ == "__main__":
     main()
