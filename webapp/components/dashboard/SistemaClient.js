@@ -36,6 +36,15 @@ export default function SistemaClient({ pingMs, pingOk, lastRun, logs, nextRun }
     } catch (e) { setActionMsg(`✗ ${e}`) } finally { setBusy(false) }
   }
 
+  const triggerPrices = async () => {
+    setBusy(true); setActionMsg('Disparando actualización de precios…')
+    try {
+      const res = await fetch('/api/admin/trigger-prices', { method: 'POST' })
+      const data = await res.json()
+      setActionMsg(res.ok ? '✓ Actualización de precios disparada en GitHub' : `✗ ${data.error}`)
+    } catch (e) { setActionMsg(`✗ ${e}`) } finally { setBusy(false) }
+  }
+
   const cleanLogs = async () => {
     setBusy(true); setActionMsg('Limpiando logs antiguos…')
     try {
@@ -86,6 +95,7 @@ export default function SistemaClient({ pingMs, pingOk, lastRun, logs, nextRun }
         <SectionTitle>Acciones manuales</SectionTitle>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={trigger} disabled={busy} style={btn('#6366f1')}>Lanzar script yfinance ahora</button>
+          <button onClick={triggerPrices} disabled={busy} style={btn('#34d399', '#062b1f')}>Actualizar precios ahora</button>
           <button onClick={cleanLogs} disabled={busy} style={btn('transparent', '#8090a8')}>Limpiar logs &gt;90 días</button>
           <button onClick={exportLogs} style={btn('transparent', '#8090a8')}>Exportar logs CSV</button>
         </div>
