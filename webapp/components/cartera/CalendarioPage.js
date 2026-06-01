@@ -9,6 +9,9 @@ import { buildCalendar } from '@/lib/portfolio-calc'
 
 const CARD    = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
 const MONTHS  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+const TYPE_DOT = { stock: '#34d399', etf: '#60a5fa', fund: '#a78bfa' }
+const Dot = ({ type }) => <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: TYPE_DOT[type] || '#34d399', marginRight: 6, flexShrink: 0 }} />
+const hrefFor = e => e.type && e.type !== 'stock' ? `/fondo/${encodeURIComponent(e.ticker)}` : `/empresa/${encodeURIComponent(e.ticker)}`
 const TT_STYLE= { background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }
 
 function fmtEUR(v) {
@@ -39,14 +42,15 @@ export default function CalendarioPage({ isPremium }) {
     const { data: positions } = await sb.from('positions').select('*').eq('user_id', user.id)
     if (!positions?.length) { setEnriched([]); setLoading(false); return }
 
-    const tickers = [...new Set(positions.map(p => p.ticker))]
-    const { data: funds } = await sb
-      .from('company_fundamentals')
-      .select('ticker,current_price,dps,div_cagr5,sector,industry,country')
-      .in('ticker', tickers)
-
+    const stockTickers = [...new Set(positions.filter(p => (p.asset_type || 'stock') === 'stock').map(p => p.ticker))]
+    const fundTickers  = [...new Set(positions.filter(p => (p.asset_type || 'stock') !== 'stock').map(p => p.ticker))]
+    const [{ data: funds }, { data: fundsData }] = await Promise.all([
+      stockTickers.length ? sb.from('company_fundamentals').select('ticker,current_price,dps,div_cagr5,sector,industry,country').in('ticker', stockTickers) : Promise.resolve({ data: [] }),
+      fundTickers.length ? sb.from('funds').select('*').in('ticker', fundTickers) : Promise.resolve({ data: [] }),
+    ])
     const fundMap = Object.fromEntries((funds || []).map(f => [f.ticker, f]))
-    setEnriched(enrichPositions(positions, fundMap))
+    const fundsMap = Object.fromEntries((fundsData || []).map(f => [f.ticker, f]))
+    setEnriched(enrichPositions(positions, fundMap, fundsMap))
     setLoading(false)
   }
 
@@ -154,8 +158,8 @@ export default function CalendarioPage({ isPremium }) {
                 {expanded === i && isPremium && m.entries.length > 0 && (
                   <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                     {m.entries.map((e, j) => (
-                      <div key={j} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#8090a8', marginBottom: 3 }}>
-                        <span>{e.name}</span>
+                      <div key={j} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, color: '#8090a8', marginBottom: 3 }}>
+                        <span style={{ display: 'flex', alignItems: 'center' }}><Dot type={e.type} />{e.name}</span>
                         <span style={{ color: '#34d399' }}>{fmtEUR(e.amount)}</span>
                       </div>
                     ))}
@@ -198,7 +202,7 @@ export default function CalendarioPage({ isPremium }) {
                         <span style={{ marginLeft: 4, fontSize: 9, color: '#2e3a55' }}>est.</span>
                       </td>
                       <td style={{ padding: '7px 8px' }}>
-                        <Link href={`/empresa/${encodeURIComponent(e.ticker)}`} style={{ color: '#c8d0e0', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>{e.name}</Link>
+                        <Link href={hrefFor(e)} style={{ color: '#c8d0e0', textDecoration: 'none', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center' }}><Dot type={e.type} />{e.name}</Link>
                       </td>
                       <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 700 }}>{fmtEUR(e.amount)}</td>
                     </tr>

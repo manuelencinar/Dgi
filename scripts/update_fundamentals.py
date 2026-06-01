@@ -15,7 +15,7 @@ import os
 import re
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 # ── Rutas ─────────────────────────────────────────────────────────────────
@@ -758,6 +758,70 @@ def is_fresh(sb, ticker, ttl_days):
 
 # ── Upsert ────────────────────────────────────────────────────────────────
 
+def update_funds(sb):
+    """Actualiza precio y distribuciones de los ETFs/fondos de la tabla funds."""
+    try:
+        rows = (sb.table("funds").select("ticker").execute()).data or []
+    except Exception as exc:
+        print(f"  funds: no se pudieron leer ({exc})")
+        return 0, 0
+    if not rows:
+        return 0, 0
+
+    import yfinance as yf
+    ok = err = 0
+    failed = []
+    print(f"\n── Actualizando {len(rows)} ETFs/fondos ──")
+    for r in rows:
+        tk = r["ticker"]
+        try:
+            t = yf.Ticker(tk)
+            info = t.info or {}
+            price = safe(info.get("regularMarketPrice") or info.get("currentPrice"))
+            divs = t.dividends
+            dist = []
+            if divs is not None and len(divs):
+                for dt, amt in divs.items():
+                    dist.append({"date": dt.strftime("%Y-%m-%d"), "amount": float(amt)})
+
+            ytm = None
+            if price and dist:
+                cutoff = datetime.now() - timedelta(days=365)
+                ttm = sum(d["amount"] for d in dist if datetime.strptime(d["date"], "%Y-%m-%d") >= cutoff)
+                if ttm > 0:
+                    ytm = round(ttm / price * 100, 1)
+
+            ter = info.get("annualReportExpenseRatio")
+            ter = round(float(ter) * 100, 3) if ter else None
+
+            if price is None:
+                err += 1; failed.append(tk); print(f"  [{tk}] sin precio")
+                continue
+
+            upd = {"current_price": price, "updated_at": datetime.now(timezone.utc).isoformat()}
+            if ytm is not None:  upd["yield_ttm"] = ytm
+            if dist:             upd["distribution_history"] = dist
+            if ter is not None:  upd["ter"] = ter
+
+            sb.table("funds").update(sanitize(upd)).eq("ticker", tk).execute()
+            ok += 1
+            print(f"  [{tk}] OK precio={price} yield={ytm}")
+        except Exception as exc:
+            err += 1; failed.append(tk)
+            print(f"  [{tk}] ERROR: {exc}")
+        time.sleep(PER_TICKER_DELAY)
+
+    try:
+        sb.table("admin_logs").insert({
+            "event_type": "funds_update",
+            "description": f"ETFs/fondos: {ok} OK · {err} errores",
+            "details": {"ok": ok, "failed": err, "failed_tickers": failed[:50]},
+            "status": "error" if err > 0 else "ok",
+        }).execute()
+    except Exception:
+        pass
+    return ok, err
+
 def write_admin_log(sb, ok, err, skip, failed_tickers, duration_s):
     """Registra el resultado del run en admin_logs."""
     try:
@@ -842,8 +906,13 @@ def main():
     print(f"\n{'─'*40}")
     print(f"Finalizado: {ok} OK  ·  {skip} omitidos  ·  {err} errores")
 
-    # Registrar en admin_logs (solo en runs completos, no por ticker individual)
+    # Actualizar ETFs/fondos y registrar en admin_logs (solo en runs completos)
     if not args.ticker:
+        try:
+            fok, ferr = update_funds(sb)
+            print(f"\nETFs/fondos: {fok} OK · {ferr} errores")
+        except Exception as exc:
+            print(f"  update_funds error: {exc}")
         write_admin_log(sb, ok, err, skip, failed_tickers, duration)
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 const LINKS = [
   { href: '/mercados', label: 'Mercados' },
   { href: '/screener', label: 'Screener' },
+  { href: '/etfs',     label: 'ETFs' },
   { href: '/cartera',  label: 'Cartera' },
 ]
 

@@ -174,17 +174,32 @@ function inferPayMonths(pos) {
   return [5]
 }
 
+// Frecuencia de distribución de un fondo inferida del historial (últimos 12 meses)
+function inferFundMonths(pos) {
+  const hist = pos.distributionHistory || []
+  const cutoff = Date.now() - 365 * 24 * 3600 * 1000
+  const n = hist.filter(d => d.date && new Date(d.date).getTime() >= cutoff).length
+  if (n >= 11) return [1,2,3,4,5,6,7,8,9,10,11,12]  // mensual
+  if (n >= 3)  return [3,6,9,12]                      // trimestral
+  if (n === 2) return [6,12]                          // semestral
+  if (n === 1) return [12]                            // anual
+  return null                                         // historial insuficiente → fecha desconocida
+}
+
 export function buildCalendar(enriched) {
   const months = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, entries: [], total: 0 }))
   const upcoming = []
 
   enriched.forEach(pos => {
     if (!pos.annualIncomeEUR || pos.annualIncomeEUR <= 0) return
-    const payMonths = inferPayMonths(pos)
+    const isFund = pos.isFund
+    const payMonths = isFund ? inferFundMonths(pos) : inferPayMonths(pos)
+    if (!payMonths) return  // fondo sin historial suficiente
     const amountPer = pos.annualIncomeEUR / payMonths.length
+    const kind = pos.assetType || 'stock'
 
     payMonths.forEach(m => {
-      const entry = { ticker: pos.ticker, name: pos.name, amount: Math.round(amountPer * 100) / 100 }
+      const entry = { ticker: pos.ticker, name: pos.name, amount: Math.round(amountPer * 100) / 100, type: kind }
       months[m - 1].entries.push(entry)
       months[m - 1].total += amountPer
 

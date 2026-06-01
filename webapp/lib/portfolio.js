@@ -41,8 +41,48 @@ const ES_RATE = 0.19
 
 // ── Enrich positions ──────────────────────────────────────────────────────
 
-export function enrichPositions(rawPositions, fundamentalsMap) {
+// Distribución anual de un fondo (yield_ttm × precio, o suma últimos 12 meses)
+function fundAnnualDist(fund) {
+  if (fund.yield_ttm != null && fund.current_price != null) return fund.yield_ttm / 100 * fund.current_price
+  const hist = Array.isArray(fund.distribution_history) ? fund.distribution_history : []
+  const cutoff = Date.now() - 365 * 24 * 3600 * 1000
+  const ttm = hist.filter(d => d.date && new Date(d.date).getTime() >= cutoff).reduce((s, d) => s + (d.amount || 0), 0)
+  return ttm || 0
+}
+
+export function enrichPositions(rawPositions, fundamentalsMap, fundsMap = {}) {
   return rawPositions.map(pos => {
+    const assetType = pos.asset_type || 'stock'
+
+    // ── ETF / Fondo ──────────────────────────────────────────────────────
+    if (assetType !== 'stock') {
+      const f = fundsMap[pos.ticker] || {}
+      const currency     = pos.currency || f.currency || 'USD'
+      const currentPrice = f.current_price ?? null
+      const annualDist   = fundAnnualDist(f)
+      const valueEUR     = currentPrice != null ? toEUR(currentPrice * pos.shares, currency) : null
+      const costEUR      = toEUR(pos.avg_cost * pos.shares, currency)
+      const gainEUR      = valueEUR != null ? valueEUR - costEUR : null
+      const gainPct      = costEUR > 0 && gainEUR != null ? gainEUR / costEUR * 100 : null
+      const annualIncomeEUR = toEUR(annualDist * pos.shares, currency)
+      const yieldOnCost  = pos.avg_cost > 0 ? annualDist / pos.avg_cost * 100 : null
+      const currentYield = currentPrice ? annualDist / currentPrice * 100 : null
+      return {
+        ...pos, assetType,
+        name: f.name || pos.ticker, countryCode: f.country ?? null,
+        sector: 'ETFs y Fondos', currency, zone: codeToZone(f.country), type: 'fund',
+        currentPrice, dps: annualDist,
+        valueEUR, costEUR, gainEUR, gainPct,
+        annualIncomeEUR, yieldOnCost, currentYield,
+        ter: f.ter ?? null,
+        distributionHistory: Array.isArray(f.distribution_history) ? f.distribution_history : [],
+        companyCountry: f.country ?? null,
+        payoutFCF: null, debtEbitda: null, interestCoverage: null, fcfCagr5: null,
+        isFund: true,
+      }
+    }
+
+    // ── Acción ───────────────────────────────────────────────────────────
     const fund = fundamentalsMap[pos.ticker] || {}
     const dictEntry = DICT.find(d => d[1] === pos.ticker)
     const name        = dictEntry?.[0] ?? pos.ticker
@@ -65,11 +105,12 @@ export function enrichPositions(rawPositions, fundamentalsMap) {
     const zone          = codeToZone(countryCode)
 
     return {
-      ...pos,
+      ...pos, assetType: 'stock',
       name, countryCode, sector, currency, zone, type,
       currentPrice, dps,
       valueEUR, costEUR, gainEUR, gainPct,
       annualIncomeEUR, yieldOnCost, currentYield,
+      isFund: false,
       companyCountry: fund.country ?? null,
       payoutFCF:          fund.payout_fcf         ?? null,
       debtEbitda:         fund.debt_ebitda         ?? null,
@@ -136,6 +177,12 @@ export function calcAlerts(enriched, concentration) {
   concentration.byCurrency.forEach(c => {
     if (c.value > 60) alerts.push(`Exposición elevada a ${c.name} — representa el ${c.value.toFixed(0)}% de la cartera`)
   })
+  // ETFs y fondos > 40% del total
+  if (total > 0) {
+    const fundsValue = enriched.filter(p => p.isFund).reduce((s, p) => s + (p.valueEUR ?? 0), 0)
+    if (fundsValue / total > 0.40)
+      alerts.push(`Más del 40% de la cartera está en vehículos diversificados — el análisis de concentración sectorial es parcial`)
+  }
   return alerts
 }
 

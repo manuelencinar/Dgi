@@ -141,9 +141,13 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
               {enriched.map((p, i) => (
                 <tr key={p.id} style={{ background: i % 2 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
                   <td style={{ padding: '8px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <Link href={`/empresa/${encodeURIComponent(p.ticker)}`} style={{ textDecoration: 'none' }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0' }}>{p.name}</p>
-                      <p style={{ fontSize: 10, color: '#4a5270' }}>{p.ticker} · {p.currency}</p>
+                    <Link href={p.isFund ? `/fondo/${encodeURIComponent(p.ticker)}` : `/empresa/${encodeURIComponent(p.ticker)}`} style={{ textDecoration: 'none' }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {p.name}
+                        {p.assetType === 'etf' && <span style={{ fontSize: 9, fontWeight: 700, color: '#60a5fa', background: 'rgba(96,165,250,0.14)', padding: '1px 5px', borderRadius: 4 }}>ETF</span>}
+                        {p.assetType === 'fund' && <span style={{ fontSize: 9, fontWeight: 700, color: '#a78bfa', background: 'rgba(167,139,250,0.14)', padding: '1px 5px', borderRadius: 4 }}>Fondo</span>}
+                      </p>
+                      <p style={{ fontSize: 10, color: '#4a5270' }}>{p.ticker} · {p.currency}{p.isFund && p.ter != null ? ` · TER ${p.ter}%` : ''}</p>
                     </Link>
                   </td>
                   <td style={{ padding: '8px', textAlign: 'right', color: '#8090a8', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{fmt(p.shares, 4)}</td>
@@ -459,14 +463,19 @@ export default function PortfolioPage({ isPremium }) {
     const { data: positions } = await sb.from('positions').select('*').eq('user_id', user.id)
     if (!positions?.length) { setEnriched([]); setLoading(false); return }
 
-    const tickers = [...new Set(positions.map(p => p.ticker))]
-    const { data: funds } = await sb
-      .from('company_fundamentals')
-      .select('ticker, current_price, dps, payout_fcf, debt_ebitda, interest_coverage, fcf_cagr5, sector, industry, country')
-      .in('ticker', tickers)
+    const stockTickers = [...new Set(positions.filter(p => (p.asset_type || 'stock') === 'stock').map(p => p.ticker))]
+    const fundTickers  = [...new Set(positions.filter(p => (p.asset_type || 'stock') !== 'stock').map(p => p.ticker))]
 
-    const fundMap = Object.fromEntries((funds || []).map(f => [f.ticker, f]))
-    setEnriched(enrichPositions(positions, fundMap))
+    const [{ data: funds }, { data: fundsData }] = await Promise.all([
+      stockTickers.length ? sb.from('company_fundamentals')
+        .select('ticker, current_price, dps, payout_fcf, debt_ebitda, interest_coverage, fcf_cagr5, sector, industry, country')
+        .in('ticker', stockTickers) : Promise.resolve({ data: [] }),
+      fundTickers.length ? sb.from('funds').select('*').in('ticker', fundTickers) : Promise.resolve({ data: [] }),
+    ])
+
+    const fundMap  = Object.fromEntries((funds || []).map(f => [f.ticker, f]))
+    const fundsMap = Object.fromEntries((fundsData || []).map(f => [f.ticker, f]))
+    setEnriched(enrichPositions(positions, fundMap, fundsMap))
     setLoading(false)
   }
 
