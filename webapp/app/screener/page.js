@@ -40,10 +40,25 @@ async function buildCompanies() {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY,
     )
-    const [{ data: rows }, { data: roicRows }] = await Promise.all([
+    async function fetchAllRoic() {
+      const all = []
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await sb
+          .from('company_fundamentals')
+          .select('ticker, roic_reported, roic_tangible')
+          .range(from, from + 999)
+        if (error || !data?.length) break
+        all.push(...data)
+        if (data.length < 1000) break
+      }
+      return all
+    }
+
+    const [{ data: rows }, roicAll] = await Promise.all([
       sb.from('market_charts').select('data').eq('range', 'fundamentals'),
-      sb.from('company_fundamentals').select('ticker, roic_reported, roic_tangible'),
+      fetchAllRoic(),
     ])
+    const roicRows = roicAll
 
     // Flatten all markets' fundamentals into one ticker map (first-seen wins)
     const fundMap = {}

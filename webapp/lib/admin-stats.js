@@ -32,12 +32,21 @@ export async function listAllAuthUsers(sc) {
 // ── Fundamentals coverage ──────────────────────────────────────────────────
 
 export async function getFundamentalsLite(sc) {
+  // PostgREST limita a 1000 filas por petición → paginar con .range()
+  const all = []
+  const PAGE = 1000
   try {
-    const { data } = await sc
-      .from('company_fundamentals')
-      .select('ticker, current_price, dps, revenue_cagr5, fcf_per_share, eps_trailing, net_debt, updated_at')
-    return data || []
-  } catch { return [] }
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await sc
+        .from('company_fundamentals')
+        .select('ticker, current_price, dps, revenue_cagr5, fcf_per_share, eps_trailing, net_debt, updated_at')
+        .range(from, from + PAGE - 1)
+      if (error || !data?.length) break
+      all.push(...data)
+      if (data.length < PAGE) break
+    }
+  } catch {}
+  return all
 }
 
 export function computeDataStats(fundamentals) {
