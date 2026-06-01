@@ -700,10 +700,12 @@ export default function MarketDetail({ market, quote, initialChartData, stats, r
 
       {/* ── FREE: Empresas del índice ── */}
       {constituents.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
-          <PricesFreshnessIndicator />
-        </div>
-        <ConstituentsList constituents={constituents} quotes={constituentQuotes} />
+        <>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+            <PricesFreshnessIndicator />
+          </div>
+          <ConstituentsList constituents={constituents} quotes={constituentQuotes} />
+        </>
       )}
 
       {/* ── PREMIUM: Analytics avanzados ── */}
