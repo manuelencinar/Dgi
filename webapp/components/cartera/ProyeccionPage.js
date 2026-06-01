@@ -9,6 +9,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { enrichPositions, calcSummary } from '@/lib/portfolio'
 import { projectIncome, calcDRIP } from '@/lib/portfolio-calc'
+import { monthlyEquivalent } from '@/lib/recurring'
 
 const CARD  = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
 const SLIDER_WRAP = { display: 'flex', flexDirection: 'column', gap: 6 }
@@ -58,6 +59,7 @@ export default function ProyeccionPage({ isPremium }) {
 
   const [horizon,         setHorizon]         = useState(20)
   const [monthly,         setMonthly]         = useState(300)
+  const [recurringMonthly, setRecurringMonthly] = useState(0)
   const [monthlyGrowth,   setMonthlyGrowth]   = useState(3)
   const [reinvest,        setReinvest]        = useState(true)
   const [taxRate,         setTaxRate]         = useState(19)
@@ -80,16 +82,24 @@ export default function ProyeccionPage({ isPremium }) {
       .select('ticker,current_price,dps,div_cagr5,sector,industry,country')
       .in('ticker', tickers)
 
+    const fundTickers = [...new Set(positions.filter(p => (p.asset_type || 'stock') !== 'stock').map(p => p.ticker))]
+    const [{ data: fundsData }, { data: rec }] = await Promise.all([
+      fundTickers.length ? sb.from('funds').select('*').in('ticker', fundTickers) : Promise.resolve({ data: [] }),
+      sb.from('recurring_contributions').select('amount_eur, frequency, active').eq('user_id', user.id),
+    ])
+
     const fundMap = Object.fromEntries((funds || []).map(f => [f.ticker, f]))
-    const e = enrichPositions(positions, fundMap)
+    const fundsMap = Object.fromEntries((fundsData || []).map(f => [f.ticker, f]))
+    const e = enrichPositions(positions, fundMap, fundsMap)
     setEnriched(e)
     setSummary(calcSummary(e))
+    setRecurringMonthly((rec || []).filter(c => c.active).reduce((s, c) => s + monthlyEquivalent(c.amount_eur, c.frequency), 0))
     setLoading(false)
   }
 
   const proj = useMemo(() => enriched.length ? projectIncome(enriched, {
-    horizon, monthly, monthlyGrowthPct: monthlyGrowth, reinvest, taxRate,
-  }) : null, [enriched, horizon, monthly, monthlyGrowth, reinvest, taxRate])
+    horizon, monthly: monthly + recurringMonthly, monthlyGrowthPct: monthlyGrowth, reinvest, taxRate,
+  }) : null, [enriched, horizon, monthly, recurringMonthly, monthlyGrowth, reinvest, taxRate])
 
   const drip = useMemo(() => calcDRIP(enriched), [enriched])
 
@@ -159,8 +169,16 @@ export default function ProyeccionPage({ isPremium }) {
         {/* Controls */}
         <div style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Parámetros</p>
+          {recurringMonthly > 0 && (
+            <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 8, padding: '10px 12px', fontSize: 11 }}>
+              <p style={{ color: '#818cf8', fontWeight: 700, marginBottom: 4 }}>Aportaciones combinadas (al mes)</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8090a8' }}><span>⚡ Periódicas a ETFs/fondos</span><span style={{ color: '#a78bfa', fontWeight: 700 }}>{recurringMonthly.toFixed(0)} €</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8090a8' }}><span>Extra (slider)</span><span style={{ color: '#c8d0e0', fontWeight: 700 }}>{monthly} €</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8090a8', marginTop: 4, paddingTop: 4, borderTop: '1px solid rgba(255,255,255,0.06)' }}><span>Total</span><span style={{ color: '#34d399', fontWeight: 700 }}>{(recurringMonthly + monthly).toFixed(0)} €</span></div>
+            </div>
+          )}
           <Slider label="Horizonte" value={horizon} min={5} max={40} onChange={setHorizon} format={v => `${v} años`} />
-          <Slider label="Aportación mensual" value={monthly} min={0} max={5000} step={50} onChange={setMonthly} format={v => `${v} €`} />
+          <Slider label="Aportación mensual extra" value={monthly} min={0} max={5000} step={50} onChange={setMonthly} format={v => `${v} €`} />
           <Slider label="Crecim. aportación/año" value={monthlyGrowth} min={0} max={10} step={0.5} onChange={setMonthlyGrowth} format={v => `${v}%`} />
           <Slider label="Retención fiscal" value={taxRate} min={0} max={35} onChange={setTaxRate} format={v => `${v}%`} />
           <Slider label="Renta objetivo/año (€)" value={rentaObjetivo} min={0} max={60000} step={500} onChange={setRentaObjetivo} format={v => v > 0 ? fmtEUR(v) : 'Sin objetivo'} />

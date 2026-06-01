@@ -6,6 +6,7 @@ import PublicNav from '@/components/PublicNav'
 import PriceChart from '@/components/empresa/PriceChart'
 import DividendBars from '@/components/empresa/DividendBars'
 import { fetchAndStoreFund } from '@/lib/fund-fetch'
+import RecurringButton from '@/components/cartera/RecurringButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -107,6 +108,11 @@ export default async function FondoPage({ params }) {
             </div>
           </div>
         </Card>
+
+        {/* Aportación periódica */}
+        <div style={{ marginBottom: 16 }}>
+          <RecurringButton ticker={fund.ticker} assetType={fund.asset_type} currency={fund.currency} fundName={fund.name} />
+        </div>
 
         {/* Gráfico de precio */}
         <Card style={{ marginBottom: 16 }}>

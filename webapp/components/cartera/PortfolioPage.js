@@ -10,6 +10,7 @@ import {
 } from '@/lib/portfolio'
 import PortfolioDGIScore from '@/components/cartera/PortfolioDGIScore'
 import CompanyDetector from '@/components/cartera/CompanyDetector'
+import RecurringSection from '@/components/cartera/RecurringSection'
 
 // ── Design tokens ──────────────────────────────────────────────────────────
 const CARD   = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
@@ -541,6 +542,9 @@ export default function PortfolioPage({ isPremium }) {
         onDividend={setDivPos}
         onDelete={setDeleteId}
       />
+
+      {/* Aportaciones periódicas */}
+      <RecurringSection />
 
       {enriched.length > 0 && (
         <>

@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import { DICT } from '@/data/dict'
+import { FX } from '@/lib/portfolio'
+import { FREQ_LABEL, monthlyEquivalent } from '@/lib/recurring'
 
 const CARD     = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
 const INPUT    = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', color: '#c8d0e0', fontSize: 13, outline: 'none', boxSizing: 'border-box' }
@@ -399,6 +401,105 @@ function TabYieldOnCost({ positions, transactions, fundamentals, isPremium }) {
   )
 }
 
+// ── Tab 4: Aportaciones periódicas ─────────────────────────────────────────
+function TabRecurring({ recurring, transactions, fundsMap }) {
+  const fundName = t => fundsMap[t]?.name || nameOf(t)
+  const recurTx = useMemo(() => transactions.filter(t => t.type === 'buy_recurring').sort((a, b) => new Date(b.date) - new Date(a.date)), [transactions])
+
+  const monthlyCommitted = recurring.filter(c => c.active).reduce((s, c) => s + monthlyEquivalent(c.amount_eur, c.frequency), 0)
+
+  const byMonth = useMemo(() => {
+    const map = {}
+    recurTx.forEach(t => {
+      const cur = fundsMap[t.ticker]?.currency || 'EUR'
+      const eur = Number(t.shares) * Number(t.price) * (FX[cur] || 1)
+      const m = String(t.date).slice(0, 7)
+      map[m] = (map[m] || 0) + eur
+    })
+    return Object.entries(map).map(([month, total]) => ({ month, total: Math.round(total) })).sort((a, b) => a.month.localeCompare(b.month))
+  }, [recurTx, fundsMap])
+
+  const totalInvested = byMonth.reduce((s, m) => s + m.total, 0)
+
+  return (
+    <div>
+      {/* Subsección 1: configuradas */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Aportaciones configuradas</p>
+        <span style={{ fontSize: 12, color: '#818cf8', fontWeight: 700 }}>{fmtEUR(monthlyCommitted)}/mes comprometido</span>
+      </div>
+      {recurring.length === 0 ? (
+        <p style={{ fontSize: 13, color: '#4a5270', padding: '12px 0' }}>No tienes aportaciones periódicas configuradas.</p>
+      ) : (
+        <div style={{ overflowX: 'auto', marginBottom: 24 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead><tr>{['Fondo', 'Importe', 'Frecuencia', 'Inicio', 'Fin', 'Estado'].map(h => (
+              <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Fondo' ? 'left' : 'right', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
+            ))}</tr></thead>
+            <tbody>
+              {recurring.map(c => (
+                <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{fundName(c.ticker)}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0' }}>{fmtEUR(c.amount_eur)}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{FREQ_LABEL[c.frequency]}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#4a5270' }}>{new Date(c.start_date).toLocaleDateString('es-ES')}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#4a5270' }}>{c.end_date ? new Date(c.end_date).toLocaleDateString('es-ES') : '—'}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', color: c.active ? '#34d399' : '#fbbf24' }}>{c.active ? 'Activa' : 'Pausada'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Subsección 2: ejecuciones */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Historial de ejecuciones</p>
+        <span style={{ fontSize: 12, color: '#34d399', fontWeight: 700 }}>Total invertido: {fmtEUR(totalInvested)}</span>
+      </div>
+
+      {byMonth.length > 0 && (
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={byMonth}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+            <XAxis dataKey="month" stroke="#4a5270" fontSize={10} />
+            <YAxis stroke="#4a5270" fontSize={10} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+            <Tooltip contentStyle={TT_STYLE} formatter={v => [fmtEUR(v), 'Invertido']} />
+            <Bar dataKey="total" fill="#818cf8" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+
+      {recurTx.length === 0 ? (
+        <p style={{ fontSize: 13, color: '#4a5270', padding: '12px 0' }}>Aún no se ha ejecutado ninguna aportación periódica.</p>
+      ) : (
+        <div style={{ overflowX: 'auto', marginTop: 14 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead><tr>{['Fecha', 'Fondo', 'Euros', 'Precio día', 'Participaciones'].map(h => (
+              <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Fondo' ? 'left' : h === 'Fecha' ? 'left' : 'right', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
+            ))}</tr></thead>
+            <tbody>
+              {recurTx.map(t => {
+                const cur = fundsMap[t.ticker]?.currency || 'EUR'
+                const eur = Number(t.shares) * Number(t.price) * (FX[cur] || 1)
+                return (
+                  <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '7px 8px', color: '#4a5270' }}>{new Date(t.date).toLocaleDateString('es-ES')}</td>
+                    <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{fundName(t.ticker)}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399' }}>{fmtEUR(eur)}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{fmt(Number(t.price))} {cur}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{fmt(Number(t.shares), 4)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────
 export default function HistorialPage({ isPremium }) {
   const router = useRouter()
@@ -408,6 +509,8 @@ export default function HistorialPage({ isPremium }) {
   const [dividends, setDividends] = useState([])
   const [positions, setPositions] = useState([])
   const [fundamentals, setFundamentals] = useState({})
+  const [recurring, setRecurring] = useState([])
+  const [fundsMap, setFundsMap] = useState({})
 
   const sb = createClient()
 
@@ -418,20 +521,26 @@ export default function HistorialPage({ isPremium }) {
     const { data: { user } } = await sb.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    const [{ data: tx }, { data: divs }, { data: pos }] = await Promise.all([
+    const [{ data: tx }, { data: divs }, { data: pos }, { data: rec }] = await Promise.all([
       sb.from('transactions').select('*').eq('user_id', user.id),
       sb.from('dividends_received').select('*').eq('user_id', user.id),
       sb.from('positions').select('*').eq('user_id', user.id),
+      sb.from('recurring_contributions').select('*').eq('user_id', user.id),
     ])
 
     setTransactions(tx || [])
     setDividends(divs || [])
     setPositions(pos || [])
+    setRecurring(rec || [])
 
     if (pos?.length) {
       const tickers = [...new Set(pos.map(p => p.ticker))]
-      const { data: funds } = await sb.from('company_fundamentals').select('ticker, dps, div_history').in('ticker', tickers)
+      const [{ data: funds }, { data: fundsRows }] = await Promise.all([
+        sb.from('company_fundamentals').select('ticker, dps, div_history').in('ticker', tickers),
+        sb.from('funds').select('ticker, name, currency').in('ticker', tickers),
+      ])
       setFundamentals(Object.fromEntries((funds || []).map(f => [f.ticker, f])))
+      setFundsMap(Object.fromEntries((fundsRows || []).map(f => [f.ticker, f])))
     }
     setLoading(false)
   }
@@ -448,6 +557,7 @@ export default function HistorialPage({ isPremium }) {
     { key: 'ops',  label: 'Operaciones' },
     { key: 'divs', label: 'Dividendos cobrados', premium: true },
     { key: 'yoc',  label: 'Yield on cost', premium: true },
+    { key: 'recur', label: 'Aportaciones periódicas' },
   ]
 
   return (
@@ -471,6 +581,7 @@ export default function HistorialPage({ isPremium }) {
         {tab === 'ops'  && <TabOperations transactions={transactions} dividends={dividends} isPremium={isPremium} fundTickers={new Set(positions.filter(p => (p.asset_type || 'stock') !== 'stock').map(p => p.ticker))} />}
         {tab === 'divs' && <TabDividends dividends={dividends} positions={positions} onAdd={handleAddDividend} isPremium={isPremium} />}
         {tab === 'yoc'  && <TabYieldOnCost positions={positions} transactions={transactions} fundamentals={fundamentals} isPremium={isPremium} />}
+        {tab === 'recur' && <TabRecurring recurring={recurring} transactions={transactions} fundsMap={fundsMap} />}
       </div>
     </div>
   )
