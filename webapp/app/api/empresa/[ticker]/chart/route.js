@@ -1,6 +1,7 @@
 import { getCompanyChartData } from '@/lib/company-chart'
 
-export const dynamic = 'force-dynamic'
+export const dynamic     = 'force-dynamic'
+export const maxDuration = 30   // el backfill inicial descarga 5 años y archiva ~1250 filas
 
 const VALID_RANGES = new Set(['1M', '3M', '6M', '1A', '3A', '5A'])
 

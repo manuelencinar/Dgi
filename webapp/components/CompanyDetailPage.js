@@ -1112,7 +1112,7 @@ export default function CompanyDetailPage({
 
       {/* ── 2. GRÁFICO DE COTIZACIÓN ── */}
       <Card style={{ marginBottom: 16 }}>
-        <PriceChart ticker={ticker} currency={currency} avgCost={avgCost} />
+        <PriceChart ticker={ticker} currency={currency} avgCost={avgCost} divHistory={divHistory} />
       </Card>
 
       {/* ── MAIN LAYOUT ── */}

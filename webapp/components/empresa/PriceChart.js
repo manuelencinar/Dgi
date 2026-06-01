@@ -32,6 +32,39 @@ function buildLine(series, xOf, yOf) {
   return series.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xOf(i).toFixed(1)} ${yOf(v).toFixed(1)}`).join(' ')
 }
 
+// Reconstruye el total return (dividendos reinvertidos) a partir del historial
+// anual de dividendos. Cada dividendo anual se reparte en 4 pagos trimestrales
+// aproximados (mar/jun/sep/dic) y se reinvierte sobre la serie de precios.
+function buildTotalReturn(timestamps, closes, divHistory) {
+  if (!Array.isArray(divHistory) || !divHistory.length || !closes.length) return null
+
+  const t0 = timestamps[0]
+  const tN = timestamps[timestamps.length - 1]
+
+  const pays = []
+  for (const h of divHistory) {
+    const dps = Number(h?.dps)
+    if (!dps || dps <= 0 || h?.year == null) continue
+    for (const month of [2, 5, 8, 11]) {       // mar, jun, sep, dic (índice 0-based)
+      const t = Math.floor(Date.UTC(h.year, month, 15) / 1000)
+      if (t >= t0 && t <= tN) pays.push({ t, amt: dps / 4 })
+    }
+  }
+  if (!pays.length) return null
+  pays.sort((a, b) => a.t - b.t)
+
+  let shares = 1, pi = 0
+  const tr = []
+  for (let i = 0; i < closes.length; i++) {
+    while (pi < pays.length && pays[pi].t <= timestamps[i]) {
+      if (closes[i] > 0) shares += shares * pays[pi].amt / closes[i]
+      pi++
+    }
+    tr.push(shares * closes[i])
+  }
+  return tr
+}
+
 function buildArea(linePath, closes, xOf, yOf) {
   const lastX = xOf(closes.length - 1).toFixed(1)
   const baseY = (PAD.top + IH).toFixed(1)
@@ -226,7 +259,7 @@ function Chart({ data, range, showTR, avgCost }) {
   )
 }
 
-export default function PriceChart({ ticker, currency, avgCost }) {
+export default function PriceChart({ ticker, currency, avgCost, divHistory }) {
   const [range,    setRange]    = useState('1A')
   const [data,     setData]     = useState(null)
   const [loading,  setLoading]  = useState(false)
@@ -241,12 +274,15 @@ export default function PriceChart({ ticker, currency, avgCost }) {
       const res  = await fetch(`/api/empresa/${encodeURIComponent(ticker)}/chart?range=${r}`, { cache: 'no-store' })
       const json = await res.json()
       if (json.error) throw new Error(json.error)
-      setData(json)
+      if (!json.timestamps?.length) { setData(null); setError(true); setLoading(false); return }
+      // Reconstruir la línea de total return desde el historial de dividendos
+      const adjCloses = buildTotalReturn(json.timestamps, json.closes, divHistory)
+      setData({ ...json, adjCloses })
     } catch {
       setError(true)
     }
     setLoading(false)
-  }, [ticker])
+  }, [ticker, divHistory])
 
   if (!loaded.current) { loaded.current = true; load('1A') }
 
