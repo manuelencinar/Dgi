@@ -75,14 +75,37 @@ function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
     return map
   }, [transactions, tickers, avgCostByTicker, dividends])
 
+  const hasFx = filtered.some(t => t.exchange_rate != null && t.exchange_rate !== 1)
+
+  const fxTotals = useMemo(() => {
+    const rows = filtered.filter(t => t.fx_commission_eur != null && t.fx_commission_eur > 0)
+    const totalCommission = rows.reduce((s, t) => s + Number(t.fx_commission_eur), 0)
+    const totalBase       = rows.reduce((s, t) => s + Number(t.total_cost_base_currency || 0), 0)
+    const avgPct = totalBase > 0
+      ? rows.reduce((s, t) => s + Number(t.fx_commission_eur) / Number(t.total_cost_base_currency || 1) * 100, 0) / (rows.length || 1)
+      : null
+    return { totalCommission, avgPct, count: rows.length }
+  }, [filtered])
+
   const exportCSV = () => {
-    const rows = [['Fecha', 'Empresa', 'Ticker', 'Tipo', 'Acciones', 'Precio', 'Importe total', 'Notas']]
+    const headers = ['Fecha', 'Empresa', 'Ticker', 'Tipo', 'Acciones', 'Precio', 'Importe total', 'Divisa', 'Tipo cambio', 'Com. FX (EUR)', 'Coste total EUR', 'Notas']
+    const rows = [headers]
     filtered.forEach(t => rows.push([
       t.date, nameOf(t.ticker), t.ticker, t.type === 'buy' ? 'Compra' : 'Venta',
-      t.shares, t.price, (Number(t.shares) * Number(t.price)).toFixed(2), t.notes || '',
+      t.shares, t.price, (Number(t.shares) * Number(t.price)).toFixed(2),
+      t.currency || currOf(t.ticker),
+      t.exchange_rate != null ? t.exchange_rate : '',
+      t.fx_commission_eur != null ? t.fx_commission_eur : '',
+      t.total_cost_base_currency != null ? t.total_cost_base_currency : '',
+      t.notes || '',
     ]))
     downloadCSV('operaciones.csv', rows)
   }
+
+  const RIGHT = { textAlign: 'right' }
+  const TH = (label, right) => (
+    <th key={label} style={{ padding: '6px 8px', textAlign: right ? 'right' : 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</th>
+  )
 
   return (
     <div>
@@ -109,34 +132,83 @@ function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
         <p style={{ fontSize: 13, color: '#4a5270', textAlign: 'center', padding: '30px 0' }}>No hay operaciones registradas.</p>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 640 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: hasFx ? 860 : 640 }}>
             <thead>
               <tr>
-                {['Fecha', 'Empresa', 'Tipo', 'Acciones', 'Precio', 'Importe', 'Notas'].map(h => (
-                  <th key={h} style={{ padding: '6px 8px', textAlign: ['Acciones','Precio','Importe'].includes(h) ? 'right' : 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
-                ))}
+                {TH('Fecha')}
+                {TH('Empresa')}
+                {TH('Tipo')}
+                {TH('Acciones', true)}
+                {TH('Precio', true)}
+                {TH('Importe orig.', true)}
+                {hasFx && TH('Tipo cambio', true)}
+                {hasFx && TH('Com. FX', true)}
+                {hasFx && TH('Coste EUR', true)}
+                {TH('Notas')}
               </tr>
             </thead>
             <tbody>
-              {filtered.map(t => (
-                <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <td style={{ padding: '7px 8px', color: '#4a5270', whiteSpace: 'nowrap' }}>{new Date(t.date).toLocaleDateString('es-ES')}</td>
-                  <td style={{ padding: '7px 8px' }}>
-                    <Link href={hrefFor(t.ticker, fundTickers)} style={{ color: '#c8d0e0', textDecoration: 'none', fontWeight: 600 }}>{nameOf(t.ticker)}</Link>
-                  </td>
-                  <td style={{ padding: '7px 8px' }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: t.type === 'buy' ? '#34d399' : '#f87171', background: t.type === 'buy' ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 7px', borderRadius: 5 }}>
-                      {t.type === 'buy' ? 'Compra' : 'Venta'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{fmt(Number(t.shares), 4)}</td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{fmt(Number(t.price))} {currOf(t.ticker)}</td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600 }}>{fmt(Number(t.shares) * Number(t.price))}</td>
-                  <td style={{ padding: '7px 8px', color: '#4a5270', fontSize: 11, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.notes || '—'}</td>
-                </tr>
-              ))}
+              {filtered.map(t => {
+                const txCurrency = t.currency || currOf(t.ticker)
+                const isManualFx = t.exchange_rate != null && t.exchange_rate_date == null
+                return (
+                  <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '7px 8px', color: '#4a5270', whiteSpace: 'nowrap' }}>{new Date(t.date).toLocaleDateString('es-ES')}</td>
+                    <td style={{ padding: '7px 8px' }}>
+                      <Link href={hrefFor(t.ticker, fundTickers)} style={{ color: '#c8d0e0', textDecoration: 'none', fontWeight: 600 }}>{nameOf(t.ticker)}</Link>
+                    </td>
+                    <td style={{ padding: '7px 8px' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: t.type === 'buy' ? '#34d399' : '#f87171', background: t.type === 'buy' ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 7px', borderRadius: 5 }}>
+                        {t.type === 'buy' ? 'Compra' : 'Venta'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '7px 8px', ...RIGHT, color: '#8090a8' }}>{fmt(Number(t.shares), 4)}</td>
+                    <td style={{ padding: '7px 8px', ...RIGHT, color: '#8090a8' }}>{fmt(Number(t.price))} {txCurrency}</td>
+                    <td style={{ padding: '7px 8px', ...RIGHT, color: '#c8d0e0', fontWeight: 600 }}>
+                      {t.amount_original != null ? fmt(Number(t.amount_original)) : fmt(Number(t.shares) * Number(t.price))} {txCurrency}
+                    </td>
+                    {hasFx && (
+                      <td style={{ padding: '7px 8px', ...RIGHT, color: '#8090a8', whiteSpace: 'nowrap' }}>
+                        {t.exchange_rate != null && t.exchange_rate !== 1 ? (
+                          <span title={isManualFx ? 'Tipo introducido manualmente' : `Fecha: ${t.exchange_rate_date}`}>
+                            {Number(t.exchange_rate).toFixed(4)}
+                            {isManualFx && <span style={{ marginLeft: 4 }} title="Tipo de cambio introducido manualmente">✏</span>}
+                          </span>
+                        ) : '—'}
+                      </td>
+                    )}
+                    {hasFx && (
+                      <td style={{ padding: '7px 8px', ...RIGHT, color: t.fx_commission_eur > 0 ? '#fbbf24' : '#4a5270' }}>
+                        {t.fx_commission_eur != null && t.fx_commission_eur > 0 ? `${fmt(Number(t.fx_commission_eur))} €` : '—'}
+                      </td>
+                    )}
+                    {hasFx && (
+                      <td style={{ padding: '7px 8px', ...RIGHT, color: '#34d399', fontWeight: 600 }}>
+                        {t.total_cost_base_currency != null ? `${fmt(Number(t.total_cost_base_currency))} €` : '—'}
+                      </td>
+                    )}
+                    <td style={{ padding: '7px 8px', color: '#4a5270', fontSize: 11, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.notes || '—'}</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Resumen FX al pie */}
+      {hasFx && fxTotals.count > 0 && (
+        <div style={{ display: 'flex', gap: 16, marginTop: 14, padding: '12px 14px', background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.15)', borderRadius: 8, flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Total comisiones de cambio</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#fbbf24' }}>{fmt(fxTotals.totalCommission)} €</p>
+          </div>
+          {fxTotals.avgPct != null && (
+            <div>
+              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Coste medio de cambio</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#fbbf24' }}>{fxTotals.avgPct.toFixed(3)}%</p>
+            </div>
+          )}
         </div>
       )}
 

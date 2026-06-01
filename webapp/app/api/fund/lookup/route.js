@@ -15,13 +15,10 @@ export async function POST(request) {
   if (!ticker) return NextResponse.json({ error: 'Falta el ticker' }, { status: 400 })
   ticker = ticker.trim().toUpperCase()
 
-  // Cache: si ya existe y es reciente, devolver directamente
+  // Si ya existe en funds (cualquier usuario lo cargó antes), devolver directamente
   try {
     const { data: existing } = await sb().from('funds').select('*').eq('ticker', ticker).maybeSingle()
-    if (existing && existing.current_price != null && existing.updated_at &&
-        (Date.now() - new Date(existing.updated_at).getTime()) < 7 * 24 * 3600 * 1000) {
-      return NextResponse.json({ fund: existing, source: 'cache' })
-    }
+    if (existing) return NextResponse.json({ fund: existing, source: 'cache' })
   } catch {}
 
   const res = await fetchAndStoreFund(ticker, assetType)

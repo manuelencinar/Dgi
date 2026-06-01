@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -20,6 +20,8 @@ const ASSET_TYPES = [
 
 export default function NewPositionPage() {
   const router = useRouter()
+  const sb     = useMemo(() => createClient(), [])
+
   const [assetType, setAssetType] = useState('stock')
 
   // Acción (búsqueda DICT)
@@ -37,7 +39,29 @@ export default function NewPositionPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState(null)
 
-  // Prefill desde query params (?ticker, ?type, ?shares, ?price)
+  // Ajustes del usuario
+  const [userSettings, setUserSettings] = useState({ base_currency: 'EUR', fx_commission_pct: 0 })
+
+  // FX en tiempo real
+  const [fxInfo,       setFxInfo]       = useState(null)  // { rate, rateDate, loading, notFound }
+  const [fxManualRate, setFxManualRate] = useState('')
+  const [useManualFx,  setUseManualFx]  = useState(false)
+
+  // Cargar ajustes del usuario al montar
+  useEffect(() => {
+    const loadSettings = async () => {
+      const { data: { user } } = await sb.auth.getUser()
+      if (!user) return
+      const { data } = await sb.from('user_settings')
+        .select('base_currency, fx_commission_pct')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (data) setUserSettings({ base_currency: data.base_currency || 'EUR', fx_commission_pct: data.fx_commission_pct || 0 })
+    }
+    loadSettings()
+  }, [sb])
+
+  // Prefill desde query params
   useEffect(() => {
     if (typeof window === 'undefined') return
     const p = new URLSearchParams(window.location.search)
@@ -53,6 +77,35 @@ export default function NewPositionPage() {
       }
     }
   }, [])
+
+  // Buscar tipo de cambio cuando cambia el activo seleccionado o la fecha
+  const lookupFxRate = useCallback(async (currency, date) => {
+    if (!currency || currency === userSettings.base_currency) { setFxInfo(null); return }
+    setFxInfo({ loading: true })
+    const start = new Date(date)
+    start.setDate(start.getDate() - 7)
+    const { data } = await sb.from('exchange_rates')
+      .select('rate, date')
+      .eq('base_currency', currency)
+      .eq('quote_currency', userSettings.base_currency)
+      .lte('date', date)
+      .gte('date', start.toISOString().slice(0, 10))
+      .order('date', { ascending: false })
+      .limit(1)
+    if (data?.[0]) {
+      setFxInfo({ rate: Number(data[0].rate), rateDate: data[0].date, loading: false, notFound: false })
+      setUseManualFx(false)
+    } else {
+      setFxInfo({ loading: false, notFound: true })
+      setUseManualFx(true)
+      setFxManualRate('')
+    }
+  }, [sb, userSettings.base_currency])
+
+  useEffect(() => {
+    if (!selected) { setFxInfo(null); return }
+    lookupFxRate(selected.currency, form.date)
+  }, [selected?.currency, form.date, lookupFxRate])
 
   const search = useCallback((q) => {
     setQuery(q)
@@ -97,21 +150,59 @@ export default function NewPositionPage() {
 
   const field = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
+  // ── FX computed values ──────────────────────────────────────────────────────
+  const fxCurrency  = selected?.currency
+  const needsFx     = fxCurrency && fxCurrency !== userSettings.base_currency
+  const effectiveRate = useManualFx && fxManualRate ? parseFloat(fxManualRate) : (fxInfo?.rate || null)
+
+  const fxBreakdown = useMemo(() => {
+    if (!needsFx || !effectiveRate) return null
+    const shares = parseFloat(form.shares)
+    const price  = parseFloat(form.price)
+    if (!shares || !price || shares <= 0 || price <= 0) return null
+    const totalOrig    = shares * price
+    const totalBase    = totalOrig * effectiveRate
+    const commission   = totalBase * userSettings.fx_commission_pct / 100
+    const totalReal    = totalBase + commission
+    return { totalOrig, totalBase, commission, totalReal }
+  }, [needsFx, effectiveRate, form.shares, form.price, userSettings.fx_commission_pct])
+
+  // ── Submit ──────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!selected) { setError('Selecciona o busca un activo'); return }
     const shares = parseFloat(form.shares), price = parseFloat(form.price)
     if (!shares || shares <= 0) { setError('Número de participaciones inválido'); return }
-    if (!price || price <= 0) { setError('Precio inválido'); return }
+    if (!price || price <= 0)   { setError('Precio inválido'); return }
+    if (needsFx && useManualFx && !fxManualRate) { setError('Introduce el tipo de cambio manualmente'); return }
 
     setSaving(true); setError(null)
-    const sb = createClient()
     const { data: { user } } = await sb.auth.getUser()
     if (!user) { setError('Sesión expirada'); setSaving(false); return }
+
+    const totalOrig = shares * price
+    const fxFields = needsFx ? {
+      currency:                selected.currency,
+      amount_original:         totalOrig,
+      exchange_rate:           effectiveRate,
+      exchange_rate_date:      useManualFx ? null : (fxInfo?.rateDate || null),
+      fx_commission_pct:       userSettings.fx_commission_pct,
+      fx_commission_eur:       fxBreakdown?.commission ?? null,
+      total_cost_base_currency: fxBreakdown?.totalReal ?? (totalOrig * (effectiveRate || 1)),
+    } : {
+      currency:                selected.currency,
+      amount_original:         totalOrig,
+      exchange_rate:           1,
+      exchange_rate_date:      form.date,
+      fx_commission_pct:       0,
+      fx_commission_eur:       0,
+      total_cost_base_currency: totalOrig,
+    }
 
     const { error: txErr } = await sb.from('transactions').insert({
       user_id: user.id, ticker: selected.ticker, type: form.type,
       shares, price, date: form.date, notes: form.notes || null,
+      ...fxFields,
     })
     if (txErr) { setError('Error al guardar la transacción: ' + txErr.message); setSaving(false); return }
 
@@ -144,6 +235,37 @@ export default function NewPositionPage() {
 
   const unit = assetType === 'stock' ? 'acciones' : 'participaciones'
 
+  // ── FX section ──────────────────────────────────────────────────────────────
+  const fxSection = needsFx && (
+    <div style={{ background: 'rgba(129,140,248,0.05)', border: '1px solid rgba(129,140,248,0.15)', borderRadius: 8, padding: 14 }}>
+      {fxInfo?.loading ? (
+        <p style={{ fontSize: 12, color: '#4a5270' }}>Buscando tipo de cambio…</p>
+      ) : fxInfo?.notFound ? (
+        <div>
+          <p style={{ fontSize: 12, color: '#fbbf24', marginBottom: 10 }}>
+            Tipo de cambio {fxCurrency}/{userSettings.base_currency} no disponible para esta fecha — introduce el tipo manualmente
+          </p>
+          <input
+            style={{ ...INPUT, marginBottom: 8 }}
+            type="number" step="any" placeholder={`Tipo de cambio ${fxCurrency}/${userSettings.base_currency}`}
+            value={fxManualRate}
+            onChange={e => { setFxManualRate(e.target.value); setUseManualFx(true) }}
+          />
+          {fxBreakdown && renderBreakdown(fxBreakdown, fxCurrency, userSettings)}
+        </div>
+      ) : fxInfo ? (
+        <div style={{ display: 'grid', gap: 6 }}>
+          <p style={{ fontSize: 12, color: '#8090a8' }}>
+            Tipo de cambio {fxCurrency}/{userSettings.base_currency} del{' '}
+            {new Date(fxInfo.rateDate + 'T12:00:00').toLocaleDateString('es-ES')}:{' '}
+            <span style={{ color: '#c8d0e0', fontWeight: 700 }}>{fxInfo.rate.toFixed(4)}</span>
+          </p>
+          {fxBreakdown && renderBreakdown(fxBreakdown, fxCurrency, userSettings)}
+        </div>
+      ) : null}
+    </div>
+  )
+
   return (
     <div style={{ maxWidth: 540, margin: '0 auto', padding: '24px 16px 64px' }}>
       <div style={{ marginBottom: 20 }}>
@@ -159,7 +281,7 @@ export default function NewPositionPage() {
             <label style={LABEL}>Tipo de activo</label>
             <div style={{ display: 'flex', gap: 8 }}>
               {ASSET_TYPES.map(a => (
-                <button key={a.v} type="button" onClick={() => { setAssetType(a.v); setSelected(null); setFundData(null); setLookupState('idle') }} style={{
+                <button key={a.v} type="button" onClick={() => { setAssetType(a.v); setSelected(null); setFundData(null); setLookupState('idle'); setFxInfo(null) }} style={{
                   flex: 1, padding: '8px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 700,
                   border: assetType === a.v ? 'none' : '1px solid rgba(255,255,255,0.1)',
                   background: assetType === a.v ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.03)',
@@ -183,6 +305,11 @@ export default function NewPositionPage() {
                     </button>
                   ))}
                 </div>
+              )}
+              {selected && (
+                <p style={{ fontSize: 11, color: '#4a5270', marginTop: 6 }}>
+                  Seleccionado: <span style={{ color: '#c8d0e0' }}>{selected.name}</span> · cotiza en <span style={{ color: '#818cf8', fontWeight: 700 }}>{selected.currency}</span>
+                </p>
               )}
             </div>
           ) : (
@@ -248,10 +375,16 @@ export default function NewPositionPage() {
               <input style={INPUT} type="number" step="any" min="0" placeholder="100" value={form.shares} onChange={e => field('shares', e.target.value)} required />
             </div>
             <div>
-              <label style={LABEL}>Precio {selected ? `(${selected.currency})` : ''}</label>
+              <label style={LABEL}>
+                Precio {selected ? `(${selected.currency})` : ''}
+                {needsFx && <span style={{ color: '#818cf8', marginLeft: 4 }}>· cotiza en {selected.currency}</span>}
+              </label>
               <input style={INPUT} type="number" step="any" min="0" placeholder="45.50" value={form.price} onChange={e => field('price', e.target.value)} required />
             </div>
           </div>
+
+          {/* Sección FX — solo si la empresa cotiza en divisa distinta a la del usuario */}
+          {fxSection}
 
           <div>
             <label style={LABEL}>Fecha de la operación</label>
@@ -273,6 +406,27 @@ export default function NewPositionPage() {
           </div>
         </div>
       </form>
+    </div>
+  )
+}
+
+function renderBreakdown(bd, fxCurrency, userSettings) {
+  return (
+    <div style={{ display: 'grid', gap: 4, marginTop: 6 }}>
+      <p style={{ fontSize: 12, color: '#8090a8' }}>
+        Total en {fxCurrency}: <span style={{ color: '#c8d0e0' }}>{bd.totalOrig.toFixed(2)} {fxCurrency}</span>
+      </p>
+      <p style={{ fontSize: 12, color: '#8090a8' }}>
+        Total en {userSettings.base_currency}: <span style={{ color: '#c8d0e0' }}>{bd.totalBase.toFixed(2)} {userSettings.base_currency}</span>
+      </p>
+      {userSettings.fx_commission_pct > 0 && (
+        <p style={{ fontSize: 12, color: '#8090a8' }}>
+          Comisión de cambio ({userSettings.fx_commission_pct}%): <span style={{ color: '#fbbf24', fontWeight: 700 }}>{bd.commission.toFixed(2)} {userSettings.base_currency}</span>
+        </p>
+      )}
+      <p style={{ fontSize: 13, fontWeight: 700, color: '#34d399', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 6, marginTop: 2 }}>
+        Coste total real: {bd.totalReal.toFixed(2)} {userSettings.base_currency}
+      </p>
     </div>
   )
 }

@@ -3,12 +3,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const TABS = [
-  { href: '/cartera',           label: 'Cartera',    exact: true },
+  { href: '/cartera',            label: 'Cartera',    exact: true },
   { href: '/cartera/proyeccion', label: 'Proyección' },
   { href: '/cartera/calendario', label: 'Calendario' },
   { href: '/cartera/simulador',  label: 'Simulador'  },
   { href: '/cartera/historial',  label: 'Historial'  },
   { href: '/cartera/alertas',    label: 'Alertas'    },
+  { href: '/cartera/ajustes',    label: 'Ajustes'    },
 ]
 
 export default function CarteraNav() {
