@@ -2,11 +2,11 @@ import { getCompanyChartData } from '@/lib/company-chart'
 
 export const dynamic = 'force-dynamic'
 
-const VALID_RANGES = new Set(['1mo', '3mo', '1y', '5y'])
+const VALID_RANGES = new Set(['1M', '3M', '6M', '1A', '3A'])
 
 export async function GET(request, { params }) {
   const { ticker } = await params
-  const range = new URL(request.url).searchParams.get('range') || '1y'
+  const range = new URL(request.url).searchParams.get('range') || '1A'
 
   if (!VALID_RANGES.has(range)) {
     return Response.json({ error: 'Rango inválido' }, { status: 400 })

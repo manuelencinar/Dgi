@@ -1,8 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 
 const UA       = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-const CACHE_TTL = { '1mo': 24*3600*1000, '3mo': 24*3600*1000, '1y': 24*3600*1000, '5y': 7*24*3600*1000 }
-const INTERVALS = { '1mo': '1d', '3mo': '1d', '1y': '1d', '5y': '1wk' }
+// Rangos: 1M, 3M, 6M, 1A, 3A → días de ventana e intervalo de muestreo
+const RANGE_DAYS     = { '1M': 35, '3M': 95, '6M': 190, '1A': 370, '3A': 1100 }
+const RANGE_INTERVAL = { '1M': '1d', '3M': '1d', '6M': '1d', '1A': '1d', '3A': '1wk' }
+const CACHE_TTL      = { '1M': 24*3600*1000, '3M': 24*3600*1000, '6M': 24*3600*1000, '1A': 24*3600*1000, '3A': 7*24*3600*1000 }
 
 function sb() {
   return createClient(
@@ -12,9 +14,12 @@ function sb() {
 }
 
 async function fetchYahoo(ticker, range) {
-  const interval = INTERVALS[range] || '1d'
+  const interval = RANGE_INTERVAL[range] || '1d'
+  const days     = RANGE_DAYS[range] || 370
+  const period2  = Math.floor(Date.now() / 1000)
+  const period1  = period2 - days * 86400
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}` +
-    `?range=${range}&interval=${interval}&includeAdjustedClose=true&includePrePost=false`
+    `?period1=${period1}&period2=${period2}&interval=${interval}&includeAdjustedClose=true&includePrePost=false`
 
   const res = await fetch(url, { headers: { 'User-Agent': UA }, cache: 'no-store' })
   if (!res.ok) throw new Error(`Yahoo chart ${res.status}`)
@@ -39,10 +44,10 @@ async function fetchYahoo(ticker, range) {
 }
 
 // Clave separada (chart-1y, chart-5y...) para no colisionar con market_charts de índices
-export async function getCompanyChartData(ticker, range = '1y') {
+export async function getCompanyChartData(ticker, range = '1A') {
   const client   = sb()
   const rangeKey = `chart-${range}`
-  const ttl      = CACHE_TTL[range] ?? CACHE_TTL['1y']
+  const ttl      = CACHE_TTL[range] ?? CACHE_TTL['1A']
 
   const { data: cached } = await client
     .from('market_charts')

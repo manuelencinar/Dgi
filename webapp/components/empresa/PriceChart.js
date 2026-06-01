@@ -52,7 +52,7 @@ function Chart({ rows, rangeId, avgCost }) {
 
   if (!rows?.length) return (
     <div style={{ height: H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#3a4260', fontSize: 12 }}>Sin datos — ejecuta update_prices.py para poblar daily_prices</p>
+      <p style={{ color: '#3a4260', fontSize: 12 }}>Sin datos de cotización disponibles</p>
     </div>
   )
 
@@ -190,6 +190,7 @@ export default function PriceChart({ ticker, currency, avgCost }) {
     since.setDate(since.getDate() - def.days)
     const sinceStr = since.toISOString().slice(0, 10)
 
+    // 1. Fuente primaria: daily_prices (poblada por update_prices.py)
     const { data } = await sb
       .from('daily_prices')
       .select('date, close_price')
@@ -199,7 +200,23 @@ export default function PriceChart({ ticker, currency, avgCost }) {
 
     let result = (data || []).map(r => ({ date: r.date, price: Number(r.close_price) }))
 
-    // Para períodos > 1 año, usar datos mensuales
+    // 2. Fallback: si daily_prices aún no tiene datos, tirar del API de Yahoo
+    if (result.length < 2) {
+      try {
+        const res  = await fetch(`/api/empresa/${encodeURIComponent(ticker)}/chart?range=${rangeId}`, { cache: 'no-store' })
+        const json = await res.json()
+        if (Array.isArray(json?.timestamps) && json.timestamps.length) {
+          result = json.timestamps
+            .map((ts, i) => ({
+              date:  new Date(ts * 1000).toISOString().slice(0, 10),
+              price: json.closes[i],
+            }))
+            .filter(p => p.price != null)
+        }
+      } catch {}
+    }
+
+    // Para períodos > 1 año, usar datos mensuales (último cierre de cada mes)
     if (def.days > 370 && result.length > 0) {
       result = toMonthly(result)
     }
@@ -227,10 +244,8 @@ export default function PriceChart({ ticker, currency, avgCost }) {
           )
         })}
         {loading && <span style={{ fontSize: 11, color: '#3a4260', marginLeft: 4 }}>cargando…</span>}
-        {rows !== null && rows.length > 0 && (
-          <span style={{ fontSize: 10, color: '#2e3a55', marginLeft: 'auto' }}>
-            {currency} · daily_prices
-          </span>
+        {rows !== null && rows.length > 0 && currency && (
+          <span style={{ fontSize: 10, color: '#2e3a55', marginLeft: 'auto' }}>{currency}</span>
         )}
       </div>
 
