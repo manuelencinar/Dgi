@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 // ── Design tokens ──────────────────────────────────────────────────────────
+const ADMIN_EMAIL = 'vayaebookk@gmail.com'
+
 const CARD    = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 24, marginBottom: 20 }
 const INPUT   = { width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#c8d0e0', fontSize: 14, outline: 'none', boxSizing: 'border-box' }
 const LABEL   = { fontSize: 12, color: '#4a5270', marginBottom: 6, display: 'block' }
@@ -144,9 +146,11 @@ export default function AjustesGlobalPage() {
       setMonthlySummary(data.monthly_summary_active || false)
       setAlertsEmail(data.alerts_email_active || false)
       setRecurringEmail(data.recurring_email_active || false)
-      setPlan(data.plan || 'free')
+      setPlan(u.email === ADMIN_EMAIL ? 'premium' : (data.plan || 'free'))
       setPremiumUntil(data.premium_until || null)
     }
+    // Si el usuario es admin y no tiene fila en user_settings, marcarlo premium
+    if (!data && u.email === ADMIN_EMAIL) setPlan('premium')
     setSettings(data)
     setLoading(false)
   }
