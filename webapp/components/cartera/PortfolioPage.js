@@ -11,6 +11,8 @@ import {
 import PortfolioDGIScore from '@/components/cartera/PortfolioDGIScore'
 import CompanyDetector from '@/components/cartera/CompanyDetector'
 import RecurringSection from '@/components/cartera/RecurringSection'
+import FxRatesWidget from '@/components/cartera/FxRatesWidget'
+import CurrencyAnalysis from '@/components/cartera/CurrencyAnalysis'
 
 // ── Design tokens ──────────────────────────────────────────────────────────
 const CARD   = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
@@ -526,6 +528,11 @@ export default function PortfolioPage({ isPremium }) {
         )}
       </div>
 
+      {/* FX rates widget — only when portfolio has non-EUR currencies */}
+      {enriched.length > 0 && (
+        <FxRatesWidget currencies={[...new Set(enriched.map(p => p.currency).filter(Boolean))]} />
+      )}
+
       {/* Section 1: Summary */}
       {enriched.length > 0 && <SummarySection summary={summary} />}
 
@@ -559,6 +566,9 @@ export default function PortfolioPage({ isPremium }) {
 
           {/* Section 6: Fiscal */}
           <FiscalSection fiscal={fiscal} country={fiscalCountry} onCountryChange={setFiscal} isPremium={isPremium} />
+
+          {/* Section 7: Currency analysis with FX impact simulator */}
+          <CurrencyAnalysis enriched={enriched} isPremium={isPremium} />
         </>
       )}
 

@@ -38,6 +38,7 @@ export default function NewPositionPage() {
   const [form, setForm]   = useState({ shares: '', price: '', date: new Date().toISOString().slice(0, 10), type: 'buy', notes: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState(null)
+  const [fxAlertPending, setFxAlertPending] = useState(false)
 
   // Ajustes del usuario
   const [userSettings, setUserSettings] = useState({ base_currency: 'EUR', fx_commission_pct: 0 })
@@ -175,6 +176,14 @@ export default function NewPositionPage() {
     if (!shares || shares <= 0) { setError('Número de participaciones inválido'); return }
     if (!price || price <= 0)   { setError('Precio inválido'); return }
     if (needsFx && useManualFx && !fxManualRate) { setError('Introduce el tipo de cambio manualmente'); return }
+
+    // Alerta de comisión elevada — pedir confirmación antes de guardar
+    const threshold = userSettings.fx_alert_threshold ?? 10
+    if (!fxAlertPending && fxBreakdown?.commission > 0 && fxBreakdown.commission > threshold) {
+      setFxAlertPending(true)
+      return
+    }
+    setFxAlertPending(false)
 
     setSaving(true); setError(null)
     const { data: { user } } = await sb.auth.getUser()
@@ -398,12 +407,30 @@ export default function NewPositionPage() {
 
           {error && <p style={{ fontSize: 12, color: '#f87171' }}>{error}</p>}
 
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-            <Link href="/cartera"><button type="button" style={BTN_GHOST}>Cancelar</button></Link>
-            <button type="submit" style={{ ...BTN_PRIMARY, opacity: saving ? 0.6 : 1 }} disabled={saving}>
-              {saving ? 'Guardando…' : 'Guardar operación'}
-            </button>
-          </div>
+          {/* Banner de alerta de comisión elevada */}
+          {fxAlertPending && fxBreakdown && (
+            <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 8, padding: '14px 16px' }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#fbbf24', marginBottom: 6 }}>
+                ⚠ La comisión de cambio de esta operación es de {fxBreakdown.commission.toFixed(2)} {userSettings.base_currency}
+              </p>
+              <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 12 }}>
+                Supera tu umbral de alerta de {userSettings.fx_alert_threshold ?? 10} {userSettings.base_currency}. ¿Deseas continuar?
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button type="submit" style={{ ...BTN_PRIMARY, padding: '9px 20px' }}>Continuar</button>
+                <button type="button" onClick={() => setFxAlertPending(false)} style={{ ...BTN_GHOST, padding: '9px 20px' }}>Cancelar</button>
+              </div>
+            </div>
+          )}
+
+          {!fxAlertPending && (
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <Link href="/cartera"><button type="button" style={BTN_GHOST}>Cancelar</button></Link>
+              <button type="submit" style={{ ...BTN_PRIMARY, opacity: saving ? 0.6 : 1 }} disabled={saving}>
+                {saving ? 'Guardando…' : 'Guardar operación'}
+              </button>
+            </div>
+          )}
         </div>
       </form>
     </div>

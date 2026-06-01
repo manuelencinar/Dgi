@@ -73,6 +73,11 @@ export default async function PublicNav({ active }) {
                   PREMIUM
                 </span>
               )}
+              <Link href="/ajustes" title="Ajustes" style={{
+                fontSize: 17, color: active === '/ajustes' ? '#818cf8' : '#4a5270',
+                textDecoration: 'none', padding: '4px 7px', borderRadius: 7, lineHeight: 1,
+                background: active === '/ajustes' ? 'rgba(99,102,241,0.12)' : 'transparent',
+              }}>⚙</Link>
               <Link href="/mercados" style={{
                 fontSize: 12, fontWeight: 700, color: '#818cf8',
                 background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',

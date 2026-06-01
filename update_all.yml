@@ -1,0 +1,157 @@
+name: Actualizar datos Mi Índice DGI
+
+on:
+  schedule:
+    # Precios diarios — dos veces al día en días laborables
+    - cron: '0 16 * * 1-5'   # 16:00 UTC — cierre Europa
+    - cron: '0 22 * * 1-5'   # 22:00 UTC — cierre EEUU
+    # Fundamentales — domingos en dos bloques para evitar rate limiting
+    - cron: '0 6 * * 0'   # Domingo 6:00 UTC — primera mitad
+    - cron: '0 9 * * 0'   # Domingo 9:00 UTC — segunda mitad
+    # ETFs y fondos — primer domingo de cada mes
+    - cron: '0 12 * * 0'
+  # Permite lanzar manualmente desde GitHub
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Qué job ejecutar'
+        required: true
+        default: 'prices'
+        type: choice
+        options:
+          - prices
+          - fundamentals_a
+          - fundamentals_b
+          - funds
+          - all
+
+jobs:
+
+  # ── JOB 1: Precios diarios (lunes-viernes) ─────────────────────────────
+  update_prices:
+    name: Precios diarios y tipos de cambio
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.job == 'prices' || github.event.inputs.job == 'all') ||
+      github.event_name == 'schedule' &&
+(github.event.schedule == '0 16 * * 1-5' || github.event.schedule == '0 22 * * 1-5')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: pip install yfinance supabase pandas requests
+
+      - name: Ejecutar update_prices.py
+        run: python scripts/update_prices.py --days 2
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Solo tipos de cambio si falla todo lo demás
+        if: failure()
+        run: python scripts/update_prices.py --fx-only --days 2
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+  # ── JOB 2: Fundamentales primera mitad A-M (domingos 6:00) ────────────
+  update_fundamentals_a:
+    name: Fundamentales A-M
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.job == 'fundamentals_a' || github.event.inputs.job == 'all') ||
+      github.event_name == 'schedule' &&
+      github.event.schedule == '0 6 * * 0'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: pip install yfinance supabase pandas numpy requests
+
+      - name: Ejecutar fundamentales primera mitad (A-M)
+        run: python scripts/update_fundamentals.py --half first
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        timeout-minutes: 90
+
+  # ── JOB 3: Fundamentales segunda mitad N-Z (domingos 9:00) ────────────
+  update_fundamentals_b:
+    name: Fundamentales N-Z
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.job == 'fundamentals_b' || github.event.inputs.job == 'all') ||
+      github.event_name == 'schedule' &&
+      github.event.schedule == '0 9 * * 0'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: pip install yfinance supabase pandas numpy requests
+
+      - name: Ejecutar fundamentales segunda mitad (N-Z)
+        run: python scripts/update_fundamentals.py --half second
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        timeout-minutes: 90
+
+  # ── JOB 4: ETFs y fondos (primer domingo de cada mes) ─────────────────
+  update_funds:
+    name: ETFs y fondos
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.job == 'funds' || github.event.inputs.job == 'all') ||
+      github.event_name == 'schedule' &&
+      github.event.schedule == '0 12 * * 0'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: |
+          pip install yfinance supabase pandas requests \
+                      beautifulsoup4 lxml
+
+      - name: Ejecutar update_funds.py
+        run: python scripts/update_funds.py
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENFIGI_API_KEY:          ${{ secrets.OPENFIGI_API_KEY }}
+        timeout-minutes: 60
