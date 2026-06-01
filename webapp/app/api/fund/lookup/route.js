@@ -22,6 +22,32 @@ async function crumb() {
 
 const raw = v => (v && typeof v === 'object' && 'raw' in v) ? v.raw : (typeof v === 'number' ? v : null)
 
+const isISIN = s => /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test(s)
+
+// Resuelve un ISIN o nombre al símbolo real de Yahoo vía el endpoint de búsqueda
+async function searchSymbol(query, cookie, preferType) {
+  try {
+    const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=8&newsCount=0`
+    const res = await fetch(url, { headers: { 'User-Agent': UA, Cookie: cookie }, cache: 'no-store' })
+    if (!res.ok) return null
+    const j = await res.json()
+    const quotes = (j?.quotes || []).filter(q => q.symbol)
+    if (!quotes.length) return null
+    const want = preferType === 'fund' ? 'MUTUALFUND' : preferType === 'etf' ? 'ETF' : null
+    const match = (want && quotes.find(q => q.quoteType === want)) || quotes[0]
+    return match?.symbol || null
+  } catch { return null }
+}
+
+async function fetchQuoteSummary(symbol, cr, cookie) {
+  const modules = 'price,summaryDetail,fundProfile,defaultKeyStatistics'
+  const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=${modules}&crumb=${encodeURIComponent(cr)}`
+  const res = await fetch(url, { headers: { 'User-Agent': UA, Cookie: cookie }, cache: 'no-store' })
+  if (!res.ok) return null
+  const j = await res.json()
+  return j?.quoteSummary?.result?.[0] || null
+}
+
 export async function POST(request) {
   let ticker, assetType
   try { ({ ticker, assetType } = await request.json()) } catch { return NextResponse.json({ error: 'Body inválido' }, { status: 400 }) }
@@ -42,19 +68,32 @@ export async function POST(request) {
 
   try {
     const { cr, cookie } = await crumb()
-    const modules = 'price,summaryDetail,fundProfile,defaultKeyStatistics'
-    const qsUrl = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=${modules}&crumb=${encodeURIComponent(cr)}`
-    const qsRes = await fetch(qsUrl, { headers: { 'User-Agent': UA, Cookie: cookie }, cache: 'no-store' })
-    if (!qsRes.ok) return NextResponse.json({ error: 'No encontrado en Yahoo Finance — puedes introducir los datos manualmente' }, { status: 404 })
-    const qs = await qsRes.json()
-    const r = qs?.quoteSummary?.result?.[0]
+
+    // Resolver símbolo: si es ISIN, buscar primero; si no, probar directo y luego buscar
+    const inputIsIsin = isISIN(ticker)
+    let symbol = ticker
+    const isin = inputIsIsin ? ticker : null
+    if (inputIsIsin) {
+      const resolved = await searchSymbol(ticker, cookie, type)
+      if (resolved) symbol = resolved
+    }
+
+    let r = await fetchQuoteSummary(symbol, cr, cookie)
+    if (!r) {
+      // Fallback: buscar el símbolo por nombre/ticker introducido
+      const resolved = await searchSymbol(ticker, cookie, type)
+      if (resolved && resolved !== symbol) {
+        symbol = resolved
+        r = await fetchQuoteSummary(symbol, cr, cookie)
+      }
+    }
     if (!r) return NextResponse.json({ error: 'No encontrado en Yahoo Finance — puedes introducir los datos manualmente' }, { status: 404 })
 
     const price = r.price || {}, sd = r.summaryDetail || {}, fp = r.fundProfile || {}, ks = r.defaultKeyStatistics || {}
 
     const currentPrice = raw(price.regularMarketPrice)
     const currency = price.currency || sd.currency || 'USD'
-    const name = price.longName || price.shortName || ticker
+    const name = price.longName || price.shortName || symbol
     const ter = raw(fp.feesExpensesInvestment?.annualReportExpenseRatio) != null
       ? raw(fp.feesExpensesInvestment.annualReportExpenseRatio) * 100
       : (raw(ks.annualReportExpenseRatio) != null ? raw(ks.annualReportExpenseRatio) * 100 : null)
@@ -65,7 +104,7 @@ export async function POST(request) {
     // Distribuciones (chart con events=div, 5 años)
     let distHistory = []
     try {
-      const chUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=5y&interval=1d&events=div`
+      const chUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5y&interval=1d&events=div`
       const chRes = await fetch(chUrl, { headers: { 'User-Agent': UA, Cookie: cookie }, cache: 'no-store' })
       const ch = await chRes.json()
       const divs = ch?.chart?.result?.[0]?.events?.dividends || {}
@@ -85,13 +124,13 @@ export async function POST(request) {
     if (yieldTtm == null && raw(sd.yield) != null) yieldTtm = Math.round(raw(sd.yield) * 1000) / 10
 
     const record = {
-      ticker, name, asset_type: type, currency,
+      ticker: symbol, name, asset_type: type, currency,
       country: null,
       current_price: currentPrice,
       ter: ter != null ? Math.round(ter * 1000) / 1000 : null,
       yield_ttm: yieldTtm,
       distribution_history: distHistory,
-      benchmark, category, manager, isin: null,
+      benchmark, category, manager, isin,
       updated_at: new Date().toISOString(),
     }
 
