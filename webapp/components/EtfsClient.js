@@ -14,6 +14,9 @@ export default function EtfsClient({ initialFunds }) {
     return funds.filter(f => (f.name || '').toLowerCase().includes(q) || f.ticker.toLowerCase().includes(q))
   }, [funds, search])
 
+  const etfs  = filtered.filter(f => (f.asset_type || 'etf') !== 'fund')
+  const onlyFunds = filtered.filter(f => f.asset_type === 'fund')
+
   const searchYahoo = async () => {
     const tk = search.trim().toUpperCase()
     if (!tk) return
@@ -48,39 +51,55 @@ export default function EtfsClient({ initialFunds }) {
       </div>
       {lookupMsg && <p style={{ fontSize: 12, color: lookupMsg.startsWith('✓') ? '#34d399' : '#fbbf24', marginBottom: 12 }}>{lookupMsg}</p>}
 
-      <div style={{ overflowX: 'auto', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
-              {['ETF', 'Ticker', 'Divisa', 'Precio', 'TER', 'Yield TTM', ''].map(h => (
-                <th key={h} style={{ padding: '10px', textAlign: h === 'ETF' || h === 'Ticker' ? 'left' : 'left', fontSize: 10, fontWeight: 700, color: '#3a4260', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(f => (
-              <tr key={f.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <td style={{ padding: '10px' }}>
-                  <Link href={`/fondo/${encodeURIComponent(f.ticker)}`} style={{ color: '#d0d8e8', textDecoration: 'none', fontSize: 13, fontWeight: 700 }}>{f.name || f.ticker}</Link>
-                  {f.category && <p style={{ fontSize: 10, color: '#2e3a55' }}>{f.category}</p>}
-                </td>
-                <td style={{ padding: '10px' }}><span style={{ fontSize: 11, fontWeight: 800, color: '#60a5fa', background: 'rgba(96,165,250,0.12)', padding: '2px 7px', borderRadius: 5 }}>{f.ticker}</span></td>
-                <td style={{ padding: '10px', fontSize: 12, color: '#4a5270' }}>{f.currency}</td>
-                <td style={{ padding: '10px', fontSize: 12, color: '#c8d0e0' }}>{f.current_price != null ? f.current_price : '—'}</td>
-                <td style={{ padding: '10px', fontSize: 12, fontWeight: 700, color: terColor(f.ter) }}>{f.ter != null ? f.ter + '%' : '—'}</td>
-                <td style={{ padding: '10px', fontSize: 12, fontWeight: 700, color: '#34d399' }}>{f.yield_ttm != null ? f.yield_ttm + '%' : '—'}</td>
-                <td style={{ padding: '10px' }}>
-                  <Link href={`/cartera/nueva-posicion?ticker=${encodeURIComponent(f.ticker)}&type=etf`} style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 7, padding: '5px 12px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                    + Cartera
-                  </Link>
-                </td>
+      <Section title="ETFs" rows={etfs} kind="etf" accent="#60a5fa" terColor={terColor}
+        empty="No hay ETFs precargados. Ejecuta la migración SQL de funds." />
+
+      <Section title="Fondos de inversión" rows={onlyFunds} kind="fund" accent="#a78bfa" terColor={terColor}
+        empty="Aún no has añadido ningún fondo. Añádelos desde la cartera con tu ISIN o ticker de Yahoo." />
+    </div>
+  )
+}
+
+function Section({ title, rows, kind, accent, terColor, empty }) {
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <p style={{ fontSize: 13, fontWeight: 800, color: '#c8d0e0', marginBottom: 10 }}>
+        {title} <span style={{ fontSize: 11, color: '#4a5270', fontWeight: 400 }}>({rows.length})</span>
+      </p>
+      {rows.length === 0 ? (
+        <p style={{ fontSize: 13, color: '#4a5270', padding: '20px 0' }}>{empty}</p>
+      ) : (
+        <div style={{ overflowX: 'auto', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+                {[kind === 'fund' ? 'Fondo' : 'ETF', 'Ticker', 'Divisa', 'Precio', 'TER', 'Yield TTM', ''].map(h => (
+                  <th key={h} style={{ padding: '10px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: '#3a4260', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {filtered.length === 0 && !search.trim() && (
-        <p style={{ fontSize: 13, color: '#4a5270', textAlign: 'center', padding: '40px 0' }}>No hay ETFs precargados. Ejecuta la migración SQL de funds.</p>
+            </thead>
+            <tbody>
+              {rows.map(f => (
+                <tr key={f.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <td style={{ padding: '10px' }}>
+                    <Link href={`/fondo/${encodeURIComponent(f.ticker)}`} style={{ color: '#d0d8e8', textDecoration: 'none', fontSize: 13, fontWeight: 700 }}>{f.name || f.ticker}</Link>
+                    {f.category && <p style={{ fontSize: 10, color: '#2e3a55' }}>{f.category}</p>}
+                  </td>
+                  <td style={{ padding: '10px' }}><span style={{ fontSize: 11, fontWeight: 800, color: accent, background: `${accent}1f`, padding: '2px 7px', borderRadius: 5 }}>{f.ticker}</span></td>
+                  <td style={{ padding: '10px', fontSize: 12, color: '#4a5270' }}>{f.currency}</td>
+                  <td style={{ padding: '10px', fontSize: 12, color: '#c8d0e0' }}>{f.current_price != null ? f.current_price : '—'}</td>
+                  <td style={{ padding: '10px', fontSize: 12, fontWeight: 700, color: terColor(f.ter) }}>{f.ter != null ? f.ter + '%' : '—'}</td>
+                  <td style={{ padding: '10px', fontSize: 12, fontWeight: 700, color: '#34d399' }}>{f.yield_ttm != null ? f.yield_ttm + '%' : '—'}</td>
+                  <td style={{ padding: '10px' }}>
+                    <Link href={`/cartera/nueva-posicion?ticker=${encodeURIComponent(f.ticker)}&type=${kind}`} style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 7, padding: '5px 12px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                      + Cartera
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )
