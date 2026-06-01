@@ -46,6 +46,22 @@ async function buildSummary(sb, userId) {
     .gte('date', prevMonth.toISOString().slice(0, 10)).lte('date', prevMonthEnd.toISOString().slice(0, 10))
   const collectedLastMonth = (divsReceived || []).reduce((s, d) => s + Number(d.amount), 0)
 
+  // Aportaciones periódicas ejecutadas el mes anterior
+  const { data: recurTx } = await sb.from('transactions').select('ticker, shares, price, date').eq('user_id', userId).eq('type', 'buy_recurring')
+    .gte('date', prevMonth.toISOString().slice(0, 10)).lte('date', prevMonthEnd.toISOString().slice(0, 10))
+  let recurFundsMap = {}
+  if (recurTx?.length) {
+    const rt = [...new Set(recurTx.map(t => t.ticker))]
+    const { data: fr } = await sb.from('funds').select('ticker, name, currency').in('ticker', rt)
+    recurFundsMap = Object.fromEntries((fr || []).map(f => [f.ticker, f]))
+  }
+  const recurContributions = (recurTx || []).map(t => {
+    const f = recurFundsMap[t.ticker] || {}
+    const fx = { EUR: 1, USD: 0.92, GBP: 1.17, JPY: 0.006 }[f.currency] || 1
+    return { name: f.name || t.ticker, eur: Number(t.shares) * Number(t.price) * fx, shares: Number(t.shares) }
+  })
+  const recurTotal = recurContributions.reduce((s, c) => s + c.eur, 0)
+
   // Subidas/recortes recientes de dividendo
   const raised = [], cut = []
   enriched.forEach(p => {
@@ -79,6 +95,7 @@ async function buildSummary(sb, userId) {
     annualIncome: summary.totalIncomeEUR,
     thisMonthEntries,
     collectedLastMonth,
+    recurContributions, recurTotal,
     raised, cut,
     portfolioScore, incomeGrowth,
   }
@@ -102,6 +119,11 @@ function buildEmailHTML(email, data) {
 
   const collectedHTML = data.collectedLastMonth > 0
     ? `<p style="color:#c8d0e0;font-size:14px;margin:8px 0">Cobraste <strong style="color:#34d399">${fmtEUR(data.collectedLastMonth)}</strong> en dividendos el mes pasado.</p>` : ''
+
+  const recurHTML = data.recurContributions?.length
+    ? `<p style="color:#c8d0e0;font-size:14px;font-weight:bold;margin:16px 0 6px">Aportaciones periódicas del mes</p>
+       <table width="100%">${data.recurContributions.map(c => `<tr><td style="padding:3px 0;color:#8090a8;font-size:13px">${c.name}</td><td style="padding:3px 0;color:#a78bfa;font-size:13px;text-align:right">${fmtEUR(c.eur)}</td></tr>`).join('')}</table>
+       <p style="color:#a78bfa;font-size:13px;margin:4px 0">Total invertido vía aportaciones: <strong>${fmtEUR(data.recurTotal)}</strong></p>` : ''
 
   const scoreHTML = data.portfolioScore != null
     ? `<p style="color:#c8d0e0;font-size:14px;margin:8px 0">Score DGI de tu cartera: <strong style="color:#818cf8">${data.portfolioScore.toFixed(1)}/10</strong></p>` : ''
@@ -135,6 +157,7 @@ function buildEmailHTML(email, data) {
     <table width="100%">${divList}</table>
 
     ${collectedHTML}
+    ${recurHTML}
     ${raisedHTML}
     ${cutHTML}
     ${scoreHTML}
