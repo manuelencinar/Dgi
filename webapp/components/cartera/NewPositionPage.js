@@ -109,28 +109,34 @@ export default function NewPositionPage() {
     const { data: { user } } = await sb.auth.getUser()
     if (!user) { setError('Sesión expirada'); setSaving(false); return }
 
-    await sb.from('transactions').insert({
+    const { error: txErr } = await sb.from('transactions').insert({
       user_id: user.id, ticker: selected.ticker, type: form.type,
       shares, price, date: form.date, notes: form.notes || null,
     })
+    if (txErr) { setError('Error al guardar la transacción: ' + txErr.message); setSaving(false); return }
 
     const { data: existing } = await sb.from('positions').select('*').eq('user_id', user.id).eq('ticker', selected.ticker).maybeSingle()
 
+    let posErr = null
     if (form.type === 'buy') {
       if (existing) {
         const newShares = existing.shares + shares
         const newAvg = weightedAvgCost(existing.shares, existing.avg_cost, shares, price)
-        await sb.from('positions').update({ shares: newShares, avg_cost: newAvg, updated_at: new Date().toISOString() }).eq('id', existing.id)
+        ;({ error: posErr } = await sb.from('positions').update({ shares: newShares, avg_cost: newAvg, updated_at: new Date().toISOString() }).eq('id', existing.id))
       } else {
-        await sb.from('positions').insert({
+        ;({ error: posErr } = await sb.from('positions').insert({
           user_id: user.id, ticker: selected.ticker, shares, avg_cost: price,
           currency: selected.currency, asset_type: selected.assetType,
-        })
+        }))
       }
     } else if (existing) {
       const remaining = existing.shares - shares
-      if (remaining <= 0) await sb.from('positions').delete().eq('id', existing.id)
-      else await sb.from('positions').update({ shares: remaining, updated_at: new Date().toISOString() }).eq('id', existing.id)
+      if (remaining <= 0) ({ error: posErr } = await sb.from('positions').delete().eq('id', existing.id))
+      else ({ error: posErr } = await sb.from('positions').update({ shares: remaining, updated_at: new Date().toISOString() }).eq('id', existing.id))
+    }
+    if (posErr) {
+      const hint = /asset_type/.test(posErr.message) ? ' (falta ejecutar el SQL que añade asset_type a positions)' : ''
+      setError('Error al guardar la posición: ' + posErr.message + hint); setSaving(false); return
     }
 
     router.push('/cartera')

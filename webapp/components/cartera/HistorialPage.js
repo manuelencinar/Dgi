@@ -14,6 +14,7 @@ function fmt(v, d = 2) { return v == null || isNaN(v) ? '—' : v.toLocaleString
 function fmtEUR(v) { return v == null ? '—' : v.toLocaleString('es-ES', { maximumFractionDigits: 2 }) + ' €' }
 function nameOf(t) { return DICT.find(d => d[1] === t)?.[0] ?? t }
 function currOf(t) { return DICT.find(d => d[1] === t)?.[3] ?? 'USD' }
+function hrefFor(t, fundSet) { return fundSet?.has(t) ? `/fondo/${encodeURIComponent(t)}` : `/empresa/${encodeURIComponent(t)}` }
 
 function downloadCSV(filename, rows) {
   const csv = rows.map(r => r.map(c => {
@@ -32,7 +33,7 @@ function PremiumBadge() {
 }
 
 // ── Tab 1: Operaciones ─────────────────────────────────────────────────────
-function TabOperations({ transactions, dividends, isPremium }) {
+function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
   const [filterTicker, setFilterTicker] = useState('all')
   const [filterType,   setFilterType]   = useState('all')
 
@@ -119,7 +120,7 @@ function TabOperations({ transactions, dividends, isPremium }) {
                 <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                   <td style={{ padding: '7px 8px', color: '#4a5270', whiteSpace: 'nowrap' }}>{new Date(t.date).toLocaleDateString('es-ES')}</td>
                   <td style={{ padding: '7px 8px' }}>
-                    <Link href={`/empresa/${encodeURIComponent(t.ticker)}`} style={{ color: '#c8d0e0', textDecoration: 'none', fontWeight: 600 }}>{nameOf(t.ticker)}</Link>
+                    <Link href={hrefFor(t.ticker, fundTickers)} style={{ color: '#c8d0e0', textDecoration: 'none', fontWeight: 600 }}>{nameOf(t.ticker)}</Link>
                   </td>
                   <td style={{ padding: '7px 8px' }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: t.type === 'buy' ? '#34d399' : '#f87171', background: t.type === 'buy' ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 7px', borderRadius: 5 }}>
@@ -326,6 +327,8 @@ function TabYieldOnCost({ positions, transactions, fundamentals, isPremium }) {
     </div>
   )
 
+  const fundSet = new Set(positions.filter(p => (p.asset_type || 'stock') !== 'stock').map(p => p.ticker))
+
   const rows = useMemo(() => {
     return positions.map(pos => {
       const fund = fundamentals[pos.ticker] || {}
@@ -373,7 +376,7 @@ function TabYieldOnCost({ positions, transactions, fundamentals, isPremium }) {
             {rows.map(r => (
               <tr key={r.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                 <td style={{ padding: '7px 8px' }}>
-                  <Link href={`/empresa/${encodeURIComponent(r.ticker)}`} style={{ color: '#c8d0e0', textDecoration: 'none', fontWeight: 600 }}>{r.name}</Link>
+                  <Link href={hrefFor(r.ticker, fundSet)} style={{ color: '#c8d0e0', textDecoration: 'none', fontWeight: 600 }}>{r.name}</Link>
                   {r.yocCurrent != null && r.yocCurrent > 10 && (
                     <span style={{ fontSize: 9, fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', padding: '1px 6px', borderRadius: 4, marginLeft: 6 }}>YoC 10%+</span>
                   )}
@@ -465,7 +468,7 @@ export default function HistorialPage({ isPremium }) {
       </div>
 
       <div style={CARD}>
-        {tab === 'ops'  && <TabOperations transactions={transactions} dividends={dividends} isPremium={isPremium} />}
+        {tab === 'ops'  && <TabOperations transactions={transactions} dividends={dividends} isPremium={isPremium} fundTickers={new Set(positions.filter(p => (p.asset_type || 'stock') !== 'stock').map(p => p.ticker))} />}
         {tab === 'divs' && <TabDividends dividends={dividends} positions={positions} onAdd={handleAddDividend} isPremium={isPremium} />}
         {tab === 'yoc'  && <TabYieldOnCost positions={positions} transactions={transactions} fundamentals={fundamentals} isPremium={isPremium} />}
       </div>
