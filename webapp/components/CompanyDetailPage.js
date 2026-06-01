@@ -1010,6 +1010,7 @@ export default function CompanyDetailPage({
   ticker, name, country, currency, sector, subsector, type,
   isPremium, hasData,
   price, change, changePct,
+  dailyPrice, avgCost,
   yld, divRate, low52, high52,
   peTrailing, peForward, evEbitda, eps, payout, mktCap,
   divHistory, cagr, streak, updatedAt,
@@ -1087,6 +1088,15 @@ export default function CompanyDetailPage({
                 {divRate != null && <span style={{ fontSize: 11, color: '#4a5270', fontWeight: 400, marginLeft: 6 }}>(DPS {fmt(divRate)} {currency})</span>}
               </p>
             )}
+            {/* Frescura del precio */}
+            {dailyPrice && (
+              <p style={{ fontSize: 10, color: '#4a5270', marginTop: 6 }}>
+                {dailyPrice.isToday
+                  ? `Actualizado hoy ${new Date(dailyPrice.updatedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`
+                  : `Precio de cierre del ${new Date(dailyPrice.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}`
+                }
+              </p>
+            )}
           </div>
         </div>
 
@@ -1102,7 +1112,7 @@ export default function CompanyDetailPage({
 
       {/* ── 2. GRÁFICO DE COTIZACIÓN ── */}
       <Card style={{ marginBottom: 16 }}>
-        <PriceChart ticker={ticker} currency={currency} />
+        <PriceChart ticker={ticker} currency={currency} avgCost={avgCost} />
       </Card>
 
       {/* ── MAIN LAYOUT ── */}

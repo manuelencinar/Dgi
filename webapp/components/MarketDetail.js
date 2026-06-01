@@ -1,6 +1,7 @@
 'use client'
 import { useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import PricesFreshnessIndicator from '@/components/PricesFreshnessIndicator'
 
 const RANGES = [
   { id: '1mo', label: '1M' },
@@ -699,6 +700,9 @@ export default function MarketDetail({ market, quote, initialChartData, stats, r
 
       {/* ── FREE: Empresas del índice ── */}
       {constituents.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+          <PricesFreshnessIndicator />
+        </div>
         <ConstituentsList constituents={constituents} quotes={constituentQuotes} />
       )}
 

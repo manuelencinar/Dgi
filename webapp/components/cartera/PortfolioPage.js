@@ -13,6 +13,7 @@ import CompanyDetector from '@/components/cartera/CompanyDetector'
 import RecurringSection from '@/components/cartera/RecurringSection'
 import FxRatesWidget from '@/components/cartera/FxRatesWidget'
 import CurrencyAnalysis from '@/components/cartera/CurrencyAnalysis'
+import PricesFreshnessIndicator from '@/components/PricesFreshnessIndicator'
 
 // ── Design tokens ──────────────────────────────────────────────────────────
 const CARD   = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
@@ -476,8 +477,32 @@ export default function PortfolioPage({ isPremium }) {
       fundTickers.length ? sb.from('funds').select('*').in('ticker', fundTickers) : Promise.resolve({ data: [] }),
     ])
 
+    // Precios frescos de daily_prices (últimos 7 días para cubrir fines de semana)
+    const since = new Date(); since.setDate(since.getDate() - 7)
+    const { data: dailyRows } = await sb.from('daily_prices')
+      .select('ticker, close_price, date')
+      .in('ticker', [...stockTickers, ...fundTickers])
+      .gte('date', since.toISOString().slice(0, 10))
+      .order('date', { ascending: false })
+
+    // Precio más reciente por ticker desde daily_prices
+    const dailyPricesMap = {}
+    for (const row of (dailyRows || [])) {
+      if (!dailyPricesMap[row.ticker]) {
+        dailyPricesMap[row.ticker] = { price: Number(row.close_price), date: row.date }
+      }
+    }
+
     const fundMap  = Object.fromEntries((funds || []).map(f => [f.ticker, f]))
     const fundsMap = Object.fromEntries((fundsData || []).map(f => [f.ticker, f]))
+
+    // Inyectar precios frescos de daily_prices en fundMap y fundsMap
+    for (const ticker of Object.keys(dailyPricesMap)) {
+      const dp = dailyPricesMap[ticker]
+      if (fundMap[ticker])  fundMap[ticker]  = { ...fundMap[ticker],  current_price: dp.price }
+      if (fundsMap[ticker]) fundsMap[ticker] = { ...fundsMap[ticker], current_price: dp.price }
+    }
+
     setEnriched(enrichPositions(positions, fundMap, fundsMap))
     setLoading(false)
   }
@@ -521,11 +546,14 @@ export default function PortfolioPage({ isPremium }) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0' }}>Mi cartera</h1>
-        {enriched.length > 0 && (
-          <Link href="/cartera/nueva-posicion" style={{ padding: '9px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-            + Añadir posición
-          </Link>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <PricesFreshnessIndicator />
+          {enriched.length > 0 && (
+            <Link href="/cartera/nueva-posicion" style={{ padding: '9px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+              + Añadir posición
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* FX rates widget — only when portfolio has non-EUR currencies */}

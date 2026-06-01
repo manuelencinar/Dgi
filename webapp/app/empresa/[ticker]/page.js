@@ -60,15 +60,34 @@ export default async function EmpresaPage({ params }) {
 
   const [name, , country, currency, sector, subsector, type] = entry
 
-  const [plan, detail, liveQuote] = await Promise.all([
+  // Obtener plan, datos, cotización en vivo y precio diario en paralelo
+  const supabase = await authClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const [plan, detail, liveQuote, dailyRow, positionRow] = await Promise.all([
     getUserPlan(),
     getCompanyDetail(t),
     getCompanyQuote(t),
+    // Precio más reciente de daily_prices
+    supabase.from('daily_prices').select('close_price, date, updated_at')
+      .eq('ticker', t).order('date', { ascending: false }).limit(1).maybeSingle()
+      .then(r => r.data),
+    // Posición del usuario para mostrar avg_cost en el gráfico
+    user ? supabase.from('positions').select('avg_cost')
+      .eq('user_id', user.id).eq('ticker', t).maybeSingle()
+      .then(r => r.data) : null,
   ])
 
   const isPremium = plan === 'premium'
 
-  const price      = liveQuote?.price       ?? detail?.current_price  ?? null
+  const dailyPrice = dailyRow ? {
+    price:     Number(dailyRow.close_price),
+    date:      dailyRow.date,
+    isToday:   dailyRow.date === new Date().toISOString().slice(0, 10),
+    updatedAt: dailyRow.updated_at,
+  } : null
+
+  const price      = liveQuote?.price       ?? dailyPrice?.price ?? detail?.current_price  ?? null
   const change     = liveQuote?.change      ?? null
   const changePct  = liveQuote?.pct         ?? null
   const yld        = price > 0 && detail?.dps != null ? detail.dps / price : null
@@ -113,6 +132,8 @@ export default async function EmpresaPage({ params }) {
         price={price}
         change={change}
         changePct={changePct}
+        dailyPrice={dailyPrice}
+        avgCost={positionRow?.avg_cost ?? null}
         yld={yld}
         divRate={divRate}
         low52={low52}
