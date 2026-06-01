@@ -30,11 +30,13 @@ alter table transactions
 
 -- ── Preferencias en user_settings ─────────────────────────────────────────
 alter table user_settings
-  add column if not exists base_currency         text    not null default 'EUR',
-  add column if not exists country_residence     text    not null default 'ES',
-  add column if not exists broker_name           text,
-  add column if not exists fx_commission_pct     numeric not null default 0,
-  add column if not exists fx_alert_threshold    numeric          default 10,
-  add column if not exists benchmark_index       text             default 'MSCI World',
-  add column if not exists monthly_summary_active boolean         default false,
-  add column if not exists alerts_email_active   boolean         default false;
+  add column if not exists base_currency          text    not null default 'EUR',
+  add column if not exists country_residence      text    not null default 'ES',
+  add column if not exists broker_name            text,
+  add column if not exists fx_commission_pct      numeric not null default 0,
+  add column if not exists fx_alert_threshold     numeric          default 10,
+  add column if not exists benchmark_index        text             default 'MSCI World',
+  add column if not exists monthly_summary_active boolean          default false,
+  add column if not exists alerts_email_active    boolean          default false,
+  add column if not exists recurring_email_active boolean          default false,
+  add column if not exists show_returns_original  boolean          default false;
