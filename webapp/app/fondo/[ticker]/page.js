@@ -5,6 +5,7 @@ import Link from 'next/link'
 import PublicNav from '@/components/PublicNav'
 import PriceChart from '@/components/empresa/PriceChart'
 import DividendBars from '@/components/empresa/DividendBars'
+import { fetchAndStoreFund } from '@/lib/fund-fetch'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +42,17 @@ export default async function FondoPage({ params }) {
   const { ticker } = await params
   const t = decodeURIComponent(ticker)
 
-  const { data: fund } = await sc().from('funds').select('*').eq('ticker', t).maybeSingle()
+  let { data: fund } = await sc().from('funds').select('*').eq('ticker', t).maybeSingle()
+
+  // Auto-rellenado: si la posición existe pero el fondo no está en la tabla, descargarlo de Yahoo
+  if (!fund) {
+    const assetType = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test(t) ? 'fund' : 'etf'
+    const res = await fetchAndStoreFund(t, assetType)
+    if (res.fund) {
+      const { data } = await sc().from('funds').select('*').eq('ticker', res.fund.ticker).maybeSingle()
+      fund = data || res.fund
+    }
+  }
   if (!fund) notFound()
 
   // Posición del usuario
