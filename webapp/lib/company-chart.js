@@ -2,9 +2,9 @@ import { createClient } from '@supabase/supabase-js'
 
 const UA       = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
 // Rangos: 1M, 3M, 6M, 1A, 3A → días de ventana e intervalo de muestreo
-const RANGE_DAYS     = { '1M': 35, '3M': 95, '6M': 190, '1A': 370, '3A': 1100 }
-const RANGE_INTERVAL = { '1M': '1d', '3M': '1d', '6M': '1d', '1A': '1d', '3A': '1wk' }
-const CACHE_TTL      = { '1M': 24*3600*1000, '3M': 24*3600*1000, '6M': 24*3600*1000, '1A': 24*3600*1000, '3A': 7*24*3600*1000 }
+const RANGE_DAYS     = { '1M': 35, '3M': 95, '6M': 190, '1A': 370, '3A': 1100, '5A': 1830 }
+const RANGE_INTERVAL = { '1M': '1d', '3M': '1d', '6M': '1d', '1A': '1d', '3A': '1wk', '5A': '1wk' }
+const CACHE_TTL      = { '1M': 24*3600*1000, '3M': 24*3600*1000, '6M': 24*3600*1000, '1A': 24*3600*1000, '3A': 7*24*3600*1000, '5A': 7*24*3600*1000 }
 
 function sb() {
   return createClient(

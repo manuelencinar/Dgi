@@ -2,7 +2,7 @@ import { getCompanyChartData } from '@/lib/company-chart'
 
 export const dynamic = 'force-dynamic'
 
-const VALID_RANGES = new Set(['1M', '3M', '6M', '1A', '3A'])
+const VALID_RANGES = new Set(['1M', '3M', '6M', '1A', '3A', '5A'])
 
 export async function GET(request, { params }) {
   const { ticker } = await params
