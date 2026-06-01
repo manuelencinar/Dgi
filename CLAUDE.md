@@ -27,8 +27,11 @@ URL del repositorio: https://github.com/manuelencinar/Dgi
 - Página de mercados — lista de 43 mercados globales con tarjetas resumen
 - Página de cada mercado individual — empresas del índice con análisis DGI
 - Screener avanzado — filtros DGI transversales entre los 43 mercados
-- Página de detalle de cada empresa — gauge salud financiera, DCF, historial dividendos, estados financieros
+- Página de detalle de cada empresa — gauge salud financiera, valoración sector-aware, ROIC reportado/tangible, historial dividendos, estados financieros
 - Módulo de cartera completo (app/cartera/) — ver sección "Módulo de cartera"
+- Página de ETFs (`/etfs`) — ETFs DGI de referencia + fondos, dos secciones separadas
+- Ficha de producto de ETF/fondo (`/fondo/[ticker]`) — precio, métricas, distribuciones, posición
+- Panel de administración (`/dashboard`) — solo admin — ver sección "Panel de administración"
 
 ## Módulo de cartera (app/cartera/)
 Implementado en tres partes. Páginas:
@@ -57,6 +60,50 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - Envío vía Resend — PENDIENTE de configurar (RESEND_API_KEY, RESEND_FROM). Sin la key el endpoint calcula pero no envía.
 - Seguridad opcional del cron: env var CRON_SECRET (si se define, el endpoint la exige).
 - Resend también pendiente para los emails de alertas.
+
+## Sistema de valoración (lib/valuation.js)
+- Valor intrínseco sector-aware. `computeValuation(data, moatWidth, type, currency)` y `recomputeValuation(engine, params, price)` (modo personalizado en cliente).
+- 6 métodos: DCF·FCF (general), DDM (bancos/aseguradoras), Múltiplo AFFO (REITs), DCF·CFO (utilities), DCF·Prima riesgo (farmacéuticas), DCF·Normalizado (energía).
+- Correcciones clave: el DCF **nunca** usa div_cagr5 para el crecimiento (usa media fcf_cagr5+revenue_cagr5); penalización al descuento por ingresos en declive; terminal 0 si 3+ años de caída; FCF base normalizado si el año reciente es negativo pero la media es positiva.
+- Inputs editables por el usuario en la ficha (modo automático/personalizado, persistencia en localStorage).
+- El script Python precalcula `intrinsic_value`, `valuation_warning`, `growth_input_used` en company_fundamentals.
+
+## ROIC corregido (lib/metrics.js) — FUENTE ÚNICA
+- `calculateROIC(data, currency)` y `roicForScoring(data)`. Capital invertido real (activos − caja excedente − pasivos no financieros), NO el equity contable (evita el 105% de Apple).
+- Devuelve roic_reported y roic_tangible (sin goodwill). Bancos/aseguradoras → ROE; REITs → NOI/activos.
+- Lo usan: gauge de salud, scoring DGI, ficha de empresa (card dual), screener (filtro con toggle reportado/tangible).
+- Script Python guarda: roic_reported, roic_tangible, roic_warning, nopat, invested_capital, invested_capital_tangible, tax_rate_effective. El legacy `roic` = tangible.
+
+## ETFs y fondos (módulo cartera)
+- Tabla `funds` (SQL en `webapp/sql/funds.sql`, con 14 ETFs DGI precargados) + `positions.asset_type` (stock/etf/fund).
+- API `/api/fund/lookup` (POST busca/descarga de Yahoo, resuelve ISIN→símbolo vía endpoint de búsqueda; PUT alta manual). Lógica compartida en `lib/fund-fetch.js` (`fetchAndStoreFund`).
+- La ficha `/fondo/[ticker]` se auto-rellena de Yahoo si el fondo no está en la tabla.
+- Limitación: Yahoo da pocos datos de fondos europeos (TER/ISIN suelen faltar → "—", no 0).
+- El Score DGI de la cartera excluye ETFs/fondos; en concentración van a la categoría "ETFs y Fondos".
+
+## Aportaciones periódicas (solo ETFs/fondos)
+- Tabla `recurring_contributions` (SQL en `webapp/sql/recurring.sql`) + `transactions.price_date`.
+- Configurar desde la ficha del fondo (`components/cartera/RecurringButton.js`). Helpers en `lib/recurring.js`.
+- API `/api/procesar-aportaciones` (GET) + cron diario 9:00 UTC en `webapp/vercel.json`. Crea transacciones `buy_recurring`, recalcula precio medio, avanza next_date, registra en admin_logs.
+- Visible en cartera (sección activas), historial (pestaña dedicada) y proyección (desglose periódicas/extra).
+
+## Panel de administración (`/dashboard`)
+- Protección en `proxy.js` (Next.js 16 usa proxy, no middleware): solo `role='admin'` en user_settings (o email admin hardcodeado), redirección silenciosa a `/`.
+- Páginas: Resumen, Datos (carga manual/CSV), Usuarios (métricas+gráfico), Índices (cobertura 43 mercados), Sistema (logs+acciones).
+- API admin: `/api/admin/fetch-ticker`, `/api/admin/trigger-github-action`, `/api/admin/clean-logs`.
+- Tabla `admin_logs` + columna `user_settings.role` (SQL en `webapp/sql/admin.sql`). Lógica en `lib/admin.js`, `lib/admin-stats.js`.
+- Requiere env var `GITHUB_TOKEN` (ya configurada en Vercel) para disparar el workflow.
+- IMPORTANTE: paginar consultas a company_fundamentals (límite 1000 de PostgREST) con `.range()`.
+
+## Infraestructura / despliegue
+- Repo GitHub: rama por defecto **master** (la app vive ahí); `main` es el proyecto HTML original + funds.json de GitHub Pages (historiales independientes).
+- Deploy: Vercel proyecto `invest-dgi`, dominio https://invest-dgi.vercel.app. Deploy con `cd webapp && vercel --prod`.
+- GitHub Action `update_fundamentals.yml` corre `scripts/update_fundamentals.py` (domingos 6:00 UTC + manual). Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
+- El script: pausa 1.5s/ticker (evita rate-limit de yfinance), `is_fresh` reintenta filas stub (current_price/revenue_cagr5 nulos), escribe en admin_logs, actualiza también la tabla `funds` (`update_funds`).
+
+## SQL pendiente de ejecutar en Supabase (todos los ficheros en webapp/sql/)
+Estado: el usuario ya ejecutó admin.sql, valuation_columns.sql, roic_columns.sql, cartera_parte3.sql, funds.sql y recurring.sql durante la sesión.
+Si se monta un entorno nuevo, ejecutar en orden los ficheros de webapp/sql/.
 
 ## Planes y precios
 - Gratuito: acceso permanente sin tarjeta con funciones básicas
