@@ -134,7 +134,8 @@ export async function POST(request) {
       updated_at: new Date().toISOString(),
     }
 
-    await client.from('funds').upsert(record, { onConflict: 'ticker' })
+    const { error: upErr } = await client.from('funds').upsert(record, { onConflict: 'ticker' })
+    if (upErr) return NextResponse.json({ error: `No se pudo guardar el fondo: ${upErr.message}` }, { status: 500 })
     return NextResponse.json({ fund: record, source: 'yahoo' })
   } catch (e) {
     return NextResponse.json({ error: 'No encontrado en Yahoo Finance — puedes introducir los datos manualmente', detail: String(e.message || e) }, { status: 404 })
