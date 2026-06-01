@@ -72,9 +72,12 @@ export async function fetchAndStoreFund(inputTicker, assetType = 'etf') {
     const currentPrice = raw(price.regularMarketPrice)
     const currency = price.currency || sd.currency || 'USD'
     const name = price.longName || price.shortName || symbol
-    const ter = raw(fp.feesExpensesInvestment?.annualReportExpenseRatio) != null
-      ? raw(fp.feesExpensesInvestment.annualReportExpenseRatio) * 100
-      : (raw(ks.annualReportExpenseRatio) != null ? raw(ks.annualReportExpenseRatio) * 100 : null)
+
+    // TER desde varias fuentes; 0 o ausente → sin dato (null)
+    const terRaw = raw(fp.feesExpensesInvestment?.annualReportExpenseRatio)
+      ?? raw(fp.feesExpensesInvestmentCat?.annualReportExpenseRatio)
+      ?? raw(ks.annualReportExpenseRatio)
+    const ter = (terRaw != null && terRaw > 0) ? terRaw * 100 : null
 
     let distHistory = []
     try {
@@ -90,7 +93,10 @@ export async function fetchAndStoreFund(inputTicker, assetType = 'etf') {
       const ttm = distHistory.filter(d => new Date(d.date).getTime() >= cutoff).reduce((s, d) => s + d.amount, 0)
       if (ttm > 0) yieldTtm = Math.round(ttm / currentPrice * 1000) / 10
     }
-    if (yieldTtm == null && raw(sd.yield) != null) yieldTtm = Math.round(raw(sd.yield) * 1000) / 10
+    if (yieldTtm == null) {
+      const yRaw = raw(sd.yield) ?? raw(sd.trailingAnnualDividendYield)
+      if (yRaw != null && yRaw > 0) yieldTtm = Math.round(yRaw * 1000) / 10
+    }
 
     const record = {
       ticker: symbol, name, asset_type: detectedType, currency, country: null,
