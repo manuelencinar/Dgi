@@ -196,7 +196,9 @@ export function computeHealthScore(data, type) {
 export function computeMoat(data, streak) {
   if (!data) return { width: 'none', label: 'Sin datos', signals: [], negative: [], sources: [] }
 
-  const roic    = n(data.roic)
+  // ROIC corregido (reported preferido); el campo roic legacy estaba disparado
+  let roic       = n(data.roic_reported) ?? n(data.roic)
+  const roicTang = n(data.roic_tangible)
   const grM     = n(data.gross_margin)
   const opM     = n(data.operating_margin)
   const fcfCagr = n(data.fcf_cagr5)
@@ -207,7 +209,13 @@ export function computeMoat(data, streak) {
   const signals  = []
   const negative = []
 
-  // ROIC: hasta 35 pts
+  // ROIC: hasta 35 pts. Por encima de 60% el dato es poco fiable (bajo capital
+  // contable por recompras/intangibles): intentar el tangible y, si sigue >60,
+  // no presumir "excepcional".
+  if (roic != null && roic >= 60) {
+    if (roicTang != null && roicTang < 60) roic = roicTang
+    else { score += 20; signals.push('ROIC elevado — verificar estructura de capital'); roic = null }
+  }
   if (roic != null) {
     if      (roic > 25) { score += 35; signals.push(`ROIC excepcional (${roic.toFixed(1)}%) — retornos muy superiores al coste de capital`) }
     else if (roic > 20) { score += 28; signals.push(`ROIC muy elevado (${roic.toFixed(1)}%)`) }

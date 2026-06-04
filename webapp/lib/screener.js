@@ -16,6 +16,18 @@ export function resolveRoic(f) {
 
 function num(v) { return v != null && !isNaN(v) ? parseFloat(v) : null }
 
+// Margen bruto "limpio": en financieras sin coste de ventas explícito el dato
+// sale como ~100% y no es representativo → devolver null (se mostrará N/A).
+export function cleanGrossMargin(f) {
+  const gm = num(f?.gross_margin)
+  if (gm == null) return null
+  const sec = (f.sector || '').toLowerCase(), ind = (f.industry || '').toLowerCase()
+  const isFin = sec.includes('financ') || ind.includes('financ') || ind.includes('bank') ||
+    ind.includes('insur') || ind.includes('capital market') || ind.includes('credit') || ind.includes('asset manage')
+  if (isFin && gm >= 99) return null
+  return gm
+}
+
 // Dividendo neto tras doble imposición (origen acreditado contra destino)
 export function netYield(grossYield, originWHT, destWHT) {
   const effective = Math.max(originWHT, destWHT) / 100
@@ -206,7 +218,7 @@ export const RADAR_METRICS = [
   { id: 'cagr',      short: 'CAGR Div',  get: f => num(f.div_cagr5),                              score: v => scoreOf('div_cagr5')(v) },
   { id: 'payout',    short: 'Payout',    get: f => { const p = num(f.payout_fcf); return p > 0 ? p : null }, score: v => scoreOf('payout_fcf')(v) },
   { id: 'roic',      short: 'ROIC',      get: f => resolveRoic(f),                                score: v => scoreOf('roic')(v) },
-  { id: 'gmargin',   short: 'M.Bruto',   get: f => num(f.gross_margin),                           score: marginScore },
+  { id: 'gmargin',   short: 'M.Bruto',   get: f => cleanGrossMargin(f),                           score: marginScore },
   { id: 'omargin',   short: 'M.Op.',     get: f => num(f.operating_margin),                       score: marginScore },
   { id: 'debt',      short: 'Deuda',     get: f => num(f.net_debt_ebitda) ?? num(f.debt_ebitda),  score: v => scoreOf('debt_ebitda')(v) },
   { id: 'icov',      short: 'Cobertura', get: f => num(f.interest_coverage),                      score: v => scoreOf('interest_cov')(v) },

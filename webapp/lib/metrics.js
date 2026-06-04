@@ -132,10 +132,16 @@ export function calculateROIC(data, currency) {
 
   // Preferir valores precalculados por el script (mismo algoritmo, tasa correcta)
   if (n(data.roic_reported) != null || n(data.roic_tangible) != null) {
+    // roic_warning puede venir como boolean, "true"/"false" (text) o mensaje.
+    // Normalizar a un mensaje string o null — nunca renderizar "false".
+    const wr = data.roic_warning
+    const warnMsg = (wr === true || wr === 'true') ? HIGH_WARNING
+      : (typeof wr === 'string' && wr.length > 10) ? wr
+      : null
     return {
       roic_reported: n(data.roic_reported),
       roic_tangible: n(data.roic_tangible),
-      roic_warning: data.roic_warning ?? null,
+      roic_warning: warnMsg,
       roic_method: 'Precalculado',
       roic_not_applicable: false,
       nopat: n(data.nopat), invested_capital: n(data.invested_capital),

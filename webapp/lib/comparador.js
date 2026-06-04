@@ -3,7 +3,7 @@ import { DICT } from '@/data/dict'
 import { getContinent } from '@/lib/helpers'
 import {
   resolveRoic, yieldPct, marginSafety, computeScore, calcDivQuality,
-  rule1010, scoreRadar, RADAR_METRICS, netYield, getWHT,
+  rule1010, scoreRadar, RADAR_METRICS, netYield, getWHT, cleanGrossMargin,
 } from '@/lib/screener'
 
 function num(v) { return v != null && !isNaN(v) ? parseFloat(v) : null }
@@ -109,7 +109,7 @@ export async function buildComparadorCompanies(tickers, destWHT = 19) {
       rule1010: rule1010(f),
       // Calidad
       roic,
-      grossMargin: num(f.gross_margin),
+      grossMargin: cleanGrossMargin(f),
       opMargin: num(f.operating_margin),
       netMargin: num(f.net_margin),
       revCagr: num(f.revenue_cagr5),

@@ -270,18 +270,22 @@ export default function PriceChart({ ticker, currency, avgCost, divHistory }) {
   const load = useCallback(async (r) => {
     setLoading(true)
     setError(false)
+    // Timeout para no quedarse en "cargando" indefinido si el backfill cuelga
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 20000)
     try {
-      const res  = await fetch(`/api/empresa/${encodeURIComponent(ticker)}/chart?range=${r}`, { cache: 'no-store' })
+      const res  = await fetch(`/api/empresa/${encodeURIComponent(ticker)}/chart?range=${r}`, { cache: 'no-store', signal: ctrl.signal })
       const json = await res.json()
-      if (json.error) throw new Error(json.error)
-      if (!json.timestamps?.length) { setData(null); setError(true); setLoading(false); return }
+      if (json.error || !json.timestamps?.length) { setData(null); setError(true); return }
       // Reconstruir la línea de total return desde el historial de dividendos
       const adjCloses = buildTotalReturn(json.timestamps, json.closes, divHistory)
       setData({ ...json, adjCloses })
     } catch {
       setError(true)
+    } finally {
+      clearTimeout(timer)
+      setLoading(false)
     }
-    setLoading(false)
   }, [ticker, divHistory])
 
   if (!loaded.current) { loaded.current = true; load('1A') }
@@ -330,16 +334,16 @@ export default function PriceChart({ ticker, currency, avgCost, divHistory }) {
       </div>
 
       {/* Chart */}
-      {error ? (
-        <div style={{ height: H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p style={{ color: '#3a4260', fontSize: 12 }}>Sin datos de cotización disponibles</p>
-        </div>
-      ) : data ? (
-        <Chart data={data} range={range} showTR={showTR} avgCost={avgCost} />
-      ) : (
+      {loading ? (
         <div style={{ height: H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <p style={{ color: '#3a4260', fontSize: 12 }}>Cargando…</p>
         </div>
+      ) : (error || !data?.closes?.length) ? (
+        <div style={{ height: H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: '#3a4260', fontSize: 12 }}>Historial de precios pendiente de carga</p>
+        </div>
+      ) : (
+        <Chart data={data} range={range} showTR={showTR} avgCost={avgCost} />
       )}
     </div>
   )

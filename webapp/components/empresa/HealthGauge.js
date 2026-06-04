@@ -16,7 +16,7 @@ function getColor(score) {
 }
 
 // Gauge dimensions
-const VW = 200, VH = 115
+const VW = 200, VH = 128
 const CX = 100, CY = 96, R = 78
 
 // Arc path for a semicircle of radius R centered at (CX, CY)
@@ -66,10 +66,10 @@ export default function HealthGauge({ score }) {
           pathLength={100}
           strokeDasharray={`${clamped} 100`}
         />
-        {/* Score labels: 0, 50, 100 */}
-        <text x={CX - R - 4} y={CY + 14} textAnchor="middle" fontSize="9" fill="#2a3045" fontFamily="inherit">0</text>
-        <text x={CX}         y={CY - R - 6} textAnchor="middle" fontSize="9" fill="#2a3045" fontFamily="inherit">50</text>
-        <text x={CX + R + 4} y={CY + 14} textAnchor="middle" fontSize="9" fill="#2a3045" fontFamily="inherit">100</text>
+        {/* Score labels: 0 (izq), 50 (arriba), 100 (der) — posiciones bien separadas */}
+        <text x={CX - R} y={CY + 16} textAnchor="middle" fontSize="9" fill="#4a5270" fontFamily="inherit">0</text>
+        <text x={CX}     y={CY - R - 5} textAnchor="middle" fontSize="9" fill="#4a5270" fontFamily="inherit">50</text>
+        <text x={CX + R} y={CY + 16} textAnchor="middle" fontSize="9" fill="#4a5270" fontFamily="inherit">100</text>
         {/* Needle */}
         <polygon
           points={`${b1x.toFixed(1)},${b1y.toFixed(1)} ${tipX.toFixed(1)},${tipY.toFixed(1)} ${b2x.toFixed(1)},${b2y.toFixed(1)}`}
@@ -80,8 +80,8 @@ export default function HealthGauge({ score }) {
         <circle cx={CX} cy={CY} r="6" fill={color} />
         <circle cx={CX} cy={CY} r="3" fill="#080b14" />
         {/* Score text below arc */}
-        <text x={CX} y={CY + 20} textAnchor="middle" fontSize="22" fontWeight="700" fill="#c8d0e0" fontFamily="'Figtree',sans-serif">
-          {score}
+        <text x={CX} y={CY + 22} textAnchor="middle" fontSize="22" fontWeight="700" fill="#c8d0e0" fontFamily="'Figtree',sans-serif">
+          {Math.round(clamped)}
         </text>
       </svg>
       <span style={{ fontSize: 12, fontWeight: 600, color, marginTop: -4 }}>{label}</span>

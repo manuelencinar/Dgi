@@ -20,10 +20,9 @@ function fmtPct(v) {
 }
 function fmtCap(v) {
   if (v == null) return '—'
-  if (v >= 1e12) return (v / 1e12).toFixed(2) + ' B'
-  if (v >= 1e9)  return (v / 1e9).toFixed(1)  + ' MM'
-  if (v >= 1e6)  return (v / 1e6).toFixed(0)  + ' M'
-  return String(v)
+  if (v >= 1e9)  return (v / 1e9).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + 'B'
+  if (v >= 1e6)  return (v / 1e6).toLocaleString('es-ES', { maximumFractionDigits: 0 }) + 'M'
+  return v.toLocaleString('es-ES', { maximumFractionDigits: 0 })
 }
 function countryFlag(code) {
   if (!code || code.length !== 2) return ''
@@ -97,7 +96,10 @@ function Week52Bar({ price, low52, high52, currency }) {
   const span    = high52 - low52
   const rawPct  = price != null ? ((price - low52) / span) * 100 : null
   const pct     = rawPct != null ? Math.max(0, Math.min(100, rawPct)) : null
-  const barCol  = pct == null ? '#4a5270' : pct < 30 ? '#f87171' : pct > 70 ? '#34d399' : '#fbbf24'
+  const barCol  = pct == null ? '#4a5270'
+    : pct < 10 ? '#fb923c'                 // muy cerca del mínimo 52s → naranja
+    : pct > 90 ? '#fbbf24'                 // muy cerca del máximo 52s → amarillo
+    : pct < 30 ? '#f87171' : pct > 70 ? '#34d399' : '#fbbf24'
 
   return (
     <div style={{ marginTop: 12 }}>
@@ -934,7 +936,6 @@ function BuybackSection({ buybacks }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <SectionTitle>Recompras de acciones</SectionTitle>
-          <Tooltip text={tooltip} />
         </div>
         {(isCannibal || isActiveBuyback || isDilutive) && (
           <span style={{
