@@ -96,6 +96,7 @@ export default function AjustesGlobalPage() {
   const [settings, setSettings] = useState(null)
   const [plan,     setPlan]     = useState(null)
   const [premiumUntil, setPremiumUntil] = useState(null)
+  const [loadError, setLoadError] = useState(null)
 
   // Sección-specific state
   const [baseCurrency,   setBaseCurrency]   = useState('EUR')
@@ -141,8 +142,9 @@ export default function AjustesGlobalPage() {
     try {
       const res  = await fetch('/api/ajustes', { cache: 'no-store' })
       const json = await res.json().catch(() => ({}))
+      if (!res.ok) setLoadError(`No se pudieron cargar los ajustes (${res.status}): ${json.error || 'error desconocido'}`)
       data = json.settings || null
-    } catch {}
+    } catch (e) { setLoadError('No se pudieron cargar los ajustes: ' + String(e.message || e)) }
 
     if (data) {
       setBaseCurrency(data.base_currency || 'EUR')
@@ -214,7 +216,12 @@ export default function AjustesGlobalPage() {
 
   return (
     <div style={{ maxWidth:680, margin:'0 auto', padding:'24px 16px 80px' }}>
-      <h1 style={{ fontSize:22, fontWeight:900, color:'#e0e8f0', marginBottom:28 }}>Ajustes</h1>
+      <h1 style={{ fontSize:22, fontWeight:900, color:'#e0e8f0', marginBottom: loadError ? 12 : 28 }}>Ajustes</h1>
+      {loadError && (
+        <div style={{ marginBottom: 20, padding: '10px 14px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)', borderRadius: 8 }}>
+          <p style={{ fontSize: 12, color: '#f87171' }}>{loadError}</p>
+        </div>
+      )}
 
       {/* ── SECCIÓN 1: Perfil y preferencias ─────────────────────────────── */}
       <div style={CARD}>
