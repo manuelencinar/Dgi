@@ -848,7 +848,8 @@ function RoicCard({ roicData, isPremium }) {
     return null
   }
 
-  const col = v => v == null ? '#4a5270' : v >= 15 ? '#34d399' : v >= 8 ? '#fbbf24' : '#f87171'
+  // >60% naranja (poco fiable), 15-60 verde, 8-15 amarillo, <8 rojo
+  const col = v => v == null ? '#4a5270' : v > 60 ? '#fb923c' : v >= 15 ? '#34d399' : v >= 8 ? '#fbbf24' : '#f87171'
 
   const content = (
     <Card>

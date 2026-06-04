@@ -219,7 +219,7 @@ def compute_roic_full(income_df, balance_df, currency, sector, industry):
     Devuelve dict con roic_reported, roic_tangible, roic_warning, nopat,
     invested_capital, invested_capital_tangible, tax_rate_effective."""
     blank = {
-        "roic_reported": None, "roic_tangible": None, "roic_warning": None,
+        "roic_reported": None, "roic_tangible": None, "roic_display": None, "roic_warning": None,
         "nopat": None, "invested_capital": None, "invested_capital_tangible": None,
         "tax_rate_effective": None,
     }
@@ -293,9 +293,14 @@ def compute_roic_full(income_df, balance_df, currency, sector, industry):
         if abs(roic_reported - roic_tangible) > 10:
             warning = (warning + " " + ROIC_ADQ_WARNING) if warning else ROIC_ADQ_WARNING
 
+        rep_v = safe2(roic_reported)
+        tan_v = safe2(roic_tangible)
+        roic_vals = [v for v in [rep_v, tan_v] if v is not None]
+        roic_display = min(roic_vals) if roic_vals else None
         return {
-            "roic_reported": safe2(roic_reported),
-            "roic_tangible": safe2(roic_tangible),
+            "roic_reported": rep_v,
+            "roic_tangible": tan_v,
+            "roic_display": roic_display,
             "roic_warning": warning,
             "nopat": safe2(nopat),
             "invested_capital": safe2(invested),
@@ -640,15 +645,15 @@ def fetch_ticker(sym):
 
         # ── ROIC (corregido: reportado + tangible) ────────────────────────
         roic_full = {
-            "roic_reported": None, "roic_tangible": None, "roic_warning": None,
+            "roic_reported": None, "roic_tangible": None, "roic_display": None, "roic_warning": None,
             "nopat": None, "invested_capital": None, "invested_capital_tangible": None,
             "tax_rate_effective": None,
         }
         if not income.empty and not balance.empty:
             roic_full = compute_roic_full(income, balance, info.get("currency"),
                                           info.get("sector"), info.get("industry"))
-        # Legacy roic = tangible preferido (mantiene moat/insights con valor correcto)
-        roic = roic_full["roic_tangible"] if roic_full["roic_tangible"] is not None else roic_full["roic_reported"]
+        # roic = el más conservador (display) para moat/insights/scoring
+        roic = roic_full.get("roic_display")
 
         # ── CAGR ─────────────────────────────────────────────────────────
         rev_cagr5 = cagr_from_df(income,   ["Total Revenue", "Total Revenues"])
@@ -717,6 +722,7 @@ def fetch_ticker(sym):
             "growth_input_used":     growth_input_used,
             "roic_reported":             roic_full["roic_reported"],
             "roic_tangible":             roic_full["roic_tangible"],
+            "roic_display":              roic_full.get("roic_display"),
             "roic_warning":              roic_full["roic_warning"],
             "nopat":                     roic_full["nopat"],
             "invested_capital":          roic_full["invested_capital"],

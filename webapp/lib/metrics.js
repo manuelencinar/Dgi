@@ -102,9 +102,12 @@ function computeFromStatements(data, currency) {
   if (roicReported > 60 || roicTangible > 60) warning = HIGH_WARNING
   if (Math.abs(roicReported - roicTangible) > 10) warning = warning ? warning + ' ' + ADQ_WARNING : ADQ_WARNING
 
+  const rep = Math.round(roicReported * 10) / 10
+  const tan = Math.round(roicTangible * 10) / 10
   return {
-    roic_reported: Math.round(roicReported * 10) / 10,
-    roic_tangible: Math.round(roicTangible * 10) / 10,
+    roic_reported: rep,
+    roic_tangible: tan,
+    roic_display: minRoic(rep, tan),
     roic_warning: warning,
     roic_method: adjusted ? ATYP_NOTE : 'Capital invertido = activos − caja excedente − pasivos no financieros',
     roic_not_applicable: false,
@@ -113,6 +116,12 @@ function computeFromStatements(data, currency) {
     invested_capital_tangible: Math.round(icTangible),
     tax_rate_effective: Math.round(taxRate * 1000) / 1000,
   }
+}
+
+// ROIC a usar en toda la app: el más conservador (menor) de reported/tangible.
+export function minRoic(reported, tangible) {
+  const vals = [reported, tangible].filter(v => v != null && !isNaN(v))
+  return vals.length ? Math.min(...vals) : null
 }
 
 // ── Export principal ───────────────────────────────────────────────────────
@@ -141,6 +150,7 @@ export function calculateROIC(data, currency) {
     return {
       roic_reported: n(data.roic_reported),
       roic_tangible: n(data.roic_tangible),
+      roic_display: minRoic(n(data.roic_reported), n(data.roic_tangible)),
       roic_warning: warnMsg,
       roic_method: 'Precalculado',
       roic_not_applicable: false,
@@ -157,26 +167,26 @@ export function calculateROIC(data, currency) {
 
   // Fallback al ROIC legacy
   if (n(data.roic) != null) {
-    return { ...blank(), roic_reported: n(data.roic), roic_tangible: n(data.roic), roic_method: 'Legacy' }
+    return { ...blank(), roic_reported: n(data.roic), roic_tangible: n(data.roic), roic_display: n(data.roic), roic_method: 'Legacy' }
   }
   return blank()
 }
 
 function blank() {
   return {
-    roic_reported: null, roic_tangible: null, roic_warning: null, roic_method: null,
+    roic_reported: null, roic_tangible: null, roic_display: null, roic_warning: null, roic_method: null,
     roic_not_applicable: false, nopat: null, invested_capital: null,
     invested_capital_tangible: null, tax_rate_effective: null,
     alternative_label: null, alternative_value: null,
   }
 }
 
-// Valor preferido para gauge/scoring: reported (más conservador) > tangible.
-// Cap a 60 para no premiar valores imposibles en el scoring.
+// Valor para gauge/scoring: el más conservador (MIN reported/tangible), capado a
+// 60 para no premiar ROICs imposibles.
 export function roicForScoring(data, currency) {
   const r = calculateROIC(data, currency)
   if (r.roic_not_applicable) return null
-  const v = r.roic_reported != null ? r.roic_reported : r.roic_tangible
+  const v = r.roic_display
   if (v == null) return null
   return Math.min(v, 60)
 }

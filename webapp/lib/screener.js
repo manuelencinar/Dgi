@@ -5,13 +5,14 @@ import { SECTORS, WHT_DEFAULTS } from '@/lib/sectors'
 
 export function getWHT(country) { return WHT_DEFAULTS[country] ?? 0 }
 
-// ROIC para ranking/display. Prioriza el "reported" (con goodwill, denominador
-// mayor → más conservador y creíble) sobre el "tangible". NO usa el campo roic
-// legacy, que tenía cálculos disparados (equity casi nulo por recompras).
+// ROIC para ranking/display: SIEMPRE el más conservador (menor) de reported y
+// tangible. Si la BD trae roic_display lo usa; si no, lo deriva al vuelo.
+// NO usa el campo roic legacy (cálculos disparados por equity casi nulo).
 export function resolveRoic(f) {
   if (f == null) return null
-  const r = num(f.roic_reported), t = num(f.roic_tangible)
-  return r ?? t
+  if (num(f.roic_display) != null) return num(f.roic_display)
+  const vals = [num(f.roic_reported), num(f.roic_tangible)].filter(v => v != null)
+  return vals.length ? Math.min(...vals) : null
 }
 
 function num(v) { return v != null && !isNaN(v) ? parseFloat(v) : null }
