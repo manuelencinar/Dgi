@@ -230,6 +230,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
   const [sortKey, setSortKey] = useState('score')
   const [visible, setVisible] = useState(PAGE)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const [selected, setSelected] = useState([])
   const [showComp, setShowComp] = useState(false)
 
@@ -360,6 +361,9 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
         <button onClick={() => setPanelOpen(o => !o)} style={{ fontSize: 12, fontWeight: 700, padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#8090a8', cursor: 'pointer', fontFamily: 'inherit' }}>
           {panelOpen ? '▲ Ocultar filtros' : '▼ Filtros'}{activeChips.length > 0 ? ` (${activeChips.length})` : ''}
         </button>
+        <button onClick={() => setHelpOpen(o => !o)} style={{ fontSize: 12, fontWeight: 700, padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: helpOpen ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.03)', color: helpOpen ? '#818cf8' : '#8090a8', cursor: 'pointer', fontFamily: 'inherit' }}>
+          {helpOpen ? '▲ Ocultar guía' : 'ℹ️ Guía de métricas'}
+        </button>
         {activeChips.map(c => (
           <button key={c.k} onClick={() => resetKey(c.k)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 14, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.12)', color: '#818cf8', cursor: 'pointer', fontFamily: 'inherit' }}>
             {c.label} ✕
@@ -424,6 +428,9 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
         </div>
       )}
 
+      {/* Guía de métricas */}
+      {helpOpen && <HelpGuide />}
+
       {/* Contador */}
       <p style={{ fontSize: 12, color: filtered.length > 0 ? '#4a5270' : '#f87171', marginBottom: 12 }}>
         <span style={{ fontWeight: 700, color: filtered.length > 0 ? '#c8d0e0' : '#f87171', fontSize: 14 }}>{filtered.length.toLocaleString('es-ES')}</span>
@@ -472,6 +479,71 @@ function Divider({ label }) {
       <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
       <span style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', letterSpacing: '0.1em' }}>{label}</span>
       <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
+    </div>
+  )
+}
+
+// ── Guía de métricas ─────────────────────────────────────────────────────────
+const GUIDE = [
+  { group: 'Puntuaciones', items: [
+    ['Score DGI', 'Nota global de 0 a 10 de la empresa como inversión en dividendos crecientes. Combina, ponderadas por sector, las métricas clave: yield, racha y crecimiento del dividendo, payout, deuda, rentabilidad y valoración. Verde ≥6,5 · amarillo 5–6,5 · rojo <5.'],
+    ['💎 Calidad del dividendo', 'Mide la solidez y sostenibilidad del dividendo (0–10): payout, deuda/EBITDA, CAGR del dividendo, racha de años subiéndolo y yield neto tras retenciones. Un número alto = dividendo fiable y con margen para seguir creciendo.'],
+  ]},
+  { group: 'Valoración', items: [
+    ['Margen de seguridad (MoS)', 'Diferencia entre el valor intrínseco estimado (DCF sector-aware) y el precio actual. Positivo (verde) = cotiza por debajo de su valor → potencialmente barata. Negativo (rojo) = cotiza por encima → cara.'],
+    ['PER', 'Precio / Beneficio por acción. Cuántos años de beneficio actual cuesta la empresa. Más bajo suele ser más barato.'],
+    ['EV/EBITDA', 'Valor de empresa (incluida la deuda) sobre el beneficio operativo bruto. Útil para comparar empresas con distinto nivel de deuda.'],
+  ]},
+  { group: 'Dividendo', items: [
+    ['Yield', 'Rentabilidad por dividendo actual: dividendo anual / precio. El óptimo DGI suele estar entre 2% y 6%; muy por encima puede señalar riesgo de recorte.'],
+    ['CAGR dividendo', 'Crecimiento anual compuesto del dividendo en los últimos 5 años. Mide la velocidad a la que sube la renta.'],
+    ['Racha', 'Años consecutivos subiendo el dividendo. Badges: 🥉 >10 años · 🥈 >25 años · 🥇 >35 años (aristócratas/reyes del dividendo).'],
+    ['Payout', 'Porcentaje del flujo de caja libre (o beneficio) que se reparte como dividendo. Más bajo = más margen y seguridad.'],
+    ['⚡ Regla 10/10', 'La empresa cumple que yield + CAGR del dividendo ≥ 10%. Equilibrio entre renta inmediata y crecimiento futuro.'],
+  ]},
+  { group: 'Calidad del negocio', items: [
+    ['ROIC', 'Retorno sobre el capital invertido: cuánto beneficio genera por cada euro invertido en el negocio. Por encima del 15% indica una empresa de alta calidad. (En bancos/aseguradoras se usa el ROE.)'],
+    ['Margen operativo', 'Beneficio operativo / ingresos. Mide la eficiencia y el poder de fijación de precios.'],
+    ['🏰 / 🧱 Foso económico', 'Ventaja competitiva duradera, estimada por ROIC y márgenes. 🏰 foso ancho (ventaja fuerte) · 🧱 foso estrecho (ventaja moderada).'],
+    ['📉 Erosión del foso', 'Señales de que la ventaja competitiva se debilita: ingresos en declive o rentabilidad y márgenes bajos.'],
+  ]},
+  { group: 'Solidez financiera', items: [
+    ['Deuda/EBITDA', 'Veces que la deuda neta supera al beneficio operativo bruto anual. Más bajo = balance más sólido (los REITs toleran cifras más altas).'],
+    ['Cobertura de intereses', 'Veces que el beneficio operativo cubre los gastos financieros. Más alto = más holgura para pagar la deuda.'],
+  ]},
+  { group: 'Proyección sobre €1.000', items: [
+    ['Renta año 1', 'Dividendo neto (tras retenciones) que generarían 1.000 € invertidos hoy en el primer año.'],
+    ['Total dividendos 10a', 'Suma de todos los dividendos netos cobrados en 10 años sobre esos 1.000 €. El crecimiento del dividendo parte capado al 12% y decae gradualmente hasta el 3% (más realista que un crecimiento constante).'],
+    ['Recuperación (rX)', 'Año en el que la suma de dividendos cobrados iguala la inversión inicial. Cuanto antes, mejor.'],
+  ]},
+  { group: 'Ordenación', items: [
+    ['⭐ Nota', 'Ordena por Score DGI (las de mayor calidad primero).'],
+    ['💰 Rentables', 'Ordena por el total de dividendos proyectado a 10 años.'],
+    ['🎯 Baratas', 'Ordena por margen de seguridad (las más infravaloradas primero).'],
+    ['💎 Dividendo', 'Ordena por calidad del dividendo.'],
+  ]},
+]
+
+function HelpGuide() {
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 12, padding: '18px 20px', marginBottom: 16 }}>
+      <p style={{ fontSize: 14, fontWeight: 800, color: '#e0e8f0', marginBottom: 4 }}>Guía de métricas</p>
+      <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 18 }}>Qué significa cada dato y badge que ves en las tarjetas.</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+        {GUIDE.map(sec => (
+          <div key={sec.group}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>{sec.group}</p>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {sec.items.map(([term, desc]) => (
+                <div key={term}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#c8d0e0', marginBottom: 2 }}>{term}</p>
+                  <p style={{ fontSize: 11.5, color: '#8090a8', lineHeight: 1.5 }}>{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
