@@ -23,7 +23,15 @@ function sb() {
 
 // Lectura de preferencias del propio usuario vía service_role (user_settings no
 // es legible desde el navegador por RLS). Solo devuelve la fila del usuario autenticado.
-const READABLE = 'base_currency, country_residence, broker_name, fx_commission_pct, fx_alert_threshold, benchmark_index, show_returns_original, monthly_summary_active, alerts_email_active, recurring_email_active, plan, premium_until, subscription_paused, pause_end_date, retention_discount_used'
+// Campos que el cliente necesita. Se leen con select('*') y se filtran aquí,
+// de modo que si alguna columna aún no existe en la BD no rompe la lectura.
+const READABLE = [
+  'base_currency', 'country_residence', 'broker_name',
+  'fx_commission_pct', 'fx_alert_threshold',
+  'benchmark_index', 'show_returns_original',
+  'monthly_summary_active', 'alerts_email_active', 'recurring_email_active',
+  'plan', 'premium_until', 'subscription_paused', 'pause_end_date', 'retention_discount_used',
+]
 
 export async function GET() {
   const auth = await createClient()
@@ -35,12 +43,18 @@ export async function GET() {
 
   const { data, error } = await svc.client
     .from('user_settings')
-    .select(READABLE)
+    .select('*')
     .eq('user_id', user.id)
     .maybeSingle()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ settings: data || null })
+
+  let settings = null
+  if (data) {
+    settings = {}
+    for (const f of READABLE) if (f in data) settings[f] = data[f]
+  }
+  return NextResponse.json({ settings })
 }
 
 export async function POST(request) {
