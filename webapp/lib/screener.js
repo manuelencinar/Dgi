@@ -20,15 +20,34 @@ export function netYield(grossYield, originWHT, destWHT) {
   return parseFloat((grossYield * (1 - effective)).toFixed(4))
 }
 
-// Proyección a 10 años — IDÉNTICA al HTML original (sin reinversión; el dividendo
-// crece por el CAGR aplicado al capital inicial). Devuelve [{year, gross, net, cum}].
+// Crecimiento del dividendo con fade lineal: el CAGR inicial se capa a CAGR_CAP
+// y decae año a año hasta CAGR_TERMINAL. Más realista que un CAGR constante:
+// ninguna empresa crece a doble dígito indefinidamente.
+const CAGR_CAP      = 12   // tope del CAGR inicial (%)
+const CAGR_TERMINAL = 3    // crecimiento terminal sostenible (%)
+const FADE_YEARS    = 10   // años hasta converger a la terminal
+
+// Factor acumulado de crecimiento del dividendo hasta el inicio del año `i` (0-based).
+function divGrowthFactor(growthPct, i) {
+  const g0 = Math.min(growthPct, CAGR_CAP)
+  let factor = 1
+  for (let k = 0; k < i; k++) {
+    // g del año k (decae linealmente de g0 a la terminal a lo largo de FADE_YEARS)
+    const g = g0 - (g0 - CAGR_TERMINAL) * (k / (FADE_YEARS - 1))
+    factor *= 1 + Math.max(g, CAGR_TERMINAL) / 100
+  }
+  return factor
+}
+
+// Proyección a 10 años. El dividendo crece con CAGR decreciente (fade lineal).
+// Devuelve [{year, gross, net, cum}].
 export function project10y(investAmt, yieldPct, growthPct, originWHT, destWHT) {
   if (!investAmt || !yieldPct) return null
-  const y = yieldPct / 100, g = growthPct / 100
+  const y = yieldPct / 100
   const effective = Math.max(originWHT, destWHT) / 100
   const rows = []; let cumNet = 0
   for (let i = 0; i < 10; i++) {
-    const gross = investAmt * y * Math.pow(1 + g, i)
+    const gross = investAmt * y * divGrowthFactor(growthPct || 0, i)
     const net = gross * (1 - effective)
     cumNet += net
     rows.push({ year: i + 1, gross: round2(gross), net: round2(net), cum: round2(cumNet) })
@@ -39,11 +58,11 @@ export function project10y(investAmt, yieldPct, growthPct, originWHT, destWHT) {
 // Año en que la suma de dividendos netos iguala la inversión inicial (payback).
 export function paybackYear(investAmt, yieldPct, growthPct, originWHT, destWHT) {
   if (!investAmt || !yieldPct) return null
-  const y = yieldPct / 100, g = growthPct / 100
+  const y = yieldPct / 100
   const effective = Math.max(originWHT, destWHT) / 100
   let cum = 0
   for (let i = 0; i < 100; i++) {
-    cum += investAmt * y * Math.pow(1 + g, i) * (1 - effective)
+    cum += investAmt * y * divGrowthFactor(growthPct || 0, i) * (1 - effective)
     if (cum >= investAmt) return i + 1
   }
   return null
