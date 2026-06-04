@@ -66,10 +66,13 @@ export default function AjustesPage() {
     const { data: { user } } = await sb.auth.getUser()
     if (!user) return
 
-    const { data } = await sb.from('user_settings')
-      .select('base_currency,country_residence,broker_name,fx_commission_pct,fx_alert_threshold,benchmark_index,monthly_summary_active,alerts_email_active')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    // Lectura vía API con service_role (user_settings no es legible por RLS desde el navegador)
+    let data = null
+    try {
+      const res  = await fetch('/api/ajustes', { cache: 'no-store' })
+      const json = await res.json().catch(() => ({}))
+      data = json.settings || null
+    } catch {}
 
     if (data) {
       setSettings({
@@ -90,22 +93,24 @@ export default function AjustesPage() {
 
   const save = async () => {
     setSaving(true); setError(null); setSaved(false)
-    const { data: { user } } = await sb.auth.getUser()
-    if (!user) { setError('Sesión expirada'); setSaving(false); return }
 
-    const { error: err } = await sb.from('user_settings').upsert({
-      user_id: user.id,
-      base_currency:         settings.base_currency,
-      country_residence:     settings.country_residence,
-      broker_name:           settings.broker_name || null,
-      fx_commission_pct:     parseFloat(settings.fx_commission_pct) || 0,
-      fx_alert_threshold:    settings.fx_alert_threshold != null ? parseFloat(settings.fx_alert_threshold) : null,
-      benchmark_index:       settings.benchmark_index || null,
+    // Guardado vía API con service_role (user_settings no permite escritura por RLS desde el navegador)
+    const payload = {
+      base_currency:          settings.base_currency,
+      country_residence:      settings.country_residence,
+      broker_name:            settings.broker_name || null,
+      fx_commission_pct:      parseFloat(settings.fx_commission_pct) || 0,
+      fx_alert_threshold:     settings.fx_alert_threshold != null && settings.fx_alert_threshold !== '' ? parseFloat(settings.fx_alert_threshold) : null,
+      benchmark_index:        settings.benchmark_index || null,
       monthly_summary_active: settings.monthly_summary_active,
-      alerts_email_active:   settings.alerts_email_active,
-    }, { onConflict: 'user_id' })
+      alerts_email_active:    settings.alerts_email_active,
+    }
+    try {
+      const res  = await fetch('/api/ajustes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setError('Error al guardar: ' + (data.error || 'desconocido')); setSaving(false); return }
+    } catch (e) { setError('Error al guardar: ' + String(e.message || e)); setSaving(false); return }
 
-    if (err) { setError('Error al guardar: ' + err.message); setSaving(false); return }
     setSaved(true)
     setSaving(false)
     setTimeout(() => setSaved(false), 3000)
