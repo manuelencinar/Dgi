@@ -1032,12 +1032,17 @@ export default function CompanyDetailPage({
         @media (min-width: 820px) { .cdp-main { grid-template-columns: 1fr 300px; } }
       `}</style>
 
-      {/* Breadcrumb */}
-      <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 16 }}>
-        <Link href="/mercados" style={{ color: '#4a5270', textDecoration: 'none' }}>Mercados</Link>
-        {' / '}
-        <span style={{ color: '#8090a8' }}>{name}</span>
-      </p>
+      {/* Breadcrumb + comparar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <p style={{ fontSize: 12, color: '#4a5270' }}>
+          <Link href="/mercados" style={{ color: '#4a5270', textDecoration: 'none' }}>Mercados</Link>
+          {' / '}
+          <span style={{ color: '#8090a8' }}>{name}</span>
+        </p>
+        <Link href={`/comparador?tickers=${encodeURIComponent(ticker)}`} style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', padding: '6px 14px', borderRadius: 8, textDecoration: 'none' }}>
+          Comparar con otras →
+        </Link>
+      </div>
 
       {/* ── 1. CABECERA ── */}
       <Card style={{ marginBottom: 16 }}>

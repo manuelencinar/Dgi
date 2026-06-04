@@ -191,3 +191,37 @@ export function rule1010(f) {
   if (y == null || c == null) return false
   return (y + c) >= 10
 }
+
+// ── Radar del comparador ─────────────────────────────────────────────────────
+// Métricas y scoring 0-10 (mismas escalas que el scoring DGI). Conjunto general
+// para que el radar funcione también con empresas de sectores mixtos.
+const G = SECTORS.general.metrics
+const scoreOf = id => (G.find(m => m.id === id) || {}).score || (() => null)
+
+export const RADAR_METRICS = [
+  { id: 'yield',     short: 'Yield',     get: f => yieldPct(f),                                   score: v => scoreOf('yield_pct')(v) },
+  { id: 'streak',    short: 'Racha',     get: f => num(f.div_streak),                             score: v => scoreOf('div_years')(v) },
+  { id: 'cagr',      short: 'CAGR Div',  get: f => num(f.div_cagr5),                              score: v => scoreOf('div_cagr5')(v) },
+  { id: 'payout',    short: 'Payout',    get: f => { const p = num(f.payout_fcf); return p > 0 ? p : null }, score: v => scoreOf('payout_fcf')(v) },
+  { id: 'roic',      short: 'ROIC',      get: f => resolveRoic(f),                                score: v => scoreOf('roic')(v) },
+  { id: 'gmargin',   short: 'M.Bruto',   get: f => num(f.gross_margin),                           score: marginScore },
+  { id: 'omargin',   short: 'M.Op.',     get: f => num(f.operating_margin),                       score: marginScore },
+  { id: 'debt',      short: 'Deuda',     get: f => num(f.net_debt_ebitda) ?? num(f.debt_ebitda),  score: v => scoreOf('debt_ebitda')(v) },
+  { id: 'icov',      short: 'Cobertura', get: f => num(f.interest_coverage),                      score: v => scoreOf('interest_cov')(v) },
+]
+
+function marginScore(v) {
+  const n = parseFloat(v); if (isNaN(n)) return null
+  if (n > 50) return 10; if (n > 40) return 9; if (n > 30) return 8; if (n > 22) return 7
+  if (n > 16) return 6; if (n > 11) return 5; if (n > 7) return 4; if (n > 4) return 3; if (n > 0) return 2; return 1
+}
+
+// Devuelve { metricId: score 0-10 } para el radar.
+export function scoreRadar(f) {
+  const out = {}
+  for (const m of RADAR_METRICS) {
+    const v = m.get(f)
+    out[m.id] = v != null ? m.score(v) : null
+  }
+  return out
+}

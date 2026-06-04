@@ -459,16 +459,20 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
         </>
       )}
 
-      {/* Botón flotante comparador */}
+      {/* Barra flotante comparador → navega a /comparador */}
       {selected.length >= 2 && (
-        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
-          <button onClick={() => setShowComp(true)} style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '12px 24px', borderRadius: 30, border: 'none', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(99,102,241,0.4)' }}>
-            Comparar {selected.length} empresas seleccionadas
-          </button>
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 50, display: 'flex', alignItems: 'center', gap: 12, background: '#10172a', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 30, padding: '8px 8px 8px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {selectedCompanies.map((co, i) => (
+              <span key={co.t} title={co.n} style={{ width: 20, height: 20, borderRadius: '50%', background: ['#34d399', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6'][i], color: '#08111a', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
+            ))}
+          </div>
+          <span style={{ fontSize: 13, color: '#c8d0e0' }}>{selected.length} seleccionadas</span>
+          <Link href={`/comparador?tickers=${encodeURIComponent(selected.join(','))}`} style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '9px 18px', borderRadius: 22, textDecoration: 'none' }}>
+            Comparar →
+          </Link>
         </div>
       )}
-
-      {showComp && <Comparator companies={selectedCompanies} destWHT={destWHT} onClose={() => setShowComp(false)} />}
     </div>
   )
 }

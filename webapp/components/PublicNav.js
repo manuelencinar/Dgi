@@ -2,10 +2,11 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
 const LINKS = [
-  { href: '/mercados', label: 'Mercados' },
-  { href: '/screener', label: 'Screener' },
-  { href: '/etfs',     label: 'ETFs' },
-  { href: '/cartera',  label: 'Cartera' },
+  { href: '/mercados',   label: 'Mercados' },
+  { href: '/screener',   label: 'Screener' },
+  { href: '/comparador', label: 'Comparador' },
+  { href: '/etfs',       label: 'ETFs' },
+  { href: '/cartera',    label: 'Cartera' },
 ]
 
 const ADMIN_EMAIL = 'vayaebookk@gmail.com'
