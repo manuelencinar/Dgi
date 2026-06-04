@@ -477,28 +477,26 @@ export default function PortfolioPage({ isPremium }) {
       fundTickers.length ? sb.from('funds').select('*').in('ticker', fundTickers) : Promise.resolve({ data: [] }),
     ])
 
-    // Precios frescos de daily_prices (últimos 7 días para cubrir fines de semana)
-    const since = new Date(); since.setDate(since.getDate() - 7)
-    const { data: dailyRows } = await sb.from('daily_prices')
-      .select('ticker, close_price, date')
-      .in('ticker', [...stockTickers, ...fundTickers])
-      .gte('date', since.toISOString().slice(0, 10))
-      .order('date', { ascending: false })
-
-    // Precio más reciente por ticker desde daily_prices
-    const dailyPricesMap = {}
-    for (const row of (dailyRows || [])) {
-      if (!dailyPricesMap[row.ticker]) {
-        dailyPricesMap[row.ticker] = { price: Number(row.close_price), date: row.date }
-      }
-    }
-
     const fundMap  = Object.fromEntries((funds || []).map(f => [f.ticker, f]))
     const fundsMap = Object.fromEntries((fundsData || []).map(f => [f.ticker, f]))
 
-    // Inyectar precios frescos de daily_prices en fundMap y fundsMap
+    // Precios frescos: el endpoint sirve de daily_prices y refresca de Yahoo los
+    // tickers desactualizados (en una sola llamada), archivándolos. Así la cartera
+    // muestra el precio actual sin tener que visitar la ficha de cada empresa.
+    let dailyPricesMap = {}
+    try {
+      const res  = await fetch('/api/precios', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tickers: [...stockTickers, ...fundTickers] }),
+      })
+      const json = await res.json().catch(() => ({}))
+      dailyPricesMap = json.prices || {}
+    } catch {}
+
+    // Inyectar precios frescos en fundMap y fundsMap
     for (const ticker of Object.keys(dailyPricesMap)) {
       const dp = dailyPricesMap[ticker]
+      if (dp?.price == null) continue
       if (fundMap[ticker])  fundMap[ticker]  = { ...fundMap[ticker],  current_price: dp.price }
       if (fundsMap[ticker]) fundsMap[ticker] = { ...fundsMap[ticker], current_price: dp.price }
     }
