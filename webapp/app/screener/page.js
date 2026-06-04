@@ -52,7 +52,11 @@ async function fetchFundamentals() {
 async function buildCompanies(destWHT) {
   const fundMap = await fetchFundamentals()
 
-  return DICT.map(([name, ticker, country, currency, sector, , type]) => {
+  // Deduplicar tickers repetidos en el DICT (first-seen wins)
+  const seen = new Set()
+  const dict = DICT.filter(d => { if (seen.has(d[1])) return false; seen.add(d[1]); return true })
+
+  return dict.map(([name, ticker, country, currency, sector, , type]) => {
     const f = fundMap[ticker] || null
     if (!f) {
       return { n: name, t: ticker, c: country, cont: getContinent(country), s: sector, cur: currency, tp: type || 'general',

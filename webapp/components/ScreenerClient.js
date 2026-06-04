@@ -446,7 +446,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       ) : (
         <>
           {pageRows.map((co, i) => (
-            <CompanyCard key={co.t} co={co} rank={i + 1} destWHT={destWHT} sortKey={sortKey}
+            <CompanyCard key={`${co.t}-${i}`} co={co} rank={i + 1} destWHT={destWHT} sortKey={sortKey}
               selected={selected.includes(co.t)} onSelect={toggleSelect} canSelect={selected.length < 4} />
           ))}
           {visible < sorted.length && (
