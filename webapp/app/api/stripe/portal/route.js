@@ -21,13 +21,17 @@ export async function POST(request) {
     .single()
 
   const customerId = settings?.stripe_customer_id
-  if (!customerId) return NextResponse.json({ error: 'Sin suscripción activa' }, { status: 400 })
+  if (!customerId) return NextResponse.json({ error: 'No tienes una suscripción de Stripe asociada a esta cuenta.' }, { status: 400 })
 
   const origin = request.headers.get('origin') || 'http://localhost:3000'
-  const portalSession = await getStripe().billingPortal.sessions.create({
-    customer:   customerId,
-    return_url: `${origin}/pricing`,
-  })
-
-  return NextResponse.json({ url: portalSession.url })
+  try {
+    const portalSession = await getStripe().billingPortal.sessions.create({
+      customer:   customerId,
+      return_url: `${origin}/ajustes`,
+    })
+    return NextResponse.json({ url: portalSession.url })
+  } catch (e) {
+    // Causa típica: el Customer Portal no está configurado en el dashboard de Stripe
+    return NextResponse.json({ error: `No se pudo abrir el portal de Stripe: ${e.message}` }, { status: 502 })
+  }
 }

@@ -157,10 +157,16 @@ export default function AjustesGlobalPage() {
 
   const openStripePortal = async () => {
     setPortalLoading(true)
-    const res  = await fetch('/api/stripe/portal', { method: 'POST' })
-    const data = await res.json()
-    setPortalLoading(false)
-    if (data.url) window.location.href = data.url
+    try {
+      const res  = await fetch('/api/stripe/portal', { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.url) { window.location.href = data.url; return }
+      alert(data.error || 'No se pudo abrir el portal de Stripe. Inténtalo de nuevo más tarde.')
+    } catch {
+      alert('No se pudo abrir el portal de Stripe. Inténtalo de nuevo más tarde.')
+    } finally {
+      setPortalLoading(false)
+    }
   }
 
   const handleChangePassword = async () => {
