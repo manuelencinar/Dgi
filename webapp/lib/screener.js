@@ -108,6 +108,9 @@ const SECTOR_KEY = { banco: 'banco', aseguradora: 'aseguradora', reit: 'reit', b
 
 export function computeScore(f, type) {
   if (!f) return null
+  // Sin dividendo no es una empresa DGI evaluable → sin Score DGI
+  const yld = yieldPct(f)
+  if (yld == null || yld <= 0) return null
   const key = SECTOR_KEY[type] || 'general'
   const metrics = (SECTORS[key] || SECTORS.general).metrics
   const vals = mapValues(f)
@@ -124,12 +127,14 @@ export function computeScore(f, type) {
 // Mapea company_fundamentals a los ids de métricas de SECTORS.
 function mapValues(f) {
   const roic = resolveRoic(f)
+  // Un payout de 0 significa que no reparte, no que sea excelente → se ignora
+  const payoutFcf = num(f.payout_fcf), payoutEps = num(f.payout_eps)
   return {
     yield_pct:    yieldPct(f),
     div_years:    num(f.div_streak),
     div_cagr5:    num(f.div_cagr5),
-    payout_fcf:   num(f.payout_fcf),
-    payout_earn:  num(f.payout_eps),
+    payout_fcf:   payoutFcf != null && payoutFcf > 0 ? payoutFcf : null,
+    payout_earn:  payoutEps != null && payoutEps > 0 ? payoutEps : null,
     fcf_cagr5:    num(f.fcf_cagr5),
     debt_ebitda:  num(f.net_debt_ebitda) ?? num(f.debt_ebitda),
     interest_cov: num(f.interest_coverage),
@@ -142,10 +147,15 @@ function mapValues(f) {
 
 // Calidad del dividendo 💎 — portado de calcDivQuality del HTML original.
 export function calcDivQuality(f, type, country, destWHT = 19) {
+  // Sin dividendo no hay calidad del dividendo que medir
+  const yldGate = yieldPct(f)
+  if (yldGate == null || yldGate <= 0) return null
+
   let score = 0, weight = 0
   const isReitLike = type === 'reit' || type === 'bdc'
+  // Un payout de 0 = no reparte → no puntúa como excelente
   const payout = num(f.payout_fcf) ?? num(f.payout_eps)
-  if (payout != null) {
+  if (payout != null && payout > 0) {
     const [t1, t2, t3, t4, t5] = isReitLike ? [70, 80, 90, 100, 110] : [40, 50, 60, 70, 80]
     const s = payout < t1 ? 10 : payout < t2 ? 9 : payout < t3 ? 7 : payout < t4 ? 5 : payout < t5 ? 3 : 1
     score += s * 1.5; weight += 1.5
