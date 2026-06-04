@@ -135,10 +135,14 @@ export default function AjustesGlobalPage() {
     if (!u) { router.push('/login'); return }
     setUser(u)
 
-    const { data } = await sb.from('user_settings')
-      .select('base_currency,country_residence,broker_name,fx_commission_pct,fx_alert_threshold,benchmark_index,show_returns_original,monthly_summary_active,alerts_email_active,recurring_email_active,plan,premium_until')
-      .eq('user_id', u.id)
-      .maybeSingle()
+    // Las preferencias se leen vía API con service_role (user_settings no es
+    // legible desde el navegador por RLS).
+    let data = null
+    try {
+      const res  = await fetch('/api/ajustes', { cache: 'no-store' })
+      const json = await res.json().catch(() => ({}))
+      data = json.settings || null
+    } catch {}
 
     if (data) {
       setBaseCurrency(data.base_currency || 'EUR')

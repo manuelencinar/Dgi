@@ -21,6 +21,28 @@ function sb() {
   return { client: serviceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, key) }
 }
 
+// Lectura de preferencias del propio usuario vía service_role (user_settings no
+// es legible desde el navegador por RLS). Solo devuelve la fila del usuario autenticado.
+const READABLE = 'base_currency, country_residence, broker_name, fx_commission_pct, fx_alert_threshold, benchmark_index, show_returns_original, monthly_summary_active, alerts_email_active, recurring_email_active, plan, premium_until, subscription_paused, pause_end_date, retention_discount_used'
+
+export async function GET() {
+  const auth = await createClient()
+  const { data: { user } } = await auth.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+
+  const svc = sb()
+  if (svc.missingKey) return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY no está configurada' }, { status: 500 })
+
+  const { data, error } = await svc.client
+    .from('user_settings')
+    .select(READABLE)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ settings: data || null })
+}
+
 export async function POST(request) {
   const auth = await createClient()
   const { data: { user } } = await auth.auth.getUser()
