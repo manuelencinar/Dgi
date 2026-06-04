@@ -2,458 +2,476 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { getCountry } from '@/lib/helpers'
+import { project10y, paybackYear, getWHT } from '@/lib/screener'
 
 // ── Opciones de filtros ────────────────────────────────────────────────────
+const SCORE_OPTS  = [{ v: 0, l: 'Todas' }, { v: 5, l: '≥5' }, { v: 6, l: '≥6' }, { v: 7, l: '≥7' }, { v: 8, l: '≥8' }]
+const ZONA_OPTS   = [{ v: 'all', l: 'Todas' }, { v: 'América', l: 'América' }, { v: 'Europa', l: 'Europa' }, { v: 'Asia', l: 'Asia' }, { v: 'Oceanía', l: 'Oceanía' }, { v: 'África', l: 'África' }]
+const YIELD_OPTS  = [{ v: 0, l: 'Todas' }, { v: 1, l: '>1%' }, { v: 2, l: '>2%' }, { v: 3, l: '>3%' }, { v: 4, l: '>4%' }, { v: 5, l: '>5%' }]
+const STREAK_OPTS = [{ v: 0, l: 'Todas' }, { v: 5, l: '>5a' }, { v: 10, l: '>10a' }, { v: 25, l: '>25a' }, { v: 35, l: '>35a' }]
+const CAGR_OPTS   = [{ v: 0, l: 'Todas' }, { v: 3, l: '>3%' }, { v: 5, l: '>5%' }, { v: 7, l: '>7%' }, { v: 10, l: '>10%' }, { v: 12, l: '>12%' }]
+const PAYOUT_OPTS = [{ v: 999, l: 'Todas' }, { v: 50, l: '<50%' }, { v: 70, l: '<70%' }, { v: 90, l: '<90%' }]
+const ROIC_OPTS   = [{ v: 0, l: 'Todas' }, { v: 10, l: '>10%' }, { v: 15, l: '>15%' }, { v: 20, l: '>20%' }]
+const OPM_OPTS    = [{ v: 0, l: 'Todas' }, { v: 10, l: '>10%' }, { v: 20, l: '>20%' }, { v: 30, l: '>30%' }]
+const REV_OPTS    = [{ v: 'all', l: 'Todas' }, { v: 'pos', l: 'Positivo' }, { v: '5', l: '>5%' }, { v: '10', l: '>10%' }]
+const MOAT_OPTS   = [{ v: 'all', l: 'Todas' }, { v: 'wide', l: 'Ancho' }, { v: 'narrow', l: 'Estrecho' }, { v: 'none', l: 'Sin foso' }]
+const DEBT_OPTS   = [{ v: 99, l: 'Todas' }, { v: 1, l: '<1x' }, { v: 2, l: '<2x' }, { v: 3, l: '<3x' }]
+const ICOV_OPTS   = [{ v: 0, l: 'Todas' }, { v: 3, l: '>3x' }, { v: 5, l: '>5x' }, { v: 8, l: '>8x' }]
+const MOS_OPTS    = [{ v: -999, l: 'Todas' }, { v: 0, l: 'Positivo' }, { v: 10, l: '>10%' }, { v: 20, l: '>20%' }]
+const PE_OPTS     = [{ v: 999, l: 'Todas' }, { v: 15, l: '<15x' }, { v: 20, l: '<20x' }, { v: 25, l: '<25x' }]
+const EV_OPTS     = [{ v: 999, l: 'Todas' }, { v: 8, l: '<8x' }, { v: 12, l: '<12x' }, { v: 15, l: '<15x' }]
+const CAP_OPTS    = [{ v: 'all', l: 'Todas' }, { v: 'small', l: 'Small <2B' }, { v: 'mid', l: 'Mid 2-10B' }, { v: 'large', l: 'Large 10-100B' }, { v: 'blue', l: 'Blue >100B' }]
 
-const YIELD_OPTS  = [{ v: 0, l: 'Todos' }, { v: 0.02, l: '>2%' }, { v: 0.03, l: '>3%' }, { v: 0.04, l: '>4%' }, { v: 0.05, l: '>5%' }]
-const ZONA_OPTS   = [{ v: 'all', l: 'Todas' }, { v: 'América', l: 'América' }, { v: 'Europa', l: 'Europa' }, { v: 'Asia', l: 'Asia' }, { v: 'Oceanía', l: 'Oceanía' }]
-const SCORE_OPTS  = [{ v: 0, l: 'Todos' }, { v: 5, l: '>5' }, { v: 6, l: '>6' }, { v: 7, l: '>7' }, { v: 8, l: '>8' }]
-const STREAK_OPTS = [{ v: 0, l: 'Todos' }, { v: 5, l: '>5a' }, { v: 10, l: '>10a' }, { v: 25, l: '>25a' }, { v: 35, l: '>35a' }]
-const CAGR_OPTS   = [{ v: 0, l: 'Todos' }, { v: 5, l: '>5%' }, { v: 7, l: '>7%' }, { v: 10, l: '>10%' }, { v: 12, l: '>12%' }]
-const DEBT_OPTS   = [{ v: 99, l: 'Todos' }, { v: 1, l: '<1x' }, { v: 2, l: '<2x' }, { v: 3, l: '<3x' }]
-const ROIC_OPTS   = [{ v: 0, l: 'Todos' }, { v: 10, l: '>10%' }, { v: 15, l: '>15%' }, { v: 20, l: '>20%' }]
-const MOAT_OPTS   = [{ v: 'all', l: 'Todos' }, { v: 'wide', l: 'Ancho' }, { v: 'narrow', l: 'Estrecho' }]
-
-const PAGE_SIZE = 50
-
-function scoreColor(s) {
-  if (s == null) return '#2e3a55'
-  if (s >= 7) return '#34d399'
-  if (s >= 4) return '#fbbf24'
-  return '#f87171'
+const INIT = {
+  score: 0, zona: 'all', sector: 'all',
+  yield: 0, streak: 0, cagr: 0, rule1010: false, payout: 999,
+  roic: 0, opm: 0, rev: 'all', moat: 'all',
+  debt: 99, icov: 0,
+  mos: -999, pe: 999, ev: 999, cap: 'all',
 }
 
-// ── Chip group ─────────────────────────────────────────────────────────────
+const PAGE = 50
+const CUR_SYM = { EUR: '€', USD: '$', GBP: '£', GBp: 'p', JPY: '¥', CHF: 'Fr', CAD: 'C$', AUD: 'A$', SEK: 'kr', DKK: 'kr', NOK: 'kr', HKD: 'HK$', SGD: 'S$' }
+const SECTOR_COLOR = {
+  'Technology': '#60a5fa', 'Healthcare': '#34d399', 'Financial Services': '#fbbf24',
+  'Industrials': '#f59e0b', 'Consumer Defensive': '#a78bfa', 'Consumer Cyclical': '#fb923c',
+  'Utilities': '#38bdf8', 'Energy': '#f87171', 'Real Estate': '#4ade80', 'Basic Materials': '#c084fc',
+  'Communication Services': '#f472b6',
+}
 
-function Chips({ label, opts, value, onChange, locked, soon }) {
-  const [tip, setTip] = useState(false)
+function scoreColor(s) { if (s == null) return '#3a4260'; if (s >= 8) return '#34d399'; if (s >= 6.5) return '#86efac'; if (s >= 5) return '#fbbf24'; if (s >= 3) return '#f97316'; return '#f87171' }
+function curSym(c) { return CUR_SYM[c] || (c ? c + ' ' : '') }
+function fmtPx(v, cur) { if (v == null) return '—'; const s = curSym(cur); const n = v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); return cur === 'EUR' ? `${n} ${s}` : `${s}${n}` }
+function fmtEUR0(v) { return v == null ? '—' : v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }
+function streakBadge(n) { if (!n) return null; if (n > 35) return '🥇'; if (n > 25) return '🥈'; if (n > 10) return '🥉'; return null }
+function moatBadge(m) { return m === 'wide' ? '🏰' : m === 'narrow' ? '🧱' : null }
 
+// Proyección €1k para una empresa (idéntica al HTML original).
+function projectCompany(co, destWHT) {
+  if (co.y == null || co.y <= 0) return null
+  const rows = project10y(1000, co.y, co.cagr || 0, getWHT(co.c), destWHT)
+  if (!rows) return null
+  return { y1: rows[0].net, cum10: rows[9].cum, payback: paybackYear(1000, co.y, co.cagr || 0, getWHT(co.c), destWHT) }
+}
+
+// ── Chips ────────────────────────────────────────────────────────────────────
+function Chips({ label, opts, value, onChange, locked }) {
   return (
     <div style={{ minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-        <p style={{ fontSize: 10, fontWeight: 700, color: locked ? '#2e3a55' : '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
-          {label}
-        </p>
-        {locked && !soon && (
-          <span style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', background: 'rgba(99,102,241,0.12)', padding: '1px 6px', borderRadius: 4, letterSpacing: '0.08em' }}>
-            PREMIUM
-          </span>
-        )}
-        {soon && (
-          <span style={{ fontSize: 9, color: '#2e3a55', padding: '1px 5px', background: 'rgba(255,255,255,0.04)', borderRadius: 4 }}>
-            próximamente
-          </span>
-        )}
+        <p style={{ fontSize: 10, fontWeight: 700, color: locked ? '#2e3a55' : '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{label}</p>
+        {locked && <span style={{ fontSize: 8, fontWeight: 700, color: '#6366f1', background: 'rgba(99,102,241,0.12)', padding: '1px 5px', borderRadius: 4 }}>🔒</span>}
       </div>
-      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', position: 'relative' }}>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', filter: locked ? 'opacity(0.5)' : 'none' }}>
         {opts.map(o => {
           const active = value === o.v
-          const disabled = locked || soon
           return (
-            <button
-              key={o.v}
-              onClick={() => {
-                if (soon) return
-                if (locked) { setTip(true); setTimeout(() => setTip(false), 2200); return }
-                onChange(o.v)
-              }}
-              style={{
-                fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid',
-                borderColor: active && !disabled ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.07)',
-                background:  active && !disabled ? 'rgba(99,102,241,0.2)' : 'transparent',
-                color: disabled ? '#2a3045' : (active ? '#818cf8' : '#4a5270'),
-                cursor: disabled ? (soon ? 'default' : 'not-allowed') : 'pointer',
-                fontFamily: 'inherit', fontWeight: active ? 700 : 400,
-                opacity: soon ? 0.35 : 1,
-              }}
-            >
-              {o.l}
-            </button>
+            <button key={String(o.v)} onClick={() => !locked && onChange(o.v)} disabled={locked} style={{
+              fontSize: 11, padding: '4px 9px', borderRadius: 6, border: '1px solid',
+              borderColor: active && !locked ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.07)',
+              background: active && !locked ? 'rgba(99,102,241,0.2)' : 'transparent',
+              color: locked ? '#2a3045' : (active ? '#818cf8' : '#4a5270'),
+              cursor: locked ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontWeight: active ? 700 : 400,
+            }}>{o.l}</button>
           )
         })}
-        {tip && (
-          <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, zIndex: 10, background: '#1a2035', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 8, padding: '8px 12px', whiteSpace: 'nowrap' }}>
-            <p style={{ fontSize: 12, color: '#c8d0e0', marginBottom: 4 }}>Función exclusiva para Premium</p>
-            <Link href="/pricing" style={{ fontSize: 11, color: '#818cf8', textDecoration: 'none', fontWeight: 700 }}>Ver planes →</Link>
-          </div>
-        )}
       </div>
     </div>
   )
 }
 
-// ── Sector select ──────────────────────────────────────────────────────────
-
-function SectorSelect({ sectors, value, onChange }) {
+function Toggle({ label, value, onChange, locked }) {
   return (
     <div style={{ minWidth: 0 }}>
-      <p style={{ fontSize: 10, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 5 }}>
-        Sector
-      </p>
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{
-          fontSize: 11, padding: '4px 10px', borderRadius: 6,
-          border: '1px solid rgba(255,255,255,0.1)',
-          background: '#0d1424', color: '#6a7090',
-          fontFamily: 'inherit', cursor: 'pointer', outline: 'none',
-        }}
-      >
-        <option value="all">Todos los sectores</option>
-        {sectors.map(s => <option key={s} value={s}>{s}</option>)}
-      </select>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+        <p style={{ fontSize: 10, fontWeight: 700, color: locked ? '#2e3a55' : '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</p>
+        {locked && <span style={{ fontSize: 8, fontWeight: 700, color: '#6366f1', background: 'rgba(99,102,241,0.12)', padding: '1px 5px', borderRadius: 4 }}>🔒</span>}
+      </div>
+      <button onClick={() => !locked && onChange(!value)} disabled={locked} style={{
+        fontSize: 11, padding: '4px 12px', borderRadius: 6, border: '1px solid',
+        borderColor: value && !locked ? 'rgba(251,191,36,0.5)' : 'rgba(255,255,255,0.07)',
+        background: value && !locked ? 'rgba(251,191,36,0.15)' : 'transparent',
+        color: locked ? '#2a3045' : (value ? '#fbbf24' : '#4a5270'), cursor: locked ? 'not-allowed' : 'pointer',
+        fontFamily: 'inherit', fontWeight: value ? 700 : 400,
+      }}>⚡ {value ? 'Activado' : 'Solo 10/10'}</button>
     </div>
   )
 }
 
-// ── Columna ordenable ──────────────────────────────────────────────────────
+// ── Tarjeta de empresa ───────────────────────────────────────────────────────
+function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect }) {
+  const ct = getCountry(co.c)
+  const proj = projectCompany(co, destWHT)
+  const sb = streakBadge(co.streak)
+  const mb = moatBadge(co.moat)
+  const secColor = SECTOR_COLOR[co.s] || '#6a7090'
 
-function SortTh({ col, label, sort, onSort, align = 'right', style = {} }) {
-  const active = sort.col === col
   return (
-    <th
-      onClick={() => onSort(col)}
-      style={{
-        textAlign: align, padding: '9px 10px', fontSize: 10, fontWeight: 700,
-        color: active ? '#818cf8' : '#3a4260',
-        textTransform: 'uppercase', letterSpacing: '0.08em',
-        cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', ...style,
-      }}
-    >
-      {label} {active ? (sort.dir === 'desc' ? '↓' : '↑') : ''}
-    </th>
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${selected ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 12, padding: '12px 14px', marginBottom: 8 }}>
+      {/* Fila superior */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <input type="checkbox" checked={selected} disabled={!selected && !canSelect} onChange={() => onSelect(co.t)} style={{ accentColor: '#818cf8', cursor: 'pointer', flexShrink: 0 }} />
+        <span style={{ fontSize: 12, fontWeight: 800, color: '#3a4260', width: 28, flexShrink: 0 }}>
+          {sortKey === 'profit' && proj ? <span style={{ color: '#34d399' }}>{fmtEUR0(proj.cum10)}</span>
+            : sortKey === 'cheap' && co.mos != null ? <span style={{ color: co.mos >= 0 ? '#34d399' : '#f87171' }}>{co.mos.toFixed(0)}%</span>
+            : `#${rank}`}
+        </span>
+        <span style={{ fontSize: 15, flexShrink: 0 }}>{ct?.flag || '🌐'}</span>
+        <Link href={`/empresa/${encodeURIComponent(co.t)}`} style={{ textDecoration: 'none', minWidth: 0, flex: 1 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#d0d8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {co.n} <span style={{ fontSize: 10, color: '#2e3a55', fontWeight: 600 }}>{co.t}</span>
+          </p>
+        </Link>
+
+        {/* Badges */}
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
+          {co.s && <span style={{ fontSize: 9, fontWeight: 700, color: secColor, background: `${secColor}1a`, padding: '2px 7px', borderRadius: 5 }}>{co.s}</span>}
+          {sb && <span title="Racha de dividendos" style={{ fontSize: 13 }}>{sb}</span>}
+          {mb && <span title={co.moat === 'wide' ? 'Foso ancho' : 'Foso estrecho'} style={{ fontSize: 12 }}>{mb}</span>}
+          {co.r1010 && <span title="Regla 10/10: yield + CAGR ≥ 10%" style={{ fontSize: 12 }}>⚡</span>}
+          {co.ero && <span title="Señales de erosión del foso" style={{ fontSize: 12 }}>📉</span>}
+        </div>
+
+        {/* Precio + MoS */}
+        <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 70 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#c8d0e0', fontVariantNumeric: 'tabular-nums' }}>{fmtPx(co.px, co.cur)}</p>
+          {co.mos != null && <p style={{ fontSize: 10, fontWeight: 700, color: co.mos >= 0 ? '#34d399' : '#f87171' }}>{co.mos >= 0 ? '+' : ''}{co.mos.toFixed(0)}% MoS</p>}
+        </div>
+
+        {/* Score + calidad */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          {co.dq != null && <span title="Calidad del dividendo" style={{ fontSize: 11, fontWeight: 700, color: '#a78bfa', background: 'rgba(167,139,250,0.12)', padding: '2px 6px', borderRadius: 5 }}>💎 {co.dq.toFixed(1)}</span>}
+          <span style={{ fontSize: 20, fontWeight: 900, color: scoreColor(co.sc), minWidth: 34, textAlign: 'right' }}>{co.sc != null ? co.sc.toFixed(1) : '—'}</span>
+        </div>
+      </div>
+
+      {/* Fila inferior: proyección €1.000 + métricas */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.04)', flexWrap: 'wrap', alignItems: 'center' }}>
+        {proj ? (
+          <>
+            <Metric label="€1k → renta año 1" value={fmtEUR0(proj.y1) + '/año'} color="#34d399" />
+            <Metric label="Total dividendos 10a" value={fmtEUR0(proj.cum10)} color="#86efac" />
+            <Metric label="Recuperación" value={proj.payback ? `r${proj.payback}` : '—'} color="#818cf8" />
+          </>
+        ) : <span style={{ fontSize: 11, color: '#2e3a55' }}>Sin datos de dividendo para proyectar</span>}
+        <div style={{ flex: 1 }} />
+        {co.y != null && <Metric label="Yield" value={co.y.toFixed(2) + '%'} color="#8090a8" />}
+        {co.roic != null && <Metric label="ROIC" value={co.roic.toFixed(1) + '%'} color="#8090a8" />}
+        {co.cagr != null && <Metric label="CAGR div" value={co.cagr.toFixed(1) + '%'} color="#8090a8" />}
+      </div>
+    </div>
   )
 }
 
-// ── Fila de resultado ──────────────────────────────────────────────────────
-
-function Row({ co }) {
-  const ct = getCountry(co.c)
+function Metric({ label, value, color }) {
   return (
-    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.025)'}
-      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-    >
-      <td style={{ padding: '10px 10px', maxWidth: 200 }}>
-        <Link href={`/empresa/${encodeURIComponent(co.t)}`} style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-          <span style={{ fontSize: 14, flexShrink: 0 }}>{ct?.flag || '🌐'}</span>
-          <div style={{ minWidth: 0 }}>
-            <p style={{ fontSize: 12, fontWeight: 700, color: '#d0d8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {co.n}
-            </p>
-            <p style={{ fontSize: 10, color: '#2e3a55', whiteSpace: 'nowrap' }}>{ct?.name || co.c}</p>
-          </div>
-        </Link>
-      </td>
-      <td style={{ padding: '10px 10px', textAlign: 'left' }}>
-        <span style={{ fontSize: 11, fontWeight: 800, color: '#818cf8', background: 'rgba(99,102,241,0.12)', padding: '2px 7px', borderRadius: 5 }}>
-          {co.t}
-        </span>
-      </td>
-      <td style={{ padding: '10px 10px', textAlign: 'left' }}>
-        <span style={{ fontSize: 11, color: '#4a5270' }}>{co.s}</span>
-      </td>
-      <td style={{ padding: '10px 10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-        {co.y != null
-          ? <span style={{ fontSize: 12, fontWeight: 700, color: co.y >= 0.04 ? '#34d399' : co.y >= 0.02 ? '#86efac' : '#8090a8' }}>
-              {(co.y * 100).toFixed(2)}%
-            </span>
-          : <span style={{ fontSize: 11, color: '#2e3a55' }}>—</span>
-        }
-      </td>
-      <td style={{ padding: '10px 10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-        {co.sc != null
-          ? <span style={{ fontSize: 13, fontWeight: 900, color: scoreColor(co.sc) }}>{co.sc.toFixed(1)}</span>
-          : <span style={{ fontSize: 11, color: '#2e3a55' }}>—</span>
-        }
-      </td>
-      <td style={{ padding: '10px 10px', textAlign: 'right' }}>
-        <span style={{ fontSize: 11, color: '#2e3a55' }}>—</span>
-      </td>
-      <td style={{ padding: '10px 10px', textAlign: 'right' }}>
-        <span style={{ fontSize: 11, color: '#2e3a55' }}>—</span>
-      </td>
-    </tr>
+    <div>
+      <p style={{ fontSize: 9, color: '#3a4260', marginBottom: 1 }}>{label}</p>
+      <p style={{ fontSize: 12, fontWeight: 700, color, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
+    </div>
+  )
+}
+
+// ── Comparador ───────────────────────────────────────────────────────────────
+function Comparator({ companies, destWHT, onClose }) {
+  const rows = [
+    ['Score DGI', co => co.sc != null ? co.sc.toFixed(1) : '—'],
+    ['Calidad div 💎', co => co.dq != null ? co.dq.toFixed(1) : '—'],
+    ['Yield', co => co.y != null ? co.y.toFixed(2) + '%' : '—'],
+    ['CAGR div 5a', co => co.cagr != null ? co.cagr.toFixed(1) + '%' : '—'],
+    ['Racha', co => co.streak != null ? co.streak + 'a' : '—'],
+    ['ROIC', co => co.roic != null ? co.roic.toFixed(1) + '%' : '—'],
+    ['Margen op.', co => co.opm != null ? co.opm.toFixed(1) + '%' : '—'],
+    ['Payout', co => co.payout != null ? co.payout.toFixed(0) + '%' : '—'],
+    ['Deuda/EBITDA', co => co.debt != null ? co.debt.toFixed(1) + 'x' : '—'],
+    ['PER', co => co.pe != null ? co.pe.toFixed(1) + 'x' : '—'],
+    ['EV/EBITDA', co => co.ev != null ? co.ev.toFixed(1) + 'x' : '—'],
+    ['Margen seguridad', co => co.mos != null ? (co.mos >= 0 ? '+' : '') + co.mos.toFixed(0) + '%' : '—'],
+    ['€1k total 10a', co => { const p = projectCompany(co, destWHT); return p ? fmtEUR0(p.cum10) : '—' }],
+  ]
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={onClose}>
+      <div style={{ background: '#0d1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 20, maxWidth: 900, width: '100%', maxHeight: '90vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <p style={{ fontSize: 16, fontWeight: 800, color: '#e0e8f0' }}>Comparar {companies.length} empresas</p>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#4a5270', fontSize: 22, cursor: 'pointer' }}>×</button>
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: '8px', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Métrica</th>
+                {companies.map(co => (
+                  <th key={co.t} style={{ textAlign: 'right', padding: '8px', color: '#c8d0e0', borderBottom: '1px solid rgba(255,255,255,0.1)', whiteSpace: 'nowrap' }}>
+                    {getCountry(co.c)?.flag} {co.t}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(([label, fn]) => (
+                <tr key={label} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <td style={{ padding: '7px 8px', color: '#4a5270' }}>{label}</td>
+                  {companies.map(co => <td key={co.t} style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{fn(co)}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   )
 }
 
 // ── Componente principal ───────────────────────────────────────────────────
+export default function ScreenerClient({ companies = [], isPremium = false, sectors = [], destWHT = 19 }) {
+  const [filters, setFilters] = useState(INIT)
+  const [search, setSearch]   = useState('')
+  const [sortKey, setSortKey] = useState('score')
+  const [visible, setVisible] = useState(PAGE)
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [selected, setSelected] = useState([])
+  const [showComp, setShowComp] = useState(false)
 
-const INIT_FILTERS = {
-  yield: 0, zona: 'all', sector: 'all',
-  score: 0, streak: 0, cagr: 0, debt: 99, roic: 0, moat: 'all',
-}
+  useEffect(() => { setVisible(PAGE) }, [filters, search, sortKey])
 
-export default function ScreenerClient({ companies = [], isPremium = false, sectors = [] }) {
-  const [filters, setFilters] = useState(INIT_FILTERS)
-  const [sort,    setSort]    = useState({ col: 'sc', dir: 'desc' })
-  const [page,    setPage]    = useState(1)
-  const [search,  setSearch]  = useState('')
-  const [carteraBanner, setCarteraBanner] = useState(null)
-  const [roicMode, setRoicMode] = useState('tangible')  // 'tangible' | 'reported'
-
-  // Preconfigurar filtros desde URL (detector de empresas de la cartera)
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const p = new URLSearchParams(window.location.search)
-    if (![...p.keys()].length) return
-    const next = {}
-    if (p.get('yield'))  next.yield  = parseFloat(p.get('yield'))  || 0
-    if (p.get('zona'))   next.zona   = p.get('zona')
-    if (p.get('sector')) next.sector = p.get('sector')
-    if (p.get('score'))  next.score  = parseFloat(p.get('score'))  || 0
-    if (p.get('cagr'))   next.cagr   = parseFloat(p.get('cagr'))   || 0
-    if (Object.keys(next).length) setFilters(f => ({ ...f, ...next }))
-    if (p.get('from') === 'cartera') setCarteraBanner(p.get('hueco') || 'tu cartera')
-  }, [])
-
-  const set = useCallback((key, val) => {
-    setFilters(f => ({ ...f, [key]: val }))
-    setPage(1)
-  }, [])
-
-  const onSort = useCallback((col) => {
-    setSort(s => s.col === col ? { col, dir: s.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: 'desc' })
-    setPage(1)
-  }, [])
+  const set = useCallback((key, val) => setFilters(f => ({ ...f, [key]: val })), [])
+  const lock = !isPremium
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return companies.filter(co => {
       if (q && !co.n.toLowerCase().includes(q) && !co.t.toLowerCase().includes(q)) return false
-      if (filters.yield  > 0          && (co.y  == null || co.y  <  filters.yield))  return false
-      if (filters.zona  !== 'all'     && co.r !== filters.zona)                       return false
-      if (filters.sector !== 'all'    && co.s !== filters.sector)                     return false
-      if (isPremium && filters.score  > 0 && (co.sc == null || co.sc < filters.score)) return false
-      if (isPremium && filters.roic   > 0) {
-        const rv = roicMode === 'tangible' ? co.rt : co.rr
-        if (rv == null || rv < filters.roic) return false
+      if (filters.score > 0 && (co.sc == null || co.sc < filters.score)) return false
+      if (filters.zona !== 'all' && co.cont !== filters.zona) return false
+      if (filters.sector !== 'all' && co.s !== filters.sector) return false
+      if (!isPremium) return true
+      // Premium
+      if (filters.yield > 0 && (co.y == null || co.y < filters.yield)) return false
+      if (filters.streak > 0 && (co.streak == null || co.streak < filters.streak)) return false
+      if (filters.cagr > 0 && (co.cagr == null || co.cagr < filters.cagr)) return false
+      if (filters.rule1010 && !co.r1010) return false
+      if (filters.payout < 999 && (co.payout == null || co.payout >= filters.payout)) return false
+      if (filters.roic > 0 && (co.roic == null || co.roic < filters.roic)) return false
+      if (filters.opm > 0 && (co.opm == null || co.opm < filters.opm)) return false
+      if (filters.rev === 'pos' && (co.rev == null || co.rev <= 0)) return false
+      if (filters.rev === '5' && (co.rev == null || co.rev < 5)) return false
+      if (filters.rev === '10' && (co.rev == null || co.rev < 10)) return false
+      if (filters.moat !== 'all' && co.moat !== filters.moat) return false
+      if (filters.debt < 99 && (co.debt == null || co.debt >= filters.debt)) return false
+      if (filters.icov > 0 && (co.icov == null || co.icov < filters.icov)) return false
+      if (filters.mos > -999 && (co.mos == null || co.mos < filters.mos)) return false
+      if (filters.pe < 999 && (co.pe == null || co.pe <= 0 || co.pe >= filters.pe)) return false
+      if (filters.ev < 999 && (co.ev == null || co.ev >= filters.ev)) return false
+      if (filters.cap !== 'all') {
+        const m = co.mcap
+        if (m == null) return false
+        if (filters.cap === 'small' && !(m < 2000)) return false
+        if (filters.cap === 'mid'   && !(m >= 2000 && m < 10000)) return false
+        if (filters.cap === 'large' && !(m >= 10000 && m < 100000)) return false
+        if (filters.cap === 'blue'  && !(m >= 100000)) return false
       }
-      // streak, cagr, debt, moat: no data yet → always pass
       return true
     })
-  }, [companies, filters, isPremium, search, roicMode])
+  }, [companies, filters, search, isPremium])
 
   const sorted = useMemo(() => {
     const arr = [...filtered]
-    const { col, dir } = sort
-    arr.sort((a, b) => {
-      const va = a[col] ?? (dir === 'desc' ? -Infinity : Infinity)
-      const vb = b[col] ?? (dir === 'desc' ? -Infinity : Infinity)
-      if (typeof va === 'string') return dir === 'desc' ? vb.localeCompare(va) : va.localeCompare(vb)
-      return dir === 'desc' ? vb - va : va - vb
-    })
+    if (sortKey === 'profit') {
+      const val = co => { const p = projectCompany(co, destWHT); return p ? p.cum10 : -Infinity }
+      arr.sort((a, b) => val(b) - val(a))
+    } else if (sortKey === 'cheap') {
+      arr.sort((a, b) => (b.mos ?? -Infinity) - (a.mos ?? -Infinity))
+    } else if (sortKey === 'dividend') {
+      arr.sort((a, b) => (b.dq ?? -Infinity) - (a.dq ?? -Infinity))
+    } else {
+      arr.sort((a, b) => (b.sc ?? -Infinity) - (a.sc ?? -Infinity))
+    }
     return arr
-  }, [filtered, sort])
+  }, [filtered, sortKey, destWHT])
 
-  const totalPages = Math.ceil(sorted.length / PAGE_SIZE)
-  const pageRows   = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-  const withData   = companies.filter(c => c.y != null).length
+  const pageRows = sorted.slice(0, visible)
 
-  const activeCount = Object.entries(filters).filter(([k, v]) =>
-    (k === 'yield'  && v > 0) || (k === 'zona'   && v !== 'all') ||
-    (k === 'sector' && v !== 'all') || (k === 'score' && v > 0 && isPremium)
-  ).length
+  // Chips activos
+  const activeChips = useMemo(() => {
+    const chips = []
+    const add = (k, label) => chips.push({ k, label })
+    if (filters.score > 0) add('score', `Score ≥${filters.score}`)
+    if (filters.zona !== 'all') add('zona', filters.zona)
+    if (filters.sector !== 'all') add('sector', filters.sector)
+    if (filters.yield > 0) add('yield', `Yield >${filters.yield}%`)
+    if (filters.streak > 0) add('streak', `Racha >${filters.streak}a`)
+    if (filters.cagr > 0) add('cagr', `CAGR >${filters.cagr}%`)
+    if (filters.rule1010) add('rule1010', '⚡ 10/10')
+    if (filters.payout < 999) add('payout', `Payout <${filters.payout}%`)
+    if (filters.roic > 0) add('roic', `ROIC >${filters.roic}%`)
+    if (filters.opm > 0) add('opm', `Margen op >${filters.opm}%`)
+    if (filters.rev !== 'all') add('rev', `Ingresos ${filters.rev === 'pos' ? '+' : '>' + filters.rev + '%'}`)
+    if (filters.moat !== 'all') add('moat', `Foso ${filters.moat}`)
+    if (filters.debt < 99) add('debt', `Deuda <${filters.debt}x`)
+    if (filters.icov > 0) add('icov', `Cobertura >${filters.icov}x`)
+    if (filters.mos > -999) add('mos', filters.mos === 0 ? 'MoS positivo' : `MoS >${filters.mos}%`)
+    if (filters.pe < 999) add('pe', `PER <${filters.pe}x`)
+    if (filters.ev < 999) add('ev', `EV/EBITDA <${filters.ev}x`)
+    if (filters.cap !== 'all') add('cap', CAP_OPTS.find(o => o.v === filters.cap)?.l)
+    return chips
+  }, [filters])
+
+  const resetKey = (k) => set(k, INIT[k])
+  const clearAll = () => { setFilters(INIT); setSearch('') }
+  const hasFilters = activeChips.length > 0 || search
+
+  const toggleSelect = (t) => setSelected(s => s.includes(t) ? s.filter(x => x !== t) : (s.length < 4 ? [...s, t] : s))
+  const selectedCompanies = companies.filter(c => selected.includes(c.t))
+
+  const SORTS = [
+    { k: 'score',    l: '⭐ Nota' },
+    { k: 'profit',   l: '💰 Rentables' },
+    { k: 'cheap',    l: '🎯 Baratas' },
+    { k: 'dividend', l: '💎 Dividendo' },
+  ]
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px 80px' }}>
-
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px 100px' }}>
       {/* Header */}
-      <div style={{ marginBottom: 20 }}>
+      <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', marginBottom: 4 }}>Screener DGI</h1>
-        <p style={{ fontSize: 12, color: '#3a4260' }}>
-          {companies.length.toLocaleString('es-ES')} empresas de {43} mercados
-          {withData > 0 && <> · <span style={{ color: '#4a5270' }}>{withData.toLocaleString('es-ES')} con datos fundamentales</span></>}
-        </p>
+        <p style={{ fontSize: 12, color: '#3a4260' }}>{companies.length.toLocaleString('es-ES')} empresas de 43 mercados</p>
       </div>
 
-      {/* Banner cartera */}
-      {carteraBanner && (
-        <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <p style={{ fontSize: 13, color: '#c8d0e0' }}>
-            <span style={{ fontWeight: 700, color: '#818cf8' }}>Resultados personalizados para tu cartera</span>
-            {' '}— buscando {carteraBanner}
-          </p>
-          <button
-            onClick={() => { setFilters(INIT_FILTERS); setSearch(''); setPage(1); setCarteraBanner(null) }}
-            style={{ fontSize: 11, color: '#4a5270', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline', flexShrink: 0 }}
-          >
-            Quitar filtro de cartera
-          </button>
+      {/* Buscador + ordenación */}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nombre o ticker…"
+          style={{ flex: 1, minWidth: 200, padding: '10px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 9, color: '#e0e8f0', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+        <div style={{ display: 'flex', gap: 4 }}>
+          {SORTS.map(s => (
+            <button key={s.k} onClick={() => setSortKey(s.k)} style={{
+              fontSize: 12, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+              border: '1px solid ' + (sortKey === s.k ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.08)'),
+              background: sortKey === s.k ? 'rgba(99,102,241,0.2)' : 'transparent',
+              color: sortKey === s.k ? '#818cf8' : '#4a5270', fontWeight: sortKey === s.k ? 700 : 400,
+            }}>{s.l}</button>
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* Buscador */}
-      <div style={{ position: 'relative', marginBottom: 16 }}>
-        <span style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#3a4260', pointerEvents: 'none' }}>⌕</span>
-        <input
-          value={search}
-          onChange={e => { setSearch(e.target.value); setPage(1) }}
-          placeholder="Buscar por nombre o ticker…"
-          style={{
-            width: '100%', paddingLeft: 36, paddingRight: 16, paddingTop: 10, paddingBottom: 10,
-            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 9, color: '#e0e8f0', fontSize: 13, outline: 'none',
-            fontFamily: 'inherit', boxSizing: 'border-box',
-          }}
-        />
+      {/* Toggle panel + chips activos */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+        <button onClick={() => setPanelOpen(o => !o)} style={{ fontSize: 12, fontWeight: 700, padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#8090a8', cursor: 'pointer', fontFamily: 'inherit' }}>
+          {panelOpen ? '▲ Ocultar filtros' : '▼ Filtros'}{activeChips.length > 0 ? ` (${activeChips.length})` : ''}
+        </button>
+        {activeChips.map(c => (
+          <button key={c.k} onClick={() => resetKey(c.k)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 14, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.12)', color: '#818cf8', cursor: 'pointer', fontFamily: 'inherit' }}>
+            {c.label} ✕
+          </button>
+        ))}
+        {hasFilters && <button onClick={clearAll} style={{ fontSize: 11, color: '#4a5270', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>Limpiar filtros</button>}
       </div>
 
       {/* Panel de filtros */}
-      <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
-
-        {/* Filtros gratuitos */}
-        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 14 }}>
-          <Chips label="Yield" opts={YIELD_OPTS}  value={filters.yield}  onChange={v => set('yield', v)} />
-          <Chips label="Zona"  opts={ZONA_OPTS}   value={filters.zona}   onChange={v => set('zona',  v)} />
-          <SectorSelect sectors={sectors} value={filters.sector} onChange={v => set('sector', v)} />
-        </div>
-
-        {/* Divisor premium */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
-          <span style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', letterSpacing: '0.1em' }}>PREMIUM</span>
-          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
-        </div>
-
-        {/* Filtros premium */}
-        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-          <Chips label="Score DGI"    opts={SCORE_OPTS}  value={filters.score}  onChange={v => set('score', v)}  locked={!isPremium} />
-          <Chips label="Racha"        opts={STREAK_OPTS} value={filters.streak} onChange={v => set('streak', v)} locked={!isPremium} soon={true} />
-          <Chips label="CAGR Div 5A"  opts={CAGR_OPTS}   value={filters.cagr}   onChange={v => set('cagr', v)}   locked={!isPremium} soon={true} />
-          <Chips label="Deuda/EBITDA" opts={DEBT_OPTS}   value={filters.debt}   onChange={v => set('debt', v)}   locked={!isPremium} soon={true} />
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: isPremium ? '#4a5270' : '#2e3a55', textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>ROIC</p>
-              {!isPremium && <span style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', background: 'rgba(99,102,241,0.12)', padding: '1px 6px', borderRadius: 4 }}>PREMIUM</span>}
-              {isPremium && (
-                <div style={{ display: 'flex', gap: 2 }}>
-                  {[['tangible', 'Tangible'], ['reported', 'Reportado']].map(([v, l]) => (
-                    <button key={v} onClick={() => setRoicMode(v)} style={{
-                      fontSize: 9, padding: '1px 6px', borderRadius: 4, border: 'none', cursor: 'pointer',
-                      background: roicMode === v ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)',
-                      color: roicMode === v ? '#818cf8' : '#4a5270', fontWeight: roicMode === v ? 700 : 400,
-                    }}>{l}</button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-              {ROIC_OPTS.map(o => {
-                const active = filters.roic === o.v
-                return (
-                  <button key={o.v} onClick={() => isPremium && set('roic', o.v)} disabled={!isPremium} style={{
-                    fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid',
-                    borderColor: active && isPremium ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.07)',
-                    background: active && isPremium ? 'rgba(99,102,241,0.2)' : 'transparent',
-                    color: !isPremium ? '#2a3045' : (active ? '#818cf8' : '#4a5270'),
-                    cursor: isPremium ? 'pointer' : 'not-allowed', fontFamily: 'inherit', fontWeight: active ? 700 : 400,
-                  }}>{o.l}</button>
-                )
-              })}
+      {panelOpen && (
+        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#4a5270', letterSpacing: '0.1em', marginBottom: 12 }}>BÁSICOS</p>
+          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 16 }}>
+            <Chips label="Score DGI" opts={SCORE_OPTS} value={filters.score} onChange={v => set('score', v)} />
+            <Chips label="Zona" opts={ZONA_OPTS} value={filters.zona} onChange={v => set('zona', v)} />
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Sector</p>
+              <select value={filters.sector} onChange={e => set('sector', e.target.value)} style={{ fontSize: 11, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: '#0d1424', color: '#6a7090', fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}>
+                <option value="all">Todos los sectores</option>
+                {sectors.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
             </div>
           </div>
-          <Chips label="Foso"         opts={MOAT_OPTS}   value={filters.moat}   onChange={v => set('moat', v)}   locked={!isPremium} soon={true} />
+
+          <Divider label="DIVIDENDO · PREMIUM" />
+          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 16 }}>
+            <Chips label="Yield" opts={YIELD_OPTS} value={filters.yield} onChange={v => set('yield', v)} locked={lock} />
+            <Chips label="Racha" opts={STREAK_OPTS} value={filters.streak} onChange={v => set('streak', v)} locked={lock} />
+            <Chips label="CAGR div" opts={CAGR_OPTS} value={filters.cagr} onChange={v => set('cagr', v)} locked={lock} />
+            <Chips label="Payout FCF" opts={PAYOUT_OPTS} value={filters.payout} onChange={v => set('payout', v)} locked={lock} />
+            <Toggle label="Regla 10/10" value={filters.rule1010} onChange={v => set('rule1010', v)} locked={lock} />
+          </div>
+
+          <Divider label="CALIDAD · PREMIUM" />
+          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 16 }}>
+            <Chips label="ROIC" opts={ROIC_OPTS} value={filters.roic} onChange={v => set('roic', v)} locked={lock} />
+            <Chips label="Margen op." opts={OPM_OPTS} value={filters.opm} onChange={v => set('opm', v)} locked={lock} />
+            <Chips label="Ingresos" opts={REV_OPTS} value={filters.rev} onChange={v => set('rev', v)} locked={lock} />
+            <Chips label="Foso" opts={MOAT_OPTS} value={filters.moat} onChange={v => set('moat', v)} locked={lock} />
+          </div>
+
+          <Divider label="SOLIDEZ · PREMIUM" />
+          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 16 }}>
+            <Chips label="Deuda/EBITDA" opts={DEBT_OPTS} value={filters.debt} onChange={v => set('debt', v)} locked={lock} />
+            <Chips label="Cobertura int." opts={ICOV_OPTS} value={filters.icov} onChange={v => set('icov', v)} locked={lock} />
+          </div>
+
+          <Divider label="VALORACIÓN Y TAMAÑO · PREMIUM" />
+          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+            <Chips label="Margen seguridad" opts={MOS_OPTS} value={filters.mos} onChange={v => set('mos', v)} locked={lock} />
+            <Chips label="PER" opts={PE_OPTS} value={filters.pe} onChange={v => set('pe', v)} locked={lock} />
+            <Chips label="EV/EBITDA" opts={EV_OPTS} value={filters.ev} onChange={v => set('ev', v)} locked={lock} />
+            <Chips label="Capitalización" opts={CAP_OPTS} value={filters.cap} onChange={v => set('cap', v)} locked={lock} />
+          </div>
+
+          {lock && (
+            <div style={{ marginTop: 16, padding: '12px 16px', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <p style={{ fontSize: 12, color: '#8090a8' }}>Desbloquea todos los filtros avanzados con Premium</p>
+              <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '8px 16px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>Ver Premium →</Link>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
-      {/* Contador + limpiar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <p style={{ fontSize: 12, color: filtered.length > 0 ? '#4a5270' : '#f87171' }}>
-          <span style={{ fontWeight: 700, color: filtered.length > 0 ? '#c8d0e0' : '#f87171', fontSize: 14 }}>
-            {filtered.length.toLocaleString('es-ES')}
-          </span>
-          {' '}empresa{filtered.length !== 1 ? 's' : ''} encontrada{filtered.length !== 1 ? 's' : ''}
-          {totalPages > 1 && <span style={{ color: '#2e3a55' }}> · pág. {page}/{totalPages}</span>}
-        </p>
-        {(activeCount > 0 || search) && (
-          <button
-            onClick={() => { setFilters(INIT_FILTERS); setSearch(''); setPage(1) }}
-            style={{ fontSize: 11, color: '#4a5270', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}
-          >
-            Limpiar filtros
-          </button>
-        )}
-      </div>
+      {/* Contador */}
+      <p style={{ fontSize: 12, color: filtered.length > 0 ? '#4a5270' : '#f87171', marginBottom: 12 }}>
+        <span style={{ fontWeight: 700, color: filtered.length > 0 ? '#c8d0e0' : '#f87171', fontSize: 14 }}>{filtered.length.toLocaleString('es-ES')}</span>
+        {hasFilters ? ` de ${companies.length.toLocaleString('es-ES')} con los filtros activos` : ` empresa${filtered.length !== 1 ? 's' : ''} encontrada${filtered.length !== 1 ? 's' : ''}`}
+      </p>
 
-      {/* Tabla */}
+      {/* Resultados */}
       {filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#3a4260', fontSize: 14 }}>
-          Sin resultados con los filtros actuales.
+        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <p style={{ fontSize: 14, color: '#8090a8', marginBottom: 16 }}>Ninguna empresa cumple todos los filtros activos</p>
+          <button onClick={clearAll} style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '9px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Limpiar filtros</button>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
-                <SortTh col="n"  label="Empresa"       sort={sort} onSort={onSort} align="left"  style={{ paddingLeft: 14 }} />
-                <SortTh col="t"  label="Ticker"        sort={sort} onSort={onSort} align="left" />
-                <SortTh col="s"  label="Sector"        sort={sort} onSort={onSort} align="left" />
-                <SortTh col="y"  label="Yield"         sort={sort} onSort={onSort} />
-                <SortTh col="sc" label="Score DGI"     sort={sort} onSort={onSort} />
-                <th style={{ textAlign: 'right', padding: '9px 10px', fontSize: 10, color: '#2a3045', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-                  Racha 🔒
-                </th>
-                <th style={{ textAlign: 'right', padding: '9px 10px', fontSize: 10, color: '#2a3045', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-                  CAGR 5A 🔒
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {pageRows.map((co, i) => <Row key={`${co.t}-${i}`} co={co} />)}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {pageRows.map((co, i) => (
+            <CompanyCard key={co.t} co={co} rank={i + 1} destWHT={destWHT} sortKey={sortKey}
+              selected={selected.includes(co.t)} onSelect={toggleSelect} canSelect={selected.length < 4} />
+          ))}
+          {visible < sorted.length && (
+            <div style={{ textAlign: 'center', marginTop: 16 }}>
+              <button onClick={() => setVisible(v => v + PAGE)} style={{ fontSize: 13, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', padding: '10px 24px', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Cargar más ({sorted.length - visible} restantes)
+              </button>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Paginación */}
-      {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 20 }}>
-          <button
-            onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-            style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: page === 1 ? '#2a3045' : '#6a7090', cursor: page === 1 ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: 12 }}>
-            ← Anterior
-          </button>
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            const n = Math.max(1, Math.min(page - 2, totalPages - 4)) + i
-            return (
-              <button key={n} onClick={() => setPage(n)} style={{
-                width: 34, height: 34, borderRadius: 8, fontFamily: 'inherit',
-                border: '1px solid ' + (page === n ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.07)'),
-                background: page === n ? 'rgba(99,102,241,0.2)' : 'transparent',
-                color: page === n ? '#818cf8' : '#4a5270', cursor: 'pointer',
-                fontSize: 12, fontWeight: page === n ? 700 : 400,
-              }}>{n}</button>
-            )
-          })}
-          <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-            style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: page === totalPages ? '#2a3045' : '#6a7090', cursor: page === totalPages ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: 12 }}>
-            Siguiente →
+      {/* Botón flotante comparador */}
+      {selected.length >= 2 && (
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
+          <button onClick={() => setShowComp(true)} style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '12px 24px', borderRadius: 30, border: 'none', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(99,102,241,0.4)' }}>
+            Comparar {selected.length} empresas seleccionadas
           </button>
         </div>
       )}
 
-      {/* CTA upgrade */}
-      {!isPremium && (
-        <div style={{ marginTop: 32, padding: '16px 20px', background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-          <div>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0', marginBottom: 3 }}>
-              Desbloquea Score DGI, racha, CAGR y más filtros
-            </p>
-            <p style={{ fontSize: 12, color: '#4a5270' }}>
-              Filtra por calidad DGI real con datos fundamentales de los 43 mercados.
-            </p>
-          </div>
-          <Link href="/pricing" style={{
-            fontSize: 13, fontWeight: 700, color: '#fff', textDecoration: 'none',
-            background: '#6366f1', padding: '9px 20px', borderRadius: 8, flexShrink: 0,
-          }}>
-            Ver Premium →
-          </Link>
-        </div>
-      )}
+      {showComp && <Comparator companies={selectedCompanies} destWHT={destWHT} onClose={() => setShowComp(false)} />}
+    </div>
+  )
+}
+
+function Divider({ label }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+      <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
+      <span style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', letterSpacing: '0.1em' }}>{label}</span>
+      <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
     </div>
   )
 }
