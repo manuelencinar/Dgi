@@ -16,7 +16,9 @@ const ALLOWED = new Set([
 ])
 
 function sb() {
-  return serviceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!key) return { missingKey: true }
+  return { client: serviceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, key) }
 }
 
 export async function POST(request) {
@@ -35,10 +37,31 @@ export async function POST(request) {
     return NextResponse.json({ error: 'No hay cambios válidos para guardar' }, { status: 400 })
   }
 
-  const { error } = await sb()
-    .from('user_settings')
-    .upsert({ user_id: user.id, ...updates }, { onConflict: 'user_id' })
+  const svc = sb()
+  if (svc.missingKey) {
+    return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY no está configurada en el servidor' }, { status: 500 })
+  }
+  const admin = svc.client
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true })
+  // UPDATE explícito: .select() devuelve las filas afectadas para confirmar la escritura
+  const { data: updated, error: upErr } = await admin
+    .from('user_settings')
+    .update(updates)
+    .eq('user_id', user.id)
+    .select('user_id')
+
+  if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 })
+  if (updated && updated.length) return NextResponse.json({ ok: true, saved: Object.keys(updates) })
+
+  // No existía fila para el usuario → INSERT
+  const { data: inserted, error: insErr } = await admin
+    .from('user_settings')
+    .insert({ user_id: user.id, ...updates })
+    .select('user_id')
+
+  if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 })
+  if (!inserted || !inserted.length) {
+    return NextResponse.json({ error: 'No se escribió ninguna fila (revisa permisos/constraint de user_settings)' }, { status: 500 })
+  }
+  return NextResponse.json({ ok: true, saved: Object.keys(updates) })
 }
