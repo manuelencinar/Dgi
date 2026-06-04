@@ -67,12 +67,17 @@ function useSave(fields, supabase) {
   const [err,    setErr]    = useState(null)
   const timer = useRef(null)
 
-  const save = async (userId) => {
+  const save = async () => {
     setSaving(true); setErr(null); setSaved(false)
     const updates = {}
     fields.forEach(([key, val]) => { updates[key] = val })
-    const { error } = await supabase.from('user_settings').upsert({ user_id: userId, ...updates }, { onConflict:'user_id' })
-    if (error) { setErr(error.message); setSaving(false); return }
+    try {
+      // Las preferencias se guardan vía API con service_role (user_settings no
+      // permite escritura directa desde el cliente por RLS — campos sensibles).
+      const res  = await fetch('/api/ajustes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setErr(data.error || 'Error al guardar'); setSaving(false); return }
+    } catch (e) { setErr(String(e.message || e)); setSaving(false); return }
     setSaved(true); setSaving(false)
     clearTimeout(timer.current)
     timer.current = setTimeout(() => setSaved(false), 3000)
