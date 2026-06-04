@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo, useRef, Fragment } from 'react'
+import { useState, useMemo, useRef, useEffect, Fragment } from 'react'
 import Link from 'next/link'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts'
 import { project10y, paybackYear, getWHT, RADAR_METRICS } from '@/lib/screener'
@@ -220,12 +220,20 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
     if (!tickers.length) { setCompanies([]); return }
     setLoading(true)
     try {
+      // Refrescar precios de Yahoo (archiva en daily_prices) antes de leer los datos
+      await fetch('/api/precios', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tickers }) }).catch(() => {})
       const res = await fetch(`/api/comparador?tickers=${encodeURIComponent(tickers.join(','))}`, { cache: 'no-store' })
       const json = await res.json()
       setCompanies(json.companies || [])
     } catch {}
     setLoading(false)
   }
+
+  // Al montar con empresas iniciales (desde ?tickers=), refrescar sus precios
+  useEffect(() => {
+    if (initialCompanies.length) reload(initialCompanies.map(c => c.ticker))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const addCompany = (ticker) => {
     if (companies.find(c => c.ticker === ticker)) return

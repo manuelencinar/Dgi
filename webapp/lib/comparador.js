@@ -10,10 +10,9 @@ function num(v) { return v != null && !isNaN(v) ? parseFloat(v) : null }
 function avg(arr) { const v = arr.filter(x => x != null); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length * 10) / 10 : null }
 
 // Sub-scores por categoría a partir de los scores 0-10 del radar + extras.
-function subScores(f, radar) {
+function subScores(f, radar, mos) {
   const s = id => radar[id]
-  // Valoración: margen de seguridad (de SECTORS general MOS) + PER + EV/EBITDA
-  const mos = marginSafety(f)
+  // Valoración: margen de seguridad (con el precio fresco) + PER
   const mosScore = mos == null ? null : mos > 40 ? 10 : mos > 30 ? 9 : mos > 20 ? 8 : mos > 10 ? 7 : mos > 0 ? 6 : mos > -10 ? 5 : mos > -20 ? 4 : mos > -30 ? 3 : mos > -50 ? 2 : 1
   const pe = num(f.pe_trailing)
   const peScore = pe == null || pe <= 0 ? null : pe < 10 ? 10 : pe < 15 ? 8 : pe < 20 ? 7 : pe < 25 ? 6 : pe < 30 ? 5 : pe < 40 ? 3 : 1
@@ -66,6 +65,18 @@ export async function buildComparadorCompanies(tickers, destWHT = 19) {
   const fundMap = Object.fromEntries(rows.map(f => [f.ticker, f]))
   const dictMap = Object.fromEntries(DICT.map(d => [d[1], d]))
 
+  // Precio fresco de daily_prices (prioridad sobre current_price de fundamentals)
+  const freshPrice = {}
+  try {
+    const since = new Date(); since.setDate(since.getDate() - 7)
+    const { data: dp } = await sb.from('daily_prices')
+      .select('ticker, close_price, date')
+      .in('ticker', list)
+      .gte('date', since.toISOString().slice(0, 10))
+      .order('date', { ascending: false })
+    for (const r of (dp || [])) if (!(r.ticker in freshPrice)) freshPrice[r.ticker] = Number(r.close_price)
+  } catch {}
+
   // Mantener el orden en que llegaron los tickers
   return list.map(ticker => {
     const d = dictMap[ticker]
@@ -78,9 +89,13 @@ export async function buildComparadorCompanies(tickers, destWHT = 19) {
 
     const y = yieldPct(f)
     const roic = resolveRoic(f)
-    const mos = marginSafety(f)
+    // Precio: daily_prices (fresco) con fallback a current_price
+    const price = freshPrice[ticker] ?? num(f.current_price)
+    // Margen de seguridad recalculado con el precio usado
+    const intrinsic = num(f.intrinsic_value)
+    const mos = (intrinsic != null && price != null && price > 0) ? Math.round((intrinsic - price) / price * 1000) / 10 : null
     const radar = scoreRadar(f)
-    const subs = subScores(f, radar)
+    const subs = subScores(f, radar, mos)
 
     return {
       ticker, name, country, currency, superSector, type,
@@ -104,8 +119,8 @@ export async function buildComparadorCompanies(tickers, destWHT = 19) {
       icov: num(f.interest_coverage),
       currentRatio: num(f.current_ratio),
       // Valoración
-      price: num(f.current_price),
-      intrinsic: num(f.intrinsic_value),
+      price,
+      intrinsic,
       mos,
       pe: num(f.pe_trailing),
       ev: num(f.ev_ebitda),
