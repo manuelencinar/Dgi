@@ -156,18 +156,20 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
         ) : <span style={{ fontSize: 11, color: '#2e3a55' }}>Sin datos de dividendo para proyectar</span>}
         <div style={{ flex: 1 }} />
         {co.y != null && <Metric label="Yield" value={co.y.toFixed(2) + '%'} color="#8090a8" />}
-        {co.roic != null && <Metric label="ROIC" value={co.roic.toFixed(1) + '%'} color="#8090a8" />}
-        {co.cagr != null && <Metric label="CAGR div" value={co.cagr.toFixed(1) + '%'} color="#8090a8" />}
+        {co.roicNA
+          ? <Metric label="ROIC" value="N/A" color="#4a5270" title="No aplica en banca, seguros o REITs — se usa ROE" />
+          : co.roic != null && <Metric label="ROIC" value={(co.roicWarn ? '⚠ ' : '') + co.roic.toFixed(1) + '%'} color={co.roicWarn ? '#fb923c' : '#8090a8'} title={co.roicWarn ? 'ROIC muy elevado — posible bajo capital contable por recompras o intangibles. Comparar con peers.' : undefined} />}
+        {co.cagr != null && <Metric label="CAGR div" value={(co.cagrWarn ? '⚠ ' : '') + co.cagr.toFixed(1) + '%'} color={co.cagrWarn ? '#fb923c' : '#8090a8'} title={co.cagrWarn ? 'CAGR muy elevado — posible base de comparación baja o dato atípico' : undefined} />}
       </div>
     </div>
   )
 }
 
-function Metric({ label, value, color }) {
+function Metric({ label, value, color, title }) {
   return (
-    <div>
+    <div title={title}>
       <p style={{ fontSize: 9, color: '#3a4260', marginBottom: 1 }}>{label}</p>
-      <p style={{ fontSize: 12, fontWeight: 700, color, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
+      <p style={{ fontSize: 12, fontWeight: 700, color, fontVariantNumeric: 'tabular-nums', cursor: title ? 'help' : 'default' }}>{value}</p>
     </div>
   )
 }

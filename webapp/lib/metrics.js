@@ -165,9 +165,12 @@ function blank() {
   }
 }
 
-// Valor preferido para gauge/scoring: tangible > reported
+// Valor preferido para gauge/scoring: reported (más conservador) > tangible.
+// Cap a 60 para no premiar valores imposibles en el scoring.
 export function roicForScoring(data, currency) {
   const r = calculateROIC(data, currency)
   if (r.roic_not_applicable) return null
-  return r.roic_tangible != null ? r.roic_tangible : r.roic_reported
+  const v = r.roic_reported != null ? r.roic_reported : r.roic_tangible
+  if (v == null) return null
+  return Math.min(v, 60)
 }

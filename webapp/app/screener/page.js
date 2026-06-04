@@ -49,12 +49,15 @@ async function fetchFundamentals() {
   return Object.fromEntries(all.map(f => [f.ticker, f]))
 }
 
+const EXCLUDED = new Set(['^VIX', '^VVIX'])   // índices de volatilidad, no invertibles
+const ROIC_NA_TYPES = new Set(['banco', 'aseguradora', 'reit', 'bdc'])
+
 async function buildCompanies(destWHT) {
   const fundMap = await fetchFundamentals()
 
-  // Deduplicar tickers repetidos en el DICT (first-seen wins)
+  // Deduplicar y excluir tickers no invertibles (VIX, etc.)
   const seen = new Set()
-  const dict = DICT.filter(d => { if (seen.has(d[1])) return false; seen.add(d[1]); return true })
+  const dict = DICT.filter(d => { if (EXCLUDED.has(d[1]) || seen.has(d[1])) return false; seen.add(d[1]); return true })
 
   return dict.map(([name, ticker, country, currency, sector, , type]) => {
     const f = fundMap[ticker] || null
@@ -65,15 +68,20 @@ async function buildCompanies(destWHT) {
         moat: 'none', ero: false, dq: null, r1010: false }
     }
     const t = type || 'general'
+    const rawCagr = f.div_cagr5 != null ? Number(f.div_cagr5) : null
+    const roicVal = ROIC_NA_TYPES.has(t) ? null : resolveRoic(f)
     return {
       n: name, t: ticker, c: country, cont: getContinent(country), s: sector, cur: currency, tp: t,
       px:   f.current_price != null ? Number(f.current_price) : null,
       y:    yieldPct(f),
       sc:   computeScore(f, t),
       mos:  marginSafety(f),
-      roic: resolveRoic(f),
+      roic: roicVal,
+      roicNA: ROIC_NA_TYPES.has(t),
+      roicWarn: roicVal != null && roicVal > 60,
       streak: f.div_streak != null ? Number(f.div_streak) : null,
-      cagr:   f.div_cagr5 != null ? Number(f.div_cagr5) : null,
+      cagr:   rawCagr != null ? Math.min(rawCagr, 50) : null,
+      cagrWarn: rawCagr != null && rawCagr > 50,
       payout: f.payout_fcf != null ? Number(f.payout_fcf) : (f.payout_eps != null ? Number(f.payout_eps) : null),
       debt:   f.net_debt_ebitda != null ? Number(f.net_debt_ebitda) : (f.debt_ebitda != null ? Number(f.debt_ebitda) : null),
       icov:   f.interest_coverage != null ? Number(f.interest_coverage) : null,
