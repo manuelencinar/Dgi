@@ -2,6 +2,7 @@
   "crons": [
     { "path": "/api/procesar-aportaciones",   "schedule": "0 9 * * *"   },
     { "path": "/api/resumen-mensual",          "schedule": "0 8 1 * *"   },
-    { "path": "/api/update-exchange-rates",    "schedule": "0 7 * * 1-5" }
+    { "path": "/api/update-exchange-rates",    "schedule": "0 7 * * 1-5" },
+    { "path": "/api/recovery-email",           "schedule": "0 10 * * *"  }
   ]
 }

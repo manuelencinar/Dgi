@@ -5,7 +5,7 @@ import { Card, PageTitle, SectionTitle, MetricCard, fmtDate, fmtDateTime } from 
 
 const PAGE = 25
 
-export default function UsuariosClient({ metrics, users }) {
+export default function UsuariosClient({ metrics, retention, users }) {
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -53,6 +53,58 @@ export default function UsuariosClient({ metrics, users }) {
           </ResponsiveContainer>
         )}
       </Card>
+
+      {/* Retención y cancelaciones */}
+      {retention && (
+        <Card style={{ marginBottom: 16 }}>
+          <SectionTitle>Retención y cancelaciones</SectionTitle>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 18 }}>
+            <MetricCard label="Cancelaciones (30 días)" value={retention.cancelsLastMonth} color="#f87171" />
+            <MetricCard label="Usuarios en pausa" value={retention.pausedNow} color="#fbbf24" />
+            <MetricCard label="Descuentos activos" value={retention.discountUsed} color="#818cf8" />
+            <MetricCard label="MRR recuperado (est.)" value={`${retention.mrrRecovered.toFixed(0)} €`} color="#34d399" />
+            <MetricCard
+              label="Recuperación a 30 días"
+              value={retention.recoveryRate != null ? `${retention.recoveryRate.toFixed(0)}%` : '—'}
+              sub={retention.oldCancelsCount ? `${retention.recoveredCount}/${retention.oldCancelsCount} volvieron` : 'Sin datos aún'}
+              color="#34d399"
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 16 }}>
+            {/* Motivos de cancelación */}
+            <div>
+              <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 10 }}>Motivos más frecuentes</p>
+              {retention.reasons.length === 0 ? (
+                <p style={{ fontSize: 13, color: '#4a5270' }}>Sin cancelaciones registradas.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={Math.max(140, retention.reasons.length * 34)}>
+                  <BarChart data={retention.reasons} layout="vertical" margin={{ left: 10, right: 16 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                    <XAxis type="number" stroke="#4a5270" fontSize={10} allowDecimals={false} />
+                    <YAxis type="category" dataKey="reason" stroke="#4a5270" fontSize={10} width={110} />
+                    <Tooltip contentStyle={{ background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }} formatter={v => [v, 'Cancelaciones']} />
+                    <Bar dataKey="count" fill="#f87171" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+
+            {/* Tasa de éxito de ofertas */}
+            <div>
+              <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 10 }}>Éxito de las ofertas de retención</p>
+              <div style={{ display: 'grid', gap: 10 }}>
+                <OfferBar label="Pausa" pct={retention.pauseSuccess} accepted={retention.pausedNow} color="#fbbf24" />
+                <OfferBar label="Descuento 50%" pct={retention.discountSuccess} accepted={retention.discountUsed} color="#818cf8" />
+              </div>
+              <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 12 }}>
+                Tasa = aceptadas / (mostradas + aceptadas). El MRR recuperado es una estimación.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Tabla */}
       <Card>
@@ -139,3 +191,18 @@ export default function UsuariosClient({ metrics, users }) {
 }
 
 const navBtn = disabled => ({ padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: disabled ? '#2a3045' : '#8090a8', cursor: disabled ? 'default' : 'pointer', fontSize: 12 })
+
+function OfferBar({ label, pct, accepted, color }) {
+  const width = pct != null ? Math.max(2, Math.min(100, pct)) : 0
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+        <span style={{ color: '#8090a8' }}>{label}</span>
+        <span style={{ color, fontWeight: 700 }}>{pct != null ? `${pct.toFixed(0)}%` : '—'} <span style={{ color: '#4a5270', fontWeight: 400 }}>({accepted} aceptadas)</span></span>
+      </div>
+      <div style={{ height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden' }}>
+        <div style={{ width: `${width}%`, height: '100%', background: color, borderRadius: 4 }} />
+      </div>
+    </div>
+  )
+}

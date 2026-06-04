@@ -369,6 +369,11 @@ export default function AjustesGlobalPage() {
             </div>
           </div>
         )}
+        {isPremium && (
+          <div style={{ marginTop: 14, textAlign: 'right' }}>
+            <Link href="/cancelar" style={{ fontSize: 12, color: '#4a5270', textDecoration: 'underline' }}>Cancelar suscripción</Link>
+          </div>
+        )}
       </div>
 
       {/* ── SECCIÓN 6: Cuenta ────────────────────────────────────────────── */}

@@ -138,6 +138,74 @@ export async function getUserMetrics(sc) {
   return { total, new7d, new30d, active30d, premiumTotal, conversion, mrr, weekly, users }
 }
 
+// ── Retención y cancelaciones ───────────────────────────────────────────────
+
+const REASON_LABELS = {
+  precio: 'Precio alto', no_uso: 'Poco uso', faltan_funciones: 'Faltan funciones',
+  otra_herramienta: 'Otra herramienta', gasto_temporal: 'Gasto temporal',
+  ya_conseguido: 'Ya conseguido', otro: 'Otro', no_especificado: 'Sin especificar',
+}
+const MONTHLY_PRICE = 9.99
+
+export async function getRetentionMetrics(sc) {
+  let cancels = [], settings = []
+  try {
+    const { data } = await sc.from('cancellations').select('user_id, reason, retention_offer_shown, retention_offer_accepted, created_at')
+    cancels = data || []
+  } catch {}
+  try {
+    const { data } = await sc.from('user_settings').select('user_id, plan, premium_until, subscription_paused, retention_discount_used')
+    settings = data || []
+  } catch {}
+
+  const now = Date.now()
+  const cancelsLastMonth = cancels.filter(c => c.created_at && (now - new Date(c.created_at).getTime()) <= 30 * DAY).length
+
+  // Motivos más frecuentes
+  const reasonMap = {}
+  cancels.forEach(c => {
+    const label = REASON_LABELS[c.reason] || c.reason || 'Sin especificar'
+    reasonMap[label] = (reasonMap[label] || 0) + 1
+  })
+  const reasons = Object.entries(reasonMap).map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count)
+
+  // Ofertas aceptadas (desde user_settings: estado real)
+  const pausedNow    = settings.filter(s => s.subscription_paused).length
+  const discountUsed = settings.filter(s => s.retention_discount_used).length
+
+  // Ofertas mostradas (de cancellations) vs aceptadas → tasa de éxito por tipo
+  const shownPause    = cancels.filter(c => c.retention_offer_shown === 'pausa').length
+  const shownDiscount = cancels.filter(c => c.retention_offer_shown === 'descuento').length
+  const pauseSuccess    = (shownPause + pausedNow)    > 0 ? pausedNow    / (shownPause + pausedNow) * 100 : null
+  const discountSuccess = (shownDiscount + discountUsed) > 0 ? discountUsed / (shownDiscount + discountUsed) * 100 : null
+
+  // MRR recuperado estimado: descuentos activos (mitad de precio) + pausas (valor retenido)
+  const mrrRecovered = discountUsed * (MONTHLY_PRICE / 2) + pausedNow * MONTHLY_PRICE
+
+  // Tasa de recuperación a 30 días: cancelaciones de hace >30 días cuyo usuario vuelve a ser premium
+  const settingsByUser = Object.fromEntries(settings.map(s => [s.user_id, s]))
+  const oldCancels = cancels.filter(c => c.created_at && (now - new Date(c.created_at).getTime()) > 30 * DAY)
+  const recovered = oldCancels.filter(c => {
+    const s = settingsByUser[c.user_id]
+    return s?.plan === 'premium' && (!s.premium_until || new Date(s.premium_until) >= new Date())
+  }).length
+  const recoveryRate = oldCancels.length ? recovered / oldCancels.length * 100 : null
+
+  return {
+    totalCancellations: cancels.length,
+    cancelsLastMonth,
+    reasons,
+    pausedNow,
+    discountUsed,
+    pauseSuccess,
+    discountSuccess,
+    mrrRecovered,
+    recoveryRate,
+    recoveredCount: recovered,
+    oldCancelsCount: oldCancels.length,
+  }
+}
+
 // ── Index coverage ─────────────────────────────────────────────────────────
 
 export function getIndexCoverage(fundamentals) {

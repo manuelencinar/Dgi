@@ -1,12 +1,12 @@
 import { serviceClient } from '@/lib/admin'
-import { getUserMetrics } from '@/lib/admin-stats'
+import { getUserMetrics, getRetentionMetrics } from '@/lib/admin-stats'
 import UsuariosClient from '@/components/dashboard/UsuariosClient'
 
 export const dynamic = 'force-dynamic'
 
 export default async function UsuariosPage() {
   const sc = serviceClient()
-  const metrics = await getUserMetrics(sc)
+  const [metrics, retention] = await Promise.all([getUserMetrics(sc), getRetentionMetrics(sc)])
 
   let planByUser = {}
   try {
@@ -28,6 +28,7 @@ export default async function UsuariosPage() {
   return (
     <UsuariosClient
       metrics={{ total: metrics.total, new7d: metrics.new7d, new30d: metrics.new30d, premiumTotal: metrics.premiumTotal, conversion: metrics.conversion, mrr: metrics.mrr, weekly: metrics.weekly }}
+      retention={retention}
       users={users}
     />
   )
