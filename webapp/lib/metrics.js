@@ -36,7 +36,17 @@ function reitNoiOverAssets(data) {
   return (op != null && at && at > 0) ? Math.round(op / at * 1000) / 10 : null
 }
 
-// Cálculo desde estados financieros (mismo algoritmo que el script Python)
+// Promedio de los dos últimos ejercicios (idx 0 y 1) para suavizar el balance
+function row2(stmt, names) {
+  const v0 = row(stmt, names, 0)
+  if (v0 == null) return null
+  const v1 = row(stmt, names, 1)
+  return v1 != null ? (v0 + v1) / 2 : v0
+}
+
+// Cálculo desde estados financieros (mismo algoritmo que el script Python).
+// ROIC = NOPAT / (Deuda total + Patrimonio neto), capital empleado medio,
+// sin restar caja (no distorsiona negocios que acumulan mucho efectivo).
 function computeFromStatements(data, currency) {
   const is = data.income_statement_annual?.data
   const bs = data.balance_sheet_annual?.data
@@ -57,28 +67,28 @@ function computeFromStatements(data, currency) {
 
   const nopat = ebit * (1 - taxRate)
 
-  const revenue = row(is, ['Ingresos Totales', 'Total Revenue', 'Total Revenues']) || 0
-  const cash = row(bs, ['Caja y Equivalentes', 'Cash And Cash Equivalents', 'Cash Cash Equivalents And Short Term Investments']) || 0
-  const excessCash = Math.max(0, cash - 0.02 * revenue)
+  const equity = row2(bs, ['Patrimonio Neto', 'Stockholders Equity', 'Total Equity Gross Minority Interest', 'Common Stock Equity', 'Total Equity'])
+  if (equity == null) return null
+  let debt = row2(bs, ['Deuda Total', 'Total Debt'])
+  if (debt == null) {
+    const lp = row2(bs, ['Deuda a L/P', 'Long Term Debt', 'Long Term Debt And Capital Lease Obligation']) || 0
+    const cp = row2(bs, ['Current Debt', 'Deuda a C/P', 'Current Debt And Capital Lease Obligation', 'Short Long Term Debt']) || 0
+    debt = lp + cp
+  }
 
-  const currentLiab = row(bs, ['Pasivo Corriente', 'Current Liabilities', 'Total Current Liabilities'])
-  const shortDebt   = row(bs, ['Current Debt', 'Short Long Term Debt', 'Current Debt And Capital Lease Obligation'])
-  let nonFinLiab = 0
-  if (currentLiab != null) nonFinLiab = shortDebt != null ? currentLiab - shortDebt : currentLiab * 0.60
+  let investedCapital = equity + debt
 
-  let investedCapital = totalAssets - excessCash - nonFinLiab
-
-  // Ajuste 2 — capital invertido negativo
-  if (investedCapital < 0) {
+  // Capital invertido negativo (patrimonio muy negativo) → no calcular
+  if (investedCapital <= 0) {
     return {
-      roic_reported: null, roic_tangible: null, roic_warning: null,
+      roic_reported: null, roic_tangible: null, roic_display: null, roic_warning: null,
       roic_method: 'N/A — balance atípico', roic_not_applicable: false,
       nopat: Math.round(nopat), invested_capital: Math.round(investedCapital),
       invested_capital_tangible: null, tax_rate_effective: Math.round(taxRate * 1000) / 1000,
     }
   }
 
-  // Ajuste 1 — capital invertido mínimo 10% de activos
+  // Suelo de seguridad: capital invertido mínimo 10% de activos
   let adjusted = false
   const floor = 0.10 * totalAssets
   if (investedCapital < floor) { investedCapital = floor; adjusted = true }
@@ -86,10 +96,10 @@ function computeFromStatements(data, currency) {
   const roicReported = nopat / investedCapital * 100
 
   // Capital invertido tangible (sin goodwill ni intangibles)
-  let gw = row(bs, ['Fondo de Comercio', 'Goodwill'])
-  let intang = row(bs, ['Other Intangible Assets', 'Otros Intangibles'])
+  let gw = row2(bs, ['Fondo de Comercio', 'Goodwill'])
+  let intang = row2(bs, ['Other Intangible Assets', 'Otros Intangibles'])
   if (gw == null && intang == null) {
-    const combined = row(bs, ['Fondo de Comercio e Intangibles', 'Goodwill And Other Intangible Assets'])
+    const combined = row2(bs, ['Fondo de Comercio e Intangibles', 'Goodwill And Other Intangible Assets'])
     gw = combined || 0; intang = 0
   }
   gw = gw || 0; intang = intang || 0

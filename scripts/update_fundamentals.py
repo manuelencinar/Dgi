@@ -214,6 +214,21 @@ def _bal(df, names):
                 return float(v)
     return None
 
+def _bal2(df, names):
+    """Promedio de los dos últimos ejercicios (suaviza el balance)."""
+    import pandas as pd
+    for r in names:
+        if r in df.index:
+            row = df.loc[r]
+            v0 = row.iloc[0]
+            if pd.isna(v0):
+                continue
+            v1 = row.iloc[1] if len(row) > 1 else None
+            if v1 is not None and not pd.isna(v1):
+                return (float(v0) + float(v1)) / 2
+            return float(v0)
+    return None
+
 def compute_roic_full(income_df, balance_df, currency, sector, industry):
     """ROIC corregido: capital invertido real, reportado y tangible.
     Devuelve dict con roic_reported, roic_tangible, roic_warning, nopat,
@@ -250,20 +265,21 @@ def compute_roic_full(income_df, balance_df, currency, sector, industry):
 
         nopat = ebit * (1 - tax_rate)
 
-        revenue = _bal(income_df, ["Total Revenue", "Total Revenues"]) or 0.0
-        cash    = _bal(balance_df, ["Cash And Cash Equivalents", "Cash Cash Equivalents And Short Term Investments"]) or 0.0
-        excess_cash = max(0.0, cash - 0.02 * revenue)
+        # Capital empleado = Deuda total + Patrimonio neto (medio 2 años),
+        # sin restar caja (no distorsiona negocios que acumulan mucho efectivo)
+        equity = _bal2(balance_df, ["Total Equity Gross Minority Interest", "Stockholders Equity", "Common Stock Equity", "Total Equity"])
+        if equity is None:
+            return blank
+        debt = _bal2(balance_df, ["Total Debt"])
+        if debt is None:
+            lp = _bal2(balance_df, ["Long Term Debt", "Long Term Debt And Capital Lease Obligation"]) or 0.0
+            cp = _bal2(balance_df, ["Current Debt", "Current Debt And Capital Lease Obligation", "Short Long Term Debt"]) or 0.0
+            debt = lp + cp
 
-        current_liab = _bal(balance_df, ["Current Liabilities", "Total Current Liabilities"])
-        short_debt   = _bal(balance_df, ["Current Debt", "Short Long Term Debt", "Current Debt And Capital Lease Obligation"])
-        non_fin_liab = 0.0
-        if current_liab is not None:
-            non_fin_liab = (current_liab - short_debt) if short_debt is not None else current_liab * 0.60
+        invested = equity + debt
 
-        invested = total_assets - excess_cash - non_fin_liab
-
-        # Ajuste 2 — capital invertido negativo
-        if invested < 0:
+        # Capital invertido negativo (patrimonio muy negativo) → no calcular
+        if invested <= 0:
             return {**blank, "nopat": safe2(nopat), "invested_capital": safe2(invested),
                     "tax_rate_effective": safe2(tax_rate, 3)}
 

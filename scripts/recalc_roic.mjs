@@ -33,18 +33,28 @@ const EBIT   = ['EBIT / Bº Operativo', 'Operating Income', 'Ebit', 'EBIT', 'Bº
 const TA     = ['Activos Totales', 'Total Assets']
 const TAXP   = ['Tax Provision', 'Income Tax Expense', 'Provisión Impuestos']
 const PRETAX = ['Pretax Income', 'Income Before Tax', 'Bº Antes de Impuestos']
-const REV    = ['Ingresos Totales', 'Total Revenue', 'Total Revenues']
-const CASH   = ['Caja y Equivalentes', 'Cash And Cash Equivalents', 'Cash Cash Equivalents And Short Term Investments', 'Cash Equivalents', 'Cash Financial']
-const CL     = ['Pasivo Corriente', 'Current Liabilities', 'Total Current Liabilities']
-const SD     = ['Current Debt', 'Short Long Term Debt', 'Current Debt And Capital Lease Obligation', 'Commercial Paper']
+const CASH   = ['Caja y Equivalentes', 'Cash And Cash Equivalents', 'Cash Equivalents', 'Cash Financial', 'Cash Cash Equivalents And Short Term Investments']
+const EQUITY = ['Patrimonio Neto', 'Stockholders Equity', 'Total Equity Gross Minority Interest', 'Common Stock Equity', 'Total Equity']
+const DEBT   = ['Deuda Total', 'Total Debt']
+const DEBT_LP = ['Deuda a L/P', 'Long Term Debt', 'Long Term Debt And Capital Lease Obligation']
+const DEBT_CP = ['Current Debt', 'Deuda a C/P', 'Current Debt And Capital Lease Obligation', 'Short Long Term Debt']
 const GW     = ['Fondo de Comercio', 'Goodwill']
 const INT    = ['Other Intangible Assets', 'Otros Intangibles']
 const GWINT  = ['Fondo de Comercio e Intangibles', 'Goodwill And Other Intangible Assets']
 
+// Promedio de los dos últimos ejercicios (idx 0 y 1) para suavizar el balance
+function val2(stmt, names) {
+  const v0 = row(stmt, names, 0)
+  if (v0 == null) return null
+  const v1 = row(stmt, names, 1)
+  return v1 != null ? (v0 + v1) / 2 : v0
+}
+
+// ROIC = NOPAT / (Deuda financiera + Patrimonio neto − Caja), capital invertido medio
 function compute(c) {
   const is = c.income_statement_annual?.data || c.income_statement_annual || null
   const bs = c.balance_sheet_annual?.data || c.balance_sheet_annual || null
-  const i = (c.industry || '').toLowerCase(), s = (c.sector || '').toLowerCase()
+  const i = (c.industry || '').toLowerCase()
   if (i.includes('bank') || i.includes('savings') || i.includes('insur') || i.includes('reit') || i.includes('real estate investment'))
     return { na: true }
   if (!is || !bs) return null
@@ -56,18 +66,24 @@ function compute(c) {
   let tax = (tp != null && pt != null && pt > 0) ? tp / pt : defTax
   if (tax < 0 || tax > 0.50) tax = defTax
   const nopat = ebit * (1 - tax)
-  const rev = row(is, REV) || 0
-  const cash = row(bs, CASH) || 0
-  const excess = Math.max(0, cash - 0.02 * rev)
-  const cl = row(bs, CL), sd = row(bs, SD)
-  let nfl = 0; if (cl != null) nfl = sd != null ? cl - sd : cl * 0.60
-  let invested = ta - excess - nfl
+
+  const equity = val2(bs, EQUITY)
+  if (equity == null) return null
+  // Deuda financiera: total directo, o suma de largo + corto plazo
+  let debt = val2(bs, DEBT)
+  if (debt == null) { const lp = val2(bs, DEBT_LP) || 0, cp = val2(bs, DEBT_CP) || 0; debt = lp + cp }
+
+  // Capital empleado = Deuda total + Patrimonio neto (sin restar caja: no
+  // distorsiona los negocios que acumulan mucho efectivo)
+  let invested = equity + debt
   if (invested <= 0) return { na: false, neg: true, nopat, invested, tax }
   const floor = 0.10 * ta
   if (invested < floor) invested = floor
   const roicR = nopat / invested * 100
-  let gw = row(bs, GW), intang = row(bs, INT)
-  if (gw == null && intang == null) { gw = row(bs, GWINT) || 0; intang = 0 }
+
+  // Variante tangible: descuenta goodwill e intangibles del capital
+  let gw = val2(bs, GW), intang = val2(bs, INT)
+  if (gw == null && intang == null) { gw = val2(bs, GWINT) || 0; intang = 0 }
   gw = gw || 0; intang = intang || 0
   let ict = invested - gw - intang; if (ict < floor) ict = floor
   const roicT = nopat / ict * 100
@@ -105,8 +121,10 @@ for (const c of rows) {
   if (res.neg) { updates.push({ ticker: c.ticker, roic_reported: null, roic_tangible: null, roic_warning: false, nopat: Math.round(res.nopat), invested_capital: Math.round(res.invested), tax_rate_effective: res.tax }); continue }
   updates.push({ ticker: c.ticker, roic_reported: res.roic_reported, roic_tangible: res.roic_tangible, roic_warning: res.roic_warning, nopat: res.nopat, invested_capital: res.invested_capital, invested_capital_tangible: res.invested_capital_tangible, tax_rate_effective: res.tax_rate_effective })
   updated++
-  if (['EDEN.PA', 'MA', 'ADP', 'CL', 'MUV2.DE'].includes(c.ticker))
-    console.log(`  ${c.ticker}: reported=${res.roic_reported}% tangible=${res.roic_tangible}% warn=${res.roic_warning}`)
+  if (['EDEN.PA', 'MA', 'ADP', 'CL', 'MUV2.DE', 'KO', 'JNJ', 'SNA'].includes(c.ticker)) {
+    const disp = Math.min(...[res.roic_reported, res.roic_tangible].filter(v => v != null))
+    console.log(`  ${c.ticker}: display(min)=${disp}% (reported=${res.roic_reported}% tangible=${res.roic_tangible}%)`)
+  }
 }
 console.log(`Calculados: ${updated} | N/A (banca/REIT): ${na} | sin estados: ${nulled}`)
 
