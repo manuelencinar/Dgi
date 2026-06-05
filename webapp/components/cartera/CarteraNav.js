@@ -9,6 +9,7 @@ const TABS = [
   { href: '/cartera/simulador',  label: 'Simulador'  },
   { href: '/cartera/historial',  label: 'Historial'  },
   { href: '/cartera/alertas',    label: 'Alertas'    },
+  { href: '/etfs',               label: 'ETFs y Fondos' },
 ]
 
 export default function CarteraNav() {
