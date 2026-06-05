@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
 import { MARKETS } from '@/lib/markets'
 import LandingFaq from '@/components/LandingFaq'
 import PublicNav from '@/components/PublicNav'
@@ -6,6 +7,21 @@ import PublicNav from '@/components/PublicNav'
 export const metadata = {
   title: 'Mi Índice DGI — Invierte en dividendos con criterio',
   description: 'El único screener que analiza 43 mercados globales con metodología DGI real. Score de calidad, radar de oportunidades y salud financiera actualizada. Empieza gratis.',
+}
+
+// Cachear la landing y revalidar el contador 1 vez al día (no penaliza cada visita)
+export const revalidate = 86400
+
+const FALLBACK_COUNT = 1588
+
+async function getCompanyCount() {
+  try {
+    const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+    const { count } = await sb.from('company_fundamentals').select('ticker', { count: 'exact', head: true })
+    return count && count > 0 ? count : FALLBACK_COUNT
+  } catch {
+    return FALLBACK_COUNT
+  }
 }
 
 // ── Datos para el mockup del hero ─────────────────────────────────────────
@@ -243,46 +259,34 @@ function MarketsSection() {
   )
 }
 
-function Testimonials() {
+function PlatformMetrics({ companyCount }) {
   const cards = [
-    { initials: 'MR', name: 'Miguel R.', role: 'Inversor particular · Madrid', text: '"Por fin una herramienta que analiza el dividendo de verdad, no solo el yield. El Score DGI me ahorra horas de análisis cada semana."' },
-    { initials: 'LG', name: 'Laura G.', role: 'Inversora DGI · Barcelona', text: '"El radar de oportunidades es lo que más uso. Me avisa cuando una empresa de calidad baja a zona de compra sin tener que revisar cada día."' },
-    { initials: 'AP', name: 'Andrés P.', role: 'Gestor de patrimonio · Valencia', text: '"Cubre mercados que ningún screener gratuito toca: Australia, Noruega, Portugal… Para una cartera internacional DGI es imprescindible."' },
+    { big: companyCount.toLocaleString('es-ES'), sub: 'empresas analizadas',           detail: 'de 43 mercados globales' },
+    { big: '2×',                                  sub: 'actualización diaria de precios', detail: 'cierre Europa y cierre EEUU' },
+    { big: '10 años',                             sub: 'de proyección de dividendos',     detail: 'por empresa, con 3 escenarios' },
+    { big: '0€',                                  sub: 'para empezar',                    detail: 'sin tarjeta de crédito' },
   ]
   return (
     <section style={{ padding: '80px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(99,102,241,0.02)' }}>
       <style>{`
-        .testi-grid { display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 960px; margin: 0 auto; }
-        @media (min-width: 700px) { .testi-grid { grid-template-columns: repeat(3, 1fr); } }
+        .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 960px; margin: 0 auto; }
+        @media (min-width: 760px) { .metrics-grid { grid-template-columns: repeat(4, 1fr); } }
+        .metric-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 28px 20px; text-align: center; transition: border-color 0.2s; }
+        .metric-card:hover { border-color: rgba(129,140,248,0.4); }
       `}</style>
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
-        <h2 style={{ fontSize: 28, fontWeight: 900, color: '#e0e8f0', marginBottom: 10 }}>
-          Lo que dicen los inversores
+        <h2 style={{ fontSize: 28, fontWeight: 900, color: '#e0e8f0' }}>
+          Números reales. Sin artificios.
         </h2>
-        <p style={{ fontSize: 12, color: '#2e3a55' }}>Testimonios de usuarios reales</p>
       </div>
-      <div className="testi-grid">
+      <div className="metrics-grid">
         {cards.map((c, i) => (
-          <div key={i} style={{
-            background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: 14, padding: '24px 22px',
-          }}>
-            <p style={{ fontSize: 13, color: '#4a5270', lineHeight: 1.75, marginBottom: 20, fontStyle: 'italic' }}>
-              {c.text}
+          <div key={i} className="metric-card">
+            <p style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 700, color: '#818cf8', lineHeight: 1.1, marginBottom: 8 }}>
+              {c.big}
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                background: 'rgba(99,102,241,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 800, color: '#818cf8',
-              }}>
-                {c.initials}
-              </div>
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0' }}>{c.name}</p>
-                <p style={{ fontSize: 11, color: '#2e3a55' }}>{c.role}</p>
-              </div>
-            </div>
+            <p style={{ fontSize: 14, fontWeight: 500, color: '#e0e8f0', marginBottom: 4 }}>{c.sub}</p>
+            <p style={{ fontSize: 12, color: '#4a5270' }}>{c.detail}</p>
           </div>
         ))}
       </div>
@@ -466,7 +470,8 @@ function Footer() {
   )
 }
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const companyCount = await getCompanyCount()
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>
       <PublicNav />
@@ -474,7 +479,7 @@ export default function LandingPage() {
       <Benefits />
       <HowItWorks />
       <MarketsSection />
-      <Testimonials />
+      <PlatformMetrics companyCount={companyCount} />
       <Pricing />
       <FaqSection />
       <Footer />
