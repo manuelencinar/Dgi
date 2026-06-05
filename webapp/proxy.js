@@ -63,6 +63,20 @@ export async function proxy(request) {
     return NextResponse.redirect(url)
   }
 
+  // Onboarding: si el usuario autenticado entra a una ruta de app y aún no lo
+  // ha completado, redirigir a /onboarding (nunca bloquea: hay botón saltar).
+  const ONBOARD_ROUTES = ['/app', '/cartera', '/mercados', '/screener', '/comparador', '/etfs', '/empresa', '/fondo']
+  if (user && ONBOARD_ROUTES.some(r => pathname.startsWith(r)) && pathname !== '/onboarding') {
+    try {
+      const { data } = await supabase.from('user_settings').select('onboarding_completed').eq('user_id', user.id).maybeSingle()
+      if (data && data.onboarding_completed === false) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/onboarding'
+        return NextResponse.redirect(url)
+      }
+    } catch {}
+  }
+
   return supabaseResponse
 }
 

@@ -206,6 +206,36 @@ export async function getRetentionMetrics(sc) {
   }
 }
 
+// ── Onboarding ───────────────────────────────────────────────────────────────
+
+export async function getOnboardingStats(sc) {
+  let logs = []
+  try {
+    const { data } = await sc.from('admin_logs')
+      .select('event_type, details, created_at')
+      .in('event_type', ['onboarding_completed', 'onboarding_skipped'])
+    logs = data || []
+  } catch {}
+
+  const completed = logs.filter(l => l.event_type === 'onboarding_completed').length
+  const skipped   = logs.filter(l => l.event_type === 'onboarding_skipped').length
+  const total     = completed + skipped
+  const completionRate = total > 0 ? completed / total * 100 : null
+
+  // Paso donde más se abandona (de los saltados)
+  const stepCounts = {}
+  logs.filter(l => l.event_type === 'onboarding_skipped').forEach(l => {
+    let step = null
+    try { step = (typeof l.details === 'string' ? JSON.parse(l.details) : l.details)?.step } catch {}
+    const key = step == null ? '?' : String(step)
+    stepCounts[key] = (stepCounts[key] || 0) + 1
+  })
+  let topAbandonStep = null, topCount = 0
+  for (const [k, v] of Object.entries(stepCounts)) if (v > topCount) { topCount = v; topAbandonStep = k }
+
+  return { completed, skipped, total, completionRate, topAbandonStep, topAbandonCount: topCount }
+}
+
 // ── Index coverage ─────────────────────────────────────────────────────────
 
 export function getIndexCoverage(fundamentals) {

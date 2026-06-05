@@ -5,7 +5,7 @@ import { Card, PageTitle, SectionTitle, MetricCard, fmtDate, fmtDateTime } from 
 
 const PAGE = 25
 
-export default function UsuariosClient({ metrics, retention, users }) {
+export default function UsuariosClient({ metrics, retention, onboarding, users }) {
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -53,6 +53,19 @@ export default function UsuariosClient({ metrics, retention, users }) {
           </ResponsiveContainer>
         )}
       </Card>
+
+      {/* Onboarding */}
+      {onboarding && onboarding.total > 0 && (
+        <Card style={{ marginBottom: 16 }}>
+          <SectionTitle>Onboarding</SectionTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12 }}>
+            <MetricCard label="Tasa de completado" value={onboarding.completionRate != null ? `${onboarding.completionRate.toFixed(0)}%` : '—'} sub={`${onboarding.completed} de ${onboarding.total}`} color="#34d399" />
+            <MetricCard label="Completados" value={onboarding.completed} color="#34d399" />
+            <MetricCard label="Saltados" value={onboarding.skipped} color="#fbbf24" />
+            <MetricCard label="Más abandono" value={onboarding.topAbandonStep != null ? `Paso ${onboarding.topAbandonStep}` : '—'} sub={onboarding.topAbandonCount ? `${onboarding.topAbandonCount} usuarios` : ''} color="#f87171" />
+          </div>
+        </Card>
+      )}
 
       {/* Retención y cancelaciones */}
       {retention && (
