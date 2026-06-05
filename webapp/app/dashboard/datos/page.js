@@ -11,7 +11,7 @@ export default async function DatosPage() {
 
   let funds = []
   try {
-    const { data } = await sc.from('funds').select('ticker, name, asset_type, ter, benchmark_ticker, benchmark_name').order('asset_type').order('ticker')
+    const { data } = await sc.from('funds').select('*').order('asset_type').order('ticker')
     funds = data || []
   } catch {}
 

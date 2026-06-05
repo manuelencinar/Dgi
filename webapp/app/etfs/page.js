@@ -12,7 +12,8 @@ export default async function EtfsPage() {
   let funds = []
   try {
     const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
-    const { data } = await sb.from('funds').select('ticker, name, currency, current_price, ter, yield_ttm, category, asset_type, return_1y, return_3y, benchmark_name, benchmark_return_1y, benchmark_return_3y').order('asset_type').order('ticker')
+    // select('*') es tolerante a columnas que aún no existan (return_*, benchmark_*)
+    const { data } = await sb.from('funds').select('*').order('asset_type').order('ticker')
     funds = data || []
   } catch {}
 
