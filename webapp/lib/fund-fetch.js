@@ -73,11 +73,11 @@ export async function fetchAndStoreFund(inputTicker, assetType = 'etf') {
     const currency = price.currency || sd.currency || 'USD'
     const name = price.longName || price.shortName || symbol
 
-    // TER desde varias fuentes; 0 o ausente → sin dato (null)
+    // TER desde varias fuentes; 0 o ausente → sin dato (null). Se guarda en decimal (0.0006 = 0.06%)
     const terRaw = raw(fp.feesExpensesInvestment?.annualReportExpenseRatio)
       ?? raw(fp.feesExpensesInvestmentCat?.annualReportExpenseRatio)
       ?? raw(ks.annualReportExpenseRatio)
-    const ter = (terRaw != null && terRaw > 0) ? terRaw * 100 : null
+    const ter = (terRaw != null && terRaw > 0) ? terRaw : null
 
     let distHistory = []
     try {
@@ -98,12 +98,20 @@ export async function fetchAndStoreFund(inputTicker, assetType = 'etf') {
       if (yRaw != null && yRaw > 0) yieldTtm = Math.round(yRaw * 1000) / 10
     }
 
+    // Benchmark por defecto según divisa/tipo (el admin puede sobreescribirlo)
+    let benchmark_ticker = null, benchmark_name = null
+    if (detectedType === 'etf') {
+      if (currency === 'USD') { benchmark_ticker = '^GSPC'; benchmark_name = 'S&P 500' }
+      else if (currency === 'EUR' || currency === 'GBP') { benchmark_ticker = '^STOXX'; benchmark_name = 'STOXX Europe 600' }
+    }
+
     const record = {
       ticker: symbol, name, asset_type: detectedType, currency, country: null,
       current_price: currentPrice,
-      ter: ter != null ? Math.round(ter * 1000) / 1000 : null,
+      ter: ter != null ? Math.round(ter * 1000000) / 1000000 : null,
       yield_ttm: yieldTtm, distribution_history: distHistory,
-      benchmark: null, category: fp.categoryName || null, manager: fp.family || null, isin,
+      benchmark: null, benchmark_ticker, benchmark_name,
+      category: fp.categoryName || null, manager: fp.family || null, isin,
       updated_at: new Date().toISOString(),
     }
 

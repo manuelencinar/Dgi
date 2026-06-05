@@ -415,6 +415,10 @@ def main():
             log.warning("No hay tickers para procesar")
             return
 
+        # Índices de referencia (benchmarks) para el cálculo de rentabilidades
+        BENCHMARK_TICKERS = ["^GSPC", "^STOXX", "URTH", "^NDX", "^FTSE", "^GDAXI", "^N225"]
+        tickers = list(set(tickers + BENCHMARK_TICKERS))
+
         # Excluir tickers de divisas si están mezclados
         tickers = [t for t in tickers if "=X" not in t]
 

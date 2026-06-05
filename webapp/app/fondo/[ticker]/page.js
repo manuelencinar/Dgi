@@ -67,7 +67,9 @@ export default async function FondoPage({ params }) {
     }
   } catch {}
 
-  const terColor = fund.ter == null ? '#4a5270' : fund.ter < 0.20 ? '#34d399' : fund.ter <= 0.50 ? '#fbbf24' : '#f87171'
+  // TER almacenado como decimal (0.0006 = 0.06%)
+  const terPctV  = (fund.ter != null && fund.ter > 0) ? fund.ter * 100 : null
+  const terColor = terPctV == null ? '#4a5270' : terPctV < 0.20 ? '#34d399' : terPctV <= 0.50 ? '#fbbf24' : '#f87171'
   const annualDist = (fund.yield_ttm != null && fund.current_price != null) ? fund.yield_ttm / 100 * fund.current_price : null
   const byYear = distByYear(fund.distribution_history)
   const typeLabel = fund.asset_type === 'fund' ? 'Fondo' : 'ETF'
@@ -102,7 +104,7 @@ export default async function FondoPage({ params }) {
                 <span style={{ fontSize: 14, color: '#4a5270', fontWeight: 400, marginLeft: 6 }}>{fund.currency}</span>
               </p>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
-                <div><p style={{ fontSize: 10, color: '#4a5270' }}>TER</p><p style={{ fontSize: 14, fontWeight: 700, color: terColor }}>{fund.ter != null ? fund.ter + '%' : '—'}</p></div>
+                <div><p style={{ fontSize: 10, color: '#4a5270' }}>TER</p><p style={{ fontSize: 14, fontWeight: 700, color: terColor }}>{terPctV != null ? terPctV.toFixed(2) + '%' : 'Pendiente'}</p></div>
                 <div><p style={{ fontSize: 10, color: '#4a5270' }}>Yield TTM</p><p style={{ fontSize: 14, fontWeight: 700, color: '#34d399' }}>{fund.yield_ttm != null ? fund.yield_ttm + '%' : '—'}</p></div>
               </div>
             </div>
@@ -119,17 +121,92 @@ export default async function FondoPage({ params }) {
           <PriceChart ticker={t} currency={fund.currency} />
         </Card>
 
+        {/* Rentabilidad */}
+        {(() => {
+          const PERIODS = [['YTD', 'return_ytd', 'benchmark_return_ytd'], ['1 año', 'return_1y', 'benchmark_return_1y'], ['3 años', 'return_3y', 'benchmark_return_3y'], ['5 años', 'return_5y', 'benchmark_return_5y']]
+          const hasAny = PERIODS.some(([, k]) => fund[k] != null)
+          const hasBench = !!fund.benchmark_name && PERIODS.some(([, , bk]) => fund[bk] != null)
+          const pf = v => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%'
+          const retCol = v => v == null ? '#4a5270' : v >= 0 ? '#34d399' : '#f87171'
+          return (
+            <Card style={{ marginBottom: 16 }}>
+              <SectionTitle>Rentabilidad</SectionTitle>
+              {hasAny ? (
+                <>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 420 }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: 'left', padding: '7px 8px', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.08)' }}></th>
+                          {PERIODS.map(([l]) => <th key={l} style={{ textAlign: 'right', padding: '7px 8px', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>{l}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style={{ padding: '7px 8px', color: '#c8d0e0', fontWeight: 700 }}>{fund.ticker}</td>
+                          {PERIODS.map(([l, k]) => <td key={l} style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 700, color: retCol(fund[k]) }}>{pf(fund[k])}</td>)}
+                        </tr>
+                        {hasBench && (
+                          <tr>
+                            <td style={{ padding: '7px 8px', color: '#8090a8' }}>{fund.benchmark_name}</td>
+                            {PERIODS.map(([l, , bk]) => <td key={l} style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{pf(fund[bk])}</td>)}
+                          </tr>
+                        )}
+                        {hasBench && (
+                          <tr style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                            <td style={{ padding: '7px 8px', color: '#4a5270' }}>Diferencia</td>
+                            {PERIODS.map(([l, k, bk]) => {
+                              const d = (fund[k] != null && fund[bk] != null) ? fund[k] - fund[bk] : null
+                              return <td key={l} style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 700, color: d == null ? '#4a5270' : d >= 0 ? '#34d399' : '#f87171' }}>{d == null ? '—' : (d >= 0 ? '+' : '') + d.toFixed(1) + '%'}</td>
+                            })}
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10 }}>Rentabilidad calculada desde precio de cierre. No incluye dividendos reinvertidos.</p>
+                </>
+              ) : (
+                <p style={{ fontSize: 13, color: '#4a5270' }}>Sin datos de rentabilidad todavía.</p>
+              )}
+            </Card>
+          )
+        })()}
+
+        {/* Coste (TER) */}
+        <Card style={{ marginBottom: 16 }}>
+          <SectionTitle>Coste (TER)</SectionTitle>
+          {terPctV == null ? (
+            <p style={{ fontSize: 13, color: '#4a5270' }}>TER pendiente de carga.</p>
+          ) : (
+            <div style={{ display: 'grid', gap: 9 }}>
+              {[
+                ['TER del fondo', terPctV.toFixed(2) + '%'],
+                ['Coste anual sobre 10.000 €', `${fmt(fund.ter * 10000)} €/año`],
+                ...(position && fund.current_price != null
+                  ? [['Coste anual sobre tu posición', `${fmt(fund.ter * fund.current_price * position.shares)} €/año`]]
+                  : []),
+              ].map(([k, v]) => (
+                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, paddingBottom: 7, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <span style={{ color: '#4a5270' }}>{k}</span>
+                  <span style={{ color: '#c8d0e0', fontWeight: 600 }}>{v}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 16 }}>
           {/* Métricas del producto */}
           <Card>
             <SectionTitle>Métricas del producto</SectionTitle>
             <div style={{ display: 'grid', gap: 9 }}>
               {[
-                ['TER (coste anual)', fund.ter != null ? fund.ter + '%' : '—'],
+                ['TER (coste anual)', terPctV != null ? terPctV.toFixed(2) + '%' : 'Pendiente'],
                 ['Yield TTM', fund.yield_ttm != null ? fund.yield_ttm + '%' : '—'],
                 ['Distribución anual', annualDist != null ? `${fmt(annualDist)} ${fund.currency}` : '—'],
                 ['Distribución/año (tu posición)', (position && annualDist != null) ? `${fmt(annualDist * position.shares)} ${fund.currency}` : '—'],
-                ['Benchmark', fund.benchmark || '—'],
+                ['Benchmark', fund.benchmark_name || fund.benchmark || '—'],
                 ['Categoría', fund.category || '—'],
                 ['Gestora / emisor', fund.manager || '—'],
                 ['ISIN', fund.isin || '—'],
