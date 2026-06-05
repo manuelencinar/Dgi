@@ -116,9 +116,9 @@ export default async function FondoPage({ params }) {
           <RecurringButton ticker={fund.ticker} assetType={fund.asset_type} currency={fund.currency} fundName={fund.name} />
         </div>
 
-        {/* Gráfico de precio */}
+        {/* Gráfico de precio (con benchmark superpuesto si está asignado) */}
         <Card style={{ marginBottom: 16 }}>
-          <PriceChart ticker={t} currency={fund.currency} />
+          <PriceChart ticker={t} currency={fund.currency} benchmarkTicker={fund.benchmark_ticker} benchmarkName={fund.benchmark_name} />
         </Card>
 
         {/* Rentabilidad */}

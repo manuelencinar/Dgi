@@ -71,11 +71,29 @@ function buildArea(linePath, closes, xOf, yOf) {
   return `${linePath} L ${lastX},${baseY} L ${PAD.left.toFixed(1)},${baseY} Z`
 }
 
+// Alinea el benchmark a las fechas del fondo y lo rebasea al primer precio del fondo
+function alignBenchmark(fundTs, fundCloses, benchTs, benchCloses) {
+  if (!fundTs?.length || !benchTs?.length) return null
+  const bm = {}
+  for (let i = 0; i < benchTs.length; i++) {
+    if (benchCloses[i] != null) bm[new Date(benchTs[i] * 1000).toISOString().slice(0, 10)] = benchCloses[i]
+  }
+  let last = null
+  const raw = fundTs.map(ts => {
+    const v = bm[new Date(ts * 1000).toISOString().slice(0, 10)]
+    if (v != null) last = v
+    return last
+  })
+  const base = raw.find(v => v != null)
+  if (base == null) return null
+  return raw.map(v => (v == null ? base : v) * fundCloses[0] / base)
+}
+
 function Chart({ data, range, showTR, avgCost }) {
   const [hover, setHover] = useState(null)
   const svgRef = useRef(null)
 
-  const { timestamps: ts, closes, adjCloses } = data || {}
+  const { timestamps: ts, closes, adjCloses, benchCloses, benchName } = data || {}
   if (!closes?.length) return (
     <div style={{ height: H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: '#3a4260', fontSize: 12 }}>Sin datos</p>
@@ -90,8 +108,11 @@ function Chart({ data, range, showTR, avgCost }) {
     ? adjCloses.map(v => v * firstClose / firstAdj)
     : null
 
-  // Y scale across both series so they share the same axis
-  const allValues = trSeries ? [...closes, ...trSeries] : closes
+  // Benchmark ya viene rebaseado al primer precio del fondo (misma escala)
+  const benchSeries = benchCloses?.length ? benchCloses : null
+
+  // Y scale across all series so they share the same axis
+  const allValues = [...closes, ...(trSeries || []), ...(benchSeries || [])]
   const min  = Math.min(...allValues)
   const max  = Math.max(...allValues)
   const span = max - min || 1
@@ -107,6 +128,9 @@ function Chart({ data, range, showTR, avgCost }) {
 
   const trLine = trSeries ? buildLine(trSeries, xOf, yOf) : null
   const trArea = trSeries ? buildArea(trLine, trSeries, xOf, yOf) : null
+
+  const benchLine = benchSeries ? buildLine(benchSeries, xOf, yOf) : null
+  const benchGain = benchSeries ? ((benchSeries[benchSeries.length - 1] / benchSeries[0]) - 1) * 100 : null
 
   // Línea horizontal del precio medio de compra del usuario (solo si está en rango visible)
   const showAvgCost = avgCost != null && avgCost >= min && avgCost <= max
@@ -163,8 +187,11 @@ function Chart({ data, range, showTR, avgCost }) {
           </span>
         )}
         <span style={{ color: '#4a5270' }}>Mín {fmtPrice(min)} · Máx {fmtPrice(max)}</span>
+        {benchSeries && (
+          <span style={{ color: '#fbbf24', fontWeight: 600 }}>— {benchName || 'Benchmark'} {benchGain != null ? `${benchGain >= 0 ? '+' : ''}${benchGain.toFixed(1)}%` : ''}</span>
+        )}
         {showAvgCost && (
-          <span style={{ color: '#fbbf24', fontWeight: 600 }}>— Precio medio {fmtPrice(avgCost)}</span>
+          <span style={{ color: '#a78bfa', fontWeight: 600 }}>— Precio medio {fmtPrice(avgCost)}</span>
         )}
       </div>
 
@@ -223,6 +250,11 @@ function Chart({ data, range, showTR, avgCost }) {
           <path d={trLine} stroke="#818cf8" strokeWidth="1.5" fill="none" strokeLinejoin="round" strokeDasharray="4 2" />
         )}
 
+        {/* Benchmark line (rebaseada al precio inicial del fondo) */}
+        {benchLine && (
+          <path d={benchLine} stroke="#fbbf24" strokeWidth="1.5" fill="none" strokeLinejoin="round" strokeDasharray="5 3" opacity="0.85" />
+        )}
+
         {/* Price fill + line */}
         <path d={priceArea} fill="url(#grad-price)" />
         <path d={priceLine} stroke={priceColor} strokeWidth="1.5" fill="none" strokeLinejoin="round" />
@@ -231,8 +263,8 @@ function Chart({ data, range, showTR, avgCost }) {
         {avgCostY != null && (
           <g>
             <line x1={PAD.left} x2={W - PAD.right} y1={avgCostY} y2={avgCostY}
-              stroke="#fbbf24" strokeWidth="1" strokeDasharray="5 3" />
-            <text x={W - PAD.right + 2} y={avgCostY + 3} textAnchor="end" fontSize="8" fill="#fbbf24" fontFamily="inherit">
+              stroke="#a78bfa" strokeWidth="1" strokeDasharray="5 3" />
+            <text x={W - PAD.right + 2} y={avgCostY + 3} textAnchor="end" fontSize="8" fill="#a78bfa" fontFamily="inherit">
               {fmtPrice(avgCost)}
             </text>
           </g>
@@ -259,7 +291,7 @@ function Chart({ data, range, showTR, avgCost }) {
   )
 }
 
-export default function PriceChart({ ticker, currency, avgCost, divHistory }) {
+export default function PriceChart({ ticker, currency, avgCost, divHistory, benchmarkTicker, benchmarkName }) {
   const [range,    setRange]    = useState('1A')
   const [data,     setData]     = useState(null)
   const [loading,  setLoading]  = useState(false)
@@ -279,14 +311,23 @@ export default function PriceChart({ ticker, currency, avgCost, divHistory }) {
       if (json.error || !json.timestamps?.length) { setData(null); setError(true); return }
       // Reconstruir la línea de total return desde el historial de dividendos
       const adjCloses = buildTotalReturn(json.timestamps, json.closes, divHistory)
-      setData({ ...json, adjCloses })
+      // Benchmark superpuesto (rebaseado), si se ha indicado uno
+      let benchCloses = null
+      if (benchmarkTicker) {
+        try {
+          const br = await fetch(`/api/empresa/${encodeURIComponent(benchmarkTicker)}/chart?range=${r}`, { cache: 'no-store' })
+          const bj = await br.json()
+          if (bj.timestamps?.length) benchCloses = alignBenchmark(json.timestamps, json.closes, bj.timestamps, bj.closes)
+        } catch {}
+      }
+      setData({ ...json, adjCloses, benchCloses, benchName: benchmarkName })
     } catch {
       setError(true)
     } finally {
       clearTimeout(timer)
       setLoading(false)
     }
-  }, [ticker, divHistory])
+  }, [ticker, divHistory, benchmarkTicker, benchmarkName])
 
   if (!loaded.current) { loaded.current = true; load('1A') }
 
