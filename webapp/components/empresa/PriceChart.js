@@ -71,22 +71,30 @@ function buildArea(linePath, closes, xOf, yOf) {
   return `${linePath} L ${lastX},${baseY} L ${PAD.left.toFixed(1)},${baseY} Z`
 }
 
-// Alinea el benchmark a las fechas del fondo y lo rebasea al primer precio del fondo
+// Superpone el benchmark sobre la serie del fondo. Se interpola el valor del
+// benchmark en cada FECHA real del fondo (alineación temporal correcta, aunque
+// los festivos difieran) y se rebasea al primer precio del fondo: comparten
+// punto de partida y la divergencia refleja el rendimiento relativo real.
 function alignBenchmark(fundTs, fundCloses, benchTs, benchCloses) {
-  if (!fundTs?.length || !benchTs?.length) return null
-  const bm = {}
-  for (let i = 0; i < benchTs.length; i++) {
-    if (benchCloses[i] != null) bm[new Date(benchTs[i] * 1000).toISOString().slice(0, 10)] = benchCloses[i]
+  if (!fundTs?.length || !fundCloses?.length) return null
+  const pts = []
+  for (let i = 0; i < benchTs.length; i++) if (benchCloses[i] != null && benchCloses[i] > 0) pts.push([benchTs[i], benchCloses[i]])
+  if (pts.length < 2) return null
+
+  const interp = ts => {
+    if (ts <= pts[0][0]) return pts[0][1]
+    if (ts >= pts[pts.length - 1][0]) return pts[pts.length - 1][1]
+    let lo = 0, hi = pts.length - 1
+    for (let k = 1; k < pts.length; k++) { if (pts[k][0] >= ts) { hi = k; lo = k - 1; break } }
+    const [t0, v0] = pts[lo], [t1, v1] = pts[hi]
+    return v0 + (v1 - v0) * ((ts - t0) / ((t1 - t0) || 1))
   }
-  let last = null
-  const raw = fundTs.map(ts => {
-    const v = bm[new Date(ts * 1000).toISOString().slice(0, 10)]
-    if (v != null) last = v
-    return last
-  })
-  const base = raw.find(v => v != null)
-  if (base == null) return null
-  return raw.map(v => (v == null ? base : v) * fundCloses[0] / base)
+
+  const benchAt = fundTs.map(interp)
+  const base = benchAt[0]
+  if (!base || base <= 0) return null
+  const factor = fundCloses[0] / base
+  return benchAt.map(v => v * factor)
 }
 
 function Chart({ data, range, showTR, avgCost }) {
