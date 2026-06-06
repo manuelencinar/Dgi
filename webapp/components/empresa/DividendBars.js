@@ -8,14 +8,15 @@ export default function DividendBars({ history }) {
   const maxDps = Math.max(...history.map(h => h.dps))
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div>
       <div style={{
         display: 'flex',
         alignItems: 'flex-end',
         gap: 6,
-        minWidth: history.length * 52,
+        width: '100%',
         height: 120,
         padding: '0 4px',
+        boxSizing: 'border-box',
       }}>
         {history.map((h) => {
           const pct = maxDps > 0 ? (h.dps / maxDps) * 100 : 0
@@ -31,7 +32,7 @@ export default function DividendBars({ history }) {
           return (
             <div
               key={h.year}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1, minWidth: 44 }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}
             >
               {h.growth != null && !h.isPartial && (
                 <span style={{
