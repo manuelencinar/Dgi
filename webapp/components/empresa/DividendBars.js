@@ -47,7 +47,7 @@ export default function DividendBars({ history }) {
               {(h.growth == null || h.isPartial) && <span style={{ height: 14 }} />}
 
               <div style={{
-                width: '100%',
+                width: '50%',
                 height: `${Math.max(4, pct * 0.78)}px`,
                 background: barColor,
                 borderRadius: '3px 3px 0 0',
