@@ -12,10 +12,12 @@ export default function DividendBars({ history }) {
       <div style={{
         display: 'flex',
         alignItems: 'flex-end',
-        gap: 6,
+        gap: 3,
         width: '100%',
-        height: 120,
-        padding: '0 4px',
+        maxWidth: 460,
+        margin: '0 auto',
+        height: 150,
+        padding: '8px 2px 0',
         boxSizing: 'border-box',
       }}>
         {history.map((h) => {

@@ -1112,7 +1112,7 @@ export default function CompanyDetailPage(props) {
   const valuationMetrics = dgiScore?.categories?.find(c => c.key === 'valuation')?.metrics || []
 
   return (
-    <div style={{ maxWidth: 1000, width: '100%', margin: '0 auto', padding: '16px 5% 64px', boxSizing: 'border-box' }}>
+    <div style={{ maxWidth: 1000, width: '100%', margin: '0 auto', padding: '16px 5% 64px', boxSizing: 'border-box', overflowX: 'clip' }}>
       <style>{`
         .cdp-2col { display: grid; grid-template-columns: 1fr; gap: 16px; }
         @media (min-width: 860px) { .cdp-2col { grid-template-columns: 1.4fr 1fr; } }
