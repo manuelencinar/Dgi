@@ -127,10 +127,10 @@ function Week52Bar({ price, low52, high52, currency, compact }) {
 
 function MiniMetric({ label, value, sub, color }) {
   return (
-    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '12px 14px' }}>
+    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '12px 14px', minWidth: 0, overflow: 'hidden' }}>
       <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 4 }}>{label}</p>
-      <p style={{ fontSize: 20, fontWeight: 800, color: color || '#c8d0e0', lineHeight: 1.1 }}>{value}</p>
-      {sub && <p style={{ fontSize: 10, color: '#4a5270', marginTop: 3 }}>{sub}</p>}
+      <p style={{ fontSize: 18, fontWeight: 800, color: color || '#c8d0e0', lineHeight: 1.15, overflowWrap: 'anywhere' }}>{value}</p>
+      {sub && <p style={{ fontSize: 10, color: '#4a5270', marginTop: 3, overflowWrap: 'anywhere' }}>{sub}</p>}
     </div>
   )
 }
