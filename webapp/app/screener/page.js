@@ -19,18 +19,18 @@ async function getUserContext() {
   try {
     const supabase = await authClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { plan: 'free', destWHT: 19 }
-    const { data } = await supabase
-      .from('user_settings')
-      .select('plan, premium_until, dest_wht')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    if (!user) return { plan: 'free', destWHT: 19, followed: [], isAuthed: false }
+    const [{ data }, { data: wl }] = await Promise.all([
+      supabase.from('user_settings').select('plan, premium_until, dest_wht').eq('user_id', user.id).maybeSingle(),
+      supabase.from('watchlist').select('ticker').eq('user_id', user.id),
+    ])
+    const followed = (wl || []).map(w => w.ticker)
     const destWHT = data?.dest_wht != null ? Number(data.dest_wht) : 19
-    if (user.email === ADMIN_EMAIL) return { plan: 'premium', destWHT }
+    if (user.email === ADMIN_EMAIL) return { plan: 'premium', destWHT, followed, isAuthed: true }
     let plan = data?.plan || 'free'
     if (plan === 'premium' && data?.premium_until && new Date(data.premium_until) < new Date()) plan = 'free'
-    return { plan, destWHT }
-  } catch { return { plan: 'free', destWHT: 19 } }
+    return { plan, destWHT, followed, isAuthed: true }
+  } catch { return { plan: 'free', destWHT: 19, followed: [], isAuthed: false } }
 }
 
 // Lee company_fundamentals (campos escalares) paginado — PostgREST limita a 1000 filas.
@@ -99,7 +99,7 @@ async function buildCompanies(destWHT) {
 }
 
 export default async function ScreenerPage() {
-  const { plan, destWHT } = await getUserContext()
+  const { plan, destWHT, followed, isAuthed } = await getUserContext()
   const companies = await buildCompanies(destWHT)
   const sectors = [...new Set(DICT.map(d => d[4]))].filter(Boolean).sort()
 
@@ -111,6 +111,8 @@ export default async function ScreenerPage() {
         isPremium={plan === 'premium'}
         sectors={sectors}
         destWHT={destWHT}
+        followed={followed}
+        isAuthed={isAuthed}
       />
     </div>
   )

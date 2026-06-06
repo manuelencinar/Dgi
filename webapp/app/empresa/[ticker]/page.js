@@ -64,7 +64,7 @@ export default async function EmpresaPage({ params }) {
   const supabase = await authClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [plan, detail, liveQuote, dailyRow, positionRow] = await Promise.all([
+  const [plan, detail, liveQuote, dailyRow, positionRow, watchRow] = await Promise.all([
     getUserPlan(),
     getCompanyDetail(t),
     getCompanyQuote(t),
@@ -74,6 +74,10 @@ export default async function EmpresaPage({ params }) {
       .then(r => r.data),
     // Posición del usuario para mostrar avg_cost en el gráfico
     user ? supabase.from('positions').select('avg_cost')
+      .eq('user_id', user.id).eq('ticker', t).maybeSingle()
+      .then(r => r.data) : null,
+    // Entrada de watchlist del usuario (botón Seguir/Siguiendo)
+    user ? supabase.from('watchlist').select('*')
       .eq('user_id', user.id).eq('ticker', t).maybeSingle()
       .then(r => r.data) : null,
   ])
@@ -128,6 +132,8 @@ export default async function EmpresaPage({ params }) {
         subsector={subsector}
         type={type}
         isPremium={isPremium}
+        isAuthed={!!user}
+        watchEntry={watchRow}
         hasData={detail != null}
         price={price}
         change={change}

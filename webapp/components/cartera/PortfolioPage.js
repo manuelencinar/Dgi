@@ -14,6 +14,7 @@ import RecurringSection from '@/components/cartera/RecurringSection'
 import FxRatesWidget from '@/components/cartera/FxRatesWidget'
 import CurrencyAnalysis from '@/components/cartera/CurrencyAnalysis'
 import PricesFreshnessIndicator from '@/components/PricesFreshnessIndicator'
+import WatchlistMini from '@/components/cartera/WatchlistMini'
 
 // ── Design tokens ──────────────────────────────────────────────────────────
 const CARD   = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
@@ -575,6 +576,9 @@ export default function PortfolioPage({ isPremium }) {
         onDividend={setDivPos}
         onDelete={setDeleteId}
       />
+
+      {/* Mini watchlist — empresas seguidas más próximas a su objetivo */}
+      <WatchlistMini />
 
       {/* Aportaciones periódicas */}
       <RecurringSection />

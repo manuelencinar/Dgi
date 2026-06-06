@@ -108,6 +108,14 @@ export async function GET(request) {
         }
       } catch {}
 
+      // Notificación in-app (best-effort)
+      try {
+        await client.from('notifications').insert({
+          user_id: c.user_id, type: 'recurring', ticker: c.ticker,
+          message: `Aportación periódica ejecutada en ${f.name || c.ticker}: ${c.amount_eur} € (${shares.toFixed(4)} part.)`,
+        })
+      } catch {}
+
       processed++; details.push({ ticker: c.ticker, status: 'ok', shares: +shares.toFixed(4) })
     } catch (e) {
       errors++; details.push({ ticker: c.ticker, status: 'error', error: String(e.message || e) })

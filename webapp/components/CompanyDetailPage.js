@@ -6,6 +6,7 @@ import HealthGauge from '@/components/empresa/HealthGauge'
 import DividendBars from '@/components/empresa/DividendBars'
 import FinancialTables from '@/components/empresa/FinancialTables'
 import KeyMetricsChart from '@/components/empresa/KeyMetricsChart'
+import FollowButton from '@/components/watchlist/FollowButton'
 import { recomputeValuation } from '@/lib/valuation'
 
 // ── helpers ───────────────────────────────────────────────────────────────
@@ -1011,6 +1012,7 @@ function BuybackSection({ buybacks }) {
 export default function CompanyDetailPage({
   ticker, name, country, currency, sector, subsector, type,
   isPremium, hasData,
+  isAuthed, watchEntry,
   price, change, changePct,
   dailyPrice, avgCost,
   yld, divRate, low52, high52,
@@ -1041,9 +1043,12 @@ export default function CompanyDetailPage({
           {' / '}
           <span style={{ color: '#8090a8' }}>{name}</span>
         </p>
-        <Link href={`/comparador?tickers=${encodeURIComponent(ticker)}`} style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', padding: '6px 14px', borderRadius: 8, textDecoration: 'none' }}>
-          Comparar con otras →
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <FollowButton ticker={ticker} name={name} currency={currency} isAuthed={isAuthed} isPremium={isPremium} entry={watchEntry} />
+          <Link href={`/comparador?tickers=${encodeURIComponent(ticker)}`} style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', padding: '6px 14px', borderRadius: 8, textDecoration: 'none' }}>
+            Comparar con otras →
+          </Link>
+        </div>
       </div>
 
       {/* ── 1. CABECERA ── */}

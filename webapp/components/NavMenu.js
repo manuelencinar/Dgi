@@ -1,12 +1,14 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import NotificationBell from '@/components/NotificationBell'
 
-// Menú principal — solo tres items
+// Menú principal
 const PRIMARY = [
-  { href: '/mercados', label: 'Mercados' },
-  { href: '/screener', label: 'Screener' },
-  { href: '/cartera',  label: 'Cartera' },
+  { href: '/mercados',  label: 'Mercados' },
+  { href: '/screener',  label: 'Screener' },
+  { href: '/watchlist', label: 'Watchlist' },
+  { href: '/cartera',   label: 'Cartera' },
 ]
 // Secundarios — accesibles desde sus flujos; en móvil aparecen apagados
 const SECONDARY = [
@@ -62,6 +64,7 @@ export default function NavMenu({ active, sessionUser }) {
                   PREMIUM
                 </span>
               )}
+              <NotificationBell />
               <Link href="/ajustes" title="Ajustes" style={{
                 fontSize: 17, color: active === '/ajustes' ? '#818cf8' : '#4a5270',
                 textDecoration: 'none', padding: '4px 7px', borderRadius: 7, lineHeight: 1,

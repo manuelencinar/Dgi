@@ -1,7 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+
+const MESSAGES = {
+  watchlist: 'Regístrate para seguir empresas y recibir alertas',
+}
 
 const BTN = {border:"none",borderRadius:9,padding:"12px 20px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%"}
 const INP = {width:"100%",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"11px 14px",color:"#fff",fontSize:14,outline:"none",fontFamily:"inherit",marginBottom:10}
@@ -29,14 +33,26 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [next, setNext] = useState('')
   const router = useRouter()
+
+  // Leemos ?msg= y ?next= de la URL sin useSearchParams (evita el Suspense obligatorio).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const msg = params.get('msg')
+    if (msg && MESSAGES[msg]) setNotice(MESSAGES[msg])
+    const n = params.get('next')
+    if (n && n.startsWith('/')) setNext(n)
+  }, [])
 
   async function handleGoogleLogin() {
     setGoogleLoading(true); setError('')
     const supabase = createClient()
+    const callback = next ? `/auth/callback?next=${encodeURIComponent(next)}` : '/auth/callback'
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` }
+      options: { redirectTo: `${window.location.origin}${callback}` }
     })
     if(error) { setError(error.message); setGoogleLoading(false) }
   }
@@ -47,7 +63,7 @@ export default function LoginPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if(error) { setError(error.message); setLoading(false) }
-    else router.push('/app')
+    else router.push(next || '/app')
   }
 
   return (
@@ -55,6 +71,12 @@ export default function LoginPage() {
       <div style={{width:"100%",maxWidth:380,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,padding:"32px 28px"}}>
         <h1 style={{fontSize:22,fontWeight:800,color:"#e0e8f0",marginBottom:6}}>Mi Índice DGI</h1>
         <p style={{fontSize:13,color:"#4a5270",marginBottom:24}}>Inicia sesión para acceder a tu cartera</p>
+
+        {notice && (
+          <div style={{fontSize:12,color:"#818cf8",background:"rgba(99,102,241,0.1)",border:"1px solid rgba(99,102,241,0.25)",borderRadius:8,padding:"10px 12px",marginBottom:16}}>
+            {notice}
+          </div>
+        )}
 
         <button onClick={handleGoogleLogin} disabled={googleLoading}
           style={{...BTN,display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",color:"#e0e8f0",marginBottom:0}}>

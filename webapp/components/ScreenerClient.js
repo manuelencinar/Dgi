@@ -3,6 +3,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { getCountry } from '@/lib/helpers'
 import { project10y, paybackYear, getWHT } from '@/lib/screener'
+import WatchlistEyeButton from '@/components/watchlist/WatchlistEyeButton'
 
 // ── Opciones de filtros ────────────────────────────────────────────────────
 const SCORE_OPTS  = [{ v: 0, l: 'Todas' }, { v: 5, l: '≥5' }, { v: 6, l: '≥6' }, { v: 7, l: '≥7' }, { v: 8, l: '≥8' }]
@@ -99,7 +100,7 @@ function Toggle({ label, value, onChange, locked }) {
 }
 
 // ── Tarjeta de empresa ───────────────────────────────────────────────────────
-function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect }) {
+function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect, following, isAuthed }) {
   const ct = getCountry(co.c)
   const proj = projectCompany(co, destWHT)
   const sb = streakBadge(co.streak)
@@ -125,6 +126,7 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
 
         {/* Badges */}
         <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
+          <WatchlistEyeButton ticker={co.t} isAuthed={isAuthed} initialFollowing={following} />
           {co.s && <span style={{ fontSize: 9, fontWeight: 700, color: secColor, background: `${secColor}1a`, padding: '2px 7px', borderRadius: 5 }}>{co.s}</span>}
           {sb && <span title="Racha de dividendos" style={{ fontSize: 13 }}>{sb}</span>}
           {mb && <span title={co.moat === 'wide' ? 'Foso ancho' : 'Foso estrecho'} style={{ fontSize: 12 }}>{mb}</span>}
@@ -226,7 +228,8 @@ function Comparator({ companies, destWHT, onClose }) {
 }
 
 // ── Componente principal ───────────────────────────────────────────────────
-export default function ScreenerClient({ companies = [], isPremium = false, sectors = [], destWHT = 19 }) {
+export default function ScreenerClient({ companies = [], isPremium = false, sectors = [], destWHT = 19, followed = [], isAuthed = false }) {
+  const followedSet = useMemo(() => new Set(followed), [followed])
   const [filters, setFilters] = useState(INIT)
   const [search, setSearch]   = useState('')
   const [sortKey, setSortKey] = useState('score')
@@ -449,7 +452,8 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
         <>
           {pageRows.map((co, i) => (
             <CompanyCard key={`${co.t}-${i}`} co={co} rank={i + 1} destWHT={destWHT} sortKey={sortKey}
-              selected={selected.includes(co.t)} onSelect={toggleSelect} canSelect={selected.length < 4} />
+              selected={selected.includes(co.t)} onSelect={toggleSelect} canSelect={selected.length < 4}
+              following={followedSet.has(co.t)} isAuthed={isAuthed} />
           ))}
           {visible < sorted.length && (
             <div style={{ textAlign: 'center', marginTop: 16 }}>

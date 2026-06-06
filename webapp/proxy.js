@@ -65,7 +65,7 @@ export async function proxy(request) {
 
   // Onboarding: si el usuario autenticado entra a una ruta de app y aún no lo
   // ha completado, redirigir a /onboarding (nunca bloquea: hay botón saltar).
-  const ONBOARD_ROUTES = ['/app', '/cartera', '/mercados', '/screener', '/comparador', '/etfs', '/empresa', '/fondo']
+  const ONBOARD_ROUTES = ['/app', '/cartera', '/mercados', '/screener', '/comparador', '/etfs', '/empresa', '/fondo', '/watchlist']
   if (user && ONBOARD_ROUTES.some(r => pathname.startsWith(r)) && pathname !== '/onboarding') {
     try {
       const { data } = await supabase.from('user_settings').select('onboarding_completed').eq('user_id', user.id).maybeSingle()

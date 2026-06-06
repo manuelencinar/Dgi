@@ -31,6 +31,8 @@ URL del repositorio: https://github.com/manuelencinar/Dgi
 - Comparador de empresas (`/comparador`) — radar, tabla, proyección, export CSV/PNG — ver "Comparador"
 - Página de detalle de cada empresa — gauge salud financiera, valoración sector-aware, ROIC, historial dividendos, gráfico de precios (daily_prices), estados financieros
 - Módulo de cartera completo (app/cartera/) — ver sección "Módulo de cartera"
+- Watchlist (`/watchlist`) — empresas seguidas con precio/yield objetivo y alertas — ver "Watchlist + notificaciones"
+- Notificaciones (`/notificaciones`) + campana en el menú — ver "Watchlist + notificaciones"
 - Página de ETFs (`/etfs`) — ETFs DGI de referencia + fondos de usuarios, con TER/rentabilidades/benchmark
 - Ficha de producto de ETF/fondo (`/fondo/[ticker]`) — precio, métricas, distribuciones, rentab. vs benchmark, posición
 - Ajustes (`/ajustes`) — preferencias del usuario, divisa, plan, alertas — guarda vía `/api/ajustes` (service_role)
@@ -111,6 +113,19 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - **Overlay de benchmark en el gráfico del fondo** (`PriceChart.js`): se superpone el índice como línea amarilla discontinua. Clave: el benchmark se interpola por **fecha real** y se **convierte a la divisa del fondo con el tipo de cambio histórico de cada día** (no rebase proporcional). Helpers: `interpSeries`, `convertToCurrency`, `alignBenchmark`. Mapa `BENCH_CCY` (^GSPC/URTH/^NDX→USD, ^STOXX/^GDAXI→EUR, ^FTSE→GBP, ^N225→JPY); se descarga el par FX `${benchCcy}${currency}=X` y se multiplica punto a punto.
 - **Admin ETFs** (`components/dashboard/EtfsAdminClient.js`, en `/dashboard` → Datos): editar TER inline, elegir benchmark (selector + personalizado), recalcular rentabilidades. APIs `/api/admin/update-fund` y `/api/admin/calculate-returns` (recalcula desde daily_prices; descarga el benchmark de Yahoo si falta).
 
+## Watchlist + notificaciones
+- Tablas `watchlist` y `notifications` (SQL en `webapp/sql/watchlist.sql`, RLS por `auth.uid()=user_id`). `watchlist` tiene `target_price`, `target_yield`, `notes`, `alert_price_active`, `alert_yield_active` + flags internos anti-spam `alert_price_triggered`/`alert_yield_triggered` (no en el spec original, necesarios para no repetir alertas). `notifications` tipos: `watchlist_price`, `watchlist_yield`, `dividend_cut`, `recurring`.
+- Página `/watchlist` (`app/watchlist/page.js` server → `components/WatchlistClient.js`): tabla con precio actual, variación, Score, yield, precio/yield objetivo + distancia, alerta, notas, fecha; resalte de fila verde si está en zona de compra (precio ≤ objetivo) o cerca (≤5%). Estado vacío + límite freemium.
+- Página `/notificaciones` (`app/notificaciones/page.js` → `components/NotificationsClient.js`): lista completa + marcar todas como leídas.
+- Campana 🔔 en el menú (`components/NotificationBell.js`, dentro de `NavMenu.js`): dropdown con últimas 5, punto rojo con nº no leídas, "Ver todas".
+- Enlace Watchlist en `NavMenu` entre Screener y Cartera. Mini watchlist en la cartera (`components/cartera/WatchlistMini.js`, debajo de posiciones): 5 más próximas al objetivo.
+- Botón Seguir/Siguiendo en la ficha de empresa (`components/watchlist/FollowButton.js`, junto a "Comparar con otras") con modal (precio/yield objetivo, notas, toggles de alerta). Icono ojo 👁 en las tarjetas del screener (`components/watchlist/WatchlistEyeButton.js`, alta directa sin modal; relleno si se sigue). Sin sesión → redirige a `/login?next=…&msg=watchlist` (mensaje en `app/login/page.js`).
+- Lógica: `lib/watchlist.js` (helpers puros: `FREE_WATCHLIST_LIMIT=10`, `priceProximity`, `priceForYield`), `lib/watchlist-enrich.js` (`buildWatchlistRows` server-side: combina watchlist + DICT + fundamentales + daily_prices → precio, score, yield, proximidad; `sortByProximity`).
+- APIs: `/api/watchlist` (GET/POST/PUT/DELETE, RLS, aplica límite freemium en POST), `/api/watchlist/enriched` (GET, para la mini), `/api/notifications` (GET lista+nº no leídas, POST marca leídas).
+- Cron `/api/check-watchlist-alerts` (service_role, en `vercel.json`: `30 16` y `30 22` L-V, 30 min tras cada cierre). Comprueba alertas activas, crea notificación in-app siempre y envía email (Resend) solo a premium. Anti-spam: no repite hasta que el precio/yield sale de zona y vuelve a entrar. CRON_SECRET opcional.
+- **Freemium**: gratuito hasta 10 empresas, sin alertas por email (pero sí notificación in-app); premium ilimitado + email.
+- También genera notificación `recurring` al ejecutarse una aportación periódica (en `/api/procesar-aportaciones`). Pendiente: notificación `dividend_cut` (no hay job detector aún).
+
 ## Aportaciones periódicas (solo ETFs/fondos)
 - Tabla `recurring_contributions` (SQL en `webapp/sql/recurring.sql`) + `transactions.price_date`.
 - Configurar desde la ficha del fondo (`components/cartera/RecurringButton.js`). Helpers en `lib/recurring.js`.
@@ -151,7 +166,7 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 
 ## Navegación
 - `components/NavMenu.js` (app), `components/PublicNav.js` (landing), `components/cartera/CarteraNav.js` (cartera).
-- Reorganizada: 3 items principales (Mercados, Screener, Cartera). Comparador y ETFs como secundarios en el menú hamburguesa móvil. Se eliminó el botón "Mi Índice" (no aportaba). CarteraNav incluye "ETFs y Fondos".
+- Items principales: Mercados, Screener, Watchlist, Cartera. Comparador y ETFs como secundarios en el menú hamburguesa móvil. Campana de notificaciones (`NotificationBell`) junto a Ajustes cuando hay sesión. Se eliminó el botón "Mi Índice" (no aportaba). CarteraNav incluye "ETFs y Fondos".
 
 ## Infraestructura / despliegue
 - Repo GitHub: rama por defecto **master** (la app vive ahí); `main` es el proyecto HTML original + funds.json de GitHub Pages (historiales independientes).
@@ -164,7 +179,7 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 ## SQL pendiente de ejecutar en Supabase (todos los ficheros en webapp/sql/)
 Estado: el usuario ya ejecutó admin.sql, valuation_columns.sql, roic_columns.sql, cartera_parte3.sql, funds.sql, recurring.sql, fx_and_settings.sql y daily_prices.sql.
 Ficheros que el usuario PUEDE tener aún pendientes de ejecutar (confirmar en entorno nuevo):
-`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, y el ALTER de `premium_until` en user_settings.
+`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), y el ALTER de `premium_until` en user_settings.
 Si se monta un entorno nuevo, ejecutar en orden todos los ficheros de webapp/sql/.
 
 ## Planes y precios
