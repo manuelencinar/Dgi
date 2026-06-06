@@ -7,6 +7,7 @@ import DividendBars from '@/components/empresa/DividendBars'
 import FinancialTables from '@/components/empresa/FinancialTables'
 import KeyMetricsChart from '@/components/empresa/KeyMetricsChart'
 import FollowButton from '@/components/watchlist/FollowButton'
+import LocalPrice from '@/components/LocalPrice'
 import { recomputeValuation } from '@/lib/valuation'
 
 // ── helpers ───────────────────────────────────────────────────────────────
@@ -1084,6 +1085,7 @@ export default function CompanyDetailPage({
               {price != null ? price.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
               <span style={{ fontSize: 16, color: '#4a5270', fontWeight: 400, marginLeft: 6 }}>{currency}</span>
             </p>
+            <LocalPrice price={price} currency={currency} />
             {changePct != null && (
               <p style={{ fontSize: 16, fontWeight: 700, color: changeCol, marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
                 {changeSign}{changePct.toFixed(2)}%

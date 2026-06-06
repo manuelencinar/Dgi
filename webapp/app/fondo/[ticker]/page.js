@@ -5,6 +5,7 @@ import Link from 'next/link'
 import PublicNav from '@/components/PublicNav'
 import PriceChart from '@/components/empresa/PriceChart'
 import DividendBars from '@/components/empresa/DividendBars'
+import LocalPrice from '@/components/LocalPrice'
 import { fetchAndStoreFund } from '@/lib/fund-fetch'
 import RecurringButton from '@/components/cartera/RecurringButton'
 
@@ -103,6 +104,7 @@ export default async function FondoPage({ params }) {
                 {fund.current_price != null ? fmt(fund.current_price) : '—'}
                 <span style={{ fontSize: 14, color: '#4a5270', fontWeight: 400, marginLeft: 6 }}>{fund.currency}</span>
               </p>
+              <LocalPrice price={fund.current_price != null ? Number(fund.current_price) : null} currency={fund.currency} />
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
                 <div><p style={{ fontSize: 10, color: '#4a5270' }}>TER</p><p style={{ fontSize: 14, fontWeight: 700, color: terColor }}>{terPctV != null ? terPctV.toFixed(2) + '%' : 'Pendiente'}</p></div>
                 <div><p style={{ fontSize: 10, color: '#4a5270' }}>Yield TTM</p><p style={{ fontSize: 14, fontWeight: 700, color: '#34d399' }}>{fund.yield_ttm != null ? fund.yield_ttm + '%' : '—'}</p></div>
