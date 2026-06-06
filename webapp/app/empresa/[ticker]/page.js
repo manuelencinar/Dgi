@@ -5,9 +5,10 @@ import CompanyDetailPage from '@/components/CompanyDetailPage'
 import { DICT } from '@/data/dict'
 import { getCompanyQuote } from '@/lib/company-quote'
 import { calculateROIC } from '@/lib/metrics'
+import { buildHealthPanel } from '@/lib/health'
+import { netYield, getWHT } from '@/lib/screener'
 import {
   getCompanyDetail,
-  computeHealthScore,
   computeMoat,
   computeValuation,
   computeProjection,
@@ -20,6 +21,88 @@ import {
 export const dynamic = 'force-dynamic'
 
 const ADMIN_EMAIL = 'vayaebookk@gmail.com'
+
+// CAGR del dividendo a N años a partir del histórico (años completos).
+function divCagr(divHistory, years) {
+  const full = (divHistory || []).filter(h => !h.isPartial && h.dps != null).sort((a, b) => a.year - b.year)
+  if (full.length < 2) return null
+  const last = full[full.length - 1]
+  const yrs  = Math.min(years, full.length - 1)
+  const base = full[full.length - 1 - yrs]
+  if (!base?.dps || base.dps <= 0 || !last?.dps) return null
+  return Math.pow(last.dps / base.dps, 1 / yrs) - 1
+}
+
+// Estima los próximos pagos a partir del DPS previsto y la frecuencia típica por divisa.
+function estimateUpcomingPayments(dpsPrev, cagr, currency) {
+  if (dpsPrev == null || dpsPrev <= 0) return []
+  const annual = dpsPrev * (1 + (cagr ?? 0))
+  const freq = (currency === 'USD' || currency === 'CAD') ? 4 : (currency === 'GBP' || currency === 'CHF') ? 2 : 1
+  const per = annual / freq
+  const monthsStep = 12 / freq
+  const ML = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+  const now = new Date()
+  const out = []
+  for (let i = 0; i < Math.min(freq, 4); i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + Math.round(monthsStep * (i + 1)), 1)
+    out.push({ dateLabel: `${ML[d.getMonth()]} ${d.getFullYear()}`, amount: per, type: 'Ordinario' })
+  }
+  return out
+}
+
+function balanceFirst(stmt, ...keys) {
+  const d = stmt?.data
+  if (!d) return null
+  for (const k of keys) {
+    const r = d[k]
+    if (Array.isArray(r)) { for (const v of r) { if (v != null && !isNaN(v)) return parseFloat(v) } }
+  }
+  return null
+}
+
+function stmtRowArr(stmt, ...keys) {
+  const d = stmt?.data
+  if (!d) return null
+  for (const k of keys) { if (Array.isArray(d[k])) return d[k] }
+  return null
+}
+
+// PER de cada ejercicio con fundamentales: precio de cierre en la fecha de cierre
+// fiscal (daily_prices) ÷ BPA diluido de ese año (o capitalización ÷ beneficio neto).
+async function buildPeHistory(detail, supabase, ticker) {
+  const isa  = detail?.income_statement_annual
+  const cols = isa?.columns
+  if (!Array.isArray(cols) || !cols.length) return []
+  const niRow  = stmtRowArr(isa, 'Beneficio Neto', 'Net Income', 'Net Income Common Stockholders')
+  const shRow  = stmtRowArr(isa, 'Acciones Medias Diluidas', 'Diluted Average Shares', 'Acciones Medias Básicas', 'Basic Average Shares')
+  const epsRow = stmtRowArr(isa, 'BPA Diluido', 'Diluted EPS', 'BPA Básico', 'Basic EPS')
+  const n = Math.min(cols.length, 4)
+
+  const closes = await Promise.all(
+    Array.from({ length: n }, (_, i) => {
+      const end = String(cols[i]).slice(0, 10)
+      return supabase.from('daily_prices')
+        .select('close_price')
+        .eq('ticker', ticker).lte('date', end)
+        .order('date', { ascending: false }).limit(1).maybeSingle()
+        .then(r => (r.data ? Number(r.data.close_price) : null))
+        .catch(() => null)
+    })
+  )
+
+  const out = []
+  for (let i = 0; i < n; i++) {
+    const close = closes[i]
+    const eps = epsRow?.[i] != null ? parseFloat(epsRow[i]) : null
+    const ni  = niRow?.[i]  != null ? parseFloat(niRow[i])  : null
+    const sh  = shRow?.[i]  != null ? parseFloat(shRow[i])  : null
+    let pe = null
+    if (close != null && eps != null && eps > 0) pe = close / eps
+    else if (close != null && sh != null && sh > 0 && ni != null && ni > 0) pe = (close * sh) / ni
+    if (pe != null && pe > 0 && pe < 200) out.push({ year: String(cols[i]).slice(0, 4), pe: Math.round(pe * 10) / 10 })
+  }
+  return out.reverse()   // de más antiguo a más reciente
+}
 
 async function getUserPlan() {
   try {
@@ -51,8 +134,10 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default async function EmpresaPage({ params }) {
+export default async function EmpresaPage({ params, searchParams }) {
   const { ticker } = await params
+  const sp = searchParams ? await searchParams : {}
+  const initialTab = typeof sp?.tab === 'string' ? sp.tab : 'resumen'
   const t = decodeURIComponent(ticker)
 
   const entry = DICT.find(d => d[1] === t)
@@ -64,7 +149,7 @@ export default async function EmpresaPage({ params }) {
   const supabase = await authClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [plan, detail, liveQuote, dailyRow, positionRow, watchRow] = await Promise.all([
+  const [plan, detail, liveQuote, dailyRow, positionRow, watchRow, settingsRow] = await Promise.all([
     getUserPlan(),
     getCompanyDetail(t),
     getCompanyQuote(t),
@@ -80,9 +165,14 @@ export default async function EmpresaPage({ params }) {
     user ? supabase.from('watchlist').select('*')
       .eq('user_id', user.id).eq('ticker', t).maybeSingle()
       .then(r => r.data) : null,
+    // Retención fiscal de destino del usuario (para el yield neto)
+    user ? supabase.from('user_settings').select('dest_wht')
+      .eq('user_id', user.id).maybeSingle()
+      .then(r => r.data).catch(() => null) : null,
   ])
 
   const isPremium = plan === 'premium'
+  const destWHT   = settingsRow?.dest_wht != null ? Number(settingsRow.dest_wht) : 19
 
   const dailyPrice = dailyRow ? {
     price:     Number(dailyRow.close_price),
@@ -110,8 +200,13 @@ export default async function EmpresaPage({ params }) {
   const cagr       = detail?.div_cagr5      != null ? detail.div_cagr5 / 100 : null
   const updatedAt  = detail?.updated_at     ?? null
 
+  // Precio / valor contable: usa el campo si existe, si no lo deriva del balance.
+  if (detail && detail.price_to_book == null && mktCap != null) {
+    const equity = balanceFirst(detail.balance_sheet_annual, 'Patrimonio Neto', 'Total Stockholder Equity', 'Stockholders Equity', 'Common Stock Equity')
+    if (equity != null && equity > 0) detail.price_to_book = mktCap / equity
+  }
+
   const roicData   = detail ? calculateROIC({ ...detail, type }, currency) : null
-  const health     = computeHealthScore(detail, type)
   const moat       = computeMoat(detail, streak)
   const dcf        = computeValuation(detail, moat?.width ?? 'none', type, currency)
   const projection = computeProjection(divHistory, cagr)
@@ -119,6 +214,17 @@ export default async function EmpresaPage({ params }) {
   const insights   = buildInsights(detail, streak, cagr, dcf)
   const badges     = computeBadges(detail, streak, cagr, moat)
   const buybacks   = computeBuybacks(detail)
+  const healthPanel = buildHealthPanel(detail, type)
+
+  // Datos derivados para las pestañas
+  const yldNet     = yld != null ? netYield(yld * 100, getWHT(country), destWHT) : null
+  const cagr10     = divCagr(divHistory, 10)
+  const fullDiv    = divHistory.filter(h => !h.isPartial && h.dps != null).sort((a, b) => a.year - b.year)
+  const dpsPrev    = fullDiv.length ? fullDiv[fullDiv.length - 1].dps : null
+  const upcomingPayments = estimateUpcomingPayments(dpsPrev, cagr, currency)
+  const payoutEps  = detail?.payout_eps ?? null
+  const priceToBook = detail?.price_to_book ?? null
+  const peHistory  = detail ? await buildPeHistory(detail, supabase, t) : []
 
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>
@@ -141,6 +247,8 @@ export default async function EmpresaPage({ params }) {
         dailyPrice={dailyPrice}
         avgCost={positionRow?.avg_cost ?? null}
         yld={yld}
+        yldNet={yldNet}
+        destWHT={destWHT}
         divRate={divRate}
         low52={low52}
         high52={high52}
@@ -149,12 +257,19 @@ export default async function EmpresaPage({ params }) {
         evEbitda={evEbitda}
         eps={eps}
         payout={payout}
+        payoutEps={payoutEps}
+        priceToBook={priceToBook}
         mktCap={mktCap}
         divHistory={divHistory}
         cagr={cagr}
+        cagr10={cagr10}
         streak={streak}
         updatedAt={updatedAt}
-        health={health}
+        dpsPrev={dpsPrev}
+        upcomingPayments={upcomingPayments}
+        peHistory={peHistory}
+        healthPanel={healthPanel}
+        initialTab={initialTab}
         roicData={roicData}
         moat={moat}
         dcf={dcf}
