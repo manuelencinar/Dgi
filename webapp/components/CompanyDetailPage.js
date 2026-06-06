@@ -190,11 +190,12 @@ function MoatSection({ moat, isPremium }) {
 
 // ── dividend history section ───────────────────────────────────────────────
 
-function DividendHistorySection({ divHistory, streak, cagr }) {
-  const [showAll, setShowAll] = useState(false)
+function DividendHistorySection({ divHistory, streak, cagr, currency }) {
+  const [showOlder, setShowOlder] = useState(false)
   const badge       = streakBadge(streak)
   const fullHistory = [...divHistory].sort((a, b) => a.year - b.year)
-  const shown       = showAll ? fullHistory : fullHistory.slice(-10)
+  const chartHistory = fullHistory.slice(-5)        // 4 ejercicios completos + año actual
+  const older        = fullHistory.slice(0, -5)     // años anteriores → listado desplegable
   const startYear   = streak > 0 ? new Date().getFullYear() - streak : null
 
   return (
@@ -219,14 +220,38 @@ function DividendHistorySection({ divHistory, streak, cagr }) {
           {streak} años consecutivos subiendo el dividendo · racha desde ~{startYear}
         </p>
       )}
-      <DividendBars history={shown} />
-      {fullHistory.length > 10 && (
-        <button onClick={() => setShowAll(s => !s)} style={{
-          marginTop: 12, width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-          borderRadius: 8, padding: '8px 12px', cursor: 'pointer', color: '#818cf8', fontSize: 11, fontWeight: 700,
-        }}>
-          {showAll ? 'Ver solo últimos 10 años ▲' : `Ver historial completo (${fullHistory.length} años) ▼`}
-        </button>
+      <DividendBars history={chartHistory} />
+      {older.length > 0 && (
+        <>
+          <button onClick={() => setShowOlder(s => !s)} style={{
+            marginTop: 12, width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 8, padding: '8px 12px', cursor: 'pointer', color: '#818cf8', fontSize: 11, fontWeight: 700,
+          }}>
+            {showOlder ? 'Ocultar años anteriores ▲' : `Ver años anteriores (${older.length}) ▼`}
+          </button>
+          {showOlder && (
+            <div style={{ marginTop: 10, maxHeight: 260, overflowY: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: '6px 8px', textAlign: 'left', color: '#4a5270', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>Año</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'right', color: '#4a5270', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>DPS bruto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...older].reverse().map((h, i) => (
+                    <tr key={h.year} style={{ background: i % 2 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
+                      <td style={{ padding: '6px 8px', color: '#8090a8' }}>{h.year}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600 }}>
+                        {h.dps != null ? `${fmt(h.dps, 3)} ${currency}` : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
     </Card>
   )
@@ -1245,7 +1270,7 @@ export default function CompanyDetailPage(props) {
               <MiniMetric label="CAGR div." value={cagr != null ? (cagr * 100).toFixed(1) + '%' : '—'} sub={cagr10 != null ? `10a ~${(cagr10 * 100).toFixed(1)}%` : null} />
               <MiniMetric label="Payout" value={payout != null ? (payout * 100).toFixed(0) + '%' : '—'} sub={props.payoutEps != null ? `EPS ${props.payoutEps.toFixed(0)}%` : 'FCF'} color={payout > 0.8 ? '#f87171' : payout > 0.6 ? '#fbbf24' : '#34d399'} />
             </div>
-            <DividendHistorySection divHistory={divHistory} streak={streak} cagr={cagr} />
+            <DividendHistorySection divHistory={divHistory} streak={streak} cagr={cagr} currency={currency} />
             <UpcomingPayments payments={upcomingPayments} currency={currency} />
             <RentaProjection yld={yld} cagr={cagr} country={country} currency={currency} dpsScenarios={projection} destWHT={destWHT} />
             <BuybackSection buybacks={buybacks} />
