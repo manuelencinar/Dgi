@@ -265,8 +265,8 @@ function UpcomingPayments({ payments, currency }) {
       <SectionTitle>Próximos pagos estimados</SectionTitle>
       {payments?.length ? (
         <>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 320 }}>
+          <div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr>
                   {['Fecha estimada', 'Importe estim.', 'Tipo'].map((h, i) => (
@@ -352,11 +352,11 @@ function RentaProjection({ yld, cagr, country, currency, dpsScenarios, destWHT =
 
           {/* Escenarios DPS conservador/base/optimista (migrado) */}
           {dpsScenarios?.length > 0 && (
-            <div style={{ marginTop: 14, overflowX: 'auto' }}>
+            <div style={{ marginTop: 14 }}>
               <p style={{ fontSize: 10, color: '#4a5270', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
                 Dividendo por acción proyectado ({currency})
               </p>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 380 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
                   <tr>
                     {['Año', 'Conserv.', 'Base', 'Optimista'].map(h => (
