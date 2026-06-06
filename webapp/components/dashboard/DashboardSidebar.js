@@ -9,6 +9,7 @@ const LINKS = [
   { href: '/dashboard/usuarios', label: 'Usuarios', icon: '👥' },
   { href: '/dashboard/indices',  label: 'Índices',  icon: '🌐' },
   { href: '/dashboard/sistema',  label: 'Sistema',  icon: '⚙' },
+  { href: '/dashboard/cambios',  label: 'Cambios pendientes', icon: '📋' },
 ]
 
 export default function DashboardSidebar() {

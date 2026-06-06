@@ -8,7 +8,7 @@ import FinancialTables from '@/components/empresa/FinancialTables'
 import KeyMetricsChart from '@/components/empresa/KeyMetricsChart'
 import FollowButton from '@/components/watchlist/FollowButton'
 import LocalPrice from '@/components/LocalPrice'
-import { Semaforo, HealthCards } from '@/components/empresa/HealthPanel'
+import HealthTwoLevel, { Semaforo } from '@/components/empresa/HealthPanel'
 import { recomputeValuation } from '@/lib/valuation'
 import { project10y, paybackYear, netYield, getWHT } from '@/lib/screener'
 
@@ -939,6 +939,29 @@ function RoicCard({ roicData, isPremium }) {
           <p style={{ fontSize: 20, fontWeight: 800, color: col(roic_tangible) }}>{roic_tangible != null ? roic_tangible.toFixed(1) + '%' : '—'}</p>
         </div>
       </div>
+
+      {/* Explicación reportado vs tangible */}
+      <div style={{ marginTop: 12, padding: '11px 13px', background: 'rgba(99,102,241,0.06)', borderRadius: 8, lineHeight: 1.55 }}>
+        <p style={{ fontSize: 11, color: '#8090a8', marginBottom: 6 }}>
+          <span style={{ color: '#c8d0e0', fontWeight: 700 }}>Reportado:</span> rentabilidad sobre <b>todo</b> el capital invertido, incluyendo el goodwill y los intangibles pagados en adquisiciones.
+        </p>
+        <p style={{ fontSize: 11, color: '#8090a8' }}>
+          <span style={{ color: '#c8d0e0', fontWeight: 700 }}>Tangible:</span> excluye goodwill e intangibles, así que mide la rentabilidad del negocio operativo <b>real</b>, sin el precio pagado por comprar otras empresas.
+        </p>
+        {roic_reported != null && roic_tangible != null && (
+          <p style={{ fontSize: 11, color: '#8090a8', marginTop: 6 }}>
+            {roic_tangible - roic_reported > 5
+              ? <>Aquí el tangible es bastante mayor: buena parte del capital es goodwill de adquisiciones — un ROIC reportado bajo puede deberse a haber pagado caro por comprar crecimiento (riesgo de deterioro).</>
+              : Math.abs(roic_tangible - roic_reported) <= 5
+              ? <>Aquí ambos son parecidos: el capital apenas incluye goodwill, señal de crecimiento mayormente orgánico.</>
+              : <>Aquí el reportado supera al tangible, algo poco habitual; suele indicar intangibles negativos o un balance atípico.</>}
+          </p>
+        )}
+        <p style={{ fontSize: 10, color: '#4a5270', marginTop: 6 }}>
+          Para puntuar siempre adoptamos el <b>más bajo</b> de los dos (criterio conservador).
+        </p>
+      </div>
+
       {roic_warning && <p style={{ fontSize: 10, color: '#fbbf24', marginTop: 10, lineHeight: 1.5 }}>⚠ {roic_warning}</p>}
       {roic_method && !roic_warning && roic_method !== 'Precalculado' && <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10 }}>{roic_method}</p>}
     </Card>
@@ -1272,17 +1295,7 @@ export default function CompanyDetailPage(props) {
         {/* ═══ SALUD FINANCIERA ═══ */}
         {tab === 'salud' && (
           <div style={{ display: 'grid', gap: 16 }}>
-            <Card>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <SectionTitle>Diagnóstico rápido</SectionTitle>
-                {healthPanel?.sectorLabel && <span style={{ fontSize: 10, color: '#4a5270', background: 'rgba(255,255,255,0.04)', padding: '2px 8px', borderRadius: 5 }}>{healthPanel.sectorLabel}</span>}
-              </div>
-              <Semaforo rows={healthPanel?.semaforo} />
-            </Card>
-            <Card>
-              <SectionTitle>Métricas detalladas</SectionTitle>
-              <HealthCards cards={healthPanel?.cards} isPremium={isPremium} />
-            </Card>
+            <HealthTwoLevel panel={healthPanel} isPremium={isPremium} ticker={ticker} sectorLabel={healthPanel?.sectorLabel} />
             <MoatSection moat={moat} isPremium={isPremium} />
             <InsightsSection insights={insights} isPremium={isPremium} />
             <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} />

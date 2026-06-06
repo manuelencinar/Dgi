@@ -1,4 +1,5 @@
 'use client'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 // ── NIVEL 1 — SEMÁFORO ──────────────────────────────────────────────────────
@@ -90,6 +91,8 @@ export function HealthCards({ cards, isPremium }) {
         .health-cards-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         @media (min-width: 560px) { .health-cards-grid { grid-template-columns: 1fr 1fr; } }
         @media (min-width: 900px) { .health-cards-grid { grid-template-columns: 1fr 1fr 1fr; } }
+        .health-expand { animation: healthExpand 0.28s ease; }
+        @keyframes healthExpand { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
       `}</style>
       <div className="health-cards-grid">
         {cards.map(c => <MetricCard key={c.id} c={c} />)}
@@ -115,6 +118,61 @@ export function HealthCards({ cards, isPremium }) {
           padding: '7px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8,
         }}>Activar Premium →</Link>
       </div>
+    </div>
+  )
+}
+
+// ── DOS NIVELES — semáforo + tarjetas colapsables ────────────────────────────
+// Nivel 2 colapsado por defecto; recuerda el estado en localStorage por empresa.
+// Default: desktop expandido · móvil colapsado.
+
+export default function HealthTwoLevel({ panel, isPremium, ticker, sectorLabel }) {
+  const [expanded, setExpanded] = useState(false)
+
+  useEffect(() => {
+    let v = null
+    try {
+      const s = localStorage.getItem(`healthCards:${ticker}`)
+      if (s === '1') v = true
+      else if (s === '0') v = false
+    } catch {}
+    if (v == null) v = typeof window !== 'undefined' && window.innerWidth >= 820
+    setExpanded(v)
+  }, [ticker])
+
+  const toggle = () => setExpanded(e => {
+    const nv = !e
+    try { localStorage.setItem(`healthCards:${ticker}`, nv ? '1' : '0') } catch {}
+    return nv
+  })
+
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Salud financiera</p>
+        {sectorLabel && (
+          <span style={{ fontSize: 10, color: '#4a5270', background: 'rgba(255,255,255,0.04)', padding: '2px 8px', borderRadius: 5 }}>{sectorLabel}</span>
+        )}
+      </div>
+
+      <Semaforo rows={panel?.semaforo} />
+
+      {panel?.cards?.length > 0 && (
+        <>
+          <button onClick={toggle} style={{
+            marginTop: 14, width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 8, padding: '9px 12px', cursor: 'pointer', color: '#818cf8', fontSize: 12, fontWeight: 700,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}>
+            {expanded ? 'Ocultar métricas detalladas ▲' : 'Ver métricas detalladas ▼'}
+          </button>
+          {expanded && (
+            <div className="health-expand" style={{ marginTop: 16 }}>
+              <HealthCards cards={panel.cards} isPremium={isPremium} />
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
