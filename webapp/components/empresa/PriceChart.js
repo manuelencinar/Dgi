@@ -71,17 +71,15 @@ function buildArea(linePath, closes, xOf, yOf) {
   return `${linePath} L ${lastX},${baseY} L ${PAD.left.toFixed(1)},${baseY} Z`
 }
 
-// Superpone el benchmark sobre la serie del fondo. Se interpola el valor del
-// benchmark en cada FECHA real del fondo (alineación temporal correcta, aunque
-// los festivos difieran) y se rebasea al primer precio del fondo: comparten
-// punto de partida y la divergencia refleja el rendimiento relativo real.
-function alignBenchmark(fundTs, fundCloses, benchTs, benchCloses) {
-  if (!fundTs?.length || !fundCloses?.length) return null
-  const pts = []
-  for (let i = 0; i < benchTs.length; i++) if (benchCloses[i] != null && benchCloses[i] > 0) pts.push([benchTs[i], benchCloses[i]])
-  if (pts.length < 2) return null
+// Divisa nativa de cada benchmark conocido (para convertirlo a la del fondo)
+const BENCH_CCY = { '^GSPC': 'USD', 'URTH': 'USD', '^NDX': 'USD', '^STOXX': 'EUR', '^GDAXI': 'EUR', '^FTSE': 'GBP', '^N225': 'JPY' }
 
-  const interp = ts => {
+// Interpola una serie (srcTs, srcVals) en cada timestamp de targetTs (lineal).
+function interpSeries(targetTs, srcTs, srcVals) {
+  const pts = []
+  for (let i = 0; i < srcTs.length; i++) if (srcVals[i] != null && srcVals[i] > 0) pts.push([srcTs[i], srcVals[i]])
+  if (pts.length < 2) return null
+  const at = ts => {
     if (ts <= pts[0][0]) return pts[0][1]
     if (ts >= pts[pts.length - 1][0]) return pts[pts.length - 1][1]
     let lo = 0, hi = pts.length - 1
@@ -89,8 +87,24 @@ function alignBenchmark(fundTs, fundCloses, benchTs, benchCloses) {
     const [t0, v0] = pts[lo], [t1, v1] = pts[hi]
     return v0 + (v1 - v0) * ((ts - t0) / ((t1 - t0) || 1))
   }
+  return targetTs.map(at)
+}
 
-  const benchAt = fundTs.map(interp)
+// Convierte la serie del benchmark a otra divisa usando el FX histórico (mismo
+// tipo de cambio de cada fecha), interpolado a los timestamps del benchmark.
+function convertToCurrency(benchTs, benchCloses, fxTs, fxCloses) {
+  const fxAt = interpSeries(benchTs, fxTs, fxCloses)
+  if (!fxAt) return benchCloses
+  return benchCloses.map((v, i) => (v != null && fxAt[i] != null) ? v * fxAt[i] : v)
+}
+
+// Superpone el benchmark sobre la serie del fondo: lo interpola en cada FECHA
+// real del fondo y lo rebasea al primer precio del fondo → comparten punto de
+// partida y la divergencia refleja el rendimiento relativo real.
+function alignBenchmark(fundTs, fundCloses, benchTs, benchCloses) {
+  if (!fundTs?.length || !fundCloses?.length) return null
+  const benchAt = interpSeries(fundTs, benchTs, benchCloses)
+  if (!benchAt) return null
   const base = benchAt[0]
   if (!base || base <= 0) return null
   const factor = fundCloses[0] / base
@@ -319,13 +333,25 @@ export default function PriceChart({ ticker, currency, avgCost, divHistory, benc
       if (json.error || !json.timestamps?.length) { setData(null); setError(true); return }
       // Reconstruir la línea de total return desde el historial de dividendos
       const adjCloses = buildTotalReturn(json.timestamps, json.closes, divHistory)
-      // Benchmark superpuesto (rebaseado), si se ha indicado uno
+      // Benchmark superpuesto, convertido a la divisa del fondo y rebaseado
       let benchCloses = null
       if (benchmarkTicker) {
         try {
           const br = await fetch(`/api/empresa/${encodeURIComponent(benchmarkTicker)}/chart?range=${r}`, { cache: 'no-store' })
           const bj = await br.json()
-          if (bj.timestamps?.length) benchCloses = alignBenchmark(json.timestamps, json.closes, bj.timestamps, bj.closes)
+          if (bj.timestamps?.length) {
+            let bTs = bj.timestamps, bCl = bj.closes
+            // Convertir el benchmark a la divisa del fondo con el FX histórico de cada día
+            const benchCcy = BENCH_CCY[benchmarkTicker]
+            if (benchCcy && currency && benchCcy !== currency) {
+              try {
+                const fxr = await fetch(`/api/empresa/${encodeURIComponent(benchCcy + currency + '=X')}/chart?range=${r}`, { cache: 'no-store' })
+                const fxj = await fxr.json()
+                if (fxj.timestamps?.length) bCl = convertToCurrency(bTs, bCl, fxj.timestamps, fxj.closes)
+              } catch {}
+            }
+            benchCloses = alignBenchmark(json.timestamps, json.closes, bTs, bCl)
+          }
         } catch {}
       }
       setData({ ...json, adjCloses, benchCloses, benchName: benchmarkName })
@@ -335,7 +361,7 @@ export default function PriceChart({ ticker, currency, avgCost, divHistory, benc
       clearTimeout(timer)
       setLoading(false)
     }
-  }, [ticker, divHistory, benchmarkTicker, benchmarkName])
+  }, [ticker, divHistory, benchmarkTicker, benchmarkName, currency])
 
   if (!loaded.current) { loaded.current = true; load('1A') }
 
