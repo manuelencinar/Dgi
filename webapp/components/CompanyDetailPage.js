@@ -193,10 +193,19 @@ function MoatSection({ moat, isPremium }) {
 
 function DividendHistorySection({ divHistory, streak, cagr, currency }) {
   const [showOlder, setShowOlder] = useState(false)
+  const [count, setCount] = useState(5)             // móvil 5 · escritorio 10
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(min-width: 820px)')
+    const apply = () => setCount(mq.matches ? 10 : 5)
+    apply()
+    mq.addEventListener?.('change', apply)
+    return () => mq.removeEventListener?.('change', apply)
+  }, [])
   const badge       = streakBadge(streak)
   const fullHistory = [...divHistory].sort((a, b) => a.year - b.year)
-  const chartHistory = fullHistory.slice(-5)        // 4 ejercicios completos + año actual
-  const older        = fullHistory.slice(0, -5)     // años anteriores → listado desplegable
+  const chartHistory = fullHistory.slice(-count)    // últimos N años en el gráfico
+  const older        = fullHistory.slice(0, -count) // años anteriores → listado desplegable
   const startYear   = streak > 0 ? new Date().getFullYear() - streak : null
 
   return (

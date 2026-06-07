@@ -14,7 +14,7 @@ export default function DividendBars({ history }) {
         alignItems: 'flex-end',
         gap: 3,
         width: '100%',
-        maxWidth: 460,
+        maxWidth: Math.min(760, Math.max(280, history.length * 56)),
         margin: '0 auto',
         height: 150,
         padding: '8px 2px 0',
