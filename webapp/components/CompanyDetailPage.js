@@ -5,7 +5,7 @@ import Link from 'next/link'
 import PriceChart from '@/components/empresa/PriceChart'
 import DividendBars from '@/components/empresa/DividendBars'
 import FinancialTables from '@/components/empresa/FinancialTables'
-import KeyMetricsChart from '@/components/empresa/KeyMetricsChart'
+import StatementCharts from '@/components/empresa/StatementCharts'
 import FollowButton from '@/components/watchlist/FollowButton'
 import LocalPrice from '@/components/LocalPrice'
 import HealthTwoLevel, { Semaforo } from '@/components/empresa/HealthPanel'
@@ -1281,8 +1281,12 @@ export default function CompanyDetailPage(props) {
         {tab === 'finanzas' && (
           <div style={{ display: 'grid', gap: 16 }}>
             <Card>
-              <SectionTitle>Evolución de métricas clave</SectionTitle>
-              <KeyMetricsChart revenueHistory={revenueHistory} netIncomeHistory={netIncomeHistory} fcfHistory={fcfHistory} epsHistory={epsHistory} />
+              <StatementCharts
+                income={financials?.income_statement_annual}
+                cashflow={financials?.cashflow_annual}
+                balance={financials?.balance_sheet_annual}
+                type={type}
+              />
             </Card>
             <Card>
               <FinancialTables
