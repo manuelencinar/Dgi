@@ -14,7 +14,7 @@ export default function DictManagerClient() {
   const [purge, setPurge] = useState(false)
 
   const load = () => fetch('/api/admin/dict').then(r => r.json()).then(setData).catch(() => setData({ removed: [], added: [], orphans: [] }))
-  useEffect(load, [])
+  useEffect(() => { load() }, [])   // no devolver la Promise (sería tratada como cleanup)
 
   async function call(method, body) {
     setBusy(true); setMsg(null)

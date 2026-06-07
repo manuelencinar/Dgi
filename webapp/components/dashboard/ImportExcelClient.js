@@ -50,7 +50,7 @@ export default function ImportExcelClient() {
     fetch('/api/admin/import-excel?action=manual-status').then(r => r.json()).then(d => setManualRows(d.rows || [])).catch(() => setManualRows([]))
     fetch('/api/admin/import-excel?action=stale').then(r => r.json()).then(d => setStale(d)).catch(() => setStale({ stale: [], missing: [] }))
   }
-  useEffect(loadTables, [])
+  useEffect(() => { loadTables() }, [])
 
   const pickFile = (f) => {
     if (!f) return
