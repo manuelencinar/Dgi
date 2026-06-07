@@ -1,9 +1,8 @@
 import { serviceClient } from '@/lib/admin'
 import { getFundamentalsLite, getMissingCompanies, getIncompleteCompanies, getOutdatedCompanies } from '@/lib/admin-stats'
-import DatosClient from '@/components/dashboard/DatosClient'
-import EtfsAdminClient from '@/components/dashboard/EtfsAdminClient'
-import ImportExcelClient from '@/components/dashboard/ImportExcelClient'
-import DictManagerClient from '@/components/dashboard/DictManagerClient'
+import { getEffectiveDict } from '@/lib/dict'
+import { getAllMarkets } from '@/lib/markets-overrides'
+import DatosTabs from '@/components/dashboard/DatosTabs'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,24 +10,25 @@ export default async function DatosPage() {
   const sc = serviceClient()
   const fundamentals = await getFundamentalsLite(sc)
 
-  let funds = []
-  try {
-    const { data } = await sc.from('funds').select('*').order('asset_type').order('ticker')
-    funds = data || []
-  } catch {}
+  const missing    = new Set(getMissingCompanies(fundamentals).map(c => c.ticker))
+  const incomplete = new Set(getIncompleteCompanies(fundamentals).map(c => c.ticker))
+  const outdated   = new Set(getOutdatedCompanies(fundamentals).map(c => c.ticker))
 
-  return (
-    <>
-      <DatosClient
-        missing={getMissingCompanies(fundamentals)}
-        incomplete={getIncompleteCompanies(fundamentals)}
-        outdated={getOutdatedCompanies(fundamentals)}
-      />
-      <ImportExcelClient />
-      <DictManagerClient />
-      <div style={{ maxWidth: 1100 }}>
-        <EtfsAdminClient funds={funds} />
-      </div>
-    </>
-  )
+  const eff = await getEffectiveDict()
+  const companies = eff.map(([name, ticker, country, currency, sector, subsector, type]) => ({
+    ticker, name, country, currency, sector, subsector, type,
+    status: missing.has(ticker) ? 'sin' : incomplete.has(ticker) ? 'incompletos' : outdated.has(ticker) ? 'desactualizados' : 'ok',
+  }))
+  const sectors   = [...new Set(eff.map(d => d[4]).filter(Boolean))].sort()
+  const countries = [...new Set(eff.map(d => d[2]).filter(Boolean))].sort()
+
+  let funds = []
+  try { funds = (await sc.from('funds').select('*').order('asset_type').order('ticker')).data || [] } catch {}
+
+  const markets = await getAllMarkets()
+
+  let logs = []
+  try { logs = (await sc.from('admin_logs').select('*').order('created_at', { ascending: false }).limit(60)).data || [] } catch {}
+
+  return <DatosTabs companies={companies} sectors={sectors} countries={countries} funds={funds} markets={markets} logs={logs} />
 }

@@ -8,11 +8,23 @@ export const dynamic = 'force-dynamic'
 const VALID_TYPES = new Set(['general', 'banco', 'aseguradora', 'reit', 'bdc', 'utilities'])
 
 // ── GET: overrides actuales + tickers huérfanos (con datos, fuera del DICT) ──
-export async function GET() {
+export async function GET(request) {
   const admin = await requireAdmin()
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
 
   const sb = serviceClient()
+
+  // Nº de usuarios con posiciones en un ticker (aviso antes de eliminar)
+  if (new URL(request.url).searchParams.get('action') === 'positions') {
+    const ticker = (new URL(request.url).searchParams.get('ticker') || '').toUpperCase()
+    if (!ticker) return NextResponse.json({ users: 0, rows: 0 })
+    try {
+      const { data } = await sb.from('positions').select('user_id').eq('ticker', ticker)
+      const users = new Set((data || []).map(r => r.user_id)).size
+      return NextResponse.json({ users, rows: (data || []).length })
+    } catch { return NextResponse.json({ users: 0, rows: 0 }) }
+  }
+
   const baseByTicker = new Map(DICT.map(d => [d[1], d[0]]))
 
   let overrides = []
@@ -69,9 +81,10 @@ export async function POST(request) {
   const { error } = await sb.from('dict_overrides').upsert(row, { onConflict: 'ticker' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Al ocultar, opcionalmente borrar también los datos fundamentales
+  // Al eliminar: borrar fundamentales e index_companies (NUNCA positions/transactions)
   if (action === 'remove' && body?.purge) {
     try { await sb.from('company_fundamentals').delete().eq('ticker', ticker) } catch {}
+    try { await sb.from('index_companies').delete().eq('ticker', ticker) } catch {}
   }
 
   try {
@@ -83,6 +96,49 @@ export async function POST(request) {
   } catch {}
 
   return NextResponse.json({ ok: true, ticker, action })
+}
+
+// ── PUT: cambiar el ticker de una empresa (atómico, todas las tablas) ───────
+export async function PUT(request) {
+  const admin = await requireAdmin()
+  if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+
+  let body
+  try { body = await request.json() } catch { return NextResponse.json({ error: 'Body inválido' }, { status: 400 }) }
+  const oldTicker = (body?.oldTicker || '').toString().trim().toUpperCase()
+  const newTicker = (body?.newTicker || '').toString().trim().toUpperCase()
+  if (!oldTicker || !newTicker) return NextResponse.json({ error: 'Faltan tickers' }, { status: 400 })
+  if (!/^[A-Z0-9.\-]+$/.test(newTicker)) return NextResponse.json({ error: 'Ticker inválido (solo mayúsculas, números, punto y guion)' }, { status: 400 })
+  if (oldTicker === newTicker) return NextResponse.json({ ok: true, ticker: newTicker })
+
+  const sb = serviceClient()
+
+  // 1) Migración atómica de datos en todas las tablas relacionadas (RPC)
+  const { error: rpcErr } = await sb.rpc('rename_ticker', { p_old: oldTicker, p_new: newTicker })
+  if (rpcErr) return NextResponse.json({ error: `No se pudo migrar: ${rpcErr.message}` }, { status: 500 })
+
+  // 2) DICT: ocultar el viejo y registrar el nuevo con los campos
+  try {
+    await sb.from('dict_overrides').upsert({ ticker: oldTicker, action: 'remove', created_at: new Date().toISOString() }, { onConflict: 'ticker' })
+    const add = {
+      ticker: newTicker, action: 'add', created_at: new Date().toISOString(),
+      name: (body?.name || newTicker).toString().slice(0, 120),
+      country: (body?.country || 'OTHER').toString().toUpperCase().slice(0, 6),
+      currency: (body?.currency || 'USD').toString().toUpperCase().slice(0, 6),
+      sector: (body?.sector || '').toString().slice(0, 60),
+      subsector: (body?.subsector || '').toString().slice(0, 80),
+      type: VALID_TYPES.has(body?.type) ? body.type : 'general',
+    }
+    await sb.from('dict_overrides').upsert(add, { onConflict: 'ticker' })
+  } catch (e) {
+    return NextResponse.json({ error: `Datos migrados pero falló el DICT: ${e.message}` }, { status: 500 })
+  }
+
+  try {
+    await sb.from('admin_logs').insert({ event_type: 'dict_override', description: `Ticker ${oldTicker} → ${newTicker} (migrado en todas las tablas)`, status: 'ok' })
+  } catch {}
+
+  return NextResponse.json({ ok: true, oldTicker, newTicker })
 }
 
 // ── DELETE: deshacer un override (restaurar comportamiento del DICT base) ────

@@ -1,5 +1,10 @@
 // DICT efectivo = DICT estático (data/dict.js) + overrides de Supabase.
 // SOLO server (usa service_role). No importar desde componentes cliente.
+//
+// dict_overrides.action:
+//   'remove' → oculta la empresa.
+//   'add'    → upsert: si el ticker ya está en el DICT base, reemplaza sus
+//              campos (edición); si no, lo añade como empresa nueva.
 import { createClient } from '@supabase/supabase-js'
 import { DICT } from '@/data/dict'
 
@@ -7,21 +12,23 @@ function sb() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 }
 
-function asEntry(o) {
-  return [o.name || o.ticker, o.ticker, o.country || 'OTHER', o.currency || 'USD', o.sector || '', o.subsector || '', o.type || 'general']
-}
-
 export function applyDictOverrides(base, overrides) {
-  const removed = new Set()
-  const added = []
+  const map = new Map(base.map(d => [d[1], d]))
   for (const o of overrides || []) {
-    if (o.action === 'remove') removed.add(o.ticker)
-    else if (o.action === 'add') added.push(asEntry(o))
+    if (!o?.ticker) continue
+    if (o.action === 'remove') { map.delete(o.ticker); continue }
+    const ex = map.get(o.ticker)
+    const e = ex ? [...ex] : ['', o.ticker, 'OTHER', 'USD', '', '', 'general']
+    if (o.name != null && o.name !== '') e[0] = o.name
+    e[1] = o.ticker
+    if (o.country) e[2] = o.country
+    if (o.currency) e[3] = o.currency
+    if (o.sector != null) e[4] = o.sector
+    if (o.subsector != null) e[5] = o.subsector
+    if (o.type) e[6] = o.type
+    map.set(o.ticker, e)
   }
-  const filtered = base.filter(d => !removed.has(d[1]))
-  const present = new Set(filtered.map(d => d[1]))
-  const extra = added.filter(a => !present.has(a[1]))
-  return [...filtered, ...extra]
+  return [...map.values()]
 }
 
 export async function getDictOverrides() {
@@ -35,12 +42,7 @@ export async function getEffectiveDict() {
   return applyDictOverrides(DICT, await getDictOverrides())
 }
 
-// Resuelve una entrada de empresa teniendo en cuenta los overrides.
 export async function findDictEntry(ticker) {
-  const ov = await getDictOverrides()
-  if (ov.some(o => o.action === 'remove' && o.ticker === ticker)) return null
-  const base = DICT.find(d => d[1] === ticker)
-  if (base) return base
-  const add = ov.find(o => o.action === 'add' && o.ticker === ticker)
-  return add ? asEntry(add) : null
+  const eff = applyDictOverrides(DICT, await getDictOverrides())
+  return eff.find(e => e[1] === ticker) || null
 }

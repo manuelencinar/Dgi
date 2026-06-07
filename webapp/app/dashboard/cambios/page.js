@@ -50,6 +50,13 @@ const PENDING = [
     action: 'Adoptar getEffectiveDict (o pasar overrides como prop) en lib/comparador, los componentes de cartera/onboarding y las páginas de mercados.',
   },
   {
+    area: 'Gestión admin',
+    type: 'Precisión',
+    title: 'Filtro por índice y edición de divisa/ticker de fondos',
+    detail: 'En la pestaña Empresas faltan: el filtro por índice (la pertenencia está en lib/index-constituents.js, estática) y el banner de "cambios pendientes" (se sustituyó por autoguardado campo a campo, que es lo que pedía la parte IMPORTANTE). En ETFs/Fondos falta editar divisa y cambiar ticker.',
+    action: 'Exportar un mapa ticker→índices desde index-constituents para el filtro; añadir edición de divisa y cambio de ticker (vía rename) a la tabla de fondos.',
+  },
+  {
     area: 'Importación Excel',
     type: 'Precisión',
     title: 'Marcado de celdas manuales y trimestre del vintage',

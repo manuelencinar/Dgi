@@ -122,7 +122,7 @@ function applySorted(markets, region, sortBy, dgiScores) {
   })
 }
 
-export default function MarketsClient({ initialQuotes = {}, initialTs = 0, dgiScores = {} }) {
+export default function MarketsClient({ initialQuotes = {}, initialTs = 0, dgiScores = {}, markets = MARKETS }) {
   const [quotes,    setQuotes]    = useState(initialQuotes)
   const [ts,        setTs]        = useState(initialTs)
   const [countdown, setCountdown] = useState(REFRESH_INTERVAL)
@@ -153,8 +153,8 @@ export default function MarketsClient({ initialQuotes = {}, initialTs = 0, dgiSc
     return () => clearInterval(tick)
   }, [refresh])
 
-  const regions     = ['Todos', ...REGIONS]
-  const sorted      = applySorted(MARKETS, region, sortBy, dgiScores)
+  const regions     = ['Todos', ...new Set(markets.map(m => m.region))]
+  const sorted      = applySorted(markets, region, sortBy, dgiScores)
   const scoredCount = Object.keys(dgiScores).length
   const updatedAt   = ts
     ? new Date(ts).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
@@ -195,7 +195,7 @@ export default function MarketsClient({ initialQuotes = {}, initialTs = 0, dgiSc
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
           {regions.map(r => {
             const active = r === region
-            const count  = r === 'Todos' ? MARKETS.length : MARKETS.filter(m => m.region === r).length
+            const count  = r === 'Todos' ? markets.length : markets.filter(m => m.region === r).length
             return (
               <button key={r} onClick={() => setRegion(r)} style={{
                 fontSize: 11, fontWeight: active ? 700 : 400, padding: '4px 11px', borderRadius: 20,
