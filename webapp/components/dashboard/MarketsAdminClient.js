@@ -35,7 +35,10 @@ export default function MarketsAdminClient({ markets: initial }) {
   return (
     <Card>
       <SectionTitle>Índices ({rows.length})</SectionTitle>
-      <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 12 }}>Edita los campos (clic) o activa/desactiva un índice. Los índices no se eliminan — solo se desactivan.</p>
+      <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 12 }}>
+        Edita los campos (clic) o activa/desactiva un índice. Los índices no se eliminan — solo se desactivan.
+        {' '}<span style={{ color: '#fbbf24' }}>*</span> = membresía sin actualizar desde el Excel de índices.
+      </p>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 720 }}>
           <thead><tr>{['Símbolo', 'Nombre', 'Ticker yfinance', 'País', 'Región', 'Activo'].map(h => <th key={h} style={th}>{h}</th>)}</tr></thead>
@@ -44,7 +47,10 @@ export default function MarketsAdminClient({ markets: initial }) {
               const active = r.active !== false
               return (
                 <tr key={r.symbol} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', opacity: active ? 1 : 0.5 }}>
-                  <td style={{ ...td, color: '#818cf8', fontWeight: 700 }}>{r.flag} {r.symbol}</td>
+                  <td style={{ ...td, color: '#818cf8', fontWeight: 700 }}>
+                    {r.flag} {r.symbol}
+                    {!r.updated && <span title="Sin actualizar desde el Excel de índices" style={{ color: '#fbbf24', marginLeft: 4 }}>*</span>}
+                  </td>
                   <td style={td}><Cell value={r.name} onSave={v => save(r.symbol, 'name', v)} /></td>
                   <td style={td}><Cell value={r.yf_ticker || r.symbol} onSave={v => save(r.symbol, 'yf_ticker', v)} color="#8090a8" /></td>
                   <td style={td}><Cell value={r.country} onSave={v => save(r.symbol, 'country', v)} color="#8090a8" /></td>

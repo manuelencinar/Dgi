@@ -1,197 +1,72 @@
 import { DICT } from '@/data/dict'
 
-// ── Explicit membership per index ──────────────────────────────────────────
-// Only tickers that (a) are in the DICT and (b) actually belong to that index.
-// Indices with unambiguous suffix (one market → one index) are handled via
-// SUFFIX_MAP below.
+// Membresia explicita por indice - generada desde indices-empresas.xlsx.
+// Solo se muestran tickers que estan en el DICT.
 
-const IGBM = [
-  'ACS.MC','EBRO.MC','A3M.MC','ELE.MC','ACX.MC','AMS.MC',
-  'BBVA.MC','DIA.MC','BKT.MC','SQM.MC','ANA.MC','ROVI.MC',
-  'CABK.MC','GALQ.MC','ENG.MC','SLR.MC','FCC.MC','AI.MC',
-  'NTGY.MC','ALNT.MC','GRF.MC','PRS.MC','FER.MC','MEL.MC',
-  'RED.MC','GSJ.MC','ITX.MC','NEX.MC','REP.MC','ADX.MC',
-  'IBE.MC','MCM.MC','IDR.MC','ENC.MC','MAP.MC','CAF.MC',
-  'TEF.MC','UBS.MC','SCYR.MC','INS.MC','SAB.MC','LEI.MC',
-  'SAN.MC','IBG.MC','COL.MC','BRI.MC','TRE.MC','ADZ.MC',
-  'OHLA.MC','RLIA.MC','IAG.MC','NYE.MC','CEV.MC','NEA.MC',
-  'CIE.MC','R4.MC','RJF.MC','EZE.MC','MDF.MC','MTB.MC',
-  'MVC.MC','FAE.MC','TRG.MC','PVA.MC','GRF-P.MC','VIS.MC',
-  'PSG.MC','ALM.MC','VOC.MC','VID.MC','TUB.MC','REN.MC',
-  'FDR.MC','ENO.MC','AZK.MC','APAM.MC','ECR.MC','AMP.MC',
-  'AIR.MC','PRI.MC','OLE.MC','MTS.MC','EDR.MC','MRL.MC',
-  'LOG.MC','AENA.MC','NTH.MC','CLNX.MC','TLGO.MC','GRE.MC',
-  'PHM.MC','ORY.MC','DOM.MC','CCEP.MC','ATRY.MC','CASH.MC',
-  'HOME.MC','GEST.MC','UNI.MC','AED.MC','BKY.MC','SOL.MC',
-  'LDA.MC','ENER.MC','ANE.MC','PUIG.MC',
-]
+const IDX = {
+  "^DJT": ["ALK","CAR","CHRW","CSX","DAL","EXPD","FDX","FDXF","JBHT","KEX","LSTR","MATX","NSC","ODFL","R","LUV","UBER","UNP","UAL","UPS"],
+  "^DJA": ["CAR","CHRW","CSX","DAL","EXPD","FDX","FDXF","JBHT","KEX","LSTR","MATX","NSC","ODFL","R","LUV","UBER","UNP","UAL","UPS","MMM","AXP","AMGN","AMZN","AAPL","BA","CAT","CVX","CSCO","KO","DIS","GS","HD","HON","IBM","JNJ","JPM","MCD","MRK","MSFT","NKE","NVDA","PG","CRM","SHW","TRV","UNH","VZ","V","WMT"],
+  "^NDX": ["ADBE","AMD","ARE","GOOGL","GOOG","AMZN","AEP","AMGN","ADI","ANSS","AAPL","AMAT","ASML","AZN","TEAM","ADSK","ADP","AXON","BKR","BIIB","BKNG","AVGO","CDNS","CDW","CHTR","CTAS","CSCO","CCEP","CTSH","CMCSA","CEG","CPRT","COST","CRWD","CSX","DDOG","DXCM","FANG","DLTR","DASH","EA","EXC","FAST","FTNT","GEV","GILD","HON","IDXX","ILMN","INTC","INTU","ISRG","KDP","KLAC","KHC","LRCX","LULU","MAR","MRVL","MELI","META","MCHP","MU","MSFT","MRNA","MDLZ","MNST","NFLX","NVDA","NXPI","ODFL","ON","ORLY","PCAR","PANW","PAYX","PYPL","PDD","PEP","QCOM","REGN","ROP","ROST","CRM","SRPT","NOW","SPLK","SMCI","SNPS","TTWO","TSLA","TXN","TTD","TMUS","VLTO","VRSN","VRTX","WBD","WDAY","XEL","ZS"],
+  "^GSPTSE": ["AC.TO","AQN.TO","ATD.TO","AP-UN.TO","ALA.TO","ARX.TO","ACO-X.TO","BTO.TO","BMO.TO","BNS.TO","ABX.TO","BCE.TO","BYD.TO","BAM.TO","BBU-UN.TO","BN.TO","BIP-UN.TO","BEP-UN.TO","CAE.TO","CCO.TO","CM.TO","CNR.TO","CNQ.TO","CP.TO","CTC-A.TO","CU.TO","CS.TO","CVE.TO","GIB-A.TO","CHP-UN.TO","CSU.TO","DSG.TO","DOL.TO","EMA.TO","EMP-A.TO","ENB.TO","FFH.TO","FTT.TO","FM.TO","FSV.TO","FTS.TO","FNV.TO","WN.TO","GIL.TO","GRT-UN.TO","GWO.TO","HR-UN.TO","H.TO","IAG.TO","IMO.TO","IFC.TO","IVN.TO","KEY.TO","K.TO","L.TO","LUN.TO","MG.TO","MFC.TO","MRU.TO","NA.TO","NTR.TO","ONEX.TO","OTEX.TO","PAAS.TO","PKI.TO","PPL.TO","POW.TO","QBR-B.TO","QSR.TO","REI-UN.TO","RCI-B.TO","RY.TO","SAP.TO","MATR.TO","SHOP.TO","SRU-UN.TO","ATRL.TO","STN.TO","SLF.TO","SU.TO","TRP.TO","TECK-B.TO","T.TO","TFII.TO","TRI.TO","X.TO","TIH.TO","TD.TO","WCP.TO","WSP.TO"],
+  "^BVSP": ["ALUP11.SA","ABEV3.SA","AURE3.SA","B3SA3.SA","BPAC11.SA","BBAS3.SA","BBSE3.SA","BRAP4.SA","BRKM5.SA","BRFS3.SA","CCRO3.SA","ELET3.SA","ELET6.SA","SBSP3.SA","SAPR11.SA","CIEL3.SA","COGN3.SA","CMIG4.SA","CSNA3.SA","CSAN3.SA","CPFE3.SA","CURY3.SA","CVCB3.SA","CYRE3.SA","DXCO3.SA","DIRR3.SA","ECOR3.SA","ENBR3.SA","EMBR3.SA","ELPL3.SA","ENGI11.SA","ENEV3.SA","EGIE3.SA","EQTL3.SA","EZTC3.SA","FLRY3.SA","GGBR4.SA","GOLL4.SA","ASAI3.SA","CRFB3.SA","GMAT3.SA","NTCO3.SA","AZZO3.SA","HAPV3.SA","HYPE3.SA","IGTI11.SA","ITUB3.SA","ITUB4.SA","ITSA4.SA","JBSS3.SA","JHSF3.SA","KLBN11.SA","RENT4.SA","LREN3.SA","MGLU3.SA","MRFG3.SA","GOAU4.SA","BEEF3.SA","MRVE3.SA","MULT3.SA","WSON33.SA","PETR3.SA","PETR4.SA","RECV3.SA","PRIO3.SA","RAIZ4.SA","RAPT4.SA","RDOR3.SA","RAIL3.SA","SANB11.SA","SMTO3.SA","SLCE3.SA","SUZB3.SA","TASA4.SA","TIMS3.SA","TAEE11.SA","UGPA3.SA","USIM5.SA","VALE3.SA","VBBR3.SA","VIVT3.SA","WEGE3.SA"],
+  "^MXX": ["ALFAA.MX","ALSEA.MX","AMXB.MX","AC.MX","BBAJIOO.MX","CUERVO.MX","BOLSAA.MX","CEMEXCPO.MX","CHDRAUIB.MX","KOFUBL.MX","CTAAL.MX","VESTA.MX","FEMSAUBD.MX","GRUMAB.MX","OMAB.MX","GAPB.MX","ASURB.MX","GCARSOA1.MX","GCC.MX","GFNORTEO.MX","GFINBURO.MX","GMEXICOB.MX","BIMBOA.MX","PE&OLES.MX","KIMBERA.MX","LACOMERU.MX","LIVEPOLC.MX","MEGACPO.MX","ORBIA.MX","PINFRA.MX","Q.MX","RA.MX","LASITIOSB.MX","WALMEX.MX","PINFRAL.MX"],
+  "^MERV": ["ALUA.BA","BMA.BA","BBAR.BA","BYMA.BA","CEPU.BA","COME.BA","CRES.BA","EDN.BA","METR.BA","GGAL.BA","SUPV.BA","LOMA.BA","MIRG.BA","PAMP.BA","SAMI.BA","TECO2.BA","TGNO4.BA","TGSU2.BA","TRAN.BA","TXAR.BA","YPFD.BA"],
+  "^IPSA": ["AGUAS-A.SN","CHILE.SN","BCI.SN","ITAUCL.SN","BSANTANDER.SN","CAP.SN","CENCOSUD.SN","CENCOMALLS.SN","COLBUN.SN","CCU.SN","VAPORES.SN","ANDINA-B.SN","ENTEL.SN","CMPC.SN","COPEC.SN","ENELAM.SN","ENELCHILE.SN","ECL.SN","FALABELLA.SN","IAM.SN","ILC.SN","LTM.SN","PARAUCO.SN","MALLPLAZA.SN","QUINENCO.SN","RIPLEY.SN","SALFACORP.SN","SMU.SN","SQM-B.SN","CONCHATORO.SN"],
+  "^STOXX50E": ["ADS.DE","ADYEN.AS","AI.PA","AIR.PA","ALV.DE","ABI.BR","ASML.AS","CS.PA","BBVA.MC","SAN.MC","BAS.DE","BAYN.DE","BMW.DE","BNP.PA","CFR.SW","CRH","BN.PA","DB1.DE","DTE.DE","DHL.DE","ENEL.MI","ENI.MI","EL.PA","RACE.MI","FLTR.L","RMS.PA","IBE.MC","ITX.MC","IFX.DE","ISP.MI","KER.PA","OR.PA","MC.PA","MBG.DE","MUV2.DE","NDA-FI.HE","RI.PA","PRX.AS","SAF.PA","SAN.PA","SAP.DE","SU.PA","SIE.DE","STLAM.MI","TTE.PA","UCG.MI","DG.PA","VOW3.DE","VNA.DE","WKL.AS"],
+  "^SSMI": ["ABBN.SS","ALC.SS","GIVN.SS","HOLN.SS","KNIN.SS","LOGN.SS","LONN.SS","NESN.SS","NOVN.SS","PGHN.SS","CFR.SS","ROG.SS","SDZ.SS","SIKA.SS","SOON.SS","SLHN.SS","SRENH.SS","SCMN.SS","UHR.SS","UBSG.SS"],
+  "^AEX": ["ABN.AS","ADYEN.AS","AGN.AS","AD.AS","AKZA.AS","ARCAD.AS","MT.AS","ASM.AS","ASML.AS","ASRNL.AS","BESI.AS","CVC.AS","DSFIR.AS","EXOR.AS","HAV.AS","HEIA.AS","IMCD.AS","INGA.AS","INPST.AS","KPN.AS","MAGN.AS","NN.AS","PHIA.AS","PRX.AS","REN.AS","SBMO.AS","SHEL.AS","UMG.AS","UNA.AS","WDP.AS","WKL.AS"],
+  "^OMX": ["ABB.ST","ALFA.ST","ASSA-B.ST","AZN.ST","ATCO-A.ST","ATCO-B.ST","BOL.ST","ELUX-B.ST","ERIC-B.ST","ESSITY-B.ST","EVO.ST","GETI-B.ST","HM-B.ST","HEXA-B.ST","INVE-B.ST","KINV-B.ST","NIBE-B.ST","NDA-SE.ST","SAAB-B.ST","SAS.ST","SCA-B.ST","SEB-B.ST","SECU-B.ST","SHB-A.ST","SKA-B.ST","SKF-B.ST","SWED-A.ST","TEL2-B.ST","TELIA.ST","VOLV-B.ST","SCA-A.ST"],
+  "^BFX": ["AED.BR","AGS.BR","ABI.BR","ARCG.BR","ARGX.BR","AZE.BR","COFB.BR","DIE.BR","ELI.BR","COLR.BR","GBLB.BR","KBC.BR","LOTB.BR","MELE.BR","SOF.BR","SOLB.BR","SYENS.BR","UCB.BR","UMI.BR","WDP.BR"],
+  "PSI20.LS": ["ALTR.LS","BCP.LS","COR.LS","CTT.LS","EDP.LS","EDPR.LS","GALP.LS","IBS.LS","JMT.LS","EGL.LS","NOS.LS","NVG.LS","RENE.LS","SON.LS","SNC.LS","SONI.LS"],
+  "^OMXH25": ["ANORA.HE","CGCBV.HE","ELISA.HE","FORTUM.HE","HUH1V.HE","KNEV.HE","KCR.HE","METSO.HE","NESTE.HE","NOKIA.HE","TYRES.HE","NDA-FI.HE","ORNBV.HE","OUT1V.HE","PURMO.HE","QTCOM.HE","SAMPO.HE","SSABBH.HE","STEAV.HE","TIETO.HE","UPM.HE","VALMT.HE","WRT1V.HE","YIT.HE"],
+  "^OMXC20": ["MAERSK-A.CO","MAERSK-B.CO","AMBU-B.CO","BAVA.CO","CARL-B.CO","COLO-B.CO","DEMANT.CO","DSV.CO","GMAB.CO","GN.CO","JYSK.CO","NKT.CO","NDA-DK.CO","NOVO-B.CO","NSIS-B.CO","ORSTED.CO","PNDORA.CO","SYDB.CO","TRYG.CO","VWS.CO"],
+  "^OMXO20GI": ["AKRBP.OL","BRG.OL","BWLPG.OL","CMBT.OL","DNB.OL","EQNR.OL","FRO.OL","GJFG.OL","GSF.OL","HAFNI.OL","HAUTO.OL","KOG.OL","MOWI.OL","NEL.OL","NOD.OL","NHY.OL","NAS.OL","RK.OL","SALM.OL","STB.OL","SUBC.OL","TEL.OL","TGS.OL","TOM.OL","YAR.OL"],
+  "^ATX": ["ANDR.VI","ATS.VI","BG.VI","CAI.VI","DOC.VI","EBS.VI","EVN.VI","IIA.VI","LENV.VI","MMK.VI","POST.VI","OMV.VI","RBI.VI","SPI.VI","SBO.VI","TKA.VI","VER.VI","VIG.VI","VOE.VI","WIE.VI"],
+  "^ISEQ": ["AIBG.IR","BIRG.IR","CRN.IR","GCC.IR","DLE.IR","FBD.IR","FLTR.IR","GL9.IR","GVP.IR","GNC.IR","IRES.IR","KRZ.IR","KRX.IR","MLC.IR","MIO.IR","OIZ.IR","IL0A.IR","RYA.IR","SWR.IR","UPH.IR","BKC.IR","DQ7.IR","IR5B.IR","KDR.IR","MCI.IR","ORM.IR","OVB.IR","PTR.IR","PRR.IR","ZOD.IR"],
+  "WIG20.WA": ["ALR.WA","ALE.WA","ACP.WA","PEO.WA","BDX.WA","CDR.WA","CPS.WA","DNP.WA","KTY.WA","JSW.WA","KGH.WA","KRU.WA","LPP.WA","MBK.WA","OPL.WA","PKN.WA","PGE.WA","PKO.WA","PZU.WA","SPL.WA"],
+  "FPXAA.PR": ["ERST.PR","CEZ.PR","CSG.PR","KOMB.PR","VIG.PR","MONET.PR","COLT.PR","TABK.PR","DSPW.PR","KOFOL.PR","PRIUA.PR","GEV.PR","KARIN.PR","PENP.PR"],
+  "^BUX": ["4IG.BU","ALTEO.BU","AKKO.BU","APPEN.BU","AUTOW.BU","BIF.BU","CIGP.BU","DELTA.BU","RICHT.BU","GSPARK.BU","MASTER.BU","MOL.BU","OTP.BU","PANNERGY.BU","RABA.BU","WABER.BU","ZWACK.BU"],
+  "XU100.IS": ["AEFES.IS","AGHOL.IS","AKBNK.IS","AKSA.IS","AKSEN.IS","ALARK.IS","ALTNY.IS","ANSGR.IS","ARCLK.IS","ASELS.IS","ASTOR.IS","AUTOW.IS","BALSU.IS","BIMAS.IS","BRSAN.IS","BRYAT.IS","BSOKE.IS","BTCIM.IS","CANTE.IS","CCOLA.IS","CIMSA.IS","CVKMD.IS","CWENE.IS","DAPGM.IS","DELTA.IS","DOAS.IS","DOHOL.IS","DSTKF.IS","ECILC.IS","EFOR.IS","EGEEN.IS","EKGYO.IS","ENJSA.IS","ENKAI.IS","EREGL.IS","EUREN.IS","EUPWR.IS","FENER.IS","FROTO.IS","GARAN.IS","GENIL.IS","GESAN.IS","GLRMK.IS","GRSEL.IS","GRTHO.IS","GSRAY.IS","GUBRF.IS","HALKB.IS","HEKTS.IS","ISCTR.IS","ISMEN.IS","IZENR.IS","KCHOL.IS","KCAER.IS","KLRHO.IS","KONTR.IS","KRDMD.IS","KTLEV.IS","KUYAS.IS","MAGEN.IS","MAVI.IS","MGROS.IS","MIATK.IS","MPARK.IS","OBAMS.IS","ODAS.IS","OTKAR.IS","OYAKC.IS","PASEU.IS","PATEK.IS","PETKM.IS","PGSUS.IS","PSGYO.IS","QUAGR.IS","RABA.IS","RALYH.IS","REEDR.IS","SAHOL.IS","SARKY.IS","SASA.IS","SISE.IS","SKBNK.IS","SOKM.IS","TABGD.IS","TAVHL.IS","TCELL.IS","THYAO.IS","TKFEN.IS","TOASO.IS","TRALT.IS","TRENJ.IS","TRMET.IS","TSKB.IS","TTKOM.IS","TTRAK.IS","TUKAS.IS","TUPRS.IS","ULKER.IS","VAKBN.IS","VESTL.IS"],
+  "^AXJO": ["ABC.AX","A2M.AX","AGL.AX","APA.AX","ALL.AX","ANZ.AX","ASX.AX","BHP.AX","BSL.AX","BXB.AX","CBA.AX","CSL.AX","FMG.AX","GMG.AX","IAG.AX","ORG.AX","QAN.AX","RIO.AX","STO.AX","SHL.AX","S32.AX","TLS.AX","TCL.AX","TWE.AX","WES.AX","WBC.AX","WDS.AX","WOW.AX","AMP.AX","APE.AX","ARF.AX","ALU.AX","AST.AX","AVJ.AX","AZJ.AX","BEN.AX","BGA.AX","BKL.AX","BPT.AX","BRG.AX","CAR.AX","CHC.AX","CIM.AX","CNU.AX","COH.AX","CPU.AX","CTD.AX","DMP.AX","EVN.AX","FPH.AX","LFS.AX","LKE.AX","LLC.AX","LYC.AX","MIN.AX","MPL.AX","MQG.AX","MFG.AX","MIR.AX","MSB.AX","NAB.AX","NEM.AX","NST.AX","NHF.AX","NXT.AX","ORA.AX","ORI.AX","PLS.AX","PDN.AX","PME.AX","QBE.AX","QUB.AX","REA.AX","RHC.AX","RRL.AX","SGM.AX","SXL.AX","SNZ.AX","SOL.AX","SUN.AX","SVW.AX","SYR.AX","TGR.AX","TPM.AX","TYR.AX","VCX.AX","VNT.AX","VUK.AX","WAM.AX","WAF.AX","WEB.AX","WTC.AX","XRO.AX","YAL.AX","ZIM.AX","ZIP.AX","ZNO.AX","ZTS.AX","AFI.AX","AHG.AX","ALQ.AX","AMC.AX","ANN.AX","APT.AX","AQZ.AX","ARB.AX","ASB.AX","AUB.AX","AWC.AX","BAP.AX","BBT.AX","BGL.AX","BLD.AX","BOQ.AX","BWP.AX","BWX.AX","CIA.AX","CLH.AX","CMW.AX","CNI.AX","COE.AX","COL.AX","CQR.AX","CSR.AX","CWN.AX","DEG.AX","DRR.AX","DXS.AX","EHL.AX","ELD.AX","EML.AX","FEX.AX","FLT.AX","GNG.AX","GOZ.AX","GPT.AX","HUB.AX","IGO.AX","ILU.AX","IMD.AX","ING.AX","IPL.AX","IRE.AX","IVC.AX","JBH.AX","JHX.AX","KAR.AX","KGN.AX","LNK.AX","MAH.AX","MGR.AX","MMS.AX","MP1.AX","MYR.AX","NAN.AX","NSR.AX","NUF.AX","NVX.AX","NWL.AX","OML.AX","ORE.AX","PBH.AX","PGH.AX","PNV.AX","PRN.AX","PSI.AX","PXA.AX","RMD.AX","RWC.AX","SDF.AX","SEK.AX","SFR.AX","SGP.AX","SKC.AX","SKI.AX","SLR.AX","SMR.AX","SSM.AX","SUL.AX","TAH.AX","VEA.AX","WOR.AX"],
+  "^FTSE": ["III.L","ADM.L","AAF.L","ALW.L","AAL.L","ANTO.L","AHT.L","ABF.L","AZN.L","AUTO.L","AV.L","BAB.L","BA.L","BARC.L","BTRW.L","BEZ.L","BKG.L","BP.L","BATS.L","BLND.L","BT-A.L","BNZL.L","BRBY.L","CNA.L","CCEP.L","CCH.L","CPG.L","CTEC.L","CRDA.L","DCC.L","DGE.L","DPLM.L","EDV.L","ENT.L","EXPN.L","FCIT.L","FRES.L","GAW.L","GLEN.L","GSK.L","HLN.L","HLMA.L","HSX.L","HWDN.L","HSBA.L","ICG.L","IGG.L","IMI.L","IMB.L","INF.L","IHG.L","ITRK.L","IAG.L","JD.L","KGF.L","LAND.L","LGEN.L","BGEO.L","LLOY.L","LSEG.L","LMP.L","MNG.L","MKS.L","MRO.L","MNDI.L","NG.L","NWG.L","NXT.L","PSON.L","PSH.L","PSN.L","PHNX.L","PRU.L","RKT.L","REL.L","RTO.L","RMV.L","RIO.L","RR.L","SGE.L","SBRY.L","SDR.L","SMT.L","SGRO.L","SVT.L","SHEL.L","SN.L","SMIN.L","SWR.L","SPX.L","SSE.L","STJ.L","STAN.L","TW.L","TSCO.L","ULVR.L","UU.L","VOD.L","WEIR.L","WTB.L"],
+  "^FTMC": ["3IN.L","FOUR.L","AAS.L","ASL.L","AEP.L","AJB.L","ALFA.L","ATT.L","AO.L","APN.L","ASHM.L","AIE.L","AML.L","ATYM.L","AGT.L","AVON.L","BME.L","BGFD.L","USA.L","BBY.L","BCG.L","BNKR.L","BAG.L","BWY.L","BKG.L","BHMG.L","BYG.L","BPCR.L","BRGE.L","BRSC.L","BRWM.L","BMY.L","BSIF.L","BOY.L","BREE.L","BPT.L","BUT.L","BYIT.L","CLDN.L","CGT.L","CWR.L","CHG.L","CSN.L","CTY.L","CKN.L","CBG.L","CMCX.L","COA.L","CPDI.L","COST.L","CWK.L","CURY.L","CVSG.L","DLN.L","DSCV.L","DOM.L","DRX.L","DOCS.L","DNLM.L","EZJ.L","EDIN.L","EWI.L","ELM.L","ENOG.L","ESCT.L","EWG.L","FCSS.L","FEML.L","FEV.L","FSV.L","FGT.L","FGP.L","FGEN.L","FSG.L","FRAS.L","FCH.L","GFRD.L","GAMA.L","GBG.L","GCP.L","GEN.L","GNS.L","GSCT.L","DATA.L","GDWN.L","GFTU.L","GRI.L","GNC.L","GRG.L","UKW.L","HANA.L","HBR.L","HVPE.L","HWG.L","HAS.L","HTWS.L","HNS.L","HRI.L","HGT.L","HICL.L","HILS.L","HFG.L","HOC.L","HTG.L","IBST.L","IAT.L","ITH.L","JLEN.L","JMAT.L","JAM.L","JMG.L","JEDT.L","JGGI.L","JFJ.L","JUP.L","JUST.L","KNOS.L","KLR.L","KAP.L","LWDB.L","LXI.L","MACF.L","MGNS.L","MSLH.L","MMAM.L","MARS.L","MEGP.L","MRC.L","MRCH.L","MCRO.L","MWY.L","MAB.L","MTO.L","MNKS.L","MGAM.L","MUT.L","MYI.L","NETW.L","NRR.L","NESF.L","NAS.L","OCI.L","ORIT.L","OSB.L","OXIG.L","PHI.L","PIN.L","PAG.L","CAKE.L","PAY.L","PNN.L","PNL.L","PFC.L","PETS.L","PZCC.L","QQ.L","QLT.L","RAT.L","REDD.L","TRIG.L","RSW.L","RHIM.L","RCP.L","ROR.L","RICA.L","SAFE.L","SVS.L","SDP.L","SCF.L","SOI.L","SAIN.L","SCIN.L","SNR.L","SRP.L","SHC.L","RWI.L","SIV.L","SRE.L","SRN.L","SSON.L","SCT.L","SOLG.L","SXS.L","SPI.L","SSPG.L","SUPR.L","SYNC.L","THRL.L","TATE.L","TBCG.L","TEP.L","TMPL.L","TEM.L","TETT.L","TIFS.L","TPT.L","TRY.L","TPK.L","BBOX.L","TUI.L","TYR.L","UKCM.L","SHED.L","VAIG.L","VSVS.L","VCT.L","VOF.L","VTY.L","PAC.L","VLE.L","VNA.L","WOSG.L","JDW.L","WTAN.L","WIZZ.L","WKP.L","WWH.L","XAR.L","XPS.L","ZEG.L"],
+  "^GDAXI": ["ADS.DE","AIR.DE","ALV.DE","BAS.DE","BAYN.DE","BEI.DE","BMW.DE","BNR.DE","CBK.DE","CON.DE","1COV.DE","DTG.DE","DBK.DE","DB1.DE","DHL.DE","DTE.DE","EOAN.DE","FRE.DE","HNR1.DE","HEI.DE","HEN3.DE","IFX.DE","MBG.DE","MRK.DE","MTX.DE","MUV2.DE","P911.DE","PAH3.DE","QIA.DE","RHM.DE","RWE.DE","SAP.DE","SRT3.DE","SIE.DE","ENR.DE","SHL.DE","SY1.DE","TLX.DE","VOW3.DE","VNA.DE"],
+  "^FCHI": ["AI.PA","AIR.PA","ALO.PA","MT.PA","CS.PA","BNP.PA","EN.PA","CAP.PA","CA.PA","ACA.PA","BN.PA","DSY.PA","EDEN.PA","ENGI.PA","EL.PA","ERF.PA","RMS.PA","KER.PA","LR.PA","OR.PA","MC.PA","ML.PA","ORA.PA","RI.PA","PUB.PA","RNO.PA","SAF.PA","SGO.PA","SAN.PA","SU.PA","GLE.PA","STLAP.PA","STMPA.PA","TEP.PA","HO.PA","TTE.PA","URW.PA","VIE.PA","DG.PA","VIV.PA"],
+  "^IBEX": ["ANA.MC","ANE.MC","ACX.MC","AENA.MC","AMS.MC","ARM.MC","SAB.MC","SAN.MC","BKT.MC","BBVA.MC","CABK.MC","CLNX.MC","ENG.MC","ELE.MC","FER.MC","FDR.MC","GRF.MC","IAG.MC","IBE.MC","ITX.MC","IDR.MC","COL.MC","LOG.MC","MAP.MC","MEL.MC","MRL.MC","NTGY.MC","PUIG.MC","RED.MC","REP.MC","ROVI.MC","SCYR.MC","SLR.MC","UNI.MC","ACS.MC"],
+  "INDCT.MC": ["A3M.MC","CIE.MC","CAF.MC","DIA.MC","EBRO.MC","EDRE.MC","ENC.MC","FAE.MC","GEST.MC","DOMI.MC","GREG.MC","HBX.MC","LDA.MC","PHMR.MC","TLGO.MC","TRE.MC","TUB.MC","VID.MC","VIS.MC"],
+  "INDS.MC": ["AEDAS.MC","AI.MC","APAM.MC","APPS.MC","ATTO.MC","AZK.MC","BAIN.MC","CEV.MC","BVA.MC","OLE.MC","ECO.MC","EZE.MC","ECR.MC","HME.MC","LRE.MC","NXT.MC","MVC.MC","MCM.MC","HOME.MC","OHLA.MC","OPDE.MC","PVA.MC","PRS.MC","RLIA.MC","GSJ.MC","SOL.MC","SQRL.MC","UCI.MC","VOC.MC"],
+  "^DJGT": ["NVIDIA Corporation","Apple Inc.","Microsoft Corporation","Amazon.com, Inc.","Broadcom Inc.","Taiwan Semiconductor (TSMC)","Alphabet Inc. (Clase A)","Meta Platforms, Inc.","Alphabet Inc. (Clase C)","Tesla, Inc.","Eli Lilly and Company","Berkshire Hathaway Inc.","JPMorgan Chase & Co.","Novo Nordisk A/S","Visa Inc.","Exxon Mobil Corporation","UnitedHealth Group Inc.","Mastercard Incorporated","ASML Holding N.V.","Procter & Gamble Co.","Johnson & Johnson","Tencent Holdings","Walmart Inc.","Home Depot, Inc.","Merck & Co., Inc.","AbbVie Inc.","CostCo Wholesale Corp.","Advanced Micro Devices (AMD)","Netflix, Inc.","Chevron Corporation","Oracle Corporation","Salesforce, Inc.","Samsung Electronics","Bank of America Corp.","Toyota Motor Corporation","Nestlé S.A.","Adobe Inc.","LVMH Moët Hennessy","Coca-Cola Company","Thermo Fisher Scientific","SAP SE","Qualcomm Incorporated","PepsiCo, Inc.","McDonald's Corporation","Cisco Systems, Inc.","AstraZeneca PLC","Accenture plc","Novartis AG","Shell PLC","Linde plc","TotalEnergies SE","Roche Holding AG","Amgen Inc."],
+  "^GSPC": ["MMM","AOS","ABT","ABBV","ACN","ADBE","AMD","AES","AFL","A","APD","ABNB","AKAM","ALB","ARE","ALGN","ALLE","LNT","ALL","GOOGL","GOOG","MO","AMZN","AMCR","AEE","AEP","AXP","AIG","AMT","AWK","AMP","AME","AMGN","APH","ADI","AON","APA","APO","AAPL","AMAT","APP","APTV","ACGL","ADM","ARES","ANET","AJG","AIZ","T","ATO","ADSK","ADP","AZO","AVB","AVY","AXON","BKR","BALL","BAC","BAX","BDX","BRK-B","BBY","TECH","BIIB","BLK","BX","SQ","BK","BA","BKNG","BSX","BMY","AVGO","BR","BRO","BF-B","BLDR","BG","BXP","CHRW","CDNS","CPT","CPB","COF","CAH","CCL","CARR","CVNA","CASY","CAT","CBOE","CBRE","CDW","COR","CNC","CNP","CF","CRL","SCHW","CHTR","CVX","CMG","CB","CHD","CIEN","CI","CINF","CTAS","CSCO","C","CFG","CLX","CME","CMS","KO","CTSH","COHR","COIN","CL","CMCSA","FIX","CAG","COP","ED","STZ","CEG","COO","CPRT","GLW","CPAY","CTVA","CSGP","COST","CRH","CRWD","CCI","CSX","CMI","CVS","DHI","DHR","DRI","DDOG","DVA","DECK","DE","DELL","DAL","DVN","DXCM","FANG","DLR","DG","DLTR","D","DPZ","DASH","DOV","DOW","DTED","DUK","DD","ETN","EBAY","SATS","ECL","EIX","EW","EA","ELV","EME","EMR","ETR","EOG","EQT","EFX","EQIX","EQR","ERIE","ESS","EL","EG","EVRG","ES","EXC","EXE","EXPE","EXPD","EXRE","XOM","FFIV","FDS","FICO","FAST","FRT","FDX","FIS","FITB","FSLR","FE","FI","F","FTNT","FTV","FOXA","FOX","BEN","FCX","GRMN","IT","GE","GEHC","GEV","GEN","GNRC","GD","GIS","GM","GPC","GILD","GPN","GL","GDDY","GS","HAL","HIG","HAS","HCA","DOC","HSI","HSY","HPE","HLT","HD","HON","HRL","HST","HWM","HPQ","HUBB","HUM","HBAN","HII","IBM","IEX","IDXX","ITW","INCY","IR","PODD","INTC","IBKR","ICE","IFF","IP","INTU","ISRG","IVZ","INVH","IQV","IRM","JBHT","SJM","JBL","JKHY","J","JNJ","JCI","JPM","KVUE","KDP","KEY","KEYS","KMB","KIM","KMI","KKR","KLAC","KHC","KR","LHX","LH","LRCX","LVS","LDOS","LEN","LII","LLY","LIN","LYV","LMT","L","LOW","LULU","LITE","LYB","MTB","MPC","MAR","MMC","MLM","MAS","MA","MKC","MCD","MCK","MDT","MRK","META","MET","MTD","MGM","MCHP","MU","MSFT","MAA","MRNA","TAP","MDLZ","MPWR","MNST","MCO","MS","MOS","MSI","MSCI","NDAQ","NGG","NTAP","NFLX","NEM","NWSA","NWS","NEE","NKE","NI","NDSN","NSC","NTRS","NOC","NCLH","NRG","NUE","NVDA","NVR","NXPI","ORLY","OXY","ODFL","OMC","ON","OKE","ORCL","OSK","OTIS","PCAR","PKG","PLTR","PANW","PARA","PH","PAYX","PAYC","PYPL","PNR","PEP","PFE","PCG","PM","PSX","PNW","PXD","PNC","POOL","PPG","PPL","PFG","PG","PGR","PLD","PRU","PSA","PHM","QRVO","QCOM","PWR","DGX","RL","RJF","RTX","O","REG","REGN","RF","RSG","RMD","RVTY","RHI","ROK","ROL","ROP","ROST","RCL","SPGI","CRM","SBAC","SLB","STX","SEE","SRE","NOW","SHW","SPG","SIRI","SWKS","SW","SNA","SO","LUV","SWK","SBUX","STT","STLD","STE","SYK","SYF","SNPS","SYY","TMUS","TROW","TTWO","TPR","TRGP","TGT","TEL","TDY","TFX","TER","TSLA","TXN","TXT","TMO","TJX","TSCO","TT","TDG","TRV","TRMB","TFC","TYL","TSN","USB","UBER","UDR","ULTA","UNP","UAL","UPS","URI","UNH","UHS","VLO","VTR","VLTO","VRSN","VRSK","VZ","VRTX","VTRS","VICI","V","VST","VMC","WRB","GWW","WBA","WMT","DIS","WBD","WM","WAT","WEC","WFC","WELL","WST","WDC","WY","WHR","WMB","WTW","WYNN","XEL","XYL","YUM","ZBRA","ZBH","ZION","ZTS"],
+  "^DJI": ["MMM","AXP","AMGN","AMZN","AAPL","BA","CAT","CVX","CSCO","KO","DIS","GS","HD","HON","IBM","JNJ","JPM","MCD","MRK","MSFT","NKE","NVDA","PG","CRM","SHW","TRV","UNH","VZ","V","WMT"],
+}
 
-const IBEX35 = [
-  'AENA.MC','ACS.MC','ACX.MC','AMS.MC','ANA.MC','ANE.MC',
-  'BBVA.MC','BKT.MC','CABK.MC','CLNX.MC','COL.MC',
-  'ELE.MC','ENG.MC','FDR.MC','FER.MC','GRF.MC',
-  'IBE.MC','IDR.MC','ITX.MC','LOG.MC','MAP.MC',
-  'MEL.MC','MRL.MC','NTGY.MC','PUIG.MC','RED.MC',
-  'REP.MC','SAB.MC','SAN.MC','SCYR.MC','SLR.MC',
-  'TEF.MC','UNI.MC','VIS.MC',
-]
-
-const DAX40 = [
-  'ADS.DE','ALV.DE','BAS.DE','BAYN.DE','BEI.DE','BMW.DE',
-  'BNR.DE','CBK.DE','CON.DE','DB1.DE','DBK.DE','DHL.DE',
-  'DTG.DE','DTE.DE','EOAN.DE','ENR.DE','FME.DE','FRE.DE',
-  'HEI.DE','HEN3.DE','IFX.DE','LHA.DE','MBG.DE','MRK.DE',
-  'MTX.DE','MUV2.DE','NEM.DE','P911.DE','PAH3.DE','QIA.DE',
-  'RHM.DE','RWE.DE','SAP.DE','SHL.DE','SIE.DE','SY1.DE',
-  'VNA.DE','VOW3.DE','ZAL.DE',
-]
-
-const CAC40 = [
-  'AC.PA','AI.PA','AIR.PA','CS.PA','ACA.PA','BN.PA',
-  'BNP.PA','BVI.PA','CAP.PA','CA.PA','DSY.PA','EDEN.PA',
-  'EL.PA','EN.PA','ENGI.PA','ERF.PA','FGR.PA','GLE.PA',
-  'HO.PA','KER.PA','LR.PA','MC.PA','ML.PA','ORA.PA',
-  'PUB.PA','RI.PA','RMS.PA','RNO.PA','SAF.PA','SAN.PA',
-  'SGO.PA','SU.PA','SW.PA','TTE.PA','VIE.PA','DG.PA',
-  'VIV.PA','WLN.PA','ALO.PA','MT.PA','TEP.PA',
-]
-
-const FTSE100 = [
-  'AZN.L','SHEL.L','HSBA.L','BP.L','GSK.L','RIO.L',
-  'ULVR.L','AV.L','BA.L','REL.L','VOD.L','LLOY.L',
-  'BARC.L','RKT.L','NG.L','DGE.L','BATS.L','PRU.L',
-  'GLEN.L','IMB.L','LGEN.L','IAG.L','CPG.L','NXT.L',
-  'AAL.L','AHT.L','ABF.L','BNZL.L','BRBY.L','BT-A.L',
-  'CNA.L','CRDA.L','EXPN.L','FLTR.L','HLMA.L','HLN.L',
-  'IHG.L','INF.L','ITRK.L','KGF.L','LSEG.L','MKS.L',
-  'MNG.L','NWG.L','PHNX.L','RR.L','RMV.L','RTO.L',
-  'SGE.L','SN.L','SPX.L','SSE.L','STAN.L','TSCO.L',
-  'TW.L','UU.L','WPP.L','FERG.L','III.L','LAND.L',
-  'BHP.L','BLND.L','BDEV.L','BKG.L','SKG.L','JD.L',
-  'SVT.L','ENT.L','EMG.L','DPLM.L','MRO.L','SBRY.L',
-  'SMIN.L','AUTO.L','MNDI.L','HL.L','WISE.L','WEIR.L',
-]
-
-const SMI20 = [
-  'ABBN.SW','ALC.SW','CFR.SW','GEBN.SW','GIVN.SW',
-  'HOLN.SW','KNIN.SW','LONN.SW','NESN.SW','NOVN.SW',
-  'PGHN.SW','RO.SW','SDZ.SW','SCHP.SW','SIKA.SW',
-  'SLHN.SW','SREN.SW','SCMN.SW','UBSG.SW','VACN.SW',
-]
-
-const AEX25 = [
-  'ADYEN.AS','AGN.AS','AD.AS','AKZA.AS','ASM.AS','ASML.AS',
-  'HEIA.AS','KPN.AS','PHIA.AS','WKL.AS','ABN.AS','ASRNL.AS',
-  'DSM.AS','EXOR.AS','IMCD.AS','ING.AS','NN.AS','RAND.AS',
-  'URW.AS','LIGHT.AS','UMG.AS','VPK.AS',
-]
-
-const OMX30 = [
-  'ALFA.ST','ASSAB.ST','ATCOA.ST','ATCOB.ST','BOL.ST',
-  'EPIA.ST','ESSITYB.ST','HEXAb.ST','HMb.ST','NIBEb.ST',
-  'SEBA.ST','SECUB.ST','SKAb.ST','SKFb.ST','SCAb.ST',
-  'SHBA.ST','SWEDA.ST','TELIA.ST','TEL2b.ST','TRELb.ST',
-  'VOLVB.ST','SAND.ST','EVO.ST','ERICb.ST','INVEb.ST',
-  'INDUc.ST','ALIVsdb.ST','GETIb.ST',
-]
-
-const DOW30 = [
-  'AAPL','AMGN','AMZN','AXP','BA','CAT','CRM','CSCO',
-  'CVX','DIS','DOW','GS','HD','HON','IBM','JNJ','JPM',
-  'KO','MCD','MMM','MRK','MSFT','NKE','NVDA','PG',
-  'SHW','TRV','UNH','V','VZ','WMT',
-]
-
-const NASDAQ100 = [
-  'AAPL','MSFT','NVDA','AMZN','META','GOOGL','GOOG',
-  'AVGO','TSLA','COST','NFLX','AMD','QCOM','CSCO','ADBE',
-  'PEP','TXN','ADI','ISRG','REGN','MU','KLAC','PANW',
-  'SNPS','CDNS','GILD','LRCX','INTC','MDLZ','CTAS',
-  'FAST','ORLY','ABNB','FTNT','DXCM','CRWD','WDAY',
-  'IDXX','MNST','ROST','MELI','KDP','EXC','XEL','CSX',
-  'PCAR','AMAT','NXPI','MRVL','LULU','TEAM',
-]
-
-// ── Unambiguous single-index markets (suffix → index symbol) ────────────────
-// These countries/regions only have one index we track, so suffix = index.
+// Indices no actualizados - membresia por sufijo de mercado.
 const SUFFIX_MAP = {
-  '^OMXC20':    ['.CO'],
-  '^OMXH25':    ['.HE'],
-  'OBX.OL':     ['.OL'],
-  '^BFX':       ['.BR'],
-  'PSI20.LS':   ['.LS'],
-  '^ATX':       ['.VI'],
-  '^ISEQ':      ['.IR'],
-  'WIG20.WA':   ['.WA'],
-  '^PX':        ['.PR'],
-  '^BUX':       ['.BD'],
-  '^GSPTSE':    ['.TO'],
-  '^N225':      ['.T'],
-  'TOPIX100.T': ['.T'],
-  '^HSI':       ['.HK'],
-  '000001.SS':  ['.SS', '.SZ'],
-  '000300.SS':  ['.SS', '.SZ'],
-  '^BSESN':     ['.NS'],
-  '^NSEI':      ['.NS'],
-  '^KS11':      ['.KS'],
-  '^AXJO':      ['.AX'],
-  '^STI':       ['.SI'],
-  '^BVSP':      ['.SA'],
-  '^MXX':       ['.MX'],
-  '^MERV':      ['.BA'],
-  '^IPSA':      ['.SN'],
-  'XU100.IS':   ['.IS'],
-  // US broad indices: all US-country companies in DICT (subset of S&P 500)
-  '^GSPC':      ['__US__'],
-  '^IXIC':      ['__US__'],
+  "^N225": [".T"],
+  "TOPIX100.T": [".T"],
+  "^HSI": [".HK"],
+  "000001.SS": [".SS",".SZ"],
+  "000300.SS": [".SS",".SZ"],
+  "^BSESN": [".NS"],
+  "^NSEI": [".NS"],
+  "^KS11": [".KS"],
+  "^STI": [".SI"],
+  "^PX": [".PR"],
+  "OBX.OL": [".OL"],
+  "^IXIC": ["__US__"],
 }
 
-// Explicit whitelists take priority
-const EXPLICIT_MAP = {
-  'IGBM.MA':    IGBM,
-  '^IBEX':      IBEX35,
-  '^GDAXI':     DAX40,
-  '^FCHI':      CAC40,
-  '^FTSE':      FTSE100,
-  '^SSMI':      SMI20,
-  '^AEX':       AEX25,
-  '^OMX':       OMX30,
-  '^DJI':       DOW30,
-  '^NDX':       NASDAQ100,
-}
+function dedup(list){const s=new Set();return list.filter(c=>{if(s.has(c.ticker))return false;s.add(c.ticker);return true})}
 
-function dedup(list) {
-  const seen = new Set()
-  return list.filter(c => { if (seen.has(c.ticker)) return false; seen.add(c.ticker); return true })
-}
-
-// Returns [{ ticker, name, cur, sector }] for a given index symbol
-export function getIndexConstituents(indexSymbol) {
-  // 1. Explicit whitelist — preserve the defined order
-  if (EXPLICIT_MAP[indexSymbol]) {
-    const whitelist = new Set(EXPLICIT_MAP[indexSymbol])
-    return dedup(
-      DICT
-        .filter(d => whitelist.has(d[1]))
-        .map(([name, ticker,, cur, superSector]) => ({ ticker, name, cur, sector: superSector }))
-    )
+export function getIndexConstituents(indexSymbol){
+  if (IDX[indexSymbol]) {
+    const byTicker = new Map(DICT.map(d => [d[1], d]))
+    return dedup(IDX[indexSymbol].map(t => byTicker.get(t)).filter(Boolean)
+      .map(([name,ticker,,cur,superSector]) => ({ ticker, name, cur, sector: superSector })))
   }
-
-  // 2. Suffix-based for unambiguous markets
   const suffixes = SUFFIX_MAP[indexSymbol]
   if (!suffixes) return []
-
-  if (suffixes[0] === '__US__') {
-    return dedup(
-      DICT
-        .filter(d => d[2] === 'US')
-        .map(([name, ticker,, cur, superSector]) => ({ ticker, name, cur, sector: superSector }))
-    )
-  }
-
-  return dedup(
-    DICT
-      .filter(d => suffixes.some(s => d[1].endsWith(s)))
-      .map(([name, ticker,, cur, superSector]) => ({ ticker, name, cur, sector: superSector }))
-  )
+  if (suffixes[0] === '__US__')
+    return dedup(DICT.filter(d=>d[2]==='US').map(([name,ticker,,cur,superSector])=>({ticker,name,cur,sector:superSector})))
+  return dedup(DICT.filter(d=>suffixes.some(s=>d[1].endsWith(s))).map(([name,ticker,,cur,superSector])=>({ticker,name,cur,sector:superSector})))
 }

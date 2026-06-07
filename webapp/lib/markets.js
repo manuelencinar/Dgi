@@ -4,8 +4,8 @@ export const MARKETS = [
   { symbol:'^DJI',     name:'Dow Jones',         country:'EE. UU.',    flag:'🇺🇸', region:'América' },
   { symbol:'^IXIC',    name:'Nasdaq Composite',  country:'EE. UU.',    flag:'🇺🇸', region:'América' },
   { symbol:'^NDX',     name:'Nasdaq 100',         country:'EE. UU.',    flag:'🇺🇸', region:'América' },
-  { symbol:'^RUT',     name:'Russell 2000',       country:'EE. UU.',    flag:'🇺🇸', region:'América' },
-  { symbol:'^VIX',     name:'VIX Volatilidad',   country:'EE. UU.',    flag:'🇺🇸', region:'América' },
+  { symbol:'^DJT',     name:'Dow Jones Transportation', country:'EE. UU.', flag:'🇺🇸', region:'América' },
+  { symbol:'^DJA',     name:'Dow Jones Composite', country:'EE. UU.',   flag:'🇺🇸', region:'América' },
   { symbol:'^GSPTSE',  name:'S&P/TSX Composite', country:'Canadá',     flag:'🇨🇦', region:'América' },
   { symbol:'^BVSP',    name:'IBOVESPA',           country:'Brasil',     flag:'🇧🇷', region:'América' },
   { symbol:'^MXX',     name:'S&P/BMV IPC',        country:'México',     flag:'🇲🇽', region:'América' },
@@ -18,7 +18,11 @@ export const MARKETS = [
   { symbol:'^GDAXI',   name:'DAX',                country:'Alemania',    flag:'🇩🇪', region:'Europa' },
   { symbol:'^FCHI',    name:'CAC 40',             country:'Francia',     flag:'🇫🇷', region:'Europa' },
   { symbol:'^IBEX',    name:'IBEX 35',            country:'España',      flag:'🇪🇸', region:'Europa' },
-  { symbol:'IGBM.MA',  name:'IGBM',               country:'España',      flag:'🇪🇸', region:'Europa' },
+  { symbol:'INDCT.MC', name:'IBEX Construcción',  country:'España',      flag:'🇪🇸', region:'Europa' },
+  { symbol:'INDS.MC',  name:'IBEX Servicios',     country:'España',      flag:'🇪🇸', region:'Europa' },
+  { symbol:'^FTMC',    name:'FTSE 250',           country:'Reino Unido', flag:'🇬🇧', region:'Europa' },
+  { symbol:'^OMXO20GI',name:'Oslo OMXO20',        country:'Noruega',     flag:'🇳🇴', region:'Europa' },
+  { symbol:'FPXAA.PR', name:'PX Praga',           country:'Rep. Checa',  flag:'🇨🇿', region:'Europa' },
   { symbol:'^SSMI',    name:'SMI',                country:'Suiza',       flag:'🇨🇭', region:'Europa' },
   { symbol:'^AEX',     name:'AEX',                country:'Países Bajos',flag:'🇳🇱', region:'Europa' },
   { symbol:'^OMX',     name:'OMX Stockholm 30',   country:'Suecia',      flag:'🇸🇪', region:'Europa' },
@@ -49,6 +53,16 @@ export const MARKETS = [
   // ── ETFs globales ────────────────────────────────────────────────────
   { symbol:'EEM',      name:'MSCI Emerging Mkts', country:'Global',       flag:'🌍', region:'ETFs globales' },
   { symbol:'URTH',     name:'MSCI World Index',   country:'Global',       flag:'🌍', region:'ETFs globales' },
+  { symbol:'^DJGT',    name:'Dow Jones Global Titans', country:'Global',  flag:'🌍', region:'ETFs globales' },
 ]
 
 export const REGIONS = [...new Set(MARKETS.map(m => m.region))]
+
+// Índices con membresía actualizada desde indices-empresas.xlsx.
+// Los que NO están aquí se marcan con * en el panel de admin (sin actualizar).
+export const UPDATED_INDICES = new Set([
+  '^DJT', '^DJA', '^NDX', '^GSPTSE', '^BVSP', '^MXX', '^MERV', '^IPSA', '^STOXX50E',
+  '^SSMI', '^AEX', '^OMX', '^BFX', 'PSI20.LS', '^OMXH25', '^OMXC20', '^OMXO20GI',
+  '^ATX', '^ISEQ', 'WIG20.WA', 'FPXAA.PR', '^BUX', 'XU100.IS', '^AXJO', '^FTSE',
+  '^FTMC', '^GDAXI', '^FCHI', '^IBEX', 'INDCT.MC', 'INDS.MC', '^DJGT', '^GSPC', '^DJI',
+])

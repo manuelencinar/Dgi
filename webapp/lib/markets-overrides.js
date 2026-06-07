@@ -1,7 +1,7 @@
 // MARKETS efectivos = MARKETS estáticos (lib/markets.js) + overrides de Supabase.
 // SOLO server (service_role). Los overrides solo editan/desactivan (no añaden/borran).
 import { createClient } from '@supabase/supabase-js'
-import { MARKETS } from '@/lib/markets'
+import { MARKETS, UPDATED_INDICES } from '@/lib/markets'
 
 function sb() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -10,8 +10,9 @@ function sb() {
 export function applyMarketOverrides(base, overrides) {
   const ov = new Map((overrides || []).map(o => [o.symbol, o]))
   return base.map(m => {
+    const updated = UPDATED_INDICES.has(m.symbol)
     const o = ov.get(m.symbol)
-    if (!o) return { ...m, active: true }
+    if (!o) return { ...m, active: true, updated }
     return {
       ...m,
       name: o.name ?? m.name,
@@ -19,6 +20,7 @@ export function applyMarketOverrides(base, overrides) {
       region: o.region ?? m.region,
       yf_ticker: o.yf_ticker || m.symbol,
       active: o.active !== false,
+      updated,
     }
   })
 }
