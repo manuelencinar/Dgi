@@ -68,6 +68,17 @@ export default function EmpresasAdminClient({ companies: initial, sectors, count
     finally { setLoading(s => { const n = new Set(s); n.delete(ticker); return n }) }
   }
 
+  const [triggering, setTriggering] = useState(false)
+  const triggerAll = async () => {
+    if (!confirm('Dispara el run completo de yfinance en GitHub (procesa todo el DICT, ~1 h). Incluye las empresas nuevas. ¿Continuar?')) return
+    setTriggering(true); setMsg(null)
+    try {
+      const res = await fetch('/api/admin/trigger-github-action', { method: 'POST' })
+      const d = await res.json()
+      setMsg(res.ok ? { t: 'ok', m: '✓ Workflow disparado en GitHub — los fundamentales completos llegarán en ~1 h' } : { t: 'err', m: d.error || 'Error' })
+    } catch (e) { setMsg({ t: 'err', m: String(e) }) } finally { setTriggering(false) }
+  }
+
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase()
     return rows.filter(r =>
@@ -148,7 +159,12 @@ export default function EmpresasAdminClient({ companies: initial, sectors, count
     <Card>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
         <SectionTitle>Empresas ({filtered.length.toLocaleString('es-ES')})</SectionTitle>
-        <button onClick={exportSel} style={ghost}>↓ Exportar CSV</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={exportSel} style={ghost}>↓ Exportar CSV</button>
+          <button onClick={triggerAll} disabled={triggering} style={{ ...ghost, color: '#818cf8', borderColor: 'rgba(99,102,241,0.3)' }}>
+            {triggering ? '…' : '↻ Actualizar fundamentales (GitHub)'}
+          </button>
+        </div>
       </div>
 
       {/* Filtros */}
