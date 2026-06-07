@@ -7,7 +7,7 @@ import { findDictEntry } from '@/lib/dict'
 import { getCompanyQuote } from '@/lib/company-quote'
 import { calculateROIC } from '@/lib/metrics'
 import { buildHealthPanel } from '@/lib/health'
-import { netYield, getWHT } from '@/lib/screener'
+import { netYield, getWHT, resolveRoic } from '@/lib/screener'
 import {
   getCompanyDetail,
   computeMoat,
@@ -231,7 +231,7 @@ export default async function EmpresaPage({ params, searchParams }) {
     date: detail.last_manual_import ?? null,
   } : null
   const finScalars = detail ? {
-    roic_display: detail.roic_display ?? null,
+    roic_display: resolveRoic(detail),   // cae a reported/tangible si roic_display es null (igual que Salud)
     roe: detail.roe ?? null,
     roa: detail.roa ?? null,
     net_debt_ebitda: detail.net_debt_ebitda ?? detail.debt_ebitda ?? null,
