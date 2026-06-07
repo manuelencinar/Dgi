@@ -137,6 +137,52 @@ const STATEMENT_NAMES = [
   'cashflow_annual', 'cashflow_quarterly',
 ]
 
+// Campo interno → etiqueta en español usada por la app (FinancialTables / lib).
+// Las etiquetas "importantes" coinciden con IMPORTANT_IS/BS/CF para que se rendericen en negrita.
+const INTERNAL_TO_LABEL = {
+  // Cuenta de resultados
+  revenue: 'Ingresos Totales', net_income: 'Beneficio Neto', ebitda: 'EBITDA',
+  ebit: 'EBIT / Bº Operativo', tax_provision: 'Provisión de Impuestos',
+  pretax_income: 'Beneficio Antes de Impuestos', operating_expense: 'Gastos Operativos',
+  eps_basic: 'BPA Básico', eps_diluted: 'BPA Diluido',
+  shares_basic: 'Acciones Medias Básicas', shares_diluted: 'Acciones Medias Diluidas',
+  research_development: 'I+D', dps_year: 'Dividendo por Acción',
+  // Balance
+  total_assets: 'Activos Totales', total_liabilities: 'Total Pasivo',
+  stockholders_equity: 'Patrimonio Neto', cash_and_equivalents: 'Caja y Equivalentes',
+  total_debt: 'Deuda Total', long_term_debt: 'Deuda a L/P', short_term_debt: 'Deuda a C/P',
+  inventory: 'Inventario', goodwill: 'Fondo de Comercio',
+  current_assets: 'Activos Corrientes', current_liabilities: 'Pasivo Corriente',
+  retained_earnings: 'Ganancias Retenidas', net_ppe: 'Inmovilizado Material Neto',
+  working_capital: 'Capital de Trabajo',
+  // Flujo de caja
+  operating_cash_flow: 'Cash Flow Operativo', free_cash_flow: 'Flujo de Caja Libre',
+  capex: 'Capex', dividends_paid: 'Dividendos Pagados', share_repurchases: 'Recompra de Acciones',
+  depreciation: 'Amortización y Depreciación', debt_issuance: 'Emisión de Deuda',
+  debt_repayment: 'Amortización de Deuda', change_in_cash: 'Variación de Caja',
+  ending_cash: 'Posición de Caja Final', stock_compensation: 'Compensación en Acciones',
+}
+
+// Construye un estado financiero en formato {columns:[años desc], data:{etiqueta:[vals]}}.
+function buildStmt(raw) {
+  const labeled = {}
+  const yearsSet = new Set()
+  for (const [internal, yd] of Object.entries(raw)) {
+    const label = INTERNAL_TO_LABEL[internal]
+    if (!label) continue
+    labeled[label] = yd
+    Object.keys(yd).forEach(y => yearsSet.add(parseInt(y, 10)))
+  }
+  const years = [...yearsSet].filter(y => !isNaN(y)).sort((a, b) => b - a)
+  if (!years.length || !Object.keys(labeled).length) return null
+  const columns = years.map(String)
+  const data = {}
+  for (const [label, yd] of Object.entries(labeled)) {
+    data[label] = years.map(y => (yd[y] != null ? yd[y] : (yd[String(y)] != null ? yd[String(y)] : null)))
+  }
+  return { columns, data }
+}
+
 // ── helpers de matriz ───────────────────────────────────────────────────────
 function cell(grid, r, c) {
   const row = grid[r]
@@ -351,11 +397,16 @@ export function processSheet(grid, ticker) {
   const derived = calcDerived(record, calcHist)
   for (const [k, v] of Object.entries(derived)) if (v != null) record[k] = v
 
-  // NOTA: no se emiten los 6 jsonb de estados financieros completos
-  // (income_statement_annual, etc.) porque su formato {partida:{año:valor}}
-  // es incompatible con el formato {columns,data} que usan yfinance y
-  // FinancialTables. El importador alimenta históricos + escalares + dividendos.
-  // El vintage de cada estado se deriva en el API a partir de los históricos.
+  // Estados financieros completos en formato {columns,data} (el mismo que yfinance
+  // y FinancialTables) — así las empresas sin datos de yfinance también muestran
+  // las tablas. En el API se mergean por año con lo existente.
+  for (let i = 0; i < STATEMENT_NAMES.length; i++) {
+    if (i < blocks.length) {
+      const [br, bc] = blocks[i]
+      const stmt = buildStmt(parseBlock(grid, br, bc))
+      if (stmt) record[STATEMENT_NAMES[i]] = stmt
+    }
+  }
 
   return record
 }

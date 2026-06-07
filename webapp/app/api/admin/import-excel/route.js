@@ -17,13 +17,44 @@ function mergeFlat(existing, incoming, protectedField, overwrite) {
   return { ...ex, ...incoming }
 }
 
-// Merge de jsonb anidado {partida: {año: valor}}.
-function mergeNested(existing, incoming, protectedField, overwrite) {
-  const out = existing && typeof existing === 'object' ? { ...existing } : {}
-  for (const [field, years] of Object.entries(incoming || {})) {
-    out[field] = mergeFlat(out[field], years, protectedField, overwrite)
+// Estado financiero {columns:[años], data:{partida:[vals]}} → mapa {año: {partida: val}}
+function stmtToMap(stmt) {
+  const out = {}, disp = {}
+  if (!stmt || !Array.isArray(stmt.columns) || !stmt.data) return { out, disp }
+  stmt.columns.forEach((col, i) => {
+    const y = String(col).slice(0, 4)
+    disp[y] = col
+    out[y] = out[y] || {}
+    for (const [lbl, arr] of Object.entries(stmt.data)) {
+      const v = Array.isArray(arr) ? arr[i] : null
+      if (v != null) out[y][lbl] = v
+    }
+  })
+  return { out, disp }
+}
+
+// Merge de estados financieros {columns,data} por año y partida. Nunca borra años.
+function mergeStmt(existing, incoming, protectedField, overwrite) {
+  const A = stmtToMap(existing), B = stmtToMap(incoming)
+  const years = [...new Set([...Object.keys(A.out), ...Object.keys(B.out)])]
+    .map(Number).filter(n => !isNaN(n)).sort((a, b) => b - a)
+  if (!years.length) return existing || incoming
+  const columns = years.map(y => A.disp[y] ?? B.disp[y] ?? String(y))
+  const labels = [...new Set([
+    ...Object.values(A.out).flatMap(o => Object.keys(o)),
+    ...Object.values(B.out).flatMap(o => Object.keys(o)),
+  ])]
+  const data = {}
+  for (const lbl of labels) {
+    data[lbl] = years.map(y => {
+      const a = A.out[String(y)]?.[lbl] ?? null
+      const b = B.out[String(y)]?.[lbl] ?? null
+      if (overwrite) return b ?? a
+      if (protectedField) return a ?? b          // año/partida existente gana
+      return b ?? a                              // no protegido: el nuevo gana, conserva lo existente
+    })
   }
-  return out
+  return { columns, data }
 }
 
 // ── POST: importar registros ya parseados en el cliente ─────────────────────
@@ -77,7 +108,7 @@ export async function POST(request) {
         const isProtected = manualFields[col] === true
 
         if (STATEMENT_COLS.has(col)) {
-          payload[col] = mergeNested(existing?.[col], value, isProtected, overwrite)
+          payload[col] = mergeStmt(existing?.[col], value, isProtected, overwrite)
           manualFields[col] = true
           fieldsAdded.push(col)
         } else if (HISTORY_COLS.has(col)) {
@@ -93,16 +124,30 @@ export async function POST(request) {
         }
       }
 
-      // data_vintage por estado financiero, derivado de los históricos ya mergeados.
-      // (El importador alimenta históricos {año:val}; los estados completos
-      //  {columns,data} siguen viniendo de yfinance.)
-      const vintageMap = {
+      // data_vintage: año más reciente de cada estado financiero mergeado.
+      const stmtVintage = {
+        income_statement_annual: 'income_statement_annual_through',
+        income_statement_quarterly: 'income_statement_quarterly_through',
+        balance_sheet_annual: 'balance_sheet_annual_through',
+        balance_sheet_quarterly: 'balance_sheet_quarterly_through',
+        cashflow_annual: 'cashflow_annual_through',
+        cashflow_quarterly: 'cashflow_quarterly_through',
+      }
+      for (const [col, key] of Object.entries(stmtVintage)) {
+        const cols = payload[col]?.columns
+        if (Array.isArray(cols) && cols.length) {
+          const maxY = Math.max(...cols.map(c => parseInt(String(c).slice(0, 4), 10)).filter(n => !isNaN(n)))
+          if (!isNaN(maxY)) dataVintage[key] = maxY
+        }
+      }
+      // Respaldo: si no hubo estado, deriva el vintage anual de los históricos.
+      const histVintage = {
         income_statement_annual_through: 'revenue_history',
         balance_sheet_annual_through: 'assets_history',
         cashflow_annual_through: payload.ocf_history ? 'ocf_history' : 'fcf_history',
       }
-      for (const [key, col] of Object.entries(vintageMap)) {
-        if (payload[col]) {
+      for (const [key, col] of Object.entries(histVintage)) {
+        if (dataVintage[key] == null && payload[col]) {
           const y = vintageOf(payload[col], false)
           if (y != null) dataVintage[key] = y
         }
