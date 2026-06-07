@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { roicForScoring } from '@/lib/metrics'
+import { computeCDR } from '@/lib/capital-discipline'
 
 function sb() {
   return createClient(
@@ -441,6 +442,19 @@ export function buildInsights(data, streak, cagr, dcf) {
     if      (beta < 0.5)  add('mercado', 'positive', `Beta muy baja (${beta.toFixed(2)}) — acción muy defensiva, oscila poco con el mercado.`)
     else if (beta < 0.85) add('mercado', 'positive', `Beta baja (${beta.toFixed(2)}) — comportamiento defensivo, menor volatilidad que el mercado.`)
     else if (beta > 1.5)  add('mercado', 'neutral',  `Beta elevada (${beta.toFixed(2)}) — acción más volátil que el mercado.`)
+  }
+
+  // ── DISCIPLINA DE CAPITAL (CDR) ────────────────────────────────────────
+  const cdr = computeCDR(data.cashflow_annual, data.balance_sheet_annual)
+  if (cdr) {
+    if (cdr.yearsAbove100 >= 3) {
+      add('dividendo', 'negative', 'Distribución sistemáticamente superior al FCF en los últimos años — el dividendo puede estar siendo financiado con deuda. Revisar sostenibilidad antes de invertir.')
+    } else if (cdr.cdrLastYear != null && cdr.cdrLastYear > 100 && cdr.lastYear) {
+      add('dividendo', 'neutral', `La distribución total (dividendos + recompras + adquisiciones) superó el FCF generado en ${cdr.lastYear.year} — revisar evolución de la deuda.`)
+    }
+    if (cdr.avg4y != null && cdr.avg4y < 60) {
+      add('dividendo', 'positive', 'Disciplina financiera excepcional — la empresa distribuye menos del 60% de su FCF y retiene caja o reduce deuda.')
+    }
   }
 
   return insights

@@ -3,6 +3,7 @@
 // solo consume los campos ya calculados de company_fundamentals.
 import { detectSectorType } from '@/lib/dgi-score'
 import { resolveRoic } from '@/lib/screener'
+import { computeCDR } from '@/lib/capital-discipline'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -80,9 +81,10 @@ const ROIC_T = {
   reit: [4, 8], utilities: [4, 8],
 }
 
-function row(key, name, color, diagSet, valueStr) {
-  return { key, name, color: COL[color], diagnosis: DIAG[diagSet][color], value: valueStr }
+function row(key, name, color, diagSet, valueStr, note) {
+  return { key, name, color: COL[color], diagnosis: DIAG[diagSet][color], value: valueStr, note: note || null }
 }
+const degrade = c => c === 'green' ? 'yellow' : c === 'yellow' ? 'red' : c
 
 export function buildSemaforo(detail, sectorKey) {
   const roic = resolveRoic(detail)
@@ -115,13 +117,19 @@ export function buildSemaforo(detail, sectorKey) {
     rows.push(row('deuda', 'Deuda', c, 'deuda', fmtVal(nde, 'x')))
   }
 
-  // 3 · Dividendo (payout)
+  // 3 · Dividendo (payout) — ajustado por disciplina de capital (CDR)
   const payout = isBankish ? payoutEps : (payoutFcf ?? payoutEps)
   const permissive = sectorKey === 'reit' || sectorKey === 'utilities'
   {
     const [t1, t2] = permissive ? [80, 95] : [60, 80]
-    const c = classify(payout, t1, t2, false)
-    rows.push(row('dividendo', 'Dividendo', c, 'dividendo', fmtVal(payout, '%')))
+    let c = classify(payout, t1, t2, false)
+    let note = null
+    const cdr = computeCDR(detail.cashflow_annual, detail.balance_sheet_annual)
+    if (cdr?.avg4y != null) {
+      if (cdr.avg4y > 110) { c = 'red'; note = 'Distribución sistemáticamente superior al FCF — dividendo financiado parcialmente con deuda' }
+      else if (cdr.avg4y >= 90) { c = degrade(c); note = 'Distribución en el límite del FCF generado' }
+    }
+    rows.push(row('dividendo', 'Dividendo', c, 'dividendo', fmtVal(payout, '%'), note))
   }
 
   // 4 · Márgenes (margen operativo)

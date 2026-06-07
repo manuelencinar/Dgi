@@ -15,16 +15,16 @@ export function Semaforo({ rows }) {
       borderRadius: 10, overflow: 'hidden',
     }}>
       {rows.map((r, i) => (
-        <div key={r.key} style={{
-          display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px',
-          borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.05)',
-        }}>
-          <span style={{ width: 11, height: 11, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
-          <span style={{ fontSize: 13, color: '#c8d0e0', flex: 1, minWidth: 0 }}>{r.name}</span>
-          <span style={{ fontSize: 11, fontWeight: 700, color: r.color, flexShrink: 0 }}>{r.diagnosis}</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#e0e8f0', width: 56, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
-            {r.value}
-          </span>
+        <div key={r.key} style={{ padding: '9px 14px', borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ width: 11, height: 11, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: '#c8d0e0', flex: 1, minWidth: 0 }}>{r.name}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: r.color, flexShrink: 0 }}>{r.diagnosis}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#e0e8f0', width: 56, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+              {r.value}
+            </span>
+          </div>
+          {r.note && <p style={{ fontSize: 10.5, color: '#fbbf24', margin: '4px 0 0 21px', lineHeight: 1.4 }}>{r.note}</p>}
         </div>
       ))}
     </div>

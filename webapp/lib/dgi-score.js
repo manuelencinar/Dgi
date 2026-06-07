@@ -1,5 +1,6 @@
 // DGI Scoring System v2 — lógica completa sector-aware
 import { roicForScoring } from '@/lib/metrics'
+import { computeCDR } from '@/lib/capital-discipline'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -551,6 +552,17 @@ function buildPenalties(data, sectorType) {
 
   const mt = exMarginTrend(data)
   if (mt != null && mt < -5) penalties.push({ reason: 'Deterioro sostenido de márgenes (>5pp en 4 años)', amount: 0.3 })
+
+  // Disciplina de capital (CDR = distribución / FCF). Misma lógica que el gráfico.
+  const cdr = computeCDR(data.cashflow_annual, data.balance_sheet_annual)
+  if (cdr) {
+    let cdrPenalized = false
+    if (cdr.yearsAbove100 >= 3) { penalties.push({ reason: 'Distribución superior al FCF en 3 o más de los últimos 4 años', amount: 1.0 }); cdrPenalized = true }
+    else if (cdr.consec2) { penalties.push({ reason: 'Distribución superior al FCF en 2 de los últimos 4 años', amount: 0.5 }); cdrPenalized = true }
+    if (cdrPenalized && cdr.netDebtChangePct != null && cdr.netDebtChangePct > 30) {
+      penalties.push({ reason: 'Deuda neta creciente mientras la distribución supera el FCF', amount: 0.5 })
+    }
+  }
 
   return penalties
 }

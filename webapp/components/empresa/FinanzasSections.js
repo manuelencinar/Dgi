@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, BarChart, ComposedChart, AreaChart, Bar, Line, Area,
   XAxis, YAxis, Tooltip, Legend, Cell, CartesianGrid, ReferenceLine,
 } from 'recharts'
+import { computeCDR } from '@/lib/capital-discipline'
 
 const C = {
   blue: '#60a5fa', green: '#34d399', indigo: '#818cf8', red: '#f87171',
@@ -239,22 +240,14 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
     const roicScalar = num(scalars.roic_display)
     if (roicScalar != null && profit.length) profit[profit.length - 1].roic = roicScalar
 
-    // Capital allocation
-    const capYears = years(f.fcf, f.dividends, f.buybacks, f.capex)
-    const capital = capYears.map((y, idx) => {
-      const fcf = f.fcf[y] ?? 0
-      const div = Math.abs(f.dividends[y] ?? 0)
-      const buy = Math.abs(f.buybacks[y] ?? 0)
-      const cap = Math.abs(f.capex[y] ?? 0)
-      const acq = Math.abs(f.acquisitions[y] ?? 0)
-      const prevY = capYears[idx - 1]
-      const nd = (f.totalDebt[y] != null && f.cash[y] != null) ? f.totalDebt[y] - f.cash[y] : null
-      const ndPrev = (prevY != null && f.totalDebt[prevY] != null && f.cash[prevY] != null) ? f.totalDebt[prevY] - f.cash[prevY] : null
-      const debtRed = (nd != null && ndPrev != null && nd < ndPrev) ? ndPrev - nd : 0
-      const used = div + buy + cap + acq + debtRed
-      const retained = fcf - used
-      return { year: y, fcf, dividends: div, buybacks: buy, capex: cap, acquisitions: acq, debtRed, retainedPos: retained >= 0 ? retained : 0, retainedNeg: retained < 0 ? retained : 0, retained }
-    })
+    // Capital allocation (CDR compartido — el capex NO entra, ya está en el FCF)
+    const cdr = computeCDR(cashflow, balance)
+    const capital = (cdr?.byYear || []).map(r => ({
+      year: r.year, fcf: r.fcf, dividends: r.div, buybacks: r.buy, acquisitions: r.acq,
+      restoPos: r.resto != null && r.resto >= 0 ? r.resto : 0,
+      restoNeg: r.resto != null && r.resto < 0 ? r.resto : 0,
+      resto: r.resto,
+    }))
 
     // Por acción
     const share = years(f.epsDiluted, f.shares, f.dps).map(y => {
@@ -268,7 +261,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
       }
     })
 
-    return { margins, debt, intcov, profit, capital, share, f }
+    return { margins, debt, intcov, profit, capital, share, f, cdr }
   }, [income, cashflow, balance, divHistory, scalars])
 
   // tendencias texto
@@ -280,18 +273,23 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
   })()
 
   const mUnit = chartUnit(d.debt.flatMap(r => [r.deuda, r.caja]))
-  const capUnit = chartUnit(d.capital.flatMap(r => [r.dividends, r.buybacks, r.capex, r.fcf]))
+  const capUnit = chartUnit(d.capital.flatMap(r => [r.dividends, r.buybacks, r.acquisitions, r.fcf]))
 
   // resúmenes
-  const lastCap = d.capital[d.capital.length - 1]
-  const lastShare = d.share[d.share.length - 1]
   const lastDebt = d.debt[d.debt.length - 1]
-  const lastProfit = d.profit[d.profit.length - 1]
   const ndNow = lastDebt?.neta
   const fcfNow = d.f.fcf[Object.keys(d.f.fcf).map(Number).sort((a, b) => b - a)[0]]
   const yearsToPay = (ndNow != null && ndNow > 0 && fcfNow > 0) ? (ndNow / fcfNow) : null
-  const mcap = num(scalars.market_cap_m) != null ? num(scalars.market_cap_m) * 1e6 : null
-  const tsr = (mcap && lastCap) ? (lastCap.dividends + lastCap.buybacks) / mcap * 100 : null
+
+  // Capital allocation — métricas del último año + texto de deuda neta
+  const ly = d.cdr?.lastYear
+  const capMetrics = ly && ly.fcf > 0 ? {
+    div: ly.div / ly.fcf * 100,
+    shr: (ly.div + ly.buy) / ly.fcf * 100,
+    dist: (ly.div + ly.buy + ly.acq) / ly.fcf * 100,
+  } : null
+  const capOver = capMetrics && (capMetrics.div > 100 || capMetrics.shr > 100 || capMetrics.dist > 100)
+  const ndText = netDebtText(d.cdr)
 
   const shareNote = shareText(d.share)
 
@@ -405,34 +403,37 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
       <Section title="¿Cómo usa la empresa su dinero?" subtitle="Distribución del flujo de caja libre por año">
         {d.capital.length < 1 ? <Placeholder /> : <>
           <Chart h={220}>
-            <BarChart data={d.capital} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
+            <ComposedChart data={d.capital} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
               {grid}
               <XAxis dataKey="year" {...axis} />
               <YAxis {...axis} width={42} tickFormatter={v => fmtU(v, capUnit)} />
-              <Tooltip content={({ active, payload }) => { if (!active || !payload?.length) return null; const p = payload[0].payload; const pc = x => p.fcf ? ` (${(x / p.fcf * 100).toFixed(0)}%)` : ''; return tipBox(p.year, [
-                { l: 'FCF total', v: fmtU(p.fcf, capUnit) },
+              <Tooltip content={({ active, payload }) => { if (!active || !payload?.length) return null; const p = payload[0].payload; const pc = x => p.fcf > 0 ? ` (${(x / p.fcf * 100).toFixed(0)}%)` : ''; return tipBox(p.year, [
+                { l: 'FCF total', v: fmtU(p.fcf, capUnit), c: C.yellow },
                 { l: 'Dividendos', v: fmtU(p.dividends, capUnit) + pc(p.dividends), c: C.green },
-                { l: 'Recompras', v: fmtU(p.buybacks, capUnit) + pc(p.buybacks), c: C.blue },
-                { l: 'Capex', v: fmtU(p.capex, capUnit) + pc(p.capex), c: C.indigo },
-                { l: 'Reduc. deuda', v: fmtU(p.debtRed, capUnit), c: C.orange },
-                { l: 'Adquisiciones', v: fmtU(p.acquisitions, capUnit), c: C.gray },
-                { l: 'Caja retenida', v: fmtU(p.retained, capUnit), c: p.retained < 0 ? C.neg : C.yellow },
-              ], p.retained < 0 ? 'Distribución superior al FCF generado ese año.' : null) }} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                { l: 'Recompras netas', v: fmtU(p.buybacks, capUnit) + pc(p.buybacks), c: C.blue },
+                ...(p.acquisitions > 0 ? [{ l: 'Adquisiciones', v: fmtU(p.acquisitions, capUnit) + pc(p.acquisitions), c: C.orange }] : []),
+                { l: 'Resto (caja/deuda)', v: fmtU(p.resto, capUnit), c: p.resto < 0 ? C.neg : '#94a3b8' },
+              ], p.resto < 0 ? 'Distribución superior al FCF — la diferencia se financió con deuda o caja acumulada.' : null) }} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
               <Legend wrapperStyle={{ fontSize: 10 }} />
               <Bar dataKey="dividends" name="Dividendos" stackId="c" fill={C.green} />
               <Bar dataKey="buybacks" name="Recompras" stackId="c" fill={C.blue} />
-              <Bar dataKey="capex" name="Capex" stackId="c" fill={C.indigo} />
-              <Bar dataKey="debtRed" name="Reduc. deuda" stackId="c" fill={C.orange} />
-              <Bar dataKey="acquisitions" name="Adquisiciones" stackId="c" fill={C.gray} />
-              <Bar dataKey="retainedPos" name="Caja retenida" stackId="c" fill={C.yellow} radius={[2, 2, 0, 0]} />
-              <Bar dataKey="retainedNeg" name="Déficit" stackId="c" fill={C.neg} />
-            </BarChart>
+              <Bar dataKey="acquisitions" name="Adquisiciones" stackId="c" fill={C.orange} />
+              <Bar dataKey="restoPos" name="Resto" stackId="c" fill="#94a3b8" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="restoNeg" name="Déficit" stackId="c" fill={C.neg} stroke={C.neg} strokeDasharray="3 2" />
+              <Line dataKey="fcf" name="FCF" stroke={C.yellow} strokeWidth={2} strokeDasharray="5 4" dot={{ r: 2.5, fill: C.yellow }} />
+            </ComposedChart>
           </Chart>
           <div className="fin-3m" style={{ marginTop: 14 }}>
-            <Mini label="% FCF a dividendos" value={lastCap?.fcf ? (lastCap.dividends / lastCap.fcf * 100).toFixed(0) + '%' : '—'} />
-            <Mini label="% FCF a recompras" value={lastCap?.fcf ? (lastCap.buybacks / lastCap.fcf * 100).toFixed(0) + '%' : '—'} />
-            <Mini label="Retorno al accionista" value={tsr != null ? tsr.toFixed(1) + '%' : '—'} />
+            <Mini label="Dividendo / FCF" value={capMetrics ? capMetrics.div.toFixed(0) + '%' : '—'} color={capMetrics ? band(capMetrics.div, 60, 90) : null} />
+            <Mini label="Retribución accionista / FCF" value={capMetrics ? capMetrics.shr.toFixed(0) + '%' : '—'} color={capMetrics ? band(capMetrics.shr, 80, 110) : null} />
+            <Mini label="Distribución total / FCF" value={capMetrics ? capMetrics.dist.toFixed(0) + '%' : '—'} color={capMetrics ? band(capMetrics.dist, 90, 120) : null} />
           </div>
+          {capOver && ly && (
+            <p style={{ fontSize: 12, color: '#fbbf24', marginTop: 8 }}>
+              En {ly.year} la empresa distribuyó más de lo que generó — la diferencia fue financiada con deuda o caja acumulada.
+            </p>
+          )}
+          {ndText && <p style={{ fontSize: 12, color: ndText.color, marginTop: 6 }}>{ndText.text}</p>}
         </>}
       </Section>
 
@@ -468,13 +469,23 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
 }
 
 // ── auxiliares de presentación ──────────────────────────────────────────────
-function Mini({ label, value }) {
+function Mini({ label, value, color }) {
   return (
     <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
       <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 4 }}>{label}</p>
-      <p style={{ fontSize: 16, fontWeight: 800, color: '#c8d0e0' }}>{value}</p>
+      <p style={{ fontSize: 16, fontWeight: 800, color: color || '#c8d0e0' }}>{value}</p>
     </div>
   )
+}
+function band(v, g, y) { return v == null ? '#c8d0e0' : v < g ? '#34d399' : v <= y ? '#fbbf24' : '#f87171' }
+function netDebtText(cdr) {
+  if (!cdr || cdr.netDebtChange == null) return null
+  const x = fmtMoney(Math.abs(cdr.netDebtChange))
+  const pct = cdr.netDebtChangePct
+  if (cdr.netDebtChange < 0) return { color: '#34d399', text: `La deuda neta se ha reducido ${x} en los últimos 4 años — señal de disciplina financiera.` }
+  if (pct != null && pct > 50) return { color: '#f87171', text: `La deuda neta ha crecido significativamente (${x}) en los últimos 4 años — las distribuciones pueden estar financiándose con deuda.` }
+  if (pct != null && pct > 20) return { color: '#fbbf24', text: `La deuda neta ha crecido ${x} en los últimos 4 años — revisar si las distribuciones son sostenibles.` }
+  return { color: '#8090a8', text: `La deuda neta ha crecido ${x} en los últimos 4 años — crecimiento moderado.` }
 }
 const pctN = v => v == null ? '—' : v.toFixed(1) + '%'
 function covColor(v) { return v == null ? '#4a5270' : v > 5 ? '#34d399' : v >= 3 ? '#fbbf24' : '#f87171' }

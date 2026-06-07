@@ -542,6 +542,89 @@ def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_c
 
 # ── Fetch ─────────────────────────────────────────────────────────────────
 
+def _stmt_row(stmt, *labels):
+    """Lee una fila de un estado {columns,data} → {año: valor}."""
+    if not isinstance(stmt, dict) or "data" not in stmt or "columns" not in stmt:
+        return {}
+    d = stmt["data"]; cols = stmt["columns"]
+    arr = None
+    for l in labels:
+        if isinstance(d.get(l), list):
+            arr = d[l]; break
+    if arr is None:
+        return {}
+    out = {}
+    for i, c in enumerate(cols):
+        try:
+            y = int(str(c)[:4])
+        except Exception:
+            continue
+        v = arr[i] if i < len(arr) else None
+        if v is not None:
+            try:
+                out[y] = float(v)
+            except Exception:
+                pass
+    return out
+
+
+def compute_cdr_fields(cf_stmt, bs_stmt):
+    """Capital Discipline Ratio — misma lógica que lib/capital-discipline.js.
+    CDR = (dividendos + recompras + adquisiciones) / FCF × 100."""
+    fcf = _stmt_row(cf_stmt, "Flujo de Caja Libre", "Free Cash Flow")
+    div = _stmt_row(cf_stmt, "Dividendos Pagados", "Dividends Paid", "Common Stock Dividend Paid")
+    buy = _stmt_row(cf_stmt, "Recompra de Acciones", "Repurchase Of Capital Stock", "Common Stock Repurchased")
+    acq = _stmt_row(cf_stmt, "Adquisición de Negocios", "Purchase Of Business", "Net Business Purchase And Sale")
+    debt = _stmt_row(bs_stmt, "Deuda Total", "Total Debt")
+    cash = _stmt_row(bs_stmt, "Caja y Equivalentes", "Cash And Cash Equivalents")
+
+    yrs = sorted(set(list(fcf) + list(div) + list(buy)))
+    by = []
+    for y in yrs:
+        f = fcf.get(y)
+        d_ = abs(div.get(y, 0.0)); b = abs(buy.get(y, 0.0)); a = abs(acq.get(y, 0.0))
+        cdr = ((d_ + b + a) / f * 100) if (f is not None and f > 0) else None
+        by.append((y, cdr))
+    if not by:
+        return {}
+
+    last4 = by[-4:]
+    cdrs4 = [c for (_, c) in last4 if c is not None]
+    avg4 = sum(cdrs4) / len(cdrs4) if cdrs4 else None
+    above = sum(1 for (_, c) in last4 if c is not None and c > 100)
+    last_cdr = by[-1][1]
+
+    nd = {y: debt[y] - cash[y] for y in debt if y in cash}
+    nd_pct = None
+    if len(nd) >= 2:
+        nys = sorted(nd)
+        yE = nys[-1]; yS = nys[max(0, len(nys) - 5)]
+        if nd[yS] != 0:
+            nd_pct = (nd[yE] - nd[yS]) / abs(nd[yS]) * 100
+
+    all_cdr = [c for (_, c) in by if c is not None]
+    all_above = len(all_cdr) > 0 and all(c > 100 for c in all_cdr)
+    flag = None
+    if avg4 is not None:
+        if all_above and nd_pct is not None and nd_pct > 30:
+            flag = "critical"
+        elif avg4 > 110 or above >= 3:
+            flag = "concern"
+        elif (90 <= avg4 <= 110) or above >= 1:
+            flag = "watch"
+        elif avg4 < 60:
+            flag = "excellent"
+        else:
+            flag = "good"
+
+    return {
+        "cdr_last_year": round(last_cdr, 2) if last_cdr is not None else None,
+        "cdr_avg_4y": round(avg4, 2) if avg4 is not None else None,
+        "cdr_years_above_100": above,
+        "capital_discipline_flag": flag,
+    }
+
+
 def fetch_ticker(sym):
     try:
         import yfinance as yf
@@ -693,8 +776,13 @@ def fetch_ticker(sym):
             pass
 
         # ── Estados financieros ───────────────────────────────────────────
+        cf_annual = df_to_stmt(cashflow, 4)
+        bs_annual = df_to_stmt(balance, 4)
+        cdr_fields = compute_cdr_fields(cf_annual, bs_annual)
+
         return sanitize({
             "ticker":           sym,
+            **cdr_fields,
             "current_price":    price,
             "dps":              dps,
             "div_streak":       div_streak,
@@ -746,8 +834,8 @@ def fetch_ticker(sym):
             "invested_capital_tangible": roic_full["invested_capital_tangible"],
             "tax_rate_effective":        roic_full["tax_rate_effective"],
             "income_statement_annual":    df_to_stmt(income, 4),
-            "balance_sheet_annual":       df_to_stmt(balance, 4),
-            "cashflow_annual":            df_to_stmt(cashflow, 4),
+            "balance_sheet_annual":       bs_annual,
+            "cashflow_annual":            cf_annual,
             "income_statement_quarterly": df_to_stmt(q_income, 4),
             "balance_sheet_quarterly":    df_to_stmt(q_balance, 4),
             "cashflow_quarterly":         df_to_stmt(q_cashflow, 4),
