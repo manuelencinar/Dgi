@@ -1081,7 +1081,7 @@ export default function CompanyDetailPage(props) {
     divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, peHistory,
     healthPanel, moat, dcf, projection, dgiScore, insights, roicData, badges, buybacks,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
-    initialTab,
+    manualImport, initialTab,
   } = props
 
   const router       = useRouter()
@@ -1293,6 +1293,7 @@ export default function CompanyDetailPage(props) {
                 income_statement_quarterly={financials?.income_statement_quarterly}
                 balance_sheet_quarterly={financials?.balance_sheet_quarterly}
                 cashflow_quarterly={financials?.cashflow_quarterly}
+                manualImport={manualImport}
               />
             </Card>
           </div>

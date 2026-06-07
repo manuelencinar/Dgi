@@ -10,6 +10,7 @@ Uso:
 """
 
 import argparse
+import json
 import math
 import os
 import re
@@ -865,6 +866,54 @@ def write_admin_log(sb, ok, err, skip, failed_tickers, duration_s):
     except Exception as exc:
         print(f"  (no se pudo escribir admin_logs: {exc})")
 
+# Columnas jsonb históricas {año: valor} — se hace MERGE (nunca se borran años)
+HISTORY_JSONB = [
+    "revenue_history", "net_income_history", "ebitda_history", "ocf_history",
+    "fcf_history", "assets_history", "debt_history", "equity_history",
+    "dps_annual_history", "eps_history", "div_history",
+]
+
+def _as_dict(v):
+    if isinstance(v, dict):
+        return v
+    if isinstance(v, str):
+        try:
+            return json.loads(v)
+        except Exception:
+            return {}
+    return {}
+
+def apply_manual_protection(sb, ticker, data):
+    """Respeta los datos manuales: salta campos protegidos y mergea históricos.
+    Devuelve la lista de campos saltados por protección manual."""
+    skipped = []
+    try:
+        cols = "manual_fields," + ",".join(HISTORY_JSONB)
+        res = sb.table("company_fundamentals").select(cols).eq("ticker", ticker).limit(1).execute()
+        existing = (res.data or [{}])[0] if res.data else {}
+    except Exception:
+        existing = {}
+
+    manual = _as_dict(existing.get("manual_fields"))
+
+    for field in list(data.keys()):
+        if field in ("ticker", "updated_at"):
+            continue
+        # 1) Campo protegido por dato manual → no sobreescribir
+        if manual.get(field) is True:
+            data.pop(field, None)
+            skipped.append(field)
+            continue
+        # 2) Históricos jsonb → merge (los años existentes se conservan, se añaden los nuevos)
+        if field in HISTORY_JSONB:
+            old = _as_dict(existing.get(field))
+            new = _as_dict(data[field])
+            if old:
+                merged = {**new, **old}   # los años existentes ganan; se añaden los nuevos
+                data[field] = merged
+    return skipped
+
+
 def upsert_company(sb, ticker, ttl_days, force):
     if not force and is_fresh(sb, ticker, ttl_days):
         print(f"  [{ticker}] omitido (datos recientes)")
@@ -875,12 +924,25 @@ def upsert_company(sb, ticker, ttl_days, force):
         print(f"  [{ticker}] ERROR: no se pudieron descargar datos")
         return "error"
 
+    # Respetar datos manuales (prioridad permanente sobre yfinance)
+    skipped = apply_manual_protection(sb, ticker, data)
+
     try:
         sb.table("company_fundamentals").upsert(data, on_conflict="ticker").execute()
         price  = data.get("current_price", "?")
         streak = data.get("div_streak", 0)
         cagr   = data.get("div_cagr5", "?")
-        print(f"  [{ticker}] OK — precio={price}  racha={streak}a  div_cagr5={cagr}%")
+        note = f"  (protegidos: {', '.join(skipped)})" if skipped else ""
+        print(f"  [{ticker}] OK — precio={price}  racha={streak}a  div_cagr5={cagr}%{note}")
+        if skipped:
+            try:
+                sb.table("admin_logs").insert({
+                    "event_type": "manual_protect",
+                    "description": f"Campos {', '.join(skipped)} de {ticker} protegidos — dato manual preservado",
+                    "status": "ok",
+                }).execute()
+            except Exception:
+                pass
         return "ok"
     except Exception as exc:
         print(f"  [{ticker}] ERROR upsert: {exc}")

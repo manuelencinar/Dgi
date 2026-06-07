@@ -2,6 +2,7 @@ import { serviceClient } from '@/lib/admin'
 import { getFundamentalsLite, getMissingCompanies, getIncompleteCompanies, getOutdatedCompanies } from '@/lib/admin-stats'
 import DatosClient from '@/components/dashboard/DatosClient'
 import EtfsAdminClient from '@/components/dashboard/EtfsAdminClient'
+import ImportExcelClient from '@/components/dashboard/ImportExcelClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,7 @@ export default async function DatosPage() {
         incomplete={getIncompleteCompanies(fundamentals)}
         outdated={getOutdatedCompanies(fundamentals)}
       />
+      <ImportExcelClient />
       <div style={{ maxWidth: 1100 }}>
         <EtfsAdminClient funds={funds} />
       </div>

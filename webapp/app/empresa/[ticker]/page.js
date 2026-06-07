@@ -225,6 +225,10 @@ export default async function EmpresaPage({ params, searchParams }) {
   const payoutEps  = detail?.payout_eps ?? null
   const priceToBook = detail?.price_to_book ?? null
   const peHistory  = detail ? await buildPeHistory(detail, supabase, t) : []
+  const manualImport = detail ? {
+    active: !!(detail.manual_fields && typeof detail.manual_fields === 'object' && Object.values(detail.manual_fields).some(v => v === true)),
+    date: detail.last_manual_import ?? null,
+  } : null
 
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>
@@ -268,6 +272,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         dpsPrev={dpsPrev}
         upcomingPayments={upcomingPayments}
         peHistory={peHistory}
+        manualImport={manualImport}
         healthPanel={healthPanel}
         initialTab={initialTab}
         roicData={roicData}

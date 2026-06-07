@@ -42,6 +42,20 @@ const PENDING = [
     detail: 'El PER histórico se reconstruye solo para los ejercicios con fundamentales guardados (≈4 años).',
     action: 'Guardar más años de estados financieros o precalcular una serie de PER anual más larga para ampliar el gráfico.',
   },
+  {
+    area: 'Importación Excel',
+    type: 'Precisión',
+    title: 'Estados financieros completos del importador',
+    detail: 'El importador alimenta históricos ({año:valor}), métricas escalares y dividendos. Los 6 jsonb de estados completos (formato {columns,data} que usan las tablas) siguen viniendo de yfinance; el formato del Excel ({partida:{año:valor}}) es incompatible y mezclarlo rompería la tabla.',
+    action: 'Convertir los bloques del Excel al formato {columns,data} y mergear por año con lo de yfinance para que las tablas Macrotrends muestren también datos manuales.',
+  },
+  {
+    area: 'Importación Excel',
+    type: 'Precisión',
+    title: 'Marcado de celdas manuales y vintage trimestral',
+    detail: 'En la ficha hay un badge de sección "Datos parcialmente manuales", pero no un punto por celda (no se guarda provenencia por celda). El data_vintage trimestral ("2024Q3") tampoco se rellena porque el Excel solo aporta años.',
+    action: 'Guardar provenencia por campo/año para marcar celdas concretas y parsear el trimestre del Excel para el vintage trimestral.',
+  },
 ]
 
 const TYPE_COLOR = {

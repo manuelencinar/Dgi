@@ -377,6 +377,17 @@ const TABS = [
   { id: 'CF', label: 'Flujo de caja' },
 ]
 
+function ManualBadge({ manualImport }) {
+  if (!manualImport?.active) return null
+  const date = manualImport.date ? new Date(manualImport.date).toLocaleDateString('es-ES') : null
+  return (
+    <span
+      title={`Algunos campos de esta empresa han sido introducidos manualmente${date ? ` (última importación: ${date})` : ''} y tienen prioridad sobre los datos automáticos.`}
+      style={{ fontSize: 10, fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', padding: '2px 8px', borderRadius: 5, cursor: 'help', whiteSpace: 'nowrap' }}
+    >✏ Datos parcialmente manuales</span>
+  )
+}
+
 export default function FinancialTables({
   isPremium,
   income_statement_annual,
@@ -385,6 +396,7 @@ export default function FinancialTables({
   income_statement_quarterly,
   balance_sheet_quarterly,
   cashflow_quarterly,
+  manualImport,
 }) {
   const [tab,    setTab]    = useState('IS')
   const [period, setPeriod] = useState('annual')
@@ -412,7 +424,10 @@ export default function FinancialTables({
           onClick={() => setOpen(o => !o)}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', marginBottom: open ? 14 : 0 }}
         >
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Cuenta de resultados</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Cuenta de resultados</span>
+            <ManualBadge manualImport={manualImport} />
+          </span>
           <span style={{ fontSize: 14, color: '#4a5270', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
         </button>
 
@@ -451,7 +466,10 @@ export default function FinancialTables({
         onClick={() => setOpen(o => !o)}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', marginBottom: open ? 16 : 0 }}
       >
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Estados financieros completos</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Estados financieros completos</span>
+          <ManualBadge manualImport={manualImport} />
+        </span>
         <span style={{ fontSize: 14, color: '#4a5270', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
       </button>
 
