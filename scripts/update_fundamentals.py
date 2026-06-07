@@ -19,6 +19,9 @@ import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+from dotenv import load_dotenv
+load_dotenv(".env.local")
+
 # ── Rutas ─────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR  = Path(__file__).parent

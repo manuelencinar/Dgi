@@ -19,6 +19,9 @@ import requests
 import yfinance as yf
 from bs4 import BeautifulSoup
 
+from dotenv import load_dotenv
+load_dotenv(".env.local")
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 

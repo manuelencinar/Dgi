@@ -33,7 +33,7 @@ jobs:
           python-version: '3.11'
           cache: pip
           cache-dependency-path: scripts/requirements.txt
-      - run: pip install yfinance supabase pandas
+      - run: pip install -r scripts/requirements.txt
       - name: Actualizar precios
         run: python scripts/update_prices.py --days 2
         env:
@@ -61,7 +61,7 @@ jobs:
           python-version: '3.11'
           cache: pip
           cache-dependency-path: scripts/requirements.txt
-      - run: pip install yfinance supabase pandas numpy
+      - run: pip install -r scripts/requirements.txt
       - name: Actualizar fundamentales
         run: python scripts/update_fundamentals.py
         env:
@@ -83,7 +83,7 @@ jobs:
           python-version: '3.11'
           cache: pip
           cache-dependency-path: scripts/requirements.txt
-      - run: pip install yfinance supabase pandas requests beautifulsoup4 lxml
+      - run: pip install -r scripts/requirements.txt
       - name: Actualizar ETFs y fondos
         run: python scripts/update_funds.py
         env:

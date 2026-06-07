@@ -19,6 +19,9 @@ from typing import Optional
 import yfinance as yf
 import pandas as pd
 
+from dotenv import load_dotenv
+load_dotenv(".env.local")
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s"
