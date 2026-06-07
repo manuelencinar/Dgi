@@ -230,6 +230,13 @@ export default async function EmpresaPage({ params, searchParams }) {
     active: !!(detail.manual_fields && typeof detail.manual_fields === 'object' && Object.values(detail.manual_fields).some(v => v === true)),
     date: detail.last_manual_import ?? null,
   } : null
+  const finScalars = detail ? {
+    roic_display: detail.roic_display ?? null,
+    roe: detail.roe ?? null,
+    roa: detail.roa ?? null,
+    net_debt_ebitda: detail.net_debt_ebitda ?? detail.debt_ebitda ?? null,
+    market_cap_m: detail.market_cap_m ?? null,
+  } : null
 
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>
@@ -274,6 +281,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         upcomingPayments={upcomingPayments}
         peHistory={peHistory}
         manualImport={manualImport}
+        finScalars={finScalars}
         healthPanel={healthPanel}
         initialTab={initialTab}
         roicData={roicData}

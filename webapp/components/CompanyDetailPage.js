@@ -6,6 +6,7 @@ import PriceChart from '@/components/empresa/PriceChart'
 import DividendBars from '@/components/empresa/DividendBars'
 import FinancialTables from '@/components/empresa/FinancialTables'
 import StatementCharts from '@/components/empresa/StatementCharts'
+import FinanzasDeepDive, { FinanzasKpis } from '@/components/empresa/FinanzasSections'
 import FollowButton from '@/components/watchlist/FollowButton'
 import LocalPrice from '@/components/LocalPrice'
 import HealthTwoLevel, { Semaforo } from '@/components/empresa/HealthPanel'
@@ -1081,7 +1082,7 @@ export default function CompanyDetailPage(props) {
     divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, peHistory,
     healthPanel, moat, dcf, projection, dgiScore, insights, roicData, badges, buybacks,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
-    manualImport, initialTab,
+    manualImport, finScalars, initialTab,
   } = props
 
   const router       = useRouter()
@@ -1289,6 +1290,16 @@ export default function CompanyDetailPage(props) {
               />
             </Card>
             <Card>
+              <SectionTitle>KPIs financieros clave</SectionTitle>
+              <FinanzasKpis
+                income={financials?.income_statement_annual}
+                cashflow={financials?.cashflow_annual}
+                balance={financials?.balance_sheet_annual}
+                divHistory={divHistory}
+                scalars={finScalars}
+              />
+            </Card>
+            <Card>
               <FinancialTables
                 isPremium={isPremium}
                 income_statement_annual={financials?.income_statement_annual}
@@ -1298,6 +1309,17 @@ export default function CompanyDetailPage(props) {
                 balance_sheet_quarterly={financials?.balance_sheet_quarterly}
                 cashflow_quarterly={financials?.cashflow_quarterly}
                 manualImport={manualImport}
+              />
+            </Card>
+            <Card>
+              <FinanzasDeepDive
+                income={financials?.income_statement_annual}
+                cashflow={financials?.cashflow_annual}
+                balance={financials?.balance_sheet_annual}
+                divHistory={divHistory}
+                currency={currency}
+                scalars={finScalars}
+                isPremium={isPremium}
               />
             </Card>
           </div>
