@@ -3,6 +3,7 @@ import { createClient as authClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/PublicNav'
 import CompanyDetailPage from '@/components/CompanyDetailPage'
 import { DICT } from '@/data/dict'
+import { findDictEntry } from '@/lib/dict'
 import { getCompanyQuote } from '@/lib/company-quote'
 import { calculateROIC } from '@/lib/metrics'
 import { buildHealthPanel } from '@/lib/health'
@@ -140,7 +141,7 @@ export default async function EmpresaPage({ params, searchParams }) {
   const initialTab = typeof sp?.tab === 'string' ? sp.tab : 'resumen'
   const t = decodeURIComponent(ticker)
 
-  const entry = DICT.find(d => d[1] === t)
+  const entry = await findDictEntry(t)
   if (!entry) notFound()
 
   const [name, , country, currency, sector, subsector, type] = entry

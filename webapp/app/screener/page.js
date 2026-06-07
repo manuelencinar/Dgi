@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createClient as authClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/PublicNav'
 import ScreenerClient from '@/components/ScreenerClient'
-import { DICT } from '@/data/dict'
+import { getEffectiveDict } from '@/lib/dict'
 import { getContinent } from '@/lib/helpers'
 import { computeScore, resolveRoic, marginSafety, yieldPct, deriveMoat, moatErosion, calcDivQuality, rule1010 } from '@/lib/screener'
 
@@ -52,12 +52,12 @@ async function fetchFundamentals() {
 const EXCLUDED = new Set(['^VIX', '^VVIX'])   // índices de volatilidad, no invertibles
 const ROIC_NA_TYPES = new Set(['banco', 'aseguradora', 'reit', 'bdc'])
 
-async function buildCompanies(destWHT) {
+async function buildCompanies(destWHT, baseDict) {
   const fundMap = await fetchFundamentals()
 
   // Deduplicar y excluir tickers no invertibles (VIX, etc.)
   const seen = new Set()
-  const dict = DICT.filter(d => { if (EXCLUDED.has(d[1]) || seen.has(d[1])) return false; seen.add(d[1]); return true })
+  const dict = baseDict.filter(d => { if (EXCLUDED.has(d[1]) || seen.has(d[1])) return false; seen.add(d[1]); return true })
 
   return dict.map(([name, ticker, country, currency, sector, , type]) => {
     const f = fundMap[ticker] || null
@@ -100,8 +100,9 @@ async function buildCompanies(destWHT) {
 
 export default async function ScreenerPage() {
   const { plan, destWHT, followed, isAuthed } = await getUserContext()
-  const companies = await buildCompanies(destWHT)
-  const sectors = [...new Set(DICT.map(d => d[4]))].filter(Boolean).sort()
+  const dict = await getEffectiveDict()
+  const companies = await buildCompanies(destWHT, dict)
+  const sectors = [...new Set(dict.map(d => d[4]))].filter(Boolean).sort()
 
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>

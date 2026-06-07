@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/PublicNav'
 import ComparadorClient from '@/components/ComparadorClient'
-import { DICT } from '@/data/dict'
+import { getEffectiveDict } from '@/lib/dict'
 import { buildComparadorCompanies } from '@/lib/comparador'
 
 export const dynamic = 'force-dynamic'
@@ -33,7 +33,7 @@ export default async function ComparadorPage({ searchParams }) {
   const initialCompanies = limited.length ? await buildComparadorCompanies(limited, destWHT) : []
 
   // Lista ligera para el buscador: [name, ticker, superSector, type]
-  const options = DICT.map(d => [d[0], d[1], d[4], d[6]])
+  const options = (await getEffectiveDict()).map(d => [d[0], d[1], d[4], d[6]])
 
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>

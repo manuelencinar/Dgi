@@ -43,6 +43,13 @@ const PENDING = [
     action: 'Guardar más años de estados financieros o precalcular una serie de PER anual más larga para ampliar el gráfico.',
   },
   {
+    area: 'DICT',
+    type: 'Precisión',
+    title: 'Overrides del DICT en superficies secundarias',
+    detail: 'Ocultar/añadir empresas (tabla dict_overrides) ya aplica en screener, ficha y buscador del comparador. Faltan superficies secundarias que importan el DICT estático en cliente: detector de empresas de la cartera, onboarding, resolución profunda del comparador (lib/comparador) y mercados.',
+    action: 'Adoptar getEffectiveDict (o pasar overrides como prop) en lib/comparador, los componentes de cartera/onboarding y las páginas de mercados.',
+  },
+  {
     area: 'Importación Excel',
     type: 'Precisión',
     title: 'Marcado de celdas manuales y trimestre del vintage',
