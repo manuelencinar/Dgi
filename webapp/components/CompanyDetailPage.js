@@ -269,10 +269,21 @@ function DividendHistorySection({ divHistory, streak, cagr, currency }) {
 
 // ── upcoming payments (estimated) ──────────────────────────────────────────
 
-function UpcomingPayments({ payments, currency }) {
+function fmtDateEs(d) {
+  if (!d) return null
+  try { return new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return null }
+}
+
+function UpcomingPayments({ payments, currency, nextExDate }) {
+  const exLabel = fmtDateEs(nextExDate)
   return (
     <Card>
-      <SectionTitle>Próximos pagos estimados</SectionTitle>
+      <SectionTitle>Próximos pagos</SectionTitle>
+      {exLabel && (
+        <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 10 }}>
+          Próxima fecha <b style={{ color: '#c8d0e0' }}>ex-dividendo</b>: {exLabel}
+        </p>
+      )}
       {payments?.length ? (
         <>
           <div>
@@ -288,15 +299,19 @@ function UpcomingPayments({ payments, currency }) {
                 {payments.map((p, i) => (
                   <tr key={i} style={{ background: i % 2 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
                     <td style={{ padding: '6px 8px', color: '#8090a8' }}>{p.dateLabel}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 700 }}>{fmt(p.amount, 3)} {currency}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#4a5270' }}>{p.type}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 700 }}>{p.amount != null ? `${fmt(p.amount, 3)} ${currency}` : '—'}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#4a5270' }}>
+                      {p.confirmed
+                        ? <span style={{ fontSize: 10, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.12)', padding: '1px 7px', borderRadius: 5 }}>Confirmado</span>
+                        : p.type}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8 }}>
-            Fechas e importes estimados a partir del patrón histórico — no son datos oficiales.
+            El primer pago es la fecha confirmada por la empresa; los siguientes se proyectan según la frecuencia y los importes históricos.
           </p>
         </>
       ) : (
@@ -1088,7 +1103,7 @@ export default function CompanyDetailPage(props) {
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
     peTrailing, peForward, evEbitda, eps, payout, mktCap, priceToBook,
-    divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, peHistory,
+    divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, peHistory,
     healthPanel, moat, dcf, projection, dgiScore, insights, roicData, badges, buybacks,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
     manualImport, finScalars, initialTab,
@@ -1281,7 +1296,7 @@ export default function CompanyDetailPage(props) {
               <MiniMetric label="Payout" value={payout != null ? (payout * 100).toFixed(0) + '%' : '—'} sub={props.payoutEps != null ? `EPS ${props.payoutEps.toFixed(0)}%` : 'FCF'} color={payout > 0.8 ? '#f87171' : payout > 0.6 ? '#fbbf24' : '#34d399'} />
             </div>
             <DividendHistorySection divHistory={divHistory} streak={streak} cagr={cagr} currency={currency} />
-            <UpcomingPayments payments={upcomingPayments} currency={currency} />
+            <UpcomingPayments payments={upcomingPayments} currency={currency} nextExDate={nextExDate} />
             <RentaProjection yld={yld} cagr={cagr} country={country} currency={currency} dpsScenarios={projection} destWHT={destWHT} />
             <BuybackSection buybacks={buybacks} />
           </div>

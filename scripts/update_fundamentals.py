@@ -223,6 +223,36 @@ def fetch_dividends_twelvedata(sym, key):
         return None
 
 
+def build_dividend_events(series, n=16):
+    """Últimos n pagos con su fecha ex: [{ex_date, amount}]. None si no hay."""
+    if series is None or len(series) == 0:
+        return None
+    try:
+        import pandas as pd
+        s = series.sort_index()
+        out = []
+        for dt, amt in s.items():
+            if amt is None or pd.isna(amt):
+                continue
+            try:
+                out.append({"ex_date": dt.strftime("%Y-%m-%d"), "amount": round(float(amt), 6)})
+            except Exception:
+                pass
+        return out[-n:] if out else None
+    except Exception:
+        return None
+
+
+def ts_to_date(v):
+    """Timestamp Unix (segundos) de yfinance → 'YYYY-MM-DD'. None si no aplica."""
+    try:
+        if v is None:
+            return None
+        return datetime.fromtimestamp(int(v), tz=timezone.utc).strftime("%Y-%m-%d")
+    except Exception:
+        return None
+
+
 def compute_streak(div_history):
     full = [h for h in div_history if not h.get("isPartial") and h.get("growth") is not None]
     if not full:
@@ -721,7 +751,8 @@ def fetch_ticker(sym):
         ebitda_v   = info.get("ebitda")
 
         # ── Dividendos ────────────────────────────────────────────────────
-        div_history = build_div_history(dividends)
+        div_series  = dividends                     # serie indexada por fecha ex
+        div_history = build_div_history(div_series)
         # Fallback UK: Yahoo es poco fiable con los dividendos del FTSE.
         # Para .L SIEMPRE consultamos Twelve Data y nos quedamos con el historial
         # más largo (Yahoo suele traer solo los últimos años, o ninguno).
@@ -731,9 +762,13 @@ def fetch_ticker(sym):
                 td_hist = build_div_history(td)
                 if len(td_hist) > len(div_history):
                     div_history = td_hist
+                    div_series  = td
                     print(f"  [{sym}] dividendos vía Twelve Data ({len(div_history)} años)")
         div_streak  = compute_streak(div_history)
         div_cagr5   = compute_div_cagr5(div_history)
+        dividend_events = build_dividend_events(div_series)   # fechas ex históricas
+        next_ex_date    = ts_to_date(info.get("exDividendDate"))
+        next_pay_date   = ts_to_date(info.get("dividendDate"))
 
         dps = safe(info.get("dividendRate") or info.get("lastDividendValue"))
         if dps is None and div_history:
@@ -847,6 +882,9 @@ def fetch_ticker(sym):
             "div_streak":       div_streak,
             "div_cagr5":        div_cagr5,
             "div_history":      div_history,
+            "dividend_events":  dividend_events,
+            "next_ex_date":     next_ex_date,
+            "next_pay_date":    next_pay_date,
             "payout_fcf":       payout_fcf,
             "payout_eps":       payout_eps,
             "fcf_per_share":    fcf_ps,

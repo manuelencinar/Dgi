@@ -35,18 +35,38 @@ function divCagr(divHistory, years) {
 }
 
 // Estima los próximos pagos a partir del DPS previsto y la frecuencia típica por divisa.
-function estimateUpcomingPayments(dpsPrev, cagr, currency) {
-  if (dpsPrev == null || dpsPrev <= 0) return []
-  const annual = dpsPrev * (1 + (cagr ?? 0))
-  const freq = (currency === 'USD' || currency === 'CAD') ? 4 : (currency === 'GBP' || currency === 'CHF') ? 2 : 1
-  const per = annual / freq
-  const monthsStep = 12 / freq
-  const ML = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-  const now = new Date()
+const ML = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
+// Próximos pagos a partir de las fechas reales (dividend_events + próximo reparto
+// confirmado). La frecuencia y los meses salen del histórico de fechas ex.
+function buildUpcomingPayments(events, nextPay, dpsPrev, cagr, currency) {
+  // Frecuencia: nº de pagos en los últimos 12 meses del evento más reciente
+  let freq = null
+  if (Array.isArray(events) && events.length >= 2) {
+    const dates = events.map(e => e.ex_date).filter(Boolean).sort()
+    const last = new Date(dates[dates.length - 1] + 'T12:00:00')
+    const yearAgo = new Date(last); yearAgo.setFullYear(yearAgo.getFullYear() - 1)
+    const count = events.filter(e => e.ex_date && new Date(e.ex_date + 'T12:00:00') > yearAgo).length
+    if (count >= 1) freq = [1, 2, 4, 12].reduce((p, c) => Math.abs(c - count) < Math.abs(p - count) ? c : p, 1)
+  }
+  if (!freq) freq = (currency === 'USD' || currency === 'CAD') ? 4 : (currency === 'GBP' || currency === 'CHF') ? 2 : 1
+  const annual = (dpsPrev != null && dpsPrev > 0) ? dpsPrev * (1 + (cagr ?? 0)) : null
+  const per = annual != null ? annual / freq : null
+  const stepMonths = 12 / freq
+
+  // Ancla: próximo reparto confirmado; si no, último ex + un paso
+  let anchor = null
+  if (nextPay) anchor = new Date(nextPay + 'T12:00:00')
+  else if (Array.isArray(events) && events.length) {
+    const last = new Date(events[events.length - 1].ex_date + 'T12:00:00')
+    last.setMonth(last.getMonth() + stepMonths); anchor = last
+  }
+  if (!anchor || isNaN(anchor.getTime())) return []
+
   const out = []
   for (let i = 0; i < Math.min(freq, 4); i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + Math.round(monthsStep * (i + 1)), 1)
-    out.push({ dateLabel: `${ML[d.getMonth()]} ${d.getFullYear()}`, amount: per, type: 'Ordinario' })
+    const d = new Date(anchor); d.setMonth(d.getMonth() + Math.round(stepMonths * i))
+    out.push({ dateLabel: `${ML[d.getMonth()]} ${d.getFullYear()}`, amount: per, type: 'Ordinario', confirmed: i === 0 && !!nextPay })
   }
   return out
 }
@@ -222,7 +242,8 @@ export default async function EmpresaPage({ params, searchParams }) {
   const cagr10     = divCagr(divHistory, 10)
   const fullDiv    = divHistory.filter(h => !h.isPartial && h.dps != null).sort((a, b) => a.year - b.year)
   const dpsPrev    = fullDiv.length ? fullDiv[fullDiv.length - 1].dps : null
-  const upcomingPayments = estimateUpcomingPayments(dpsPrev, cagr, currency)
+  const upcomingPayments = buildUpcomingPayments(detail?.dividend_events, detail?.next_pay_date, dpsPrev, cagr, currency)
+  const nextExDate = detail?.next_ex_date ?? null
   const payoutEps  = detail?.payout_eps ?? null
   const priceToBook = detail?.price_to_book ?? null
   const peHistory  = detail ? await buildPeHistory(detail, supabase, t) : []
@@ -279,6 +300,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         updatedAt={updatedAt}
         dpsPrev={dpsPrev}
         upcomingPayments={upcomingPayments}
+        nextExDate={nextExDate}
         peHistory={peHistory}
         manualImport={manualImport}
         finScalars={finScalars}
