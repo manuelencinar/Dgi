@@ -722,12 +722,16 @@ def fetch_ticker(sym):
 
         # ── Dividendos ────────────────────────────────────────────────────
         div_history = build_div_history(dividends)
-        # Fallback UK: Yahoo no suele traer los dividendos del FTSE → Twelve Data
-        if sym.endswith(".L") and len(div_history) < 2 and TWELVE_KEY:
+        # Fallback UK: Yahoo es poco fiable con los dividendos del FTSE.
+        # Para .L SIEMPRE consultamos Twelve Data y nos quedamos con el historial
+        # más largo (Yahoo suele traer solo los últimos años, o ninguno).
+        if sym.endswith(".L") and TWELVE_KEY:
             td = fetch_dividends_twelvedata(sym, TWELVE_KEY)
             if td is not None and len(td):
-                div_history = build_div_history(td)
-                print(f"  [{sym}] dividendos vía Twelve Data ({len(div_history)} años)")
+                td_hist = build_div_history(td)
+                if len(td_hist) > len(div_history):
+                    div_history = td_hist
+                    print(f"  [{sym}] dividendos vía Twelve Data ({len(div_history)} años)")
         div_streak  = compute_streak(div_history)
         div_cagr5   = compute_div_cagr5(div_history)
 
