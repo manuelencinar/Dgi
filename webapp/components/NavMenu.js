@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import NotificationBell from '@/components/NotificationBell'
+import GlobalSearch from '@/components/GlobalSearch'
 
 // Menú principal
 const PRIMARY = [
@@ -57,6 +58,7 @@ export default function NavMenu({ active, sessionUser }) {
         <div style={{ flex: 1 }} />
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <GlobalSearch />
           {sessionUser ? (
             <>
               {sessionUser.isPremium && (
