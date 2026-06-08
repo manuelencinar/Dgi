@@ -83,6 +83,18 @@ function buildUpcomingPayments(events, nextPay, nextEx, dpsPrev, cagr, currency,
   }
   if (!payAnchor || isNaN(payAnchor.getTime())) return []
 
+  // Si las fechas de yfinance ya pasaron (next_ex/next_pay obsoletos), avanzar las
+  // anclas hacia el futuro en pasos de la frecuencia: solo mostramos pagos futuros.
+  // Al avanzar deja de ser un pago confirmado y pasa a ser estimación.
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  let rolled = 0
+  while (payAnchor < today && rolled < 24) {
+    payAnchor = addMonths(payAnchor, stepMonths)
+    if (exAnchor) exAnchor = addMonths(exAnchor, stepMonths)
+    rolled++
+  }
+  if (rolled > 0) firstConfirmed = false
+
   const out = []
   for (let i = 0; i < Math.min(freq, 4); i++) {
     const pay = addMonths(payAnchor, Math.round(stepMonths * i))
@@ -277,7 +289,9 @@ export default async function EmpresaPage({ params, searchParams }) {
   const dpsPrev    = fullDiv.length ? fullDiv[fullDiv.length - 1].dps : null
   const originWHT  = getWHT(country)
   const upcomingPayments = buildUpcomingPayments(detail?.dividend_events, detail?.next_pay_date, detail?.next_ex_date, dpsPrev, cagr, currency, country, originWHT, destWHT)
-  const nextExDate = detail?.next_ex_date ?? null
+  // Solo mostramos la "próxima ex-dividendo" si aún no ha pasado (yfinance la deja obsoleta).
+  const _todayMid  = new Date(); _todayMid.setHours(0, 0, 0, 0)
+  const nextExDate = (detail?.next_ex_date && new Date(detail.next_ex_date + 'T12:00:00') >= _todayMid) ? detail.next_ex_date : null
   const payoutEps  = detail?.payout_eps ?? null
   const priceToBook = detail?.price_to_book ?? null
   const peHistory  = detail ? await buildPeHistory(detail, supabase, t) : []
