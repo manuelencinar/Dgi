@@ -8,6 +8,7 @@ import { getCompanyQuote } from '@/lib/company-quote'
 import { calculateROIC } from '@/lib/metrics'
 import { buildHealthPanel } from '@/lib/health'
 import { netYield, getWHT, resolveRoic } from '@/lib/screener'
+import { payLagDays } from '@/lib/sectors'
 import {
   getCompanyDetail,
   computeMoat,
@@ -37,9 +38,19 @@ function divCagr(divHistory, years) {
 // Estima los próximos pagos a partir del DPS previsto y la frecuencia típica por divisa.
 const ML = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
-// Próximos pagos a partir de las fechas reales (dividend_events + próximo reparto
-// confirmado). La frecuencia y los meses salen del histórico de fechas ex.
-function buildUpcomingPayments(events, nextPay, dpsPrev, cagr, currency) {
+function fmtFullEs(d) {
+  if (!d || isNaN(d.getTime())) return null
+  return `${d.getDate()} ${ML[d.getMonth()]} ${d.getFullYear()}`
+}
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x }
+function addMonths(d, n) { const x = new Date(d); x.setMonth(x.getMonth() + n); return x }
+
+// Próximos pagos con fecha de pago real e importe bruto/neto.
+//   Fecha de pago: si la empresa confirmó next_pay_date se usa tal cual; si solo
+//   hay next_ex_date, se le suman los días que tarda en pagar ese mercado
+//   (payLagDays). Importe neto = bruto × (1 − retención efectiva), donde la
+//   retención efectiva = máx(origen, destino) (origen acreditado contra destino).
+function buildUpcomingPayments(events, nextPay, nextEx, dpsPrev, cagr, currency, country, originWHT, destWHT) {
   // Frecuencia: nº de pagos en los últimos 12 meses del evento más reciente
   let freq = null
   if (Array.isArray(events) && events.length >= 2) {
@@ -53,20 +64,38 @@ function buildUpcomingPayments(events, nextPay, dpsPrev, cagr, currency) {
   const annual = (dpsPrev != null && dpsPrev > 0) ? dpsPrev * (1 + (cagr ?? 0)) : null
   const per = annual != null ? annual / freq : null
   const stepMonths = 12 / freq
+  const lag  = payLagDays(country)
+  const effWHT = Math.max(originWHT || 0, destWHT || 0) / 100
 
-  // Ancla: próximo reparto confirmado; si no, último ex + un paso
-  let anchor = null
-  if (nextPay) anchor = new Date(nextPay + 'T12:00:00')
-  else if (Array.isArray(events) && events.length) {
-    const last = new Date(events[events.length - 1].ex_date + 'T12:00:00')
-    last.setMonth(last.getMonth() + stepMonths); anchor = last
+  // Ancla de fecha de pago (y de ex), por orden de preferencia.
+  let payAnchor = null, exAnchor = null, firstConfirmed = false
+  if (nextPay) {
+    payAnchor = new Date(nextPay + 'T12:00:00')
+    exAnchor  = nextEx ? new Date(nextEx + 'T12:00:00') : addDays(payAnchor, -lag)
+    firstConfirmed = true
+  } else if (nextEx) {
+    exAnchor  = new Date(nextEx + 'T12:00:00')
+    payAnchor = addDays(exAnchor, lag)         // ex + días de pago del mercado
+  } else if (Array.isArray(events) && events.length) {
+    const lastEx = new Date(events[events.length - 1].ex_date + 'T12:00:00')
+    exAnchor  = addMonths(lastEx, stepMonths)  // próxima ex estimada
+    payAnchor = addDays(exAnchor, lag)
   }
-  if (!anchor || isNaN(anchor.getTime())) return []
+  if (!payAnchor || isNaN(payAnchor.getTime())) return []
 
   const out = []
   for (let i = 0; i < Math.min(freq, 4); i++) {
-    const d = new Date(anchor); d.setMonth(d.getMonth() + Math.round(stepMonths * i))
-    out.push({ dateLabel: `${ML[d.getMonth()]} ${d.getFullYear()}`, amount: per, type: 'Ordinario', confirmed: i === 0 && !!nextPay })
+    const pay = addMonths(payAnchor, Math.round(stepMonths * i))
+    const ex  = exAnchor ? addMonths(exAnchor, Math.round(stepMonths * i)) : null
+    out.push({
+      payLabel: fmtFullEs(pay),
+      exLabel:  fmtFullEs(ex),
+      gross: per,
+      net:   per != null ? per * (1 - effWHT) : null,
+      confirmed: i === 0 && firstConfirmed,
+      estimatedFromEx: !firstConfirmed,
+      type: 'Ordinario',
+    })
   }
   return out
 }
@@ -242,7 +271,8 @@ export default async function EmpresaPage({ params, searchParams }) {
   const cagr10     = divCagr(divHistory, 10)
   const fullDiv    = divHistory.filter(h => !h.isPartial && h.dps != null).sort((a, b) => a.year - b.year)
   const dpsPrev    = fullDiv.length ? fullDiv[fullDiv.length - 1].dps : null
-  const upcomingPayments = buildUpcomingPayments(detail?.dividend_events, detail?.next_pay_date, dpsPrev, cagr, currency)
+  const originWHT  = getWHT(country)
+  const upcomingPayments = buildUpcomingPayments(detail?.dividend_events, detail?.next_pay_date, detail?.next_ex_date, dpsPrev, cagr, currency, country, originWHT, destWHT)
   const nextExDate = detail?.next_ex_date ?? null
   const payoutEps  = detail?.payout_eps ?? null
   const priceToBook = detail?.price_to_book ?? null
@@ -301,6 +331,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         dpsPrev={dpsPrev}
         upcomingPayments={upcomingPayments}
         nextExDate={nextExDate}
+        originWHT={originWHT}
         peHistory={peHistory}
         manualImport={manualImport}
         finScalars={finScalars}

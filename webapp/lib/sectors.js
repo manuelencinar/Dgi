@@ -179,6 +179,19 @@ export const WHT_DEFAULTS = {
   "PT":25,"AT":27.5,"HK":0,"SG":0,"CN":10,"BR":15,"OTHER":0
 }
 
+// Días naturales típicos entre la fecha ex-dividendo y la fecha de pago en cada
+// mercado. Se usan para estimar el reparto cuando solo se conoce la fecha ex.
+//   EEUU/Canadá: ~2-4 semanas · Reino Unido: ~6 semanas · Europa continental:
+//   pocos días (ex y pago casi consecutivos) · Japón/Asia: bastante más.
+export const DIVIDEND_PAY_LAG = {
+  "US":30,"CA":30,"GB":42,"IE":30,
+  "DE":3,"FR":2,"ES":3,"CH":3,"NL":10,"BE":5,"IT":5,"PT":5,"AT":5,
+  "DK":5,"SE":5,"NO":5,"FI":5,
+  "AU":21,"JP":75,"HK":30,"SG":21,"CN":30,"BR":20,"OTHER":30
+}
+
+export function payLagDays(country) { return DIVIDEND_PAY_LAG[country] ?? 30 }
+
 export const DCF_CFG = {
   general:{lbl:"FCF/acción",cid:"fcf_cagr5"},
   aseguradora:{lbl:"BPA norm.",cid:"eps_cagr5"},

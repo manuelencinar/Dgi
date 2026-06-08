@@ -274,44 +274,50 @@ function fmtDateEs(d) {
   try { return new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return null }
 }
 
-function UpcomingPayments({ payments, currency, nextExDate }) {
+function UpcomingPayments({ payments, currency, nextExDate, originWHT = 0, destWHT = DEFAULT_DEST_WHT }) {
   const exLabel = fmtDateEs(nextExDate)
+  const effWHT = Math.max(originWHT || 0, destWHT || 0)
   return (
     <Card>
       <SectionTitle>Próximos pagos</SectionTitle>
       {exLabel && (
-        <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 10 }}>
+        <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 6 }}>
           Próxima fecha <b style={{ color: '#c8d0e0' }}>ex-dividendo</b>: {exLabel}
         </p>
       )}
       {payments?.length ? (
         <>
-          <div>
+          <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr>
-                  {['Fecha estimada', 'Importe estim.', 'Tipo'].map((h, i) => (
-                    <th key={h} style={{ padding: '6px 8px', textAlign: i === 0 ? 'left' : 'right', color: '#4a5270', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>{h}</th>
+                  {['Fecha de pago', `Bruto (${currency})`, `Neto (${currency})`, ''].map((h, i) => (
+                    <th key={i} style={{ padding: '6px 8px', textAlign: i === 0 ? 'left' : i === 3 ? 'right' : 'right', color: '#4a5270', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {payments.map((p, i) => (
                   <tr key={i} style={{ background: i % 2 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
-                    <td style={{ padding: '6px 8px', color: '#8090a8' }}>{p.dateLabel}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 700 }}>{p.amount != null ? `${fmt(p.amount, 3)} ${currency}` : '—'}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#4a5270' }}>
+                    <td style={{ padding: '7px 8px', color: '#c8d0e0', whiteSpace: 'nowrap' }}>
+                      {p.payLabel || '—'}
+                      {p.exLabel && <span style={{ display: 'block', fontSize: 9.5, color: '#4a5270' }}>ex {p.exLabel}</span>}
+                    </td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8', fontWeight: 600, whiteSpace: 'nowrap' }}>{p.gross != null ? fmt(p.gross, 3) : '—'}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 700, whiteSpace: 'nowrap' }}>{p.net != null ? fmt(p.net, 3) : '—'}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right' }}>
                       {p.confirmed
-                        ? <span style={{ fontSize: 10, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.12)', padding: '1px 7px', borderRadius: 5 }}>Confirmado</span>
-                        : p.type}
+                        ? <span style={{ fontSize: 10, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.12)', padding: '1px 7px', borderRadius: 5, whiteSpace: 'nowrap' }}>Confirmado</span>
+                        : <span style={{ fontSize: 10, fontWeight: 600, color: '#6b7693', whiteSpace: 'nowrap' }}>Estimado</span>}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8 }}>
-            El primer pago es la fecha confirmada por la empresa; los siguientes se proyectan según la frecuencia y los importes históricos.
+          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8, lineHeight: 1.5 }}>
+            <b style={{ color: '#3a4565' }}>Neto</b> tras retención efectiva del <b style={{ color: '#3a4565' }}>{effWHT}%</b> (origen {originWHT}% acreditado contra destino {destWHT}%).
+            Las fechas confirmadas las declara la empresa; el resto se estiman sumando a la fecha ex-dividendo los días de pago típicos del mercado, y los importes se proyectan según la frecuencia y el histórico.
           </p>
         </>
       ) : (
@@ -1103,7 +1109,7 @@ export default function CompanyDetailPage(props) {
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
     peTrailing, peForward, evEbitda, eps, payout, mktCap, priceToBook,
-    divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, peHistory,
+    divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, originWHT, peHistory,
     healthPanel, moat, dcf, projection, dgiScore, insights, roicData, badges, buybacks,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
     manualImport, finScalars, initialTab,
@@ -1296,7 +1302,7 @@ export default function CompanyDetailPage(props) {
               <MiniMetric label="Payout" value={payout != null ? (payout * 100).toFixed(0) + '%' : '—'} sub={props.payoutEps != null ? `EPS ${props.payoutEps.toFixed(0)}%` : 'FCF'} color={payout > 0.8 ? '#f87171' : payout > 0.6 ? '#fbbf24' : '#34d399'} />
             </div>
             <DividendHistorySection divHistory={divHistory} streak={streak} cagr={cagr} currency={currency} />
-            <UpcomingPayments payments={upcomingPayments} currency={currency} nextExDate={nextExDate} />
+            <UpcomingPayments payments={upcomingPayments} currency={currency} nextExDate={nextExDate} originWHT={originWHT} destWHT={destWHT} />
             <RentaProjection yld={yld} cagr={cagr} country={country} currency={currency} dpsScenarios={projection} destWHT={destWHT} />
             <BuybackSection buybacks={buybacks} />
           </div>
