@@ -16,6 +16,7 @@ import os
 import re
 import sys
 import time
+import requests
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -32,6 +33,9 @@ DEFAULT_TTL = 7
 BATCH_SIZE       = 50
 BATCH_DELAY      = 2.0
 PER_TICKER_DELAY = 1.5   # segundos entre tickers para no saturar yfinance
+
+# Fallback de dividendos UK (Yahoo suele no traer los del FTSE) vía Twelve Data
+TWELVE_KEY = os.environ.get("TWELVEDATA_API_KEY", "")
 
 # ── Entorno ────────────────────────────────────────────────────────────────
 
@@ -176,6 +180,48 @@ def build_div_history(dividends_series):
         return result
     except Exception:
         return []
+
+def fetch_dividends_twelvedata(sym, key):
+    """Fallback de dividendos para UK (.L) vía Twelve Data.
+    Devuelve un pandas.Series (fecha → importe en PENIQUES, para casar con el
+    precio en GBp de Yahoo) o None si no hay datos."""
+    try:
+        import pandas as pd
+        base = sym.split(".")[0]
+        url = (f"https://api.twelvedata.com/dividends?symbol={base}"
+               f"&exchange=LSE&range=full&apikey={key}")
+        j = None
+        for attempt in range(2):
+            r = requests.get(url, timeout=20)
+            if r.status_code == 429:        # límite free: 8 req/min
+                time.sleep(8); continue
+            j = r.json(); break
+        if not isinstance(j, dict):
+            return None
+        if j.get("status") == "error":
+            return None
+        divs = j.get("dividends") or []
+        if not divs:
+            return None
+        cur = ((j.get("meta") or {}).get("currency") or "").upper()
+        factor = 100.0 if cur == "GBP" else 1.0   # GBP(libras) → peniques
+        rows = []
+        for d in divs:
+            dt = d.get("ex_date") or d.get("payment_date")
+            amt = d.get("amount")
+            if dt and amt is not None:
+                try:
+                    rows.append((dt, float(amt) * factor))
+                except (TypeError, ValueError):
+                    pass
+        if not rows:
+            return None
+        idx = pd.to_datetime([dt for dt, _ in rows], errors="coerce")
+        s = pd.Series([v for _, v in rows], index=idx).dropna()
+        return s if len(s) else None
+    except Exception:
+        return None
+
 
 def compute_streak(div_history):
     full = [h for h in div_history if not h.get("isPartial") and h.get("growth") is not None]
@@ -676,6 +722,12 @@ def fetch_ticker(sym):
 
         # ── Dividendos ────────────────────────────────────────────────────
         div_history = build_div_history(dividends)
+        # Fallback UK: Yahoo no suele traer los dividendos del FTSE → Twelve Data
+        if sym.endswith(".L") and len(div_history) < 2 and TWELVE_KEY:
+            td = fetch_dividends_twelvedata(sym, TWELVE_KEY)
+            if td is not None and len(td):
+                div_history = build_div_history(td)
+                print(f"  [{sym}] dividendos vía Twelve Data ({len(div_history)} años)")
         div_streak  = compute_streak(div_history)
         div_cagr5   = compute_div_cagr5(div_history)
 

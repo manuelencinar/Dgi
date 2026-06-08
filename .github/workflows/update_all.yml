@@ -67,6 +67,7 @@ jobs:
         env:
           SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TWELVEDATA_API_KEY:        ${{ secrets.TWELVEDATA_API_KEY }}
 
 # ── JOB 3: ETFs y fondos (primer domingo de cada mes) ───────────────────────
   update_funds:
