@@ -1200,11 +1200,14 @@ export default function CompanyDetailPage(props) {
 
   // Estado del dividendo para la pestaña Dividendo (banner en vez de historial vacío):
   //   'none' no reparte · 'unknown' sin verificar · 'pending' reparte pero falta el dato · null normal
+  // Si hay datos reales de dividendo se muestra el contenido normal aunque
+  // pays_dividend aún no esté verificado (null) — solo se recurre al banner
+  // cuando de verdad no hay nada que mostrar.
   const hasDivData   = (divRate != null && divRate > 0) || (divHistory?.length > 0)
   const dividendState = paysDividend === false ? 'none'
-                      : paysDividend == null    ? 'unknown'
-                      : !hasDivData             ? 'pending'
-                      : null
+                      : hasDivData              ? null
+                      : paysDividend === true   ? 'pending'
+                      : 'unknown'
 
   return (
     <div style={{ maxWidth: 1000, width: '100%', margin: '0 auto', padding: '16px 5% 64px', boxSizing: 'border-box', overflowX: 'clip' }}>
