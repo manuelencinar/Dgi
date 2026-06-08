@@ -776,6 +776,16 @@ def fetch_ticker(sym):
             if full:
                 dps = full[-1]["dps"]
 
+        # ── ¿Reparte dividendo? ───────────────────────────────────────────
+        # Distingue empresas que NO pagan (Google, Berkshire…) de las que
+        # pagan pero les falta el DPS. Si cualquiera de las tres señales de
+        # yfinance es > 0, la empresa reparte dividendo.
+        dividend_rate  = float(info.get("dividendRate") or 0)
+        dividend_yield = float(info.get("dividendYield") or 0)
+        five_year_avg  = float(info.get("fiveYearAvgDividendYield") or 0)
+        pays_dividend  = dividend_rate > 0 or dividend_yield > 0 or five_year_avg > 0
+        no_dividend_confirmed_at = None if pays_dividend else datetime.now().isoformat()
+
         # ── FCF per share ─────────────────────────────────────────────────
         fcf_ps = None
         if not cashflow.empty and shares:
@@ -879,6 +889,8 @@ def fetch_ticker(sym):
             **cdr_fields,
             "current_price":    price,
             "dps":              dps,
+            "pays_dividend":    pays_dividend,
+            "no_dividend_confirmed_at": no_dividend_confirmed_at,
             "div_streak":       div_streak,
             "div_cagr5":        div_cagr5,
             "div_history":      div_history,

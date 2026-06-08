@@ -86,7 +86,7 @@ function row(key, name, color, diagSet, valueStr, note) {
 }
 const degrade = c => c === 'green' ? 'yellow' : c === 'yellow' ? 'red' : c
 
-export function buildSemaforo(detail, sectorKey) {
+export function buildSemaforo(detail, sectorKey, paysDividend) {
   const roic = resolveRoic(detail)
   const roe = num(detail.roe), roa = num(detail.roa)
   const nde = num(detail.net_debt_ebitda) ?? num(detail.debt_ebitda)
@@ -117,10 +117,12 @@ export function buildSemaforo(detail, sectorKey) {
     rows.push(row('deuda', 'Deuda', c, 'deuda', fmtVal(nde, 'x')))
   }
 
-  // 3 · Dividendo (payout) — ajustado por disciplina de capital (CDR)
-  const payout = isBankish ? payoutEps : (payoutFcf ?? payoutEps)
-  const permissive = sectorKey === 'reit' || sectorKey === 'utilities'
-  {
+  // 3 · Dividendo (payout) — ajustado por disciplina de capital (CDR).
+  // Si la empresa no reparte dividendo, la categoría se excluye del gauge
+  // (su peso se redistribuye entre las demás al haber una fila menos).
+  if (paysDividend !== false) {
+    const payout = isBankish ? payoutEps : (payoutFcf ?? payoutEps)
+    const permissive = sectorKey === 'reit' || sectorKey === 'utilities'
     const [t1, t2] = permissive ? [80, 95] : [60, 80]
     let c = classify(payout, t1, t2, false)
     let note = null
@@ -344,13 +346,13 @@ export function buildHealthCards(detail, sectorKey) {
 
 // ── Panel completo (server-side) ─────────────────────────────────────────────
 
-export function buildHealthPanel(detail, type) {
+export function buildHealthPanel(detail, type, paysDividend) {
   if (!detail) return null
   const sectorKey = detectHealthSector(type, detail.sector, detail.industry)
   return {
     sectorKey,
     sectorLabel: HEALTH_SECTOR_LABELS[sectorKey] || 'General',
-    semaforo: buildSemaforo(detail, sectorKey),
+    semaforo: buildSemaforo(detail, sectorKey, paysDividend),
     cards: buildHealthCards(detail, sectorKey),
   }
 }

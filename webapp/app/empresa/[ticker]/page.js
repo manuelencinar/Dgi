@@ -247,6 +247,10 @@ export default async function EmpresaPage({ params, searchParams }) {
   const mktCap     = detail?.market_cap_m   != null ? detail.market_cap_m * 1e6 : null
   const divHistory = detail?.divHistory     ?? []
   const streak     = detail?.div_streak     ?? 0
+  // ¿Reparte dividendo? true / false / null (sin verificar). Distingue empresas
+  // que no pagan (Google, Berkshire…) de las que tienen el dato pendiente.
+  const paysDividend = detail?.pays_dividend ?? null
+  const noDividendAt = detail?.no_dividend_confirmed_at ?? null
   const cagr       = detail?.div_cagr5      != null ? detail.div_cagr5 / 100 : null
   const updatedAt  = detail?.updated_at     ?? null
 
@@ -260,11 +264,11 @@ export default async function EmpresaPage({ params, searchParams }) {
   const moat       = computeMoat(detail, streak)
   const dcf        = computeValuation(detail, moat?.width ?? 'none', type, currency)
   const projection = computeProjection(divHistory, cagr)
-  const dgiScore   = computeDGIScore(detail, streak, cagr, dcf, type)
+  const dgiScore   = computeDGIScore(detail, streak, cagr, dcf, type, paysDividend)
   const insights   = buildInsights(detail, streak, cagr, dcf)
   const badges     = computeBadges(detail, streak, cagr, moat)
   const buybacks   = computeBuybacks(detail)
-  const healthPanel = buildHealthPanel(detail, type)
+  const healthPanel = buildHealthPanel(detail, type, paysDividend)
 
   // Datos derivados para las pestañas
   const yldNet     = yld != null ? netYield(yld * 100, getWHT(country), destWHT) : null
@@ -332,6 +336,8 @@ export default async function EmpresaPage({ params, searchParams }) {
         upcomingPayments={upcomingPayments}
         nextExDate={nextExDate}
         originWHT={originWHT}
+        paysDividend={paysDividend}
+        noDividendAt={noDividendAt}
         peHistory={peHistory}
         manualImport={manualImport}
         finScalars={finScalars}

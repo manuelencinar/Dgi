@@ -4,6 +4,12 @@ import { Card, SectionTitle } from '@/components/dashboard/ui'
 
 const PAGE = 25
 const STATUS = { sin: { l: 'Sin fundamentales', c: '#f87171' }, incompletos: { l: 'Incompletos', c: '#fbbf24' }, desactualizados: { l: 'Desactualizados', c: '#fb923c' }, ok: { l: 'OK', c: '#34d399' } }
+const DIV_STATUS = {
+  falta_dps:     { l: 'Falta DPS',     c: '#fbbf24' },
+  no_reparte:    { l: 'No reparte',    c: '#6b7693' },
+  por_verificar: { l: 'Por verificar', c: '#60a5fa' },
+  ok:            { l: 'Reparte',       c: '#34d399' },
+}
 const TYPES = ['general', 'banco', 'aseguradora', 'reit', 'bdc', 'utilities']
 const inputStyle = { background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 5, padding: '4px 6px', color: '#e0e8f0', fontSize: 12, outline: 'none', width: '100%', fontFamily: 'inherit' }
 
@@ -52,6 +58,7 @@ export default function EmpresasAdminClient({ companies: initial, sectors, count
   const [fSector, setFSector] = useState('')
   const [fCountry, setFCountry] = useState('')
   const [fStatus, setFStatus] = useState('')
+  const [fDiv, setFDiv] = useState('')
   const [page, setPage] = useState(1)
   const [sel, setSel] = useState(() => new Set())
   const [confirmDel, setConfirmDel] = useState(null) // ticker
@@ -85,9 +92,10 @@ export default function EmpresasAdminClient({ companies: initial, sectors, count
       (!ql || r.ticker.toLowerCase().includes(ql) || (r.name || '').toLowerCase().includes(ql)) &&
       (!fSector || r.sector === fSector) &&
       (!fCountry || r.country === fCountry) &&
-      (!fStatus || r.status === fStatus)
+      (!fStatus || r.status === fStatus) &&
+      (!fDiv || r.divStatus === fDiv)
     )
-  }, [rows, q, fSector, fCountry, fStatus])
+  }, [rows, q, fSector, fCountry, fStatus, fDiv])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE))
   const pageRows = filtered.slice((page - 1) * PAGE, page * PAGE)
@@ -173,6 +181,7 @@ export default function EmpresasAdminClient({ companies: initial, sectors, count
         <select value={fSector} onChange={e => { setFSector(e.target.value); setPage(1) }} style={filterStyle}><option value="">Sector: todos</option>{sectors.map(s => <option key={s} value={s}>{s}</option>)}</select>
         <select value={fCountry} onChange={e => { setFCountry(e.target.value); setPage(1) }} style={filterStyle}><option value="">País: todos</option>{countries.map(c => <option key={c} value={c}>{c}</option>)}</select>
         <select value={fStatus} onChange={e => { setFStatus(e.target.value); setPage(1) }} style={filterStyle}><option value="">Estado: todos</option><option value="sin">Sin fundamentales</option><option value="incompletos">Incompletos</option><option value="desactualizados">Desactualizados</option><option value="ok">OK</option></select>
+        <select value={fDiv} onChange={e => { setFDiv(e.target.value); setPage(1) }} style={filterStyle}><option value="">Dividendo: todos</option><option value="falta_dps">Incompletos reales (falta DPS)</option><option value="no_reparte">No reparten dividendo</option><option value="por_verificar">Por verificar</option></select>
       </div>
 
       {msg && <p style={{ fontSize: 12, color: msg.t === 'ok' ? '#34d399' : msg.t === 'err' ? '#f87171' : '#8090a8', marginBottom: 10 }}>{msg.m}</p>}
@@ -194,7 +203,7 @@ export default function EmpresasAdminClient({ companies: initial, sectors, count
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 760 }}>
           <thead><tr>
             <th style={th}><input type="checkbox" checked={allOnPage} onChange={toggleAll} /></th>
-            {['Ticker', 'Nombre', 'Sector', 'País', 'Tipo', 'Estado', ''].map(h => <th key={h} style={th}>{h}</th>)}
+            {['Ticker', 'Nombre', 'Sector', 'País', 'Tipo', 'Estado', 'Dividendo', ''].map(h => <th key={h} style={th}>{h}</th>)}
           </tr></thead>
           <tbody>
             {pageRows.map(r => (
@@ -220,13 +229,14 @@ export default function EmpresasAdminClient({ companies: initial, sectors, count
                   <td style={td}><Cell value={r.country} options={countries} onSave={v => saveField(r, 'country', v)} color="#4a5270" /></td>
                   <td style={td}><Cell value={r.type} options={TYPES} onSave={v => saveField(r, 'type', v)} color="#4a5270" /></td>
                   <td style={td}><span style={{ fontSize: 10, fontWeight: 700, color: STATUS[r.status]?.c, background: `${STATUS[r.status]?.c}18`, padding: '2px 7px', borderRadius: 5 }}>{STATUS[r.status]?.l}</span></td>
+                  <td style={td}>{r.divStatus ? <span style={{ fontSize: 10, fontWeight: 700, color: DIV_STATUS[r.divStatus]?.c, background: `${DIV_STATUS[r.divStatus]?.c}18`, padding: '2px 7px', borderRadius: 5 }}>{DIV_STATUS[r.divStatus]?.l}</span> : <span style={{ color: '#4a5270' }}>—</span>}</td>
                   <td style={td}>
                     <button onClick={() => loadFund(r.ticker)} disabled={loading.has(r.ticker)} title="Cargar de yfinance" style={miniBtn('#818cf8')}>{loading.has(r.ticker) ? '…' : '⤓'}</button>
                     <button onClick={() => openDelete(r.ticker)} title="Eliminar" style={miniBtn('#f87171')}>🗑</button>
                   </td>
                 </tr>
                 {confirmDel === r.ticker && (
-                  <tr><td colSpan={8} style={{ padding: '10px 12px', background: 'rgba(248,113,113,0.06)' }}>
+                  <tr><td colSpan={9} style={{ padding: '10px 12px', background: 'rgba(248,113,113,0.06)' }}>
                     <p style={{ fontSize: 12, color: '#c8d0e0', marginBottom: delInfo?.users ? 4 : 8 }}>¿Eliminar <b>{r.name}</b>? Esta empresa dejó de cotizar.</p>
                     {delInfo?.users > 0 && <p style={{ fontSize: 11, color: '#fbbf24', marginBottom: 8 }}>⚠ {delInfo.users} usuario(s) la tienen en cartera — sus posiciones históricas se conservarán pero no verán datos actualizados.</p>}
                     <button onClick={() => doDelete(r.ticker)} style={{ ...ghost, color: '#f87171', borderColor: 'rgba(248,113,113,0.3)', marginRight: 6 }}>Sí, eliminar</button>

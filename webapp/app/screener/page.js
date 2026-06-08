@@ -36,7 +36,7 @@ async function getUserContext() {
 // Lee company_fundamentals (campos escalares) paginado — PostgREST limita a 1000 filas.
 async function fetchFundamentals() {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
-  const FIELDS = 'ticker, current_price, dps, div_streak, div_cagr5, payout_fcf, payout_eps, fcf_cagr5, debt_ebitda, net_debt_ebitda, interest_coverage, roic, roic_reported, roic_tangible, roe, operating_margin, gross_margin, revenue_cagr5, pe_trailing, ev_ebitda, market_cap_m, intrinsic_value, sector, industry, country'
+  const FIELDS = 'ticker, current_price, dps, pays_dividend, div_streak, div_cagr5, payout_fcf, payout_eps, fcf_cagr5, debt_ebitda, net_debt_ebitda, interest_coverage, roic, roic_reported, roic_tangible, roe, operating_margin, gross_margin, revenue_cagr5, pe_trailing, ev_ebitda, market_cap_m, intrinsic_value, sector, industry, country'
   const all = []
   try {
     for (let from = 0; ; from += 1000) {
@@ -65,7 +65,7 @@ async function buildCompanies(destWHT, baseDict) {
       return { n: name, t: ticker, c: country, cont: getContinent(country), s: sector, cur: currency, tp: type || 'general',
         px: null, y: null, sc: null, mos: null, roic: null, streak: null, cagr: null, payout: null,
         debt: null, icov: null, opm: null, rev: null, pe: null, ev: null, mcap: null,
-        moat: 'none', ero: false, dq: null, r1010: false }
+        moat: 'none', ero: false, dq: null, r1010: false, pays: null }
     }
     const t = type || 'general'
     const rawCagr = f.div_cagr5 != null ? Number(f.div_cagr5) : null
@@ -94,6 +94,7 @@ async function buildCompanies(destWHT, baseDict) {
       ero:    moatErosion(f),
       dq:     calcDivQuality(f, t, country, destWHT),
       r1010:  rule1010(f),
+      pays:   f.pays_dividend ?? null,
     }
   })
 }

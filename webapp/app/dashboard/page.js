@@ -58,6 +58,8 @@ export default async function DashboardHome() {
               { label: 'Sin fundamentales', value: dataStats.missingCount, col: dataStats.missingCount > 0 ? '#fbbf24' : '#34d399' },
               { label: 'Datos desactualizados (>30d)', value: dataStats.outdatedCount, col: dataStats.outdatedCount > 0 ? '#fbbf24' : '#34d399' },
               { label: 'Datos incompletos', value: dataStats.incompleteCount, col: dataStats.incompleteCount > 0 ? '#f87171' : '#34d399' },
+              { label: 'No reparten dividendo (correcto)', value: dataStats.noDividendCount ?? 0, col: '#6b7693' },
+              { label: 'Dividendo por verificar', value: dataStats.unverifiedCount ?? 0, col: (dataStats.unverifiedCount ?? 0) > 0 ? '#60a5fa' : '#34d399' },
             ].map(r => (
               <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                 <span style={{ fontSize: 13, color: '#8090a8' }}>{r.label}</span>

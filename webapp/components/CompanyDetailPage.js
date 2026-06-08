@@ -274,6 +274,47 @@ function fmtDateEs(d) {
   try { return new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return null }
 }
 
+// Formatea un timestamp ISO completo (no_dividend_confirmed_at) a fecha es-ES.
+function fmtStampEs(d) {
+  if (!d) return null
+  try { const dt = new Date(d); return isNaN(dt) ? null : dt.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return null }
+}
+
+// Banner informativo cuando no hay historial de dividendo que mostrar.
+//   'none'    no reparte (gris) · 'unknown' sin verificar (gris) · 'pending' reparte pero falta dato (ámbar)
+function DividendBanner({ state, date }) {
+  const stamp = fmtStampEs(date)
+  const CFG = {
+    none: {
+      color: '#8a93ab', bg: 'rgba(107,118,147,0.08)', border: 'rgba(107,118,147,0.22)', icon: '○',
+      title: 'Esta empresa no reparte dividendo actualmente',
+      sub: stamp ? `Verificado el ${stamp}` : 'Muchas empresas de calidad reinvierten todo su beneficio en el negocio en lugar de repartirlo.',
+    },
+    unknown: {
+      color: '#8a93ab', bg: 'rgba(107,118,147,0.08)', border: 'rgba(107,118,147,0.22)', icon: '○',
+      title: 'Sin datos de dividendo disponibles',
+      sub: 'Todavía no hemos verificado la política de dividendo de esta empresa.',
+    },
+    pending: {
+      color: '#fbbf24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.25)', icon: '⏳',
+      title: 'Datos de dividendo pendientes de actualizar',
+      sub: 'La empresa reparte dividendo pero todavía no disponemos del importe.',
+    },
+  }
+  const c = CFG[state] || CFG.unknown
+  return (
+    <Card style={{ background: c.bg, border: `1px solid ${c.border}` }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        <span style={{ fontSize: 20, color: c.color, lineHeight: 1.1 }}>{c.icon}</span>
+        <div>
+          <p style={{ fontSize: 14, fontWeight: 700, color: c.color, marginBottom: 4 }}>{c.title}</p>
+          <p style={{ fontSize: 12, color: '#8090a8', lineHeight: 1.5 }}>{c.sub}</p>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 function UpcomingPayments({ payments, currency, nextExDate, originWHT = 0, destWHT = DEFAULT_DEST_WHT }) {
   const exLabel = fmtDateEs(nextExDate)
   const effWHT = Math.max(originWHT || 0, destWHT || 0)
@@ -922,11 +963,19 @@ function DGIScoreCard({ dgiScore, isPremium, compact }) {
               <div style={{ height: '100%', width: cat.score != null ? `${(cat.score/10)*100}%` : '0%', background: scoreColor(cat.score), borderRadius: 2 }} />
             </div>
             <div style={{ paddingLeft: 8, borderLeft: '2px solid rgba(255,255,255,0.04)' }}>
-              {cat.metrics?.filter(m => m.available).map(m => <MetricRow key={m.key} m={m} />)}
-              {cat.metrics?.filter(m => !m.available).length > 0 && (
-                <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 2 }}>
-                  {cat.metrics.filter(m => !m.available).length} métrica(s) sin datos — peso redistribuido
+              {cat.noDividend ? (
+                <p style={{ fontSize: 10.5, color: '#8a93ab', marginTop: 2 }}>
+                  Esta empresa no reparte dividendo — la categoría puntúa 0.
                 </p>
+              ) : (
+                <>
+                  {cat.metrics?.filter(m => m.available).map(m => <MetricRow key={m.key} m={m} />)}
+                  {cat.metrics?.filter(m => !m.available).length > 0 && (
+                    <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 2 }}>
+                      {cat.metrics.filter(m => !m.available).length} métrica(s) sin datos — peso redistribuido
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -942,6 +991,11 @@ function DGIScoreCard({ dgiScore, isPremium, compact }) {
             </div>
           ))}
         </div>
+      )}
+      {dgiScore.noDividend && (
+        <p style={{ fontSize: 10.5, color: '#8a93ab', marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          Esta empresa no reparte dividendo — la categoría Dividendo puntúa 0. No es necesariamente una mala inversión: muchas empresas de calidad reinvierten su beneficio en lugar de repartirlo.
+        </p>
       )}
       {dgiScore.methodology && <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 12 }}>{dgiScore.methodology}</p>}
     </Card>
@@ -1110,6 +1164,7 @@ export default function CompanyDetailPage(props) {
     yld, yldNet, destWHT, divRate, low52, high52,
     peTrailing, peForward, evEbitda, eps, payout, mktCap, priceToBook,
     divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, originWHT, peHistory,
+    paysDividend, noDividendAt,
     healthPanel, moat, dcf, projection, dgiScore, insights, roicData, badges, buybacks,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
     manualImport, finScalars, initialTab,
@@ -1142,6 +1197,14 @@ export default function CompanyDetailPage(props) {
   const sBadge     = streakBadge(streak)
   const valuationMetrics = dgiScore?.categories?.find(c => c.key === 'valuation')?.metrics || []
 
+  // Estado del dividendo para la pestaña Dividendo (banner en vez de historial vacío):
+  //   'none' no reparte · 'unknown' sin verificar · 'pending' reparte pero falta el dato · null normal
+  const hasDivData   = (divRate != null && divRate > 0) || (divHistory?.length > 0)
+  const dividendState = paysDividend === false ? 'none'
+                      : paysDividend == null    ? 'unknown'
+                      : !hasDivData             ? 'pending'
+                      : null
+
   return (
     <div style={{ maxWidth: 1000, width: '100%', margin: '0 auto', padding: '16px 5% 64px', boxSizing: 'border-box', overflowX: 'clip' }}>
       <style>{`
@@ -1166,7 +1229,8 @@ export default function CompanyDetailPage(props) {
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
               {flag && <span style={{ fontSize: 16 }}>{flag}</span>}
               {sector && <span style={{ fontSize: 11, color: '#818cf8', background: 'rgba(99,102,241,0.1)', padding: '2px 8px', borderRadius: 5 }}>{sector}</span>}
-              {sBadge && <span style={{ fontSize: 11, fontWeight: 700, color: sBadge.color, background: `${sBadge.color}18`, padding: '2px 8px', borderRadius: 5 }}>{streak >= 25 ? '🥇' : streak >= 10 ? '🥈' : '🥉'} {sBadge.label}</span>}
+              {paysDividend !== false && sBadge && <span style={{ fontSize: 11, fontWeight: 700, color: sBadge.color, background: `${sBadge.color}18`, padding: '2px 8px', borderRadius: 5 }}>{streak >= 25 ? '🥇' : streak >= 10 ? '🥈' : '🥉'} {sBadge.label}</span>}
+              {paysDividend === false && <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7693', background: 'rgba(107,118,147,0.14)', padding: '2px 8px', borderRadius: 5 }}>Sin dividendo</span>}
               {badges?.filter(b => b.id?.startsWith('moat') || b.id === '1010').map(b => (
                 <span key={b.id} style={{ fontSize: 11, fontWeight: 700, color: b.color, background: b.bg, padding: '2px 8px', borderRadius: 5 }} title={b.title}>{b.label}</span>
               ))}
@@ -1187,7 +1251,7 @@ export default function CompanyDetailPage(props) {
                   {change != null && <span style={{ fontSize: 11, marginLeft: 5, opacity: 0.75 }}>({changeSign}{Math.abs(change).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency})</span>}
                 </span>
               )}
-              {yld != null && <span style={{ fontSize: 13, color: '#34d399', fontWeight: 700 }}>Yield {fmtPct(yld)}</span>}
+              {paysDividend !== false && yld != null && <span style={{ fontSize: 13, color: '#34d399', fontWeight: 700 }}>Yield {fmtPct(yld)}</span>}
             </div>
           </div>
         </div>
@@ -1295,16 +1359,25 @@ export default function CompanyDetailPage(props) {
         {/* ═══ DIVIDENDO ═══ */}
         {tab === 'dividendo' && (
           <div style={{ display: 'grid', gap: 16 }}>
-            <div className="cdp-grid4">
-              <MiniMetric label="Yield" value={yld != null ? fmtPct(yld) : '—'} sub={yldNet != null ? `Neto ~${yldNet.toFixed(2)}%` : null} color="#34d399" />
-              <MiniMetric label="DPS año anterior" value={dpsPrev != null ? `${fmt(dpsPrev, 3)} ${currency}` : '—'} />
-              <MiniMetric label="CAGR div." value={cagr != null ? (cagr * 100).toFixed(1) + '%' : '—'} sub={cagr10 != null ? `10a ~${(cagr10 * 100).toFixed(1)}%` : null} />
-              <MiniMetric label="Payout" value={payout != null ? (payout * 100).toFixed(0) + '%' : '—'} sub={props.payoutEps != null ? `EPS ${props.payoutEps.toFixed(0)}%` : 'FCF'} color={payout > 0.8 ? '#f87171' : payout > 0.6 ? '#fbbf24' : '#34d399'} />
-            </div>
-            <DividendHistorySection divHistory={divHistory} streak={streak} cagr={cagr} currency={currency} />
-            <UpcomingPayments payments={upcomingPayments} currency={currency} nextExDate={nextExDate} originWHT={originWHT} destWHT={destWHT} />
-            <RentaProjection yld={yld} cagr={cagr} country={country} currency={currency} dpsScenarios={projection} destWHT={destWHT} />
-            <BuybackSection buybacks={buybacks} />
+            {dividendState ? (
+              <>
+                <DividendBanner state={dividendState} date={noDividendAt} />
+                <BuybackSection buybacks={buybacks} />
+              </>
+            ) : (
+              <>
+                <div className="cdp-grid4">
+                  <MiniMetric label="Yield" value={yld != null ? fmtPct(yld) : '—'} sub={yldNet != null ? `Neto ~${yldNet.toFixed(2)}%` : null} color="#34d399" />
+                  <MiniMetric label="DPS año anterior" value={dpsPrev != null ? `${fmt(dpsPrev, 3)} ${currency}` : '—'} />
+                  <MiniMetric label="CAGR div." value={cagr != null ? (cagr * 100).toFixed(1) + '%' : '—'} sub={cagr10 != null ? `10a ~${(cagr10 * 100).toFixed(1)}%` : null} />
+                  <MiniMetric label="Payout" value={payout != null ? (payout * 100).toFixed(0) + '%' : '—'} sub={props.payoutEps != null ? `EPS ${props.payoutEps.toFixed(0)}%` : 'FCF'} color={payout > 0.8 ? '#f87171' : payout > 0.6 ? '#fbbf24' : '#34d399'} />
+                </div>
+                <DividendHistorySection divHistory={divHistory} streak={streak} cagr={cagr} currency={currency} />
+                <UpcomingPayments payments={upcomingPayments} currency={currency} nextExDate={nextExDate} originWHT={originWHT} destWHT={destWHT} />
+                <RentaProjection yld={yld} cagr={cagr} country={country} currency={currency} dpsScenarios={projection} destWHT={destWHT} />
+                <BuybackSection buybacks={buybacks} />
+              </>
+            )}
           </div>
         )}
 

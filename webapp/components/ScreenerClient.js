@@ -253,6 +253,10 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       if (filters.sector !== 'all' && co.s !== filters.sector) return false
       if (!isPremium) return true
       // Premium
+      // Si hay cualquier filtro de dividendo activo, excluir las empresas que no
+      // reparten dividendo (aparecen en el screener, pero no en búsquedas por dividendo).
+      const divFilterActive = filters.yield > 0 || filters.streak > 0 || filters.cagr > 0 || filters.rule1010 || filters.payout < 999
+      if (divFilterActive && co.pays === false) return false
       if (filters.yield > 0 && (co.y == null || co.y < filters.yield)) return false
       if (filters.streak > 0 && (co.streak == null || co.streak < filters.streak)) return false
       if (filters.cagr > 0 && (co.cagr == null || co.cagr < filters.cagr)) return false

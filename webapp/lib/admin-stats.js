@@ -14,6 +14,30 @@ const CRITICAL = [
   { key: 'net_debt',       label: 'Deuda' },
 ]
 
+// Campos críticos que faltan, IGNORANDO el DPS cuando la empresa no reparte
+// dividendo (pays_dividend === false): para esas empresas no tener DPS es
+// correcto, no un dato incompleto.
+function missingCriticalFields(f) {
+  return CRITICAL.filter(c => {
+    if (f[c.key] != null) return false
+    if (c.key === 'dps' && f.pays_dividend === false) return false
+    return true
+  }).map(c => c.label)
+}
+
+// Estado de dividendo de una empresa (para el dashboard de datos):
+//   'falta_dps'     → paga dividendo pero falta el importe (incompleto real)
+//   'no_reparte'    → no reparte dividendo (correcto, no es un error)
+//   'por_verificar' → el script aún no la ha procesado
+//   'ok'            → reparte y tenemos el DPS
+export function dividendStatus(f) {
+  if (!f) return null
+  if (f.pays_dividend === false) return 'no_reparte'
+  if (f.pays_dividend == null)   return 'por_verificar'
+  if (f.dps == null || Number(f.dps) === 0) return 'falta_dps'
+  return 'ok'
+}
+
 // ── Auth users (service role) ──────────────────────────────────────────────
 
 export async function listAllAuthUsers(sc) {
@@ -39,7 +63,7 @@ export async function getFundamentalsLite(sc) {
     for (let from = 0; ; from += PAGE) {
       const { data, error } = await sc
         .from('company_fundamentals')
-        .select('ticker, current_price, dps, revenue_cagr5, fcf_per_share, eps_trailing, net_debt, updated_at')
+        .select('ticker, current_price, dps, revenue_cagr5, fcf_per_share, eps_trailing, net_debt, pays_dividend, no_dividend_confirmed_at, updated_at')
         .range(from, from + PAGE - 1)
       if (error || !data?.length) break
       all.push(...data)
@@ -57,14 +81,19 @@ export function computeDataStats(fundamentals) {
   const now = Date.now()
 
   const outdated = fundamentals.filter(f => f.updated_at && (now - new Date(f.updated_at).getTime()) > 30 * DAY)
-  const incomplete = fundamentals.filter(f =>
-    CRITICAL.some(c => f[c.key] == null))
+  // Incompletos REALES: les falta algún dato crítico. No cuentan las empresas
+  // que no reparten dividendo y solo "les falta" el DPS (eso es correcto).
+  const incomplete = fundamentals.filter(f => missingCriticalFields(f).length > 0)
+  const noDividend  = fundamentals.filter(f => f.pays_dividend === false)
+  const unverified  = fundamentals.filter(f => f.pays_dividend == null)
 
   return {
     totalFundamentals: fundamentals.length,
     missingCount:      missing.length,
     outdatedCount:     outdated.length,
     incompleteCount:   incomplete.length,
+    noDividendCount:   noDividend.length,
+    unverifiedCount:   unverified.length,
   }
 }
 
@@ -80,7 +109,7 @@ export function getIncompleteCompanies(fundamentals) {
   const dictByTicker = Object.fromEntries(DICT.map(d => [d[1], d]))
   return fundamentals
     .map(f => {
-      const missingFields = CRITICAL.filter(c => f[c.key] == null).map(c => c.label)
+      const missingFields = missingCriticalFields(f)
       if (!missingFields.length) return null
       const d = dictByTicker[f.ticker]
       return { ticker: f.ticker, name: d?.[0] ?? f.ticker, missingFields, updated_at: f.updated_at }

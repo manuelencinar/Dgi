@@ -569,9 +569,10 @@ function buildPenalties(data, sectorType) {
 
 // ── Main export ────────────────────────────────────────────────────────────
 
-export function computeDGIScore(data, streak, cagr, dcf, type) {
+export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend) {
   if (!data) return null
 
+  const noDividend = paysDividend === false
   const sectorType = detectSectorType(type, data.sector, data.industry)
 
   const WEIGHTS = {
@@ -615,7 +616,9 @@ export function computeDGIScore(data, streak, cagr, dcf, type) {
   const valuationM = buildValuation(data, dcf, sectorType)
 
   const qS = catScore(qualityM,  Math.min(3, qualityM.length))
-  const dS = catScore(dividendM, 3)
+  // Si la empresa NO reparte dividendo, la categoría Dividendo puntúa 0 (no se
+  // redistribuye su peso — lastra la nota, como debe ser para un inversor DGI).
+  const dS = noDividend ? 0 : catScore(dividendM, 3)
   const fS = catScore(financialM, 3)
   const vS = catScore(valuationM, 2)
 
@@ -643,9 +646,10 @@ export function computeDGIScore(data, streak, cagr, dcf, type) {
     prepenalty,
     sectorType,
     sectorLabel: sectorLabels[sectorType],
+    noDividend,
     categories: [
       { key: 'quality',   name: cat1Labels[sectorType], weight: w.quality,   score: qS, metrics: qualityM },
-      { key: 'dividend',  name: 'Dividendo',             weight: w.dividend,  score: dS, metrics: dividendM },
+      { key: 'dividend',  name: 'Dividendo',             weight: w.dividend,  score: dS, metrics: dividendM, noDividend },
       { key: 'financial', name: 'Solidez financiera',    weight: w.financial, score: fS, metrics: financialM },
       { key: 'valuation', name: 'Valoración',            weight: w.valuation, score: vS, metrics: valuationM },
     ],
