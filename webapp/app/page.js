@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import { MARKETS } from '@/lib/markets'
 import LandingFaq from '@/components/LandingFaq'
+import LandingNews from '@/components/news/LandingNews'
 import PublicNav from '@/components/PublicNav'
 
 export const metadata = {
@@ -480,6 +481,7 @@ export default async function LandingPage() {
       <HowItWorks />
       <MarketsSection />
       <PlatformMetrics companyCount={companyCount} />
+      <LandingNews />
       <Pricing />
       <FaqSection />
       <Footer />

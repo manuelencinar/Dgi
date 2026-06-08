@@ -10,6 +10,7 @@ import FinanzasDeepDive, { FinanzasKpis } from '@/components/empresa/FinanzasSec
 import FollowButton from '@/components/watchlist/FollowButton'
 import LocalPrice from '@/components/LocalPrice'
 import HealthTwoLevel, { Semaforo } from '@/components/empresa/HealthPanel'
+import CompanyNews from '@/components/news/CompanyNews'
 import { recomputeValuation } from '@/lib/valuation'
 import { project10y, paybackYear, netYield, getWHT } from '@/lib/screener'
 
@@ -1307,6 +1308,7 @@ export default function CompanyDetailPage(props) {
 
         {/* ═══ RESUMEN ═══ */}
         {tab === 'resumen' && (
+          <>
           <div className="cdp-2col">
             <div style={{ display: 'grid', gap: 16, alignContent: 'start' }}>
               <Card><PriceChart ticker={ticker} currency={currency} avgCost={avgCost} divHistory={divHistory} /></Card>
@@ -1354,6 +1356,10 @@ export default function CompanyDetailPage(props) {
               )}
             </div>
           </div>
+          <div style={{ marginTop: 16 }}>
+            <CompanyNews ticker={ticker} country={country} name={name} />
+          </div>
+          </>
         )}
 
         {/* ═══ DIVIDENDO ═══ */}
