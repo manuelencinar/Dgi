@@ -35,7 +35,7 @@ export default function NewPositionPage() {
   const [fundData, setFundData]         = useState(null)
   const [manual, setManual]             = useState({ name: '', currency: 'EUR', current_price: '', annual_distribution: '' })
 
-  const [form, setForm]   = useState({ shares: '', price: '', date: new Date().toISOString().slice(0, 10), type: 'buy', notes: '' })
+  const [form, setForm]   = useState({ shares: '', price: '', commission: '', date: new Date().toISOString().slice(0, 10), type: 'buy', notes: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState(null)
   const [fxAlertPending, setFxAlertPending] = useState(false)
@@ -190,6 +190,7 @@ export default function NewPositionPage() {
     if (!user) { setError('Sesión expirada'); setSaving(false); return }
 
     const totalOrig = shares * price
+    const commission = parseFloat(form.commission) || 0
     const fxFields = needsFx ? {
       currency:                selected.currency,
       amount_original:         totalOrig,
@@ -208,11 +209,21 @@ export default function NewPositionPage() {
       total_cost_base_currency: totalOrig,
     }
 
-    const { error: txErr } = await sb.from('transactions').insert({
+    // Coste real total = (acciones × precio) + comisión broker + comisión de cambio (EUR)
+    const totalCost = totalOrig + commission + (fxFields.fx_commission_eur || 0)
+
+    const baseTx = {
       user_id: user.id, ticker: selected.ticker, type: form.type,
       shares, price, date: form.date, notes: form.notes || null,
       ...fxFields,
+    }
+    let { error: txErr } = await sb.from('transactions').insert({
+      ...baseTx, commission, commission_currency: selected.currency, total_cost: totalCost,
     })
+    // Si aún no se ha ejecutado commissions.sql, reintentar sin esas columnas
+    if (txErr && /commission|total_cost/.test(txErr.message)) {
+      ;({ error: txErr } = await sb.from('transactions').insert(baseTx))
+    }
     if (txErr) { setError('Error al guardar la transacción: ' + txErr.message); setSaving(false); return }
 
     const { data: existing } = await sb.from('positions').select('*').eq('user_id', user.id).eq('ticker', selected.ticker).maybeSingle()
@@ -390,6 +401,13 @@ export default function NewPositionPage() {
               </label>
               <input style={INPUT} type="number" step="any" min="0" placeholder="45.50" value={form.price} onChange={e => field('price', e.target.value)} required />
             </div>
+          </div>
+
+          {/* Comisión del broker */}
+          <div>
+            <label style={LABEL}>Comisión del broker {selected ? `(${selected.currency})` : ''} <span style={{ color: '#3a4260' }}>· opcional</span></label>
+            <input style={INPUT} type="number" step="any" min="0" placeholder="ej. 3.95" value={form.commission} onChange={e => field('commission', e.target.value)} />
+            <p style={{ fontSize: 11, color: '#3a4260', marginTop: 5 }}>Incluye aquí la comisión de compraventa y el canon de bolsa si aplica.</p>
           </div>
 
           {/* Sección FX — solo si la empresa cotiza en divisa distinta a la del usuario */}

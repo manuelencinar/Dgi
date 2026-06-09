@@ -137,8 +137,8 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 700 }}>
             <thead>
               <tr>
-                {['Empresa','Acciones','P. Medio','P. Actual','Valor','Rentab.','YoC','Yield','Renta/año',''].map(h => (
-                  <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: '#4a5270', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap' }}>{h}</th>
+                {['Empresa','Acciones','P. Medio','Coste real','P. Actual','Valor','Rentab.','YoC','Yield','Renta/año',''].map(h => (
+                  <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: '#4a5270', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap' }} title={h === 'Coste real' ? 'Coste por acción incluyendo comisiones de compra' : undefined}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -157,6 +157,7 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
                   </td>
                   <td style={{ padding: '8px', textAlign: 'right', color: '#8090a8', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{fmt(p.shares, 4)}</td>
                   <td style={{ padding: '8px', textAlign: 'right', color: '#8090a8', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{fmt(p.avg_cost)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: p.buyCommission > 0 ? '#c8d0e0' : '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.04)' }} title={p.buyCommission > 0 ? `Incluye ${fmt(p.buyCommission)} ${p.currency} de comisiones` : 'Sin comisiones registradas'}>{p.avgCostReal != null ? fmt(p.avgCostReal) : '—'}</td>
                   <td style={{ padding: '8px', textAlign: 'right', color: '#c8d0e0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{p.currentPrice != null ? fmt(p.currentPrice) : '—'}</td>
                   <td style={{ padding: '8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{p.valueEUR != null ? fmtEUR(p.valueEUR) : '—'}</td>
                   <td style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
@@ -167,7 +168,7 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
                       </div>
                     ) : '—'}
                   </td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#818cf8', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{p.yieldOnCost != null ? p.yieldOnCost.toFixed(2) + '%' : '—'}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: '#818cf8', borderBottom: '1px solid rgba(255,255,255,0.04)' }} title="Yield on cost sobre el coste real (con comisiones)">{(p.yieldOnCostReal ?? p.yieldOnCost) != null ? (p.yieldOnCostReal ?? p.yieldOnCost).toFixed(2) + '%' : '—'}</td>
                   <td style={{ padding: '8px', textAlign: 'right', color: '#34d399', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{p.currentYield != null ? p.currentYield.toFixed(2) + '%' : '—'}</td>
                   <td style={{ padding: '8px', textAlign: 'right', color: '#fbbf24', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{p.annualIncomeEUR != null ? fmtEUR(p.annualIncomeEUR) : '—'}</td>
                   <td style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.04)', whiteSpace: 'nowrap' }}>
@@ -465,8 +466,18 @@ export default function PortfolioPage({ isPremium }) {
     const { data: { user } } = await sb.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    const { data: positions } = await sb.from('positions').select('*').eq('user_id', user.id)
+    const [{ data: positions }, { data: txs }] = await Promise.all([
+      sb.from('positions').select('*').eq('user_id', user.id),
+      sb.from('transactions').select('*').eq('user_id', user.id),
+    ])
     if (!positions?.length) { setEnriched([]); setLoading(false); return }
+
+    // Comisiones de broker acumuladas por ticker (solo compras), en la divisa de la operación
+    const commByTicker = {}
+    ;(txs || []).forEach(t => {
+      if (t.type === 'sell') return
+      commByTicker[t.ticker] = (commByTicker[t.ticker] || 0) + (Number(t.commission) || 0)
+    })
 
     const stockTickers = [...new Set(positions.filter(p => (p.asset_type || 'stock') === 'stock').map(p => p.ticker))]
     const fundTickers  = [...new Set(positions.filter(p => (p.asset_type || 'stock') !== 'stock').map(p => p.ticker))]
@@ -502,7 +513,15 @@ export default function PortfolioPage({ isPremium }) {
       if (fundsMap[ticker]) fundsMap[ticker] = { ...fundsMap[ticker], current_price: dp.price }
     }
 
-    setEnriched(enrichPositions(positions, fundMap, fundsMap))
+    // Coste real por acción (incluye comisiones de compra) + YoC sobre coste real
+    const enr = enrichPositions(positions, fundMap, fundsMap).map(p => {
+      const comm = commByTicker[p.ticker] || 0
+      const shares = Number(p.shares) || 0
+      const avgCostReal = shares > 0 ? (Number(p.avg_cost) * shares + comm) / shares : p.avg_cost
+      const yieldOnCostReal = (avgCostReal > 0 && p.dps != null) ? p.dps / avgCostReal * 100 : null
+      return { ...p, buyCommission: comm, avgCostReal, yieldOnCostReal }
+    })
+    setEnriched(enr)
     setLoading(false)
   }
 

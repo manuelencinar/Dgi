@@ -87,16 +87,31 @@ function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
     return { totalCommission, avgPct, count: rows.length }
   }, [filtered])
 
+  // Comisiones de broker (convertidas a EUR con el FX aproximado) + totales
+  const commTotals = useMemo(() => {
+    let broker = 0, fx = 0
+    filtered.forEach(t => {
+      const cur = t.commission_currency || t.currency || currOf(t.ticker)
+      broker += (Number(t.commission) || 0) * (FX[cur] || 1)
+      fx     += Number(t.fx_commission_eur) || 0
+    })
+    const total = broker + fx
+    const avg = filtered.length ? total / filtered.length : 0
+    return { broker, fx, total, avg, count: filtered.length }
+  }, [filtered])
+
   const exportCSV = () => {
-    const headers = ['Fecha', 'Empresa', 'Ticker', 'Tipo', 'Acciones', 'Precio', 'Importe total', 'Divisa', 'Tipo cambio', 'Com. FX (EUR)', 'Coste total EUR', 'Notas']
+    const headers = ['Fecha', 'Empresa', 'Ticker', 'Tipo', 'Acciones', 'Precio', 'Importe total', 'Divisa', 'Com. broker', 'Tipo cambio', 'Com. FX (EUR)', 'Coste total EUR', 'Coste real', 'Notas']
     const rows = [headers]
     filtered.forEach(t => rows.push([
       t.date, nameOf(t.ticker), t.ticker, t.type === 'buy' ? 'Compra' : 'Venta',
       t.shares, t.price, (Number(t.shares) * Number(t.price)).toFixed(2),
       t.currency || currOf(t.ticker),
+      t.commission != null ? t.commission : '',
       t.exchange_rate != null ? t.exchange_rate : '',
       t.fx_commission_eur != null ? t.fx_commission_eur : '',
       t.total_cost_base_currency != null ? t.total_cost_base_currency : '',
+      t.total_cost != null ? t.total_cost : '',
       t.notes || '',
     ]))
     downloadCSV('operaciones.csv', rows)
@@ -132,7 +147,7 @@ function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
         <p style={{ fontSize: 13, color: '#4a5270', textAlign: 'center', padding: '30px 0' }}>No hay operaciones registradas.</p>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: hasFx ? 860 : 640 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: hasFx ? 1020 : 780 }}>
             <thead>
               <tr>
                 {TH('Fecha')}
@@ -141,9 +156,11 @@ function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
                 {TH('Acciones', true)}
                 {TH('Precio', true)}
                 {TH('Importe orig.', true)}
+                {TH('Com. broker', true)}
                 {hasFx && TH('Tipo cambio', true)}
                 {hasFx && TH('Com. FX', true)}
                 {hasFx && TH('Coste EUR', true)}
+                {TH('Coste real', true)}
                 {TH('Notas')}
               </tr>
             </thead>
@@ -167,6 +184,9 @@ function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
                     <td style={{ padding: '7px 8px', ...RIGHT, color: '#c8d0e0', fontWeight: 600 }}>
                       {t.amount_original != null ? fmt(Number(t.amount_original)) : fmt(Number(t.shares) * Number(t.price))} {txCurrency}
                     </td>
+                    <td style={{ padding: '7px 8px', ...RIGHT, color: t.commission > 0 ? '#fbbf24' : '#4a5270', whiteSpace: 'nowrap' }}>
+                      {t.commission != null && t.commission > 0 ? `${fmt(Number(t.commission))} ${t.commission_currency || txCurrency}` : '—'}
+                    </td>
                     {hasFx && (
                       <td style={{ padding: '7px 8px', ...RIGHT, color: '#8090a8', whiteSpace: 'nowrap' }}>
                         {t.exchange_rate != null && t.exchange_rate !== 1 ? (
@@ -187,6 +207,9 @@ function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
                         {t.total_cost_base_currency != null ? `${fmt(Number(t.total_cost_base_currency))} €` : '—'}
                       </td>
                     )}
+                    <td style={{ padding: '7px 8px', ...RIGHT, color: '#c8d0e0', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      {t.total_cost != null ? `${fmt(Number(t.total_cost))} ${txCurrency}` : '—'}
+                    </td>
                     <td style={{ padding: '7px 8px', color: '#4a5270', fontSize: 11, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.notes || '—'}</td>
                   </tr>
                 )
@@ -196,12 +219,24 @@ function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
         </div>
       )}
 
-      {/* Resumen FX al pie */}
-      {hasFx && fxTotals.count > 0 && (
-        <div style={{ display: 'flex', gap: 16, marginTop: 14, padding: '12px 14px', background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.15)', borderRadius: 8, flexWrap: 'wrap' }}>
+      {/* Resumen de comisiones al pie */}
+      {filtered.length > 0 && (commTotals.broker > 0 || commTotals.fx > 0) && (
+        <div style={{ display: 'flex', gap: 22, marginTop: 14, padding: '12px 16px', background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.15)', borderRadius: 8, flexWrap: 'wrap' }}>
           <div>
-            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Total comisiones de cambio</p>
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#fbbf24' }}>{fmt(fxTotals.totalCommission)} €</p>
+            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Comisiones de broker</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#fbbf24' }}>{fmt(commTotals.broker)} €</p>
+          </div>
+          <div>
+            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Comisiones de cambio</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#fbbf24' }}>{fmt(commTotals.fx)} €</p>
+          </div>
+          <div>
+            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Total costes en comisiones</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#f87171' }}>{fmt(commTotals.total)} €</p>
+          </div>
+          <div>
+            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Comisión media / operación</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#c8d0e0' }}>{fmt(commTotals.avg)} €</p>
           </div>
           {fxTotals.avgPct != null && (
             <div>
@@ -209,6 +244,7 @@ function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
               <p style={{ fontSize: 15, fontWeight: 700, color: '#fbbf24' }}>{fxTotals.avgPct.toFixed(3)}%</p>
             </div>
           )}
+          <p style={{ fontSize: 9, color: '#2e3a55', width: '100%', marginTop: 2 }}>Comisiones en divisa extranjera convertidas a EUR con el tipo de cambio aproximado.</p>
         </div>
       )}
 
