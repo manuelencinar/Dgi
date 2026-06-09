@@ -61,11 +61,6 @@ export default function NavMenu({ active, sessionUser }) {
           <GlobalSearch />
           {sessionUser ? (
             <>
-              {sessionUser.isPremium && (
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 6, padding: '2px 8px', letterSpacing: '0.06em' }}>
-                  PREMIUM
-                </span>
-              )}
               <NotificationBell />
               <Link href="/ajustes" title="Ajustes" style={{
                 fontSize: 17, color: active === '/ajustes' ? '#818cf8' : '#4a5270',
