@@ -8,9 +8,9 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
 function fmtBig(v) {
   if (v == null) return '—'
   const a = Math.abs(v)
-  if (a >= 1e12) return (v / 1e12).toFixed(2) + ' B'
-  if (a >= 1e9)  return (v / 1e9).toFixed(1)  + ' MM'
-  if (a >= 1e6)  return (v / 1e6).toFixed(0)  + ' M'
+  // En España: millones (M) y miles de millones (mil M). Nunca "billones".
+  if (a >= 1e9) return (v / 1e9).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' mil M'
+  if (a >= 1e6) return (v / 1e6).toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' M'
   return v.toFixed(2)
 }
 function fmtPct(v, d = 1) { return v != null ? (v * 100).toFixed(d) + '%' : '—' }

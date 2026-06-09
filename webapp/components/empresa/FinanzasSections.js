@@ -42,13 +42,13 @@ function cagr(map) {
 }
 function chartUnit(vals) {
   const max = Math.max(0, ...vals.filter(v => v != null).map(Math.abs))
-  if (max >= 1e9) return { div: 1e9, suffix: 'B', dec: 1 }
-  if (max >= 1e6) return { div: 1e6, suffix: 'M', dec: 0 }
-  if (max >= 1e3) return { div: 1e3, suffix: 'K', dec: 0 }
+  if (max >= 1e9) return { div: 1e9, suffix: ' mil M', dec: 1 }
+  if (max >= 1e6) return { div: 1e6, suffix: ' M', dec: 0 }
+  if (max >= 1e3) return { div: 1e3, suffix: ' K', dec: 0 }
   return { div: 1, suffix: '', dec: 0 }
 }
 const fmtU = (v, u) => (v == null || isNaN(v)) ? '—' : (v / u.div).toLocaleString('es-ES', { maximumFractionDigits: u.dec }) + u.suffix
-const fmtMoney = v => { if (v == null || isNaN(v)) return '—'; const a = Math.abs(v); if (a >= 1e9) return (v / 1e9).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + 'B'; if (a >= 1e6) return (v / 1e6).toLocaleString('es-ES', { maximumFractionDigits: 0 }) + 'M'; return v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) }
+const fmtMoney = v => { if (v == null || isNaN(v)) return '—'; const a = Math.abs(v); if (a >= 1e9) return (v / 1e9).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' mil M'; if (a >= 1e6) return (v / 1e6).toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' M'; return v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) }
 const fmtPct = (v, d = 1) => v == null ? '—' : (v > 0 ? '+' : '') + v.toFixed(d) + '%'
 const fmtNum = (v, d = 2) => v == null ? '—' : v.toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d })
 

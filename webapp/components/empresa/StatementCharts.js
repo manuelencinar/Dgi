@@ -42,9 +42,9 @@ function pctChange(cur, prev) {
 // Unidad coherente por gráfico (no mezcla M y B)
 function chartUnit(values) {
   const max = Math.max(0, ...values.filter(v => v != null).map(Math.abs))
-  if (max >= 1e9) return { div: 1e9, suffix: 'B', dec: 1 }
-  if (max >= 1e6) return { div: 1e6, suffix: 'M', dec: 0 }
-  if (max >= 1e3) return { div: 1e3, suffix: 'K', dec: 0 }
+  if (max >= 1e9) return { div: 1e9, suffix: ' mil M', dec: 1 }
+  if (max >= 1e6) return { div: 1e6, suffix: ' M', dec: 0 }
+  if (max >= 1e3) return { div: 1e3, suffix: ' K', dec: 0 }
   return { div: 1, suffix: '', dec: 0 }
 }
 function fmtUnit(v, u) {
