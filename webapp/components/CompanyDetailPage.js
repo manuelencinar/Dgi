@@ -26,7 +26,6 @@ function fmtPct(v) {
 }
 function fmtCap(v) {
   if (v == null) return '—'
-  if (v >= 1e9)  return (v / 1e9).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' mil M'
   if (v >= 1e6)  return (v / 1e6).toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' M'
   return v.toLocaleString('es-ES', { maximumFractionDigits: 0 })
 }
@@ -662,7 +661,7 @@ function DCFSection({ dcf, ticker, isPremium }) {
                   <div key={y.year} style={{ textAlign: 'center' }}>
                     <p style={{ fontSize: 10, color: '#4a5270' }}>{y.year}</p>
                     <p style={{ fontSize: 12, fontWeight: 700, color: y.value >= 0 ? '#34d399' : '#f87171' }}>
-                      {Math.abs(y.value) >= 1e9 ? (y.value/1e9).toFixed(1)+' mil M' : Math.abs(y.value) >= 1e6 ? (y.value/1e6).toFixed(0)+' M' : y.value.toFixed(0)}
+                      {Math.abs(y.value) >= 1e6 ? (y.value/1e6).toLocaleString('es-ES', { maximumFractionDigits: 0 })+' M' : y.value.toFixed(0)}
                     </p>
                   </div>
                 ))}
@@ -1130,7 +1129,7 @@ function BuybackSection({ buybacks }) {
                     <div style={{ height: '100%', width: `${barPct}%`, background: col, borderRadius: 4 }} />
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 600, color: col, width: 70, textAlign: 'right', flexShrink: 0 }}>
-                    {y.isBuyback ? '−' : '+'}{absM >= 1000 ? `${(absM / 1000).toFixed(1)} mil M` : `${absM.toFixed(0)} M`}
+                    {y.isBuyback ? '−' : '+'}{`${absM.toLocaleString('es-ES', { maximumFractionDigits: 0 })} M`}
                   </span>
                   {y.yield != null && <span style={{ fontSize: 10, color: '#4a5270', width: 40, textAlign: 'right', flexShrink: 0 }}>{y.yield.toFixed(1)}%</span>}
                 </div>

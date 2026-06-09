@@ -210,7 +210,6 @@ function fmtM(v) {
   const m   = v / 1e6
   const abs = Math.abs(m)
   const sign = m < 0 ? '−' : ''
-  if (abs >= 1000) return sign + (abs / 1000).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' mil M'
   return sign + abs.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' M'
 }
 

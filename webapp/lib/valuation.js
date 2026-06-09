@@ -8,8 +8,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
 function fmtBig(v) {
   if (v == null) return '—'
   const a = Math.abs(v)
-  // En España: millones (M) y miles de millones (mil M). Nunca "billones".
-  if (a >= 1e9) return (v / 1e9).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' mil M'
+  // En España siempre en millones (M): 3.5e9 → "3.500 M", 8e8 → "800 M".
   if (a >= 1e6) return (v / 1e6).toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' M'
   return v.toFixed(2)
 }
