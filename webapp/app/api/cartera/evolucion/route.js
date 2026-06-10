@@ -65,9 +65,11 @@ export async function GET(req) {
     const yearStart = `${year}-01-01`
     const today = new Date()
     const todayStr = ymd(today)
-    const rangeEnd = year < nowYear ? `${year}-12-31` : todayStr
+    // Siempre traemos precios/FX hasta HOY (aunque el ejercicio sea pasado), para
+    // que el "Valor actual" se calcule con el cierre y el tipo de cambio más recientes.
+    const rangeEnd = todayStr
 
-    // daily_prices de los tickers + ^GSPC, en el rango
+    // daily_prices de los tickers + ^GSPC
     const priceTickers = [...tickers, '^GSPC']
     const priceMap = {}   // ticker -> [{date, v}] asc
     {
@@ -146,13 +148,14 @@ export async function GET(req) {
     // upsert snapshots (best-effort)
     try { await sb.from('portfolio_snapshots').upsert(snapshots, { onConflict: 'user_id,year,month' }) } catch {}
 
-    // ── KPIs (a día de hoy) ──
+    // ── KPIs (a día de hoy) ── valor actual = mismo cruce que las barras:
+    // acciones netas de transacciones × último cierre × tipo de cambio más reciente.
     let currentValue = 0
-    for (const p of (positions || [])) {
-      const sh = n(p.shares); if (sh <= 0) continue
-      const cur = p.currency || 'EUR'
-      let price = lastBefore(priceMap[p.ticker], todayStr) ?? curPrice[p.ticker]
-      if (price == null) { price = avgBuyPrice(p.ticker, todayStr); usedFallback = true }
+    for (const ticker of tickers) {
+      const sh = sharesAt(ticker, todayStr); if (sh <= 1e-9) continue
+      const cur = currByTicker[ticker] || 'EUR'
+      let price = lastBefore(priceMap[ticker], todayStr) ?? curPrice[ticker]
+      if (price == null) { price = avgBuyPrice(ticker, todayStr); usedFallback = true }
       currentValue += sh * price * rateAt(cur, todayStr)
     }
     const investedTotal = transactions.filter(t => t.type !== 'sell').reduce((s, t) => s + buyEUR(t), 0)
