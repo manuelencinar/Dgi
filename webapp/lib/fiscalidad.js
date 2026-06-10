@@ -31,6 +31,132 @@ export function nameOf(ticker) {
   return DICT.find(x => x[1] === ticker)?.[0] ?? ticker
 }
 
+// ── Retención en origen para el prefill fiscal (tipos de convenio) ──────────
+const WHT_FISCAL = { US: 15, DE: 26.375, CH: 35, FR: 12.8, GB: 0, NL: 15, ES: 19, BE: 30, JP: 15.315, AU: 15, CA: 15 }
+export function fiscalWHT(code) { return WHT_FISCAL[code] ?? 15 }
+
+function r2(v) { return Math.round(v * 100) / 100 }
+function r4(v) { return Math.round(v * 10000) / 10000 }
+
+// div_history puede venir como array [{year,dps}] u objeto {year:dps}
+function parseDivHistory(dh) {
+  const out = {}
+  if (Array.isArray(dh)) dh.forEach(h => { if (h && h.year != null && h.dps != null) out[h.year] = Number(h.dps) })
+  else if (dh && typeof dh === 'object') for (const [y, v] of Object.entries(dh)) { const n = Number(v); if (!isNaN(n)) out[y] = n }
+  return out
+}
+
+// Acciones en cartera ANTES de una fecha (compras − ventas con fecha < ref).
+function sharesBefore(txs, refDate) {
+  const ref = new Date(refDate)
+  let s = 0
+  for (const t of txs) {
+    if (new Date(t.date) < ref) s += (t.type === 'sell' ? -1 : 1) * (Number(t.shares) || 0)
+  }
+  return s
+}
+
+// Frecuencia anual estimada (12/4/2/1) desde dividend_events o la divisa.
+function inferFreq(events, currency) {
+  const ds = (events || []).map(e => e.ex_date).filter(Boolean).map(d => new Date(d)).filter(d => !isNaN(d)).sort((a, b) => a - b)
+  if (ds.length >= 2) {
+    const last = ds[ds.length - 1]
+    const yearAgo = new Date(last); yearAgo.setFullYear(yearAgo.getFullYear() - 1)
+    const n = ds.filter(d => d > yearAgo).length
+    if (n >= 1) return [1, 2, 4, 12].reduce((p, c) => Math.abs(c - n) < Math.abs(p - n) ? c : p, 1)
+  }
+  return (currency === 'USD' || currency === 'CAD') ? 4 : (currency === 'GBP' || currency === 'CHF') ? 2 : 1
+}
+
+// Fechas ex-dividendo del ejercicio: reales si las hay en dividend_events, si no estimadas.
+function paymentExDates(events, year, currency) {
+  const inYear = (events || [])
+    .map(e => e.ex_date).filter(Boolean)
+    .filter(d => new Date(d).getFullYear() === year)
+    .sort()
+  if (inYear.length) return inYear
+  const freq = inferFreq(events, currency)
+  const iso = (m, d) => `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+  if (freq >= 12) return Array.from({ length: 12 }, (_, i) => iso(i + 1, 15))
+  if (freq === 4) return [iso(3, 15), iso(6, 15), iso(9, 15), iso(12, 15)]
+  if (freq === 2) return [iso(6, 15), iso(12, 15)]
+  return [iso(7, 1)]   // anual
+}
+
+// Calcula las entradas fiscales automáticas (dividendos + ganancias FIFO).
+// Devuelve también los avisos: empresas sin div_history y ventas sin compra.
+export function computeAutoEntries({ positions, transactions, fundamentals, exercise }) {
+  const txByTicker = {}
+  ;(transactions || []).forEach(t => { (txByTicker[t.ticker] ||= []).push(t) })
+  for (const k in txByTicker) txByTicker[k].sort((a, b) => new Date(a.date) - new Date(b.date))
+
+  // ── Dividendos ──
+  const divEntries = []
+  const missingDivHistory = []
+  const stockPos = (positions || []).filter(p => (p.asset_type || 'stock') === 'stock' && Number(p.shares) > 0)
+  for (const pos of stockPos) {
+    const f = fundamentals[pos.ticker] || {}
+    const dh = parseDivHistory(f.div_history)
+    const annualDPS = dh[exercise]
+    const code = countryCodeOf(pos.ticker, f.country)
+    if (annualDPS == null || annualDPS <= 0) { missingDivHistory.push({ ticker: pos.ticker, name: nameOf(pos.ticker) }); continue }
+    const exDates = paymentExDates(f.dividend_events, exercise, pos.currency)
+    const freq = exDates.length || 1
+    const dpsPer = annualDPS / freq
+    const txs = txByTicker[pos.ticker] || []
+    let totalGross = 0
+    for (const ex of exDates) { const sh = sharesBefore(txs, ex); if (sh > 0) totalGross += sh * dpsPer }
+    if (totalGross <= 0) continue
+    const whtPct = fiscalWHT(code)
+    const wh = totalGross * whtPct / 100
+    divEntries.push({
+      type: 'dividend', ticker: pos.ticker, company_name: nameOf(pos.ticker), country: code,
+      shares: r4(totalGross / annualDPS), dps: annualDPS,
+      gross_amount: r2(totalGross), withholding_origin_pct: whtPct,
+      withholding_origin: r2(wh), net_amount: r2(totalGross - wh),
+      ex_date: exDates[Math.floor((exDates.length - 1) / 2)] || null,
+    })
+  }
+
+  // ── Ganancias / pérdidas (FIFO) ──
+  const gainEntries = []
+  const excludedSells = []
+  for (const [ticker, txs] of Object.entries(txByTicker)) {
+    const hasAnyBuy = txs.some(t => t.type !== 'sell')
+    const lots = []
+    for (const t of txs) {
+      if (t.type === 'sell') {
+        const e = txEur(t)
+        const totalSellShares = e.shares
+        const sellComm = e.commEUR + e.fxComm
+        const inYear = new Date(t.date).getFullYear() === exercise
+        let toSell = totalSellShares
+        if (!hasAnyBuy) { if (inYear) excludedSells.push({ ticker, name: nameOf(ticker), shares: totalSellShares, sell_date: t.date }); continue }
+        while (toSell > 1e-9 && lots.length) {
+          const lot = lots[0]
+          const take = Math.min(toSell, lot.shares)
+          const costBasis = take * lot.costPerShare
+          const proceeds = take * e.priceEUR - sellComm * (totalSellShares > 0 ? take / totalSellShares : 0)
+          const gain = proceeds - costBasis
+          if (inYear) gainEntries.push({
+            type: gain >= 0 ? 'gain' : 'loss', ticker, company_name: nameOf(ticker),
+            buy_date: lot.date, sell_date: t.date, shares: r4(take),
+            buy_price_total: r2(costBasis), sell_price_total: r2(proceeds), gain_loss: r2(gain),
+          })
+          lot.shares -= take; toSell -= take
+          if (lot.shares <= 1e-9) lots.shift()
+        }
+        if (toSell > 1e-9 && inYear) excludedSells.push({ ticker, name: nameOf(ticker), shares: r4(toSell), sell_date: t.date })
+      } else {
+        const e = txEur(t)
+        if (e.shares > 0) lots.push({ date: t.date, shares: e.shares, costPerShare: (e.grossEUR + e.commEUR + e.fxComm) / e.shares })
+      }
+    }
+  }
+
+  return { divEntries, gainEntries, missingDivHistory, excludedSells }
+}
+
 // ── conversión a EUR de una transacción ─────────────────────────────────────
 function txEur(t) {
   const rate   = Number(t.exchange_rate) || 1
