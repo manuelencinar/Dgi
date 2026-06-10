@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server'
 import { createClient as sessionClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
+import { FX } from '@/lib/portfolio'
 
 export const dynamic = 'force-dynamic'
 
@@ -94,7 +95,8 @@ export async function GET(req) {
       ;(fn || []).forEach(r => { if (r.current_price != null) curPrice[r.ticker] = n(r.current_price) })
     }
 
-    const rateAt = (cur, dateStr) => cur === 'EUR' ? 1 : (lastBefore(rateMap[cur], dateStr) ?? (rateMap[cur]?.length ? rateMap[cur][rateMap[cur].length - 1].v : 1))
+    // Tipo de cambio X→EUR a la fecha; si no hay dato real, usa el FX aproximado de la app (no 1)
+    const rateAt = (cur, dateStr) => cur === 'EUR' ? 1 : (lastBefore(rateMap[cur], dateStr) ?? (rateMap[cur]?.length ? rateMap[cur][rateMap[cur].length - 1].v : (FX[cur] || 1)))
     const avgBuyPrice = (ticker, dateStr) => {
       const buys = transactions.filter(t => t.ticker === ticker && t.type !== 'sell' && t.date <= dateStr)
       const sh = buys.reduce((s, t) => s + n(t.shares), 0)
@@ -120,8 +122,10 @@ export async function GET(req) {
         if (shares <= 1e-9) continue
         anyPos = true
         const cur = currByTicker[ticker] || 'EUR'
+        // Precio de cierre del mes (daily_prices). Solo para el mes en curso, si no
+        // hay cierre del día usamos current_price; nunca current_price para meses pasados.
         let price = lastBefore(priceMap[ticker], monthEnd)
-        if (price == null) { price = curPrice[ticker] ?? null }
+        if (price == null && isCurrent) price = curPrice[ticker] ?? null
         if (price == null) { price = avgBuyPrice(ticker, monthEnd); usedFallback = true }
         marketValue += shares * price * rateAt(cur, monthEnd)
       }
@@ -147,7 +151,7 @@ export async function GET(req) {
     for (const p of (positions || [])) {
       const sh = n(p.shares); if (sh <= 0) continue
       const cur = p.currency || 'EUR'
-      let price = curPrice[p.ticker] ?? lastBefore(priceMap[p.ticker], todayStr)
+      let price = lastBefore(priceMap[p.ticker], todayStr) ?? curPrice[p.ticker]
       if (price == null) { price = avgBuyPrice(p.ticker, todayStr); usedFallback = true }
       currentValue += sh * price * rateAt(cur, todayStr)
     }

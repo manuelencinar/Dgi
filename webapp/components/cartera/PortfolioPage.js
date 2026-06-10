@@ -584,7 +584,7 @@ export default function PortfolioPage({ isPremium }) {
       {enriched.length > 0 && <SummarySection summary={summary} />}
 
       {/* Evolución del patrimonio — debajo del resumen, antes de las posiciones */}
-      {enriched.length > 0 && <PortfolioEvolution isPremium={isPremium} />}
+      {enriched.length > 0 && <PortfolioEvolution isPremium={isPremium} currentValueEUR={summary.totalValueEUR} />}
 
       {/* Module 1: Score DGI de la cartera con benchmark */}
       {enriched.length > 0 && <PortfolioDGIScore enriched={enriched} isPremium={isPremium} />}

@@ -10,7 +10,7 @@ const fmtEUR = (v, d = 0) => v == null || isNaN(v) ? '—' : Number(v).toLocaleS
 const fmtPct = v => v == null || isNaN(v) ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%'
 const axisEUR = v => Math.abs(v) >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : Math.abs(v) >= 1e3 ? Math.round(v / 1e3) + 'K' : String(v)
 
-export default function PortfolioEvolution({ isPremium }) {
+export default function PortfolioEvolution({ isPremium, currentValueEUR = null }) {
   const nowYear = new Date().getFullYear()
   const [year, setYear] = useState(nowYear)
   const [data, setData] = useState(null)
@@ -38,10 +38,17 @@ export default function PortfolioEvolution({ isPremium }) {
     return () => { cancelled = true }
   }, [year])
 
+  // Para el año en curso, el valor del mes actual = el valor real de la cartera
+  // (el mismo que muestra el resumen), para que el gráfico y los KPIs cuadren.
+  const overrideCurrent = isCurrentYearOverride(year, nowYear, currentValueEUR)
+
   const chartData = useMemo(() => {
     if (!data?.months) return []
-    return data.months.map(mo => {
-      const mv = mo.marketValue, inv = mo.investedCapital
+    const lastIdx = lastDataIndex(data.months)
+    return data.months.map((mo, idx) => {
+      let mv = mo.marketValue
+      if (overrideCurrent != null && idx === lastIdx) mv = overrideCurrent
+      const inv = mo.investedCapital
       const has = mv != null && inv != null && !mo.noData
       const retPct = has && inv > 0 ? (mv - inv) / inv * 100 : 0
       const divPct = has && inv > 0 ? (mo.dividendsAccum || 0) / inv * 100 : 0
@@ -55,11 +62,31 @@ export default function PortfolioEvolution({ isPremium }) {
         positive: has ? mv >= inv : true, noData: !has,
       }
     })
-  }, [data])
+  }, [data, overrideCurrent])
 
   const hasDivs = data?.flags?.hasDividends
-  const k = data?.kpis
   const years = data?.years || [nowYear]
+
+  // KPIs: si tenemos el valor real de la cartera (año en curso), prevalece sobre
+  // el estimado del API para que el "Valor actual" coincida con el resumen.
+  const k = useMemo(() => {
+    const base = data?.kpis
+    if (!base) return null
+    if (overrideCurrent == null) return base
+    const inv = base.investedTotal || 0
+    const latentGain = overrideCurrent - inv
+    const startVal = data.months?.find(mo => mo.marketValue != null && mo.marketValue > 0)?.marketValue ?? null
+    return {
+      ...base,
+      currentValue: overrideCurrent,
+      latentGain,
+      latentPct: inv > 0 ? latentGain / inv * 100 : null,
+      totalReturnPct: inv > 0 ? (latentGain + (base.dividendsAllTime || 0)) / inv * 100 : null,
+      valueChangeEUR: startVal != null ? overrideCurrent - startVal : null,
+      valueChangePct: startVal ? (overrideCurrent - startVal) / startVal * 100 : null,
+      beatsSP500: base.sp500Pct != null && inv > 0 ? ((latentGain + (base.dividendsAllTime || 0)) / inv * 100) > base.sp500Pct : false,
+    }
+  }, [data, overrideCurrent])
 
   return (
     <div style={{ ...CARD, marginBottom: 16 }}>
@@ -150,6 +177,17 @@ export default function PortfolioEvolution({ isPremium }) {
       )}
     </div>
   )
+}
+
+// Valor real de la cartera a usar como override del mes actual (solo año en curso)
+function isCurrentYearOverride(year, nowYear, currentValueEUR) {
+  return year === nowYear && currentValueEUR != null && !isNaN(currentValueEUR) ? Math.round(currentValueEUR) : null
+}
+// Índice del último mes con datos (no futuro)
+function lastDataIndex(months) {
+  let idx = -1
+  months.forEach((mo, i) => { if (!mo.noData && mo.marketValue != null) idx = i })
+  return idx
 }
 
 const btn = active => ({
