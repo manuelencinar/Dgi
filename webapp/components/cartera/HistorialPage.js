@@ -16,6 +16,19 @@ function fmt(v, d = 2) { return v == null || isNaN(v) ? '—' : v.toLocaleString
 function fmtEUR(v) { return v == null ? '—' : v.toLocaleString('es-ES', { maximumFractionDigits: 2 }) + ' €' }
 function nameOf(t) { return DICT.find(d => d[1] === t)?.[0] ?? t }
 function currOf(t) { return DICT.find(d => d[1] === t)?.[3] ?? 'USD' }
+
+// Recalcula acciones y precio medio ponderado de un ticker desde sus operaciones
+// (en orden de fecha). Compras suben el medio; ventas reducen acciones (no el medio).
+function recomputePosition(txs) {
+  const sorted = [...txs].sort((a, b) => new Date(a.date) - new Date(b.date))
+  let shares = 0, avg = 0
+  for (const t of sorted) {
+    const sh = Number(t.shares) || 0, px = Number(t.price) || 0
+    if (t.type === 'sell') { shares = Math.max(0, shares - sh) }
+    else { const total = shares + sh; avg = total > 0 ? (shares * avg + sh * px) / total : px; shares = total }
+  }
+  return { shares, avg }
+}
 function hrefFor(t, fundSet) { return fundSet?.has(t) ? `/fondo/${encodeURIComponent(t)}` : `/empresa/${encodeURIComponent(t)}` }
 
 function downloadCSV(filename, rows) {
@@ -35,9 +48,10 @@ function PremiumBadge() {
 }
 
 // ── Tab 1: Operaciones ─────────────────────────────────────────────────────
-function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
+function TabOperations({ transactions, dividends, isPremium, onDelete, fundTickers }) {
   const [filterTicker, setFilterTicker] = useState('all')
   const [filterType,   setFilterType]   = useState('all')
+  const [confirmDel,   setConfirmDel]   = useState(null)   // id de la operación a borrar
 
   const tickers = [...new Set(transactions.map(t => t.ticker))].sort()
 
@@ -162,6 +176,7 @@ function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
                 {hasFx && TH('Coste EUR', true)}
                 {TH('Coste real', true)}
                 {TH('Notas')}
+                {TH('')}
               </tr>
             </thead>
             <tbody>
@@ -211,6 +226,16 @@ function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
                       {t.total_cost != null ? `${fmt(Number(t.total_cost))} ${txCurrency}` : '—'}
                     </td>
                     <td style={{ padding: '7px 8px', color: '#4a5270', fontSize: 11, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.notes || '—'}</td>
+                    <td style={{ padding: '7px 8px', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                      {confirmDel === t.id ? (
+                        <span style={{ fontSize: 10.5, color: '#fbbf24' }}>
+                          ¿Borrar? <button onClick={() => { onDelete(t); setConfirmDel(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontWeight: 700, padding: '0 3px' }}>Sí</button>
+                          <button onClick={() => setConfirmDel(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8090a8', padding: '0 3px' }}>No</button>
+                        </span>
+                      ) : (
+                        <button onClick={() => setConfirmDel(t.id)} title="Borrar operación (recalcula la posición)" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontSize: 13, padding: '2px 4px' }}>🗑</button>
+                      )}
+                    </td>
                   </tr>
                 )
               })}
@@ -288,7 +313,8 @@ function TabOperations({ transactions, dividends, isPremium, fundTickers }) {
 }
 
 // ── Tab 2: Dividendos cobrados ─────────────────────────────────────────────
-function TabDividends({ dividends, positions, onAdd, isPremium }) {
+function TabDividends({ dividends, positions, onAdd, onDelete, isPremium }) {
+  const [confirmDel, setConfirmDel] = useState(null)
   const [form, setForm] = useState({ ticker: '', amount: '', amount_net: '', date: new Date().toISOString().slice(0, 10) })
   const [saving, setSaving] = useState(false)
 
@@ -406,8 +432,8 @@ function TabDividends({ dividends, positions, onAdd, isPremium }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr>
-                {['Fecha', 'Empresa', 'Bruto', 'Neto'].map(h => (
-                  <th key={h} style={{ padding: '6px 8px', textAlign: ['Bruto','Neto'].includes(h) ? 'right' : 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
+                {['Fecha', 'Empresa', 'Bruto', 'Neto', ''].map((h, i) => (
+                  <th key={i} style={{ padding: '6px 8px', textAlign: ['Bruto','Neto'].includes(h) ? 'right' : 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -418,6 +444,16 @@ function TabDividends({ dividends, positions, onAdd, isPremium }) {
                   <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{nameOf(d.ticker)}</td>
                   <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 600 }}>{fmt(Number(d.amount))}</td>
                   <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{d.amount_net != null ? fmt(Number(d.amount_net)) : '—'}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    {confirmDel === d.id ? (
+                      <span style={{ fontSize: 10.5, color: '#fbbf24' }}>
+                        ¿Borrar? <button onClick={() => { onDelete(d.id); setConfirmDel(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontWeight: 700, padding: '0 3px' }}>Sí</button>
+                        <button onClick={() => setConfirmDel(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8090a8', padding: '0 3px' }}>No</button>
+                      </span>
+                    ) : (
+                      <button onClick={() => setConfirmDel(d.id)} title="Borrar dividendo" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontSize: 13, padding: '2px 4px' }}>🗑</button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -659,6 +695,33 @@ export default function HistorialPage({ isPremium }) {
     load()
   }
 
+  // Borrar una operación = como si nunca hubiera existido: se elimina y se
+  // recalcula la posición del ticker a partir de las transacciones restantes.
+  const handleDeleteTx = async (tx) => {
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user) return
+    await sb.from('transactions').delete().eq('id', tx.id).eq('user_id', user.id)
+
+    const { data: remaining } = await sb.from('transactions').select('*').eq('user_id', user.id).eq('ticker', tx.ticker)
+    const { shares, avg } = recomputePosition(remaining || [])
+    const { data: pos } = await sb.from('positions').select('*').eq('user_id', user.id).eq('ticker', tx.ticker).maybeSingle()
+
+    if (pos) {
+      if (shares <= 1e-9) await sb.from('positions').delete().eq('id', pos.id)
+      else await sb.from('positions').update({ shares, avg_cost: avg, updated_at: new Date().toISOString() }).eq('id', pos.id)
+    }
+    // Si no había posición (operación huérfana), no se recrea: borrar la operación
+    // simplemente la elimina del historial, como si nunca hubiera existido.
+    load()
+  }
+
+  const handleDeleteDiv = async (id) => {
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user) return
+    await sb.from('dividends_received').delete().eq('id', id).eq('user_id', user.id)
+    load()
+  }
+
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#4a5270' }}>Cargando historial…</div>
 
   const TABS = [
@@ -686,8 +749,8 @@ export default function HistorialPage({ isPremium }) {
       </div>
 
       <div style={CARD}>
-        {tab === 'ops'  && <TabOperations transactions={transactions} dividends={dividends} isPremium={isPremium} fundTickers={new Set(positions.filter(p => (p.asset_type || 'stock') !== 'stock').map(p => p.ticker))} />}
-        {tab === 'divs' && <TabDividends dividends={dividends} positions={positions} onAdd={handleAddDividend} isPremium={isPremium} />}
+        {tab === 'ops'  && <TabOperations transactions={transactions} dividends={dividends} isPremium={isPremium} onDelete={handleDeleteTx} fundTickers={new Set(positions.filter(p => (p.asset_type || 'stock') !== 'stock').map(p => p.ticker))} />}
+        {tab === 'divs' && <TabDividends dividends={dividends} positions={positions} onAdd={handleAddDividend} onDelete={handleDeleteDiv} isPremium={isPremium} />}
         {tab === 'yoc'  && <TabYieldOnCost positions={positions} transactions={transactions} fundamentals={fundamentals} isPremium={isPremium} />}
         {tab === 'recur' && <TabRecurring recurring={recurring} transactions={transactions} fundsMap={fundsMap} />}
       </div>
