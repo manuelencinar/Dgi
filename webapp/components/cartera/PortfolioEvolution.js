@@ -86,7 +86,7 @@ export default function PortfolioEvolution({ isPremium }) {
       {/* KPIs */}
       {k && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
-          <Kpi label="Valor actual" value={fmtEUR(k.currentValue)} sub={k.valueChangeEUR != null ? `${k.valueChangeEUR >= 0 ? '+' : ''}${fmtEUR(k.valueChangeEUR)} · ${fmtPct(k.valueChangePct)}` : null} subCol={k.valueChangeEUR >= 0 ? GREEN : RED} col="#e0e8f0" />
+          <Kpi label="Valor actual" value={fmtEUR(k.currentValue)} sub={k.contributedYear ? `Aportado en ${year}: ${k.contributedYear >= 0 ? '+' : ''}${fmtEUR(k.contributedYear)}` : null} subCol="#8090a8" col="#e0e8f0" />
           <Kpi label="Capital invertido" value={fmtEUR(k.investedTotal)} sub="Coste medio ponderado" col="#c8d0e0" />
           <Kpi label="Ganancia latente" value={(k.latentGain >= 0 ? '+' : '') + fmtEUR(k.latentGain)} sub={fmtPct(k.latentPct)} subCol={k.latentGain >= 0 ? GREEN : RED} col={k.latentGain >= 0 ? GREEN : RED} />
           {isPremium && hasRealized && (

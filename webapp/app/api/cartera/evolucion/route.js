@@ -216,10 +216,15 @@ export async function GET(req) {
     // Rentabilidad total = latente + resultado realizado del año + dividendos
     const totalReturnPct = investedTotal > 0 ? (latentGain + realizedYear + dividendsAllTime) / investedTotal * 100 : null
 
-    const firstWithVal = months.find(mo => mo.marketValue != null && mo.marketValue > 0)
-    const startVal = firstWithVal ? firstWithVal.marketValue : null
-    const valueChangeEUR = startVal != null ? currentValue - startVal : null
-    const valueChangePct = startVal ? valueChangeEUR / startVal * 100 : null
+    // Aportación neta del ejercicio (compras − ingresos por ventas). Sirve para
+    // distinguir el crecimiento del patrimonio por DINERO NUEVO del rendimiento.
+    const inYear = d => d && new Date(d).getFullYear() === year
+    const buysYearEUR = transactions.filter(t => t.type !== 'sell' && inYear(t.date)).reduce((s, t) => s + buyEUR(t), 0)
+    const sellsYearEUR = transactions.filter(t => t.type === 'sell' && inYear(t.date)).reduce((s, t) => {
+      const rate = rateAt(curOf(t.ticker), t.date)
+      return s + (n(t.shares) * n(t.price) * rate - n(t.commission) * rate - n(t.fx_commission_eur))
+    }, 0)
+    const contributedYear = buysYearEUR - sellsYearEUR
 
     // ── S&P 500 en el período del ejercicio ──
     let sp500Pct = null, beatsSP500 = false
@@ -232,7 +237,7 @@ export async function GET(req) {
 
     return NextResponse.json({
       months, years,
-      kpis: { currentValue: Math.round(currentValue), investedTotal: Math.round(investedTotal), latentGain: Math.round(latentGain), latentPct, totalReturnPct, dividendsAllTime: Math.round(dividendsAllTime), realizedYear: Math.round(realizedYear), valueChangeEUR: valueChangeEUR != null ? Math.round(valueChangeEUR) : null, valueChangePct, beatsSP500, sp500Pct },
+      kpis: { currentValue: Math.round(currentValue), investedTotal: Math.round(investedTotal), latentGain: Math.round(latentGain), latentPct, totalReturnPct, dividendsAllTime: Math.round(dividendsAllTime), realizedYear: Math.round(realizedYear), contributedYear: Math.round(contributedYear), beatsSP500, sp500Pct },
       flags: { hasDividends: dividends.length > 0, hasRealized: realizedEvents.length > 0, usedFallback, empty: false },
     })
   } catch (e) {
