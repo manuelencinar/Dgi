@@ -73,6 +73,7 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
   const [addDraft, setAddDraft] = useState({ query: '', ticker: '', company_name: '', country: '', shares: '', dps: '', pct: '' })
   const [delId, setDelId] = useState(null)
   const [showExcluded, setShowExcluded] = useState(false)
+  const [receivedCount, setReceivedCount] = useState(null)   // dividendos cobrados confirmados del ejercicio
 
   const fetchEntries = useCallback(async (uid, ex) => {
     const { data } = await sb.from('fiscal_entries').select('*').eq('user_id', uid).eq('exercise', ex).eq('deleted', false)
@@ -89,6 +90,11 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
       sb.from('transactions').select('*').eq('user_id', user.id),
     ])
     setPositions(pos || []); setTransactions(tx || [])
+    // Dividendos cobrados confirmados del ejercicio (fuente: sección Dividendos)
+    try {
+      const { data: drecs } = await sb.from('dividends_received').select('date,status').eq('user_id', user.id).eq('status', 'received')
+      setReceivedCount((drecs || []).filter(d => d.date && new Date(d.date).getFullYear() === year).length)
+    } catch { setReceivedCount(null) }
     const tickers = [...new Set([...(pos || []).map(p => p.ticker), ...(tx || []).map(t => t.ticker)])]
     if (tickers.length) {
       const { data: funds } = await sb.from('company_fundamentals').select('ticker, country, div_history, dividend_events').in('ticker', tickers)
@@ -242,6 +248,14 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
           </select>
         </div>
       </div>
+
+      {/* Aviso: la fiscalidad de dividendos se basa en los cobros confirmados */}
+      {receivedCount === 0 && (
+        <div style={{ background: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <p style={{ fontSize: 12.5, color: '#8090a8' }}>Para calcular tu fiscalidad confirma los dividendos cobrados en la sección Dividendos.</p>
+          <Link href="/cartera/dividendos" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'rgba(96,165,250,0.85)', padding: '7px 14px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>Ir a Dividendos →</Link>
+        </div>
+      )}
 
       {/* Resumen ejecutivo */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12, marginBottom: 16 }}>

@@ -312,31 +312,21 @@ function TabOperations({ transactions, dividends, isPremium, onDelete, fundTicke
   )
 }
 
-// ── Tab 2: Dividendos cobrados ─────────────────────────────────────────────
-function TabDividends({ dividends, positions, onAdd, onDelete, isPremium }) {
-  const [confirmDel, setConfirmDel] = useState(null)
-  const [form, setForm] = useState({ ticker: '', amount: '', amount_net: '', date: new Date().toISOString().slice(0, 10) })
-  const [saving, setSaving] = useState(false)
-
-  const submit = async (e) => {
-    e.preventDefault()
-    if (!form.ticker || !form.amount) return
-    setSaving(true)
-    await onAdd(form.ticker, parseFloat(form.amount), form.amount_net ? parseFloat(form.amount_net) : null, form.date)
-    setForm({ ticker: '', amount: '', amount_net: '', date: new Date().toISOString().slice(0, 10) })
-    setSaving(false)
-  }
+// ── Tab 2: Dividendos cobrados (solo lectura — se gestionan en /cartera/dividendos) ──
+function TabDividends({ dividends, isPremium }) {
+  // Solo los dividendos confirmados como cobrados.
+  const received = useMemo(() => (dividends || []).filter(d => (d.status || 'received') === 'received'), [dividends])
 
   const byYear = useMemo(() => {
     const map = {}
-    dividends.forEach(d => {
+    received.forEach(d => {
       const y = new Date(d.date).getFullYear()
       map[y] = (map[y] || 0) + Number(d.amount)
     })
     return Object.entries(map).map(([year, total]) => ({ year, total: Math.round(total * 100) / 100 })).sort((a, b) => a.year - b.year)
-  }, [dividends])
+  }, [received])
 
-  const totalAccum = dividends.reduce((s, d) => s + Number(d.amount), 0)
+  const totalAccum = received.reduce((s, d) => s + Number(d.amount), 0)
   const curYear  = new Date().getFullYear()
   const thisYear = byYear.find(y => +y.year === curYear)?.total ?? 0
   const lastYear = byYear.find(y => +y.year === curYear - 1)?.total ?? 0
@@ -347,45 +337,24 @@ function TabDividends({ dividends, positions, onAdd, onDelete, isPremium }) {
 
   const exportCSV = () => {
     const rows = [['Fecha', 'Empresa', 'Ticker', 'Importe bruto', 'Importe neto']]
-    ;[...dividends].sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(d =>
+    ;[...received].sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(d =>
       rows.push([d.date, nameOf(d.ticker), d.ticker, d.amount, d.amount_net ?? '']))
     downloadCSV('dividendos_cobrados.csv', rows)
   }
 
   if (!isPremium) return (
     <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-      <p style={{ fontSize: 14, fontWeight: 700, color: '#818cf8', marginBottom: 8 }}>Registro de dividendos — solo Premium</p>
+      <p style={{ fontSize: 14, fontWeight: 700, color: '#818cf8', marginBottom: 8 }}>Dividendos cobrados — solo Premium</p>
       <Link href="/pricing" style={{ padding: '9px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>Activar Premium →</Link>
     </div>
   )
 
   return (
     <div>
-      {/* Form */}
-      <form onSubmit={submit} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr auto', gap: 8, marginBottom: 20, alignItems: 'end' }}>
-        <div>
-          <label style={{ fontSize: 10, color: '#4a5270', display: 'block', marginBottom: 4 }}>Empresa</label>
-          <select value={form.ticker} onChange={e => setForm(f => ({ ...f, ticker: e.target.value }))} style={{ ...INPUT, width: '100%' }} required>
-            <option value="">Selecciona…</option>
-            {positions.map(p => <option key={p.ticker} value={p.ticker}>{nameOf(p.ticker)}</option>)}
-          </select>
-        </div>
-        <div>
-          <label style={{ fontSize: 10, color: '#4a5270', display: 'block', marginBottom: 4 }}>Bruto</label>
-          <input style={{ ...INPUT, width: '100%' }} type="number" step="any" min="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} required />
-        </div>
-        <div>
-          <label style={{ fontSize: 10, color: '#4a5270', display: 'block', marginBottom: 4 }}>Neto</label>
-          <input style={{ ...INPUT, width: '100%' }} type="number" step="any" min="0" value={form.amount_net} onChange={e => setForm(f => ({ ...f, amount_net: e.target.value }))} />
-        </div>
-        <div>
-          <label style={{ fontSize: 10, color: '#4a5270', display: 'block', marginBottom: 4 }}>Fecha</label>
-          <input style={{ ...INPUT, width: '100%' }} type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} required />
-        </div>
-        <button type="submit" disabled={saving} style={{ padding: '9px 16px', background: 'rgba(52,211,153,0.8)', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>
-          {saving ? '…' : 'Añadir'}
-        </button>
-      </form>
+      {/* Los dividendos se gestionan en la sección Dividendos — aquí solo lectura */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
+        <Link href="/cartera/dividendos" style={{ fontSize: 12, color: '#818cf8', fontWeight: 700, textDecoration: 'none' }}>Gestionar dividendos →</Link>
+      </div>
 
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 20 }}>
@@ -420,40 +389,30 @@ function TabDividends({ dividends, positions, onAdd, onDelete, isPremium }) {
 
       {/* List */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Dividendos registrados</p>
-        {dividends.length > 0 && (
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Dividendos cobrados</p>
+        {received.length > 0 && (
           <button onClick={exportCSV} style={{ ...INPUT, cursor: 'pointer', color: '#818cf8', fontWeight: 700, fontSize: 11, padding: '6px 12px' }}>↓ CSV</button>
         )}
       </div>
-      {dividends.length === 0 ? (
-        <p style={{ fontSize: 13, color: '#4a5270', textAlign: 'center', padding: '20px 0' }}>Aún no has registrado dividendos cobrados.</p>
+      {received.length === 0 ? (
+        <p style={{ fontSize: 13, color: '#4a5270', textAlign: 'center', padding: '20px 0' }}>Sin dividendos cobrados. Confírmalos en la sección <Link href="/cartera/dividendos" style={{ color: '#818cf8' }}>Dividendos</Link>.</p>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr>
-                {['Fecha', 'Empresa', 'Bruto', 'Neto', ''].map((h, i) => (
+                {['Fecha', 'Empresa', 'Bruto', 'Neto'].map((h, i) => (
                   <th key={i} style={{ padding: '6px 8px', textAlign: ['Bruto','Neto'].includes(h) ? 'right' : 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {[...dividends].sort((a, b) => new Date(b.date) - new Date(a.date)).map(d => (
+              {[...received].sort((a, b) => new Date(b.date) - new Date(a.date)).map(d => (
                 <tr key={d.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                   <td style={{ padding: '7px 8px', color: '#4a5270' }}>{new Date(d.date).toLocaleDateString('es-ES')}</td>
                   <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{nameOf(d.ticker)}</td>
                   <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 600 }}>{fmt(Number(d.amount))}</td>
                   <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{d.amount_net != null ? fmt(Number(d.amount_net)) : '—'}</td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    {confirmDel === d.id ? (
-                      <span style={{ fontSize: 10.5, color: '#fbbf24' }}>
-                        ¿Borrar? <button onClick={() => { onDelete(d.id); setConfirmDel(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontWeight: 700, padding: '0 3px' }}>Sí</button>
-                        <button onClick={() => setConfirmDel(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8090a8', padding: '0 3px' }}>No</button>
-                      </span>
-                    ) : (
-                      <button onClick={() => setConfirmDel(d.id)} title="Borrar dividendo" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontSize: 13, padding: '2px 4px' }}>🗑</button>
-                    )}
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -750,7 +709,7 @@ export default function HistorialPage({ isPremium }) {
 
       <div style={CARD}>
         {tab === 'ops'  && <TabOperations transactions={transactions} dividends={dividends} isPremium={isPremium} onDelete={handleDeleteTx} fundTickers={new Set(positions.filter(p => (p.asset_type || 'stock') !== 'stock').map(p => p.ticker))} />}
-        {tab === 'divs' && <TabDividends dividends={dividends} positions={positions} onAdd={handleAddDividend} onDelete={handleDeleteDiv} isPremium={isPremium} />}
+        {tab === 'divs' && <TabDividends dividends={dividends} isPremium={isPremium} />}
         {tab === 'yoc'  && <TabYieldOnCost positions={positions} transactions={transactions} fundamentals={fundamentals} isPremium={isPremium} />}
         {tab === 'recur' && <TabRecurring recurring={recurring} transactions={transactions} fundsMap={fundsMap} />}
       </div>
