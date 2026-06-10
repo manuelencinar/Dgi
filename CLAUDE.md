@@ -102,6 +102,14 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - `scripts/recalc_roic.mjs` — script Node de una vez para recalcular ROIC en BD desde los estados financieros ya guardados (sin yfinance). Ejecutar con `--write`. SQL de la columna: `webapp/sql/roic_display.sql`.
 - Resultados de referencia tras el fix: Edenred ~17,6%, ADP ~36%, MA ~61%, KO ~16,7%, JNJ ~17,7%.
 
+## Sistema de bonificaciones por tendencia positiva (scoring DGI)
+- Adicionales al scoring base: NO modifican umbrales ni penalizaciones, solo suman puntos extra por tendencias positivas sostenidas. Cap total **+1.0**; la nota final nunca supera 10. Requieren ≥3 años de histórico (si falta, se ignora la bonificación sin penalizar).
+- Lógica única en `lib/bonuses.js` (`computeBonuses(data, sectorType)`), integrada en `lib/dgi-score.js` (`computeDGIScore` suma `bonus.total` tras penalizaciones y devuelve `bonuses`/`bonusTotal`). **Replicada en `scripts/update_fundamentals.py`** (`compute_bonus_fields`, deben coincidir) usando los jsonb anuales ya descargados.
+- 6 bonificaciones desde income/balance/cashflow anuales: ROIC creciente (+0.3/+0.15), márgenes en expansión (+0.2/+0.1; energía/materiales usan media móvil 3a), reducción de deuda neta (+0.2/+0.1; utilities/REITs usan cobertura de intereses), FCF creciente y positivo (+0.2/+0.1; utilities usan CFO), aceleración del dividendo (cagr3 > cagr10×1.1; +0.1), caja neta positiva y mejorando (+0.1).
+- Columnas en company_fundamentals (SQL en `webapp/sql/bonuses.sql`): `bonus_roic_trend`, `bonus_margin_trend`, `bonus_debt_reduction`, `bonus_fcf_growth`, `bonus_div_acceleration`, `bonus_net_cash`, `bonus_total`, `improving_flag` (boolean, true si `bonus_total >= 0.3`).
+- Ficha de empresa: sección verde "Bonificaciones por tendencia positiva" al pie del Score DGI (solo si hay bonificaciones).
+- Screener: badge "↑ Mejorando" (bonus_total ≥ 0.5) / "↗ Tendencia +" (≥ 0.3) junto a racha/foso, y filtro premium "Empresas mejorando" con selector (ROIC/Márgenes/Deuda/FCF). El screener lee `bonus_total`/`improving_flag` de la BD (los rellena el script Python).
+
 ## ETFs y fondos (módulo cartera)
 - Tabla `funds` (SQL en `webapp/sql/funds.sql`, con 14 ETFs DGI precargados) + `positions.asset_type` (stock/etf/fund).
 - API `/api/fund/lookup` (POST busca/descarga de Yahoo, resuelve ISIN→símbolo vía endpoint de búsqueda; PUT alta manual). Lógica compartida en `lib/fund-fetch.js` (`fetchAndStoreFund`).

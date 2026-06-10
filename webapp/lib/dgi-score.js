@@ -1,6 +1,7 @@
 // DGI Scoring System v2 — lógica completa sector-aware
 import { roicForScoring } from '@/lib/metrics'
 import { computeCDR } from '@/lib/capital-discipline'
+import { computeBonuses } from '@/lib/bonuses'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -639,7 +640,10 @@ export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend) {
 
   const penalties    = buildPenalties({ ...data, divHistory: data.divHistory || [] }, sectorType)
   const penaltyTotal = penalties.reduce((s, p) => s + p.amount, 0)
-  const total        = prepenalty != null ? Math.min(10, Math.max(1, Math.round((prepenalty - penaltyTotal) * 10) / 10)) : null
+  // Bonificaciones por tendencia positiva (adicionales, cap +1.0). No tocan los
+  // umbrales ni las penalizaciones: se suman a la nota final tras penalizaciones.
+  const bonus        = computeBonuses({ ...data, divHistory: data.divHistory || [] }, sectorType)
+  const total        = prepenalty != null ? Math.min(10, Math.max(1, Math.round((prepenalty - penaltyTotal + bonus.total) * 10) / 10)) : null
 
   return {
     total,
@@ -654,6 +658,8 @@ export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend) {
       { key: 'valuation', name: 'Valoración',            weight: w.valuation, score: vS, metrics: valuationM },
     ],
     penalties,
+    bonuses: bonus.applied,
+    bonusTotal: bonus.total,
     hasData: true,
     methodology: `Metodología de scoring adaptada para ${sectorLabels[sectorType]}`,
   }

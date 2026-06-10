@@ -704,6 +704,137 @@ def compute_cdr_fields(cf_stmt, bs_stmt):
     }
 
 
+# ── Bonificaciones por tendencia positiva (réplica de lib/bonuses.js) ────────
+def _by_year(stmt, *labels):
+    return {int(y): v for y, v in _stmt_row(stmt, *labels).items()}
+
+def _improving(vals, higher=True):
+    v0 = vals[0] if len(vals) > 0 else None
+    v1 = vals[1] if len(vals) > 1 else None
+    v2 = vals[2] if len(vals) > 2 else None
+    def b(a, c): return (a > c) if higher else (a < c)
+    if v0 is not None and v1 is not None and v2 is not None and b(v0, v1) and b(v1, v2):
+        return 3
+    if v0 is not None and v1 is not None and b(v0, v1):
+        return 2
+    return 0
+
+def _ma3(vals):
+    out = []
+    for i in range(0, max(0, len(vals) - 2)):
+        a, b, c = vals[i], vals[i + 1], vals[i + 2]
+        out.append((a + b + c) / 3 if (a is not None and b is not None and c is not None) else None)
+    return out
+
+def _bonus_sector(sector, industry):
+    s = (sector or "").lower(); i = (industry or "").lower()
+    if "utilities" in s: return "utilities"
+    if "reit" in i or "real estate" in s: return "reit"
+    if "energy" in s or "basic materials" in s: return "energy"
+    return "general"
+
+def compute_bonus_fields(is_stmt, bs_stmt, cf_stmt, div_history, sector, industry):
+    TAX = 0.21
+    out = {"bonus_roic_trend": 0.0, "bonus_margin_trend": 0.0, "bonus_debt_reduction": 0.0,
+           "bonus_fcf_growth": 0.0, "bonus_div_acceleration": 0.0, "bonus_net_cash": 0.0,
+           "bonus_total": 0.0, "improving_flag": False}
+    cols = (is_stmt or {}).get("columns") or (bs_stmt or {}).get("columns") or []
+    if len(cols) < 3:
+        return out
+    stype = _bonus_sector(sector, industry)
+
+    ebit = _by_year(is_stmt, "EBIT / Bº Operativo", "Operating Income", "Ebit")
+    rev = _by_year(is_stmt, "Ingresos Totales", "Total Revenue")
+    interest = _by_year(is_stmt, "Gastos por Intereses", "Interest Expense")
+    equity = _by_year(bs_stmt, "Patrimonio Neto", "Total Stockholder Equity", "Stockholders Equity", "Common Stock Equity")
+    debt = _by_year(bs_stmt, "Deuda Total", "Total Debt")
+    assets = _by_year(bs_stmt, "Activos Totales", "Total Assets")
+    cash = _by_year(bs_stmt, "Caja y Equivalentes", "Cash And Cash Equivalents", "Cash Cash Equivalents And Short Term Investments")
+    fcf = _by_year(cf_stmt, "Flujo de Caja Libre", "Free Cash Flow")
+    cfo = _by_year(cf_stmt, "Cash Flow Operativo", "Operating Cash Flow", "Total Cash From Operating Activities")
+    dep = _by_year(cf_stmt, "Depreciación y Amortización", "Depreciation And Amortization", "Depreciation Amortization Depletion")
+
+    def desc_years(*maps):
+        ys = set()
+        for m in maps:
+            ys.update(m.keys())
+        return sorted(ys, reverse=True)
+
+    # 1. ROIC
+    roic = []
+    for y in desc_years(ebit, equity, debt):
+        e, eq, dt = ebit.get(y), equity.get(y), debt.get(y)
+        if e is None or eq is None or dt is None:
+            roic.append(None); continue
+        cap = eq + dt
+        floor = assets.get(y) * 0.10 if assets.get(y) is not None else 0
+        if cap < floor: cap = floor
+        roic.append((e * (1 - TAX)) / cap * 100 if cap > 0 else None)
+    lvl = _improving(roic, True)
+    out["bonus_roic_trend"] = 0.3 if lvl == 3 else 0.15 if lvl == 2 else 0.0
+
+    # 2. Márgenes
+    opm = [(ebit.get(y) / rev.get(y) * 100) if (ebit.get(y) is not None and rev.get(y) and rev.get(y) > 0) else None
+           for y in desc_years(ebit, rev)]
+    if stype == "energy":
+        lvl = 3 if _improving(_ma3(opm), True) == 3 else 0
+    else:
+        lvl = _improving(opm, True)
+    out["bonus_margin_trend"] = 0.2 if lvl == 3 else 0.1 if lvl == 2 else 0.0
+
+    # 3. Deuda
+    nd_years = desc_years(debt, cash)
+    netdebt = [(debt.get(y) - cash.get(y)) if (debt.get(y) is not None and cash.get(y) is not None) else None for y in nd_years]
+    ndeb = []
+    for i, y in enumerate(nd_years):
+        ebd = ebit.get(y) + (dep.get(y) or 0) if ebit.get(y) is not None else None
+        ndeb.append(netdebt[i] / ebd if (netdebt[i] is not None and ebd and ebd > 0) else None)
+    if stype in ("utilities", "reit"):
+        cov = [(ebit.get(y) / abs(interest.get(y))) if (ebit.get(y) is not None and interest.get(y)) else None
+               for y in desc_years(ebit, interest)]
+        out["bonus_debt_reduction"] = 0.2 if _improving(cov, True) == 3 else 0.0
+    else:
+        lvl = _improving(netdebt, False)
+        amt = 0.2 if lvl == 3 else 0.1 if lvl == 2 else 0.0
+        if amt == 0 and _improving(ndeb, False) == 3:
+            amt = 0.1
+        out["bonus_debt_reduction"] = amt
+
+    # 4. FCF (Utilities: CFO)
+    m = cfo if stype == "utilities" else fcf
+    s = [m[y] for y in sorted(m.keys(), reverse=True)]
+    v0 = s[0] if len(s) > 0 else None
+    v1 = s[1] if len(s) > 1 else None
+    v2 = s[2] if len(s) > 2 else None
+    if v0 is not None and v1 is not None and v2 is not None and v0 > v1 > v2 and v0 > 0 and v1 > 0 and v2 > 0:
+        out["bonus_fcf_growth"] = 0.2
+    elif v0 is not None and v1 is not None and v0 > v1 and v0 > 0 and v1 > 0:
+        out["bonus_fcf_growth"] = 0.1
+
+    # 5. Aceleración del dividendo
+    full = sorted([h for h in (div_history or []) if h.get("dps") is not None and not h.get("isPartial")],
+                  key=lambda h: h["year"])
+    if len(full) >= 5:
+        last, y3 = full[-1], full[-4]
+        if y3["dps"] > 0 and last["dps"] > 0:
+            cagr3 = (last["dps"] / y3["dps"]) ** (1 / 3) - 1
+            base = full[-11] if len(full) >= 11 else full[0]
+            yrs = 10 if len(full) >= 11 else (len(full) - 1)
+            cagr10 = (last["dps"] / base["dps"]) ** (1 / yrs) - 1 if (base["dps"] > 0 and yrs > 0) else None
+            if cagr10 is not None and cagr3 <= 0.30 and cagr3 > cagr10 * 1.1:
+                out["bonus_div_acceleration"] = 0.1
+
+    # 6. Caja neta positiva y mejorando
+    if len(netdebt) >= 2 and netdebt[0] is not None and netdebt[1] is not None and netdebt[0] < 0 and netdebt[0] < netdebt[1]:
+        out["bonus_net_cash"] = 0.1
+
+    total = min(1.0, round(out["bonus_roic_trend"] + out["bonus_margin_trend"] + out["bonus_debt_reduction"]
+                           + out["bonus_fcf_growth"] + out["bonus_div_acceleration"] + out["bonus_net_cash"], 2))
+    out["bonus_total"] = total
+    out["improving_flag"] = total >= 0.3
+    return out
+
+
 def fetch_ticker(sym):
     try:
         import yfinance as yf
@@ -882,11 +1013,15 @@ def fetch_ticker(sym):
         # ── Estados financieros ───────────────────────────────────────────
         cf_annual = df_to_stmt(cashflow, 4)
         bs_annual = df_to_stmt(balance, 4)
+        is_annual = df_to_stmt(income, 4)
         cdr_fields = compute_cdr_fields(cf_annual, bs_annual)
+        bonus_fields = compute_bonus_fields(is_annual, bs_annual, cf_annual, div_history,
+                                            info.get("sector"), info.get("industry"))
 
         return sanitize({
             "ticker":           sym,
             **cdr_fields,
+            **bonus_fields,
             "current_price":    price,
             "dps":              dps,
             "pays_dividend":    pays_dividend,
@@ -942,7 +1077,7 @@ def fetch_ticker(sym):
             "invested_capital":          roic_full["invested_capital"],
             "invested_capital_tangible": roic_full["invested_capital_tangible"],
             "tax_rate_effective":        roic_full["tax_rate_effective"],
-            "income_statement_annual":    df_to_stmt(income, 4),
+            "income_statement_annual":    is_annual,
             "balance_sheet_annual":       bs_annual,
             "cashflow_annual":            cf_annual,
             "income_statement_quarterly": df_to_stmt(q_income, 4),

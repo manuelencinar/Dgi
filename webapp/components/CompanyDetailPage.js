@@ -992,6 +992,21 @@ function DGIScoreCard({ dgiScore, isPremium, compact }) {
           ))}
         </div>
       )}
+
+      {dgiScore.bonuses?.length > 0 && (
+        <div style={{ marginTop: 14, padding: '12px 14px', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.18)', borderRadius: 8 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Bonificaciones por tendencia positiva</p>
+          {dgiScore.bonuses.map((b, i) => (
+            <div key={i} title={b.tooltip} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: '#8fe9c4', marginBottom: 4, cursor: 'help' }}>
+              <span>↑ {b.label}</span><span style={{ flexShrink: 0, marginLeft: 8, fontWeight: 700, color: '#34d399' }}>+{b.amount.toFixed(1)}</span>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#34d399', fontWeight: 800, marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(52,211,153,0.18)' }}>
+            <span>Total bonificaciones</span><span>+{dgiScore.bonusTotal.toFixed(1)}</span>
+          </div>
+          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8 }}>Las bonificaciones premian tendencias positivas sostenidas — señales de que el negocio está mejorando estructuralmente.</p>
+        </div>
+      )}
       {dgiScore.noDividend && (
         <p style={{ fontSize: 10.5, color: '#8a93ab', marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           Esta empresa no reparte dividendo — la categoría Dividendo puntúa 0. No es necesariamente una mala inversión: muchas empresas de calidad reinvierten su beneficio en lugar de repartirlo.

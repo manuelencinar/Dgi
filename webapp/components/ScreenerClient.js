@@ -22,6 +22,7 @@ const MOS_OPTS    = [{ v: -999, l: 'Todas' }, { v: 0, l: 'Positivo' }, { v: 10, 
 const PE_OPTS     = [{ v: 999, l: 'Todas' }, { v: 15, l: '<15x' }, { v: 20, l: '<20x' }, { v: 25, l: '<25x' }]
 const EV_OPTS     = [{ v: 999, l: 'Todas' }, { v: 8, l: '<8x' }, { v: 12, l: '<12x' }, { v: 15, l: '<15x' }]
 const CAP_OPTS    = [{ v: 'all', l: 'Todas' }, { v: 'small', l: 'Small <2B' }, { v: 'mid', l: 'Mid 2-10B' }, { v: 'large', l: 'Large 10-100B' }, { v: 'blue', l: 'Blue >100B' }]
+const IMPROVING_OPTS = [{ v: 'any', l: 'Cualquier mejora' }, { v: 'roic', l: 'ROIC' }, { v: 'margin', l: 'Márgenes' }, { v: 'debt', l: 'Deuda' }, { v: 'fcf', l: 'FCF' }]
 
 const INIT = {
   score: 0, zona: 'all', sector: 'all',
@@ -29,6 +30,15 @@ const INIT = {
   roic: 0, opm: 0, rev: 'all', moat: 'all',
   debt: 99, icov: 0,
   mos: -999, pe: 999, ev: 999, cap: 'all',
+  improving: false, improvingType: 'any',
+}
+
+// Badge de tendencia positiva (bonificaciones del scoring)
+function improvingBadge(bonus) {
+  if (bonus == null) return null
+  if (bonus >= 0.5) return { label: '↑ Mejorando', color: '#34d399', bg: 'rgba(52,211,153,0.14)' }
+  if (bonus >= 0.3) return { label: '↗ Tendencia +', color: '#6ee7b7', bg: 'rgba(52,211,153,0.08)' }
+  return null
 }
 
 const PAGE = 50
@@ -132,6 +142,7 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
           {mb && <span title={co.moat === 'wide' ? 'Foso ancho' : 'Foso estrecho'} style={{ fontSize: 12 }}>{mb}</span>}
           {co.r1010 && <span title="Regla 10/10: yield + CAGR ≥ 10%" style={{ fontSize: 12 }}>⚡</span>}
           {co.ero && <span title="Señales de erosión del foso" style={{ fontSize: 12 }}>📉</span>}
+          {(() => { const ib = improvingBadge(co.bonus); return ib ? <span title="Tendencias financieras positivas sostenidas (bonificaciones del scoring)" style={{ fontSize: 9, fontWeight: 700, color: ib.color, background: ib.bg, padding: '2px 7px', borderRadius: 5, whiteSpace: 'nowrap' }}>{ib.label}</span> : null })()}
         </div>
 
         {/* Precio + MoS */}
@@ -281,6 +292,15 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
         if (filters.cap === 'large' && !(m >= 10000 && m < 100000)) return false
         if (filters.cap === 'blue'  && !(m >= 100000)) return false
       }
+      // Empresas mejorando (bonificaciones por tendencia positiva)
+      if (filters.improving) {
+        const sel = filters.improvingType
+        if (sel === 'roic')   { if (!(co.bRoic > 0)) return false }
+        else if (sel === 'margin') { if (!(co.bMargin > 0)) return false }
+        else if (sel === 'debt')   { if (!(co.bDebt > 0)) return false }
+        else if (sel === 'fcf')    { if (!(co.bFcf > 0)) return false }
+        else { if (!(co.bonus > 0)) return false }
+      }
       return true
     })
   }, [companies, filters, search, isPremium])
@@ -418,6 +438,12 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
           <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 16 }}>
             <Chips label="Deuda/EBITDA" opts={DEBT_OPTS} value={filters.debt} onChange={v => set('debt', v)} locked={lock} />
             <Chips label="Cobertura int." opts={ICOV_OPTS} value={filters.icov} onChange={v => set('icov', v)} locked={lock} />
+          </div>
+
+          <Divider label="TENDENCIA · PREMIUM" />
+          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 16, alignItems: 'flex-start' }}>
+            <Toggle label="Empresas mejorando" value={filters.improving} onChange={v => set('improving', v)} locked={lock} />
+            {filters.improving && <Chips label="Tipo de mejora" opts={IMPROVING_OPTS} value={filters.improvingType} onChange={v => set('improvingType', v)} locked={lock} />}
           </div>
 
           <Divider label="VALORACIÓN Y TAMAÑO · PREMIUM" />
