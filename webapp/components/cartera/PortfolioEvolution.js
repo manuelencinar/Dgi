@@ -4,7 +4,7 @@ import { ComposedChart, Bar, Line, Area, Cell, XAxis, YAxis, CartesianGrid, Tool
 
 const CARD = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-const BLUE = '#60a5fa', GREEN = '#34d399', ORANGE = '#fbbf24', RED = '#f87171'
+const BLUE = '#60a5fa', GREEN = '#34d399', ORANGE = '#fbbf24', RED = '#f87171', TEAL = '#22d3ee'
 
 const fmtEUR = (v, d = 0) => v == null || isNaN(v) ? '—' : Number(v).toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d }) + ' €'
 const fmtPct = v => v == null || isNaN(v) ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%'
@@ -53,12 +53,14 @@ export default function PortfolioEvolution({ isPremium }) {
         gain: has ? Math.max(mv - inv, 0) : 0,
         loss: has ? Math.max(inv - mv, 0) : 0,
         retPct, divAccum: mo.dividendsAccum || 0, divMonth: mo.dividendsMonth || 0, divPct,
+        realized: mo.realized || 0, realizedPct: has && inv > 0 ? (mo.realized || 0) / inv * 100 : 0,
         positive: has ? mv >= inv : true, noData: !has,
       }
     })
   }, [data])
 
   const hasDivs = data?.flags?.hasDividends
+  const hasRealized = data?.flags?.hasRealized
   const years = data?.years || [nowYear]
   const k = data?.kpis
 
@@ -83,13 +85,16 @@ export default function PortfolioEvolution({ isPremium }) {
 
       {/* KPIs */}
       {k && (
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isPremium ? 4 : 3}, 1fr)`, gap: 10, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
           <Kpi label="Valor actual" value={fmtEUR(k.currentValue)} sub={k.valueChangeEUR != null ? `${k.valueChangeEUR >= 0 ? '+' : ''}${fmtEUR(k.valueChangeEUR)} · ${fmtPct(k.valueChangePct)}` : null} subCol={k.valueChangeEUR >= 0 ? GREEN : RED} col="#e0e8f0" />
           <Kpi label="Capital invertido" value={fmtEUR(k.investedTotal)} sub="Coste medio ponderado" col="#c8d0e0" />
           <Kpi label="Ganancia latente" value={(k.latentGain >= 0 ? '+' : '') + fmtEUR(k.latentGain)} sub={fmtPct(k.latentPct)} subCol={k.latentGain >= 0 ? GREEN : RED} col={k.latentGain >= 0 ? GREEN : RED} />
+          {isPremium && hasRealized && (
+            <Kpi label={`Resultado realizado ${year}`} value={(k.realizedYear >= 0 ? '+' : '') + fmtEUR(k.realizedYear)} sub="Ventas del ejercicio" col={k.realizedYear >= 0 ? TEAL : RED} />
+          )}
           {isPremium && (
             <Kpi label="Rentabilidad total" value={fmtPct(k.totalReturnPct)} col={k.totalReturnPct >= 0 ? GREEN : RED}
-              badge={k.beatsSP500 ? '🏆 Superas al S&P 500' : null} sub={k.sp500Pct != null ? `S&P 500: ${fmtPct(k.sp500Pct)}` : 'Incluye dividendos'} />
+              badge={k.beatsSP500 ? '🏆 Superas al S&P 500' : null} sub={k.sp500Pct != null ? `S&P 500: ${fmtPct(k.sp500Pct)}` : 'Incluye realizadas y dividendos'} />
           )}
         </div>
       )}
@@ -118,6 +123,7 @@ export default function PortfolioEvolution({ isPremium }) {
                   <Area dataKey="loss" stackId="band" stroke="none" fill={RED} fillOpacity={0.16} isAnimationActive={false} />
                   <Line dataKey="inv" stroke={GREEN} strokeWidth={2} dot={{ r: 2.5, fill: GREEN }} isAnimationActive={false} connectNulls />
                   {hasDivs && showDivs && <Line dataKey="divAccum" stroke={ORANGE} strokeWidth={1.5} strokeDasharray="5 4" dot={{ r: 2, fill: ORANGE }} isAnimationActive={false} />}
+                  {hasRealized && <Line dataKey="realized" stroke={TEAL} strokeWidth={1.5} strokeDasharray="2 3" dot={{ r: 2, fill: TEAL }} isAnimationActive={false} />}
                 </>
               ) : (
                 <>
@@ -126,6 +132,7 @@ export default function PortfolioEvolution({ isPremium }) {
                     {chartData.map((d, i) => <Cell key={i} fill={d.noData ? 'rgba(255,255,255,0.05)' : d.retPct >= 0 ? GREEN : RED} fillOpacity={0.85} />)}
                   </Bar>
                   {hasDivs && showDivs && <Line dataKey="divPct" stroke={ORANGE} strokeWidth={1.5} strokeDasharray="5 4" dot={{ r: 2, fill: ORANGE }} isAnimationActive={false} />}
+                  {hasRealized && <Line dataKey="realizedPct" stroke={TEAL} strokeWidth={1.5} strokeDasharray="2 3" dot={{ r: 2, fill: TEAL }} isAnimationActive={false} />}
                 </>
               )}
             </ComposedChart>
@@ -139,6 +146,9 @@ export default function PortfolioEvolution({ isPremium }) {
               <button onClick={() => setShowDivs(s => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: showDivs ? '#fbbf24' : '#3a4260', fontSize: 10.5, padding: 0, display: 'inline-flex', alignItems: 'center' }}>
                 <span style={{ display: 'inline-block', width: 12, height: 0, borderTop: `2px dashed ${ORANGE}`, marginRight: 5, verticalAlign: 'middle', opacity: showDivs ? 1 : 0.4 }} />Dividendos acumulados {showDivs ? '' : '(oculto)'}
               </button>
+            )}
+            {hasRealized && (
+              <span style={{ color: '#4a5270' }}><span style={{ display: 'inline-block', width: 12, height: 0, borderTop: `2px dotted ${TEAL}`, marginRight: 5, verticalAlign: 'middle' }} />Resultado realizado</span>
             )}
           </div>
 
@@ -182,7 +192,7 @@ function EvoTooltip({ active, payload, label, year, mode, hasDivs }) {
   )
   const gain = d.mv - d.inv
   const gainPct = d.inv > 0 ? gain / d.inv * 100 : 0
-  const totalRet = d.inv > 0 ? (gain + d.divAccum) / d.inv * 100 : 0
+  const totalRet = d.inv > 0 ? (gain + d.divAccum + (d.realized || 0)) / d.inv * 100 : 0
   return (
     <div style={{ background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 13px', fontSize: 11.5, minWidth: 200 }}>
       <p style={{ color: '#c8d0e0', fontWeight: 700, marginBottom: 6 }}>{label} {year}</p>
@@ -191,6 +201,7 @@ function EvoTooltip({ active, payload, label, year, mode, hasDivs }) {
       <Row label="Ganancia latente" val={`${gain >= 0 ? '+' : ''}${fmtEUR(gain)} (${fmtPct(gainPct)})`} col={gain >= 0 ? '#34d399' : '#f87171'} />
       {hasDivs && d.divMonth > 0 && <Row label="Dividendos del mes" val={fmtEUR(d.divMonth, 2)} col="#fbbf24" />}
       {hasDivs && d.divAccum > 0 && <Row label="Dividendos acumulados" val={fmtEUR(d.divAccum, 2)} col="#fbbf24" />}
+      {d.realized !== 0 && <Row label="Resultado realizado acum." val={`${d.realized >= 0 ? '+' : ''}${fmtEUR(d.realized, 2)}`} col={d.realized >= 0 ? '#22d3ee' : '#f87171'} />}
       <Row label="Rentab. total (con div.)" val={fmtPct(totalRet)} col="#818cf8" />
     </div>
   )

@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { createClient as sessionClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { FX } from '@/lib/portfolio'
+import { DICT } from '@/data/dict'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,7 +64,14 @@ export async function GET(req) {
     const posByTicker = Object.fromEntries(posList.map(p => [p.ticker, p]))
     const currByTicker = Object.fromEntries(posList.map(p => [p.ticker, p.currency || 'EUR']))
     const tickers = posList.map(p => p.ticker)
-    const currencies = [...new Set(posList.map(p => p.currency).filter(c => c && c !== 'EUR'))]
+    const dictCur = t => DICT.find(d => d[1] === t)?.[3] || 'EUR'
+    const curOf = t => posByTicker[t]?.currency || transactions.find(x => x.ticker === t && x.currency)?.currency || dictCur(t)
+    // Divisas a cubrir con FX: posiciones + transacciones (también de títulos ya vendidos)
+    const currencies = [...new Set([
+      ...posList.map(p => p.currency),
+      ...transactions.map(t => t.currency),
+      ...[...new Set(transactions.map(t => t.ticker))].map(dictCur),
+    ].filter(c => c && c !== 'EUR'))]
 
     const yearStart = `${year}-01-01`
     const today = new Date()
@@ -112,6 +120,43 @@ export async function GET(req) {
       return Math.max(0, cur - delta)
     }
 
+    // ── Resultado realizado (ventas) por FIFO ──
+    // Para cada venta: proceeds (neto de comisiones) − coste FIFO de las acciones
+    // vendidas (con comisiones de compra). Solo cuentan ventas con compra previa.
+    const realizedEvents = (() => {
+      const byTicker = {}
+      transactions.forEach(t => { (byTicker[t.ticker] ||= []).push(t) })
+      const out = []
+      for (const [ticker, txs] of Object.entries(byTicker)) {
+        const cur = curOf(ticker)
+        const sorted = [...txs].sort((a, b) => new Date(a.date) - new Date(b.date))
+        const lots = []
+        for (const t of sorted) {
+          const rate = rateAt(cur, t.date)
+          if (t.type === 'sell') {
+            const sellShares = n(t.shares)
+            const sellPriceEUR = n(t.price) * rate
+            const sellComm = n(t.commission) * rate + n(t.fx_commission_eur)
+            let toSell = sellShares
+            while (toSell > 1e-9 && lots.length) {
+              const lot = lots[0]
+              const take = Math.min(toSell, lot.shares)
+              const proceeds = take * sellPriceEUR - sellComm * (sellShares > 0 ? take / sellShares : 0)
+              out.push({ date: t.date, gain: proceeds - take * lot.costPerShare })
+              lot.shares -= take; toSell -= take
+              if (lot.shares <= 1e-9) lots.shift()
+            }
+          } else {
+            const sh = n(t.shares)
+            if (sh > 0) { const costTotal = (n(t.shares) * n(t.price) + n(t.commission)) * rate + n(t.fx_commission_eur); lots.push({ shares: sh, costPerShare: costTotal / sh }) }
+          }
+        }
+      }
+      return out.filter(e => new Date(e.date).getFullYear() === year)
+    })()
+    const realizedAt = monthEnd => realizedEvents.filter(e => e.date <= monthEnd).reduce((s, e) => s + e.gain, 0)
+    const realizedYear = realizedEvents.reduce((s, e) => s + e.gain, 0)
+
     let usedFallback = false
     const maxMonth = year < nowYear ? 12 : today.getMonth() + 1
     const months = []
@@ -145,7 +190,8 @@ export async function GET(req) {
         .filter(d => d.date && new Date(d.date).getFullYear() === year && new Date(d.date).getMonth() + 1 === m)
         .reduce((s, d) => s + n(d.amount), 0)
 
-      months.push({ m, marketValue: anyPos ? Math.round(marketValue) : 0, investedCapital: Math.round(investedCapital), dividendsMonth: Math.round(dividendsMonth * 100) / 100, dividendsAccum: Math.round(dividendsAccum * 100) / 100, noData: !anyPos && investedCapital === 0 })
+      const realizedAccum = realizedAt(monthEnd)
+      months.push({ m, marketValue: anyPos ? Math.round(marketValue) : 0, investedCapital: Math.round(investedCapital), dividendsMonth: Math.round(dividendsMonth * 100) / 100, dividendsAccum: Math.round(dividendsAccum * 100) / 100, realized: Math.round(realizedAccum * 100) / 100, noData: !anyPos && investedCapital === 0 && realizedAccum === 0 })
       snapshots.push({ user_id: user.id, year, month: m, market_value: anyPos ? marketValue : 0, invested_capital: investedCapital, dividends_received_month: dividendsMonth, dividends_accumulated: dividendsAccum, calculated_at: new Date().toISOString() })
     }
 
@@ -167,7 +213,8 @@ export async function GET(req) {
     const dividendsAllTime = dividends.reduce((s, d) => s + n(d.amount), 0)
     const latentGain = currentValue - investedTotal
     const latentPct = investedTotal > 0 ? latentGain / investedTotal * 100 : null
-    const totalReturnPct = investedTotal > 0 ? (latentGain + dividendsAllTime) / investedTotal * 100 : null
+    // Rentabilidad total = latente + resultado realizado del año + dividendos
+    const totalReturnPct = investedTotal > 0 ? (latentGain + realizedYear + dividendsAllTime) / investedTotal * 100 : null
 
     const firstWithVal = months.find(mo => mo.marketValue != null && mo.marketValue > 0)
     const startVal = firstWithVal ? firstWithVal.marketValue : null
@@ -185,8 +232,8 @@ export async function GET(req) {
 
     return NextResponse.json({
       months, years,
-      kpis: { currentValue: Math.round(currentValue), investedTotal: Math.round(investedTotal), latentGain: Math.round(latentGain), latentPct, totalReturnPct, dividendsAllTime: Math.round(dividendsAllTime), valueChangeEUR: valueChangeEUR != null ? Math.round(valueChangeEUR) : null, valueChangePct, beatsSP500, sp500Pct },
-      flags: { hasDividends: dividends.length > 0, usedFallback, empty: false },
+      kpis: { currentValue: Math.round(currentValue), investedTotal: Math.round(investedTotal), latentGain: Math.round(latentGain), latentPct, totalReturnPct, dividendsAllTime: Math.round(dividendsAllTime), realizedYear: Math.round(realizedYear), valueChangeEUR: valueChangeEUR != null ? Math.round(valueChangeEUR) : null, valueChangePct, beatsSP500, sp500Pct },
+      flags: { hasDividends: dividends.length > 0, hasRealized: realizedEvents.length > 0, usedFallback, empty: false },
     })
   } catch (e) {
     return NextResponse.json({ error: String(e?.message || e), months: [], kpis: null, flags: {} }, { status: 200 })
