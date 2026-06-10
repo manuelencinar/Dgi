@@ -40,10 +40,11 @@ export async function GET(req) {
     const [{ data: txs }, { data: divs }, { data: positions }] = await Promise.all([
       sb.from('transactions').select('*').eq('user_id', user.id),
       sb.from('dividends_received').select('ticker, amount, date').eq('user_id', user.id),
-      sb.from('positions').select('ticker, currency, shares, asset_type').eq('user_id', user.id),
+      sb.from('positions').select('ticker, currency, shares, avg_cost, asset_type').eq('user_id', user.id),
     ])
     const transactions = txs || []
     const dividends = divs || []
+    const posList = (positions || []).filter(p => n(p.shares) > 0)
 
     // Años disponibles
     const txYears = transactions.filter(t => t.date).map(t => new Date(t.date).getFullYear())
@@ -52,15 +53,17 @@ export async function GET(req) {
     const years = []
     for (let y = firstYear; y <= nowYear; y++) years.push(y)
 
-    if (!transactions.length) {
-      return NextResponse.json({ months: [], kpis: null, flags: { hasDividends: false, usedFallback: false, empty: true }, years })
+    if (!posList.length) {
+      return NextResponse.json({ months: [], kpis: null, flags: { hasDividends: dividends.length > 0, usedFallback: false, empty: true }, years })
     }
 
-    // Tickers + divisas (de transacciones y posiciones)
-    const currByTicker = {}
-    ;[...transactions, ...(positions || [])].forEach(r => { if (r.ticker && r.currency) currByTicker[r.ticker] = r.currency })
-    const tickers = [...new Set(transactions.map(t => t.ticker))]
-    const currencies = [...new Set(Object.values(currByTicker).filter(c => c && c !== 'EUR'))]
+    // Anclamos en las POSICIONES reales del usuario (fuente de verdad de lo que
+    // posee hoy). El historial de transacciones solo sirve para "rebobinar" las
+    // acciones mes a mes. Así no contamos compras de posiciones ya vendidas/borradas.
+    const posByTicker = Object.fromEntries(posList.map(p => [p.ticker, p]))
+    const currByTicker = Object.fromEntries(posList.map(p => [p.ticker, p.currency || 'EUR']))
+    const tickers = posList.map(p => p.ticker)
+    const currencies = [...new Set(posList.map(p => p.currency).filter(c => c && c !== 'EUR'))]
 
     const yearStart = `${year}-01-01`
     const today = new Date()
@@ -99,14 +102,15 @@ export async function GET(req) {
 
     // Tipo de cambio X→EUR a la fecha; si no hay dato real, usa el FX aproximado de la app (no 1)
     const rateAt = (cur, dateStr) => cur === 'EUR' ? 1 : (lastBefore(rateMap[cur], dateStr) ?? (rateMap[cur]?.length ? rateMap[cur][rateMap[cur].length - 1].v : (FX[cur] || 1)))
-    const avgBuyPrice = (ticker, dateStr) => {
-      const buys = transactions.filter(t => t.ticker === ticker && t.type !== 'sell' && t.date <= dateStr)
-      const sh = buys.reduce((s, t) => s + n(t.shares), 0)
-      return sh > 0 ? buys.reduce((s, t) => s + n(t.shares) * n(t.price), 0) / sh : 0
+    // Acciones que se poseían a fin de `dateStr`: partimos de las acciones ACTUALES
+    // (positions) y deshacemos las operaciones posteriores a esa fecha.
+    //   sharesAt(m) = actuales − comprasDespués(m) + ventasDespués(m)
+    const sharesAt = (ticker, dateStr) => {
+      const cur = n(posByTicker[ticker]?.shares)
+      const after = transactions.filter(t => t.ticker === ticker && t.date > dateStr)
+      const delta = after.reduce((s, t) => s + (t.type === 'sell' ? -1 : 1) * n(t.shares), 0)
+      return Math.max(0, cur - delta)
     }
-    const sharesAt = (ticker, dateStr) => transactions
-      .filter(t => t.ticker === ticker && t.date <= dateStr)
-      .reduce((s, t) => s + (t.type === 'sell' ? -1 : 1) * n(t.shares), 0)
 
     let usedFallback = false
     const maxMonth = year < nowYear ? 12 : today.getMonth() + 1
@@ -118,22 +122,22 @@ export async function GET(req) {
       const isCurrent = year === nowYear && m === maxMonth
       const monthEnd = isCurrent ? todayStr : ymd(new Date(year, m, 0))
 
-      let marketValue = 0, anyPos = false
+      let marketValue = 0, investedCapital = 0, anyPos = false
       for (const ticker of tickers) {
         const shares = sharesAt(ticker, monthEnd)
         if (shares <= 1e-9) continue
         anyPos = true
         const cur = currByTicker[ticker] || 'EUR'
+        const rate = rateAt(cur, monthEnd)
+        const avgCost = n(posByTicker[ticker]?.avg_cost)
         // Precio de cierre del mes (daily_prices). Solo para el mes en curso, si no
         // hay cierre del día usamos current_price; nunca current_price para meses pasados.
         let price = lastBefore(priceMap[ticker], monthEnd)
         if (price == null && isCurrent) price = curPrice[ticker] ?? null
-        if (price == null) { price = avgBuyPrice(ticker, monthEnd); usedFallback = true }
-        marketValue += shares * price * rateAt(cur, monthEnd)
+        if (price == null) { price = avgCost; usedFallback = true }
+        marketValue += shares * price * rate
+        investedCapital += shares * avgCost * rate   // coste de las acciones poseídas ese mes
       }
-      const investedCapital = transactions
-        .filter(t => t.type !== 'sell' && t.date <= monthEnd)
-        .reduce((s, t) => s + buyEUR(t), 0)
       const dividendsAccum = dividends
         .filter(d => d.date && new Date(d.date).getFullYear() === year && d.date <= monthEnd)
         .reduce((s, d) => s + n(d.amount), 0)
@@ -148,17 +152,18 @@ export async function GET(req) {
     // upsert snapshots (best-effort)
     try { await sb.from('portfolio_snapshots').upsert(snapshots, { onConflict: 'user_id,year,month' }) } catch {}
 
-    // ── KPIs (a día de hoy) ── valor actual = mismo cruce que las barras:
-    // acciones netas de transacciones × último cierre × tipo de cambio más reciente.
-    let currentValue = 0
-    for (const ticker of tickers) {
-      const sh = sharesAt(ticker, todayStr); if (sh <= 1e-9) continue
-      const cur = currByTicker[ticker] || 'EUR'
-      let price = lastBefore(priceMap[ticker], todayStr) ?? curPrice[ticker]
-      if (price == null) { price = avgBuyPrice(ticker, todayStr); usedFallback = true }
-      currentValue += sh * price * rateAt(cur, todayStr)
+    // ── KPIs (a día de hoy) ── sobre las posiciones reales actuales.
+    let currentValue = 0, investedTotal = 0
+    for (const p of posList) {
+      const sh = n(p.shares); if (sh <= 0) continue
+      const cur = p.currency || 'EUR'
+      const rate = rateAt(cur, todayStr)
+      const avgCost = n(p.avg_cost)
+      let price = lastBefore(priceMap[p.ticker], todayStr) ?? curPrice[p.ticker]
+      if (price == null) { price = avgCost; usedFallback = true }
+      currentValue += sh * price * rate
+      investedTotal += sh * avgCost * rate
     }
-    const investedTotal = transactions.filter(t => t.type !== 'sell').reduce((s, t) => s + buyEUR(t), 0)
     const dividendsAllTime = dividends.reduce((s, d) => s + n(d.amount), 0)
     const latentGain = currentValue - investedTotal
     const latentPct = investedTotal > 0 ? latentGain / investedTotal * 100 : null
