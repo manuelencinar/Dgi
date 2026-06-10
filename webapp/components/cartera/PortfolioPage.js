@@ -9,6 +9,7 @@ import {
   calcDiversificationScore, calcDividendRisks, calcFiscal,
 } from '@/lib/portfolio'
 import PortfolioDGIScore from '@/components/cartera/PortfolioDGIScore'
+import PortfolioEvolution from '@/components/cartera/PortfolioEvolution'
 import CompanyDetector from '@/components/cartera/CompanyDetector'
 import RecurringSection from '@/components/cartera/RecurringSection'
 import FxRatesWidget from '@/components/cartera/FxRatesWidget'
@@ -581,6 +582,9 @@ export default function PortfolioPage({ isPremium }) {
 
       {/* Section 1: Summary */}
       {enriched.length > 0 && <SummarySection summary={summary} />}
+
+      {/* Evolución del patrimonio — debajo del resumen, antes de las posiciones */}
+      {enriched.length > 0 && <PortfolioEvolution isPremium={isPremium} />}
 
       {/* Module 1: Score DGI de la cartera con benchmark */}
       {enriched.length > 0 && <PortfolioDGIScore enriched={enriched} isPremium={isPremium} />}
