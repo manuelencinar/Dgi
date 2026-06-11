@@ -26,8 +26,11 @@ export async function POST(req) {
     const { data: existing } = await sb.from('fiscal_entries').select('*').eq('user_id', user.id).eq('exercise', exercise)
     const rows = existing || []
 
-    if (!force && rows.length > 0) {
-      return NextResponse.json({ skipped: true, reason: 'already_has_entries' })
+    // El prefill solo genera transmisiones (ganancias/pérdidas). No se salta por
+    // tener entradas antiguas de dividendos: solo si ya existen ganancias/pérdidas.
+    const hasGains = rows.some(r => r.type === 'gain' || r.type === 'loss')
+    if (!force && hasGains) {
+      return NextResponse.json({ skipped: true, reason: 'already_has_gains' })
     }
 
     // En modo recálculo: borrar solo las auto NO confirmadas y NO eliminadas

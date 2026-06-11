@@ -101,9 +101,12 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
       const { data: funds } = await sb.from('company_fundamentals').select('ticker, country, div_history, dividend_events').in('ticker', tickers)
       setFundamentals(Object.fromEntries((funds || []).map(f => [f.ticker, f])))
     }
-    // Prefill automático si no hay entradas para el ejercicio
+    // Prefill de transmisiones: si hay ventas del ejercicio pero aún no se han
+    // generado las ganancias/pérdidas en fiscal_entries.
     let data = await fetchEntries(user.id, year)
-    if (data.length === 0 && countryResidence === 'ES') {
+    const hasGains = data.some(e => e.type === 'gain' || e.type === 'loss')
+    const hasSells = (tx || []).some(t => t.type === 'sell' && t.date && new Date(t.date).getFullYear() === year)
+    if (countryResidence === 'ES' && !hasGains && hasSells) {
       setPrefilling(true)
       try { await fetch('/api/fiscal/prefill', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exercise: year }) }) } catch {}
       data = await fetchEntries(user.id, year)
