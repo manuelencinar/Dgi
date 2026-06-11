@@ -11,6 +11,7 @@ import {
 import PortfolioDGIScore from '@/components/cartera/PortfolioDGIScore'
 import PortfolioEvolution from '@/components/cartera/PortfolioEvolution'
 import CompanyDetector from '@/components/cartera/CompanyDetector'
+import DividendCutSimulator from '@/components/cartera/DividendCutSimulator'
 import RecurringSection from '@/components/cartera/RecurringSection'
 import FxRatesWidget from '@/components/cartera/FxRatesWidget'
 import CurrencyAnalysis from '@/components/cartera/CurrencyAnalysis'
@@ -616,6 +617,9 @@ export default function PortfolioPage({ isPremium }) {
 
           {/* Section 5: Dividend risk */}
           <DividendRiskSection risks={divRisks} totalIncomeEUR={summary.totalIncomeEUR} isPremium={isPremium} />
+
+          {/* What-if: simular un recorte de dividendo (antes en /cartera/simulador) */}
+          <DividendCutSimulator enriched={enriched} summary={summary} isPremium={isPremium} />
 
           {/* Section 6: Fiscal */}
           <FiscalSection fiscal={fiscal} country={fiscalCountry} onCountryChange={setFiscal} isPremium={isPremium} />

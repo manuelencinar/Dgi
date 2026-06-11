@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 import { enrichPositions, calcSummary } from '@/lib/portfolio'
 import { projectIncome, calcDRIP } from '@/lib/portfolio-calc'
 import { monthlyEquivalent } from '@/lib/recurring'
+import FISimulator from '@/components/cartera/FISimulator'
 
 const CARD  = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
 const SLIDER_WRAP = { display: 'flex', flexDirection: 'column', gap: 6 }
@@ -393,6 +394,9 @@ export default function ProyeccionPage({ isPremium }) {
           <p style={{ fontSize: 12, color: '#4a5270' }}>Activa <b style={{ color: '#8090a8' }}>Reinvertir dividendos</b> en los parámetros para ver el análisis DRIP.</p>
         </div>
       )}
+
+      {/* Independencia financiera — antes en /cartera/simulador */}
+      <FISimulator isPremium={isPremium} />
     </div>
   )
 }

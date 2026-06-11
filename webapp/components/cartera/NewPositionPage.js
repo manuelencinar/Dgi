@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { DICT } from '@/data/dict'
 import { weightedAvgCost } from '@/lib/portfolio'
+import PositionImpactPreview from '@/components/cartera/PositionImpactPreview'
 
 const CARD = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
 const INPUT = { width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#c8d0e0', fontSize: 14, outline: 'none', boxSizing: 'border-box' }
@@ -492,6 +493,14 @@ export default function NewPositionPage() {
           )}
         </div>
       </form>
+
+      {/* Previsualización del impacto en la cartera (solo acciones, en compra) */}
+      {selected && selected.assetType === 'stock' && form.type === 'buy' && (
+        <PositionImpactPreview
+          ticker={selected.ticker} name={selected.name} currency={selected.currency}
+          shares={form.shares} price={form.price} type={form.type}
+        />
+      )}
     </div>
   )
 }

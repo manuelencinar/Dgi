@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation'
 const TABS = [
   { href: '/cartera',            label: 'Cartera',    exact: true },
   { href: '/cartera/proyeccion', label: 'Proyección' },
-  { href: '/cartera/simulador',  label: 'Simulador'  },
   { href: '/cartera/dividendos', label: 'Dividendos' },
   { href: '/cartera/historial',  label: 'Historial'  },
   { href: '/cartera/alertas',    label: 'Alertas'    },

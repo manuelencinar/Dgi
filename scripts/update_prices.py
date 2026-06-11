@@ -16,11 +16,11 @@ import os, json, time, logging, argparse
 from datetime import datetime, date, timedelta
 from typing import Optional
 
-import yfinance as yf
-import pandas as pd
-
 from dotenv import load_dotenv
 load_dotenv(".env.local")
+
+import yfinance as yf
+import pandas as pd
 
 logging.basicConfig(
     level=logging.INFO,
@@ -369,6 +369,8 @@ def main():
         description="Actualiza precios diarios y tipos de cambio en Supabase")
     parser.add_argument("--days",    type=int, default=2,
                         help="Días hacia atrás a descargar (default 2)")
+    parser.add_argument("--history", action="store_true",
+                        help="Carga histórica completa — descarga 3 años de precios")
     parser.add_argument("--dry-run", action="store_true",
                         help="Sin subir a Supabase")
     parser.add_argument("--setup",   action="store_true",
@@ -417,10 +419,6 @@ def main():
         if not tickers:
             log.warning("No hay tickers para procesar")
             return
-
-        # Índices de referencia (benchmarks) para el cálculo de rentabilidades
-        BENCHMARK_TICKERS = ["^GSPC", "^STOXX", "URTH", "^NDX", "^FTSE", "^GDAXI", "^N225"]
-        tickers = list(set(tickers + BENCHMARK_TICKERS))
 
         # Excluir tickers de divisas si están mezclados
         tickers = [t for t in tickers if "=X" not in t]
