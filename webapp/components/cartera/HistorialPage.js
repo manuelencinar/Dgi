@@ -190,9 +190,13 @@ function TabOperations({ transactions, dividends, isPremium, onDelete, fundTicke
                       <Link href={hrefFor(t.ticker, fundTickers)} style={{ color: '#c8d0e0', textDecoration: 'none', fontWeight: 600 }}>{nameOf(t.ticker)}</Link>
                     </td>
                     <td style={{ padding: '7px 8px' }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: t.type === 'buy' ? '#34d399' : '#f87171', background: t.type === 'buy' ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 7px', borderRadius: 5 }}>
-                        {t.type === 'buy' ? 'Compra' : 'Venta'}
-                      </span>
+                      {t.type === 'stock_dividend' ? (
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.1)', padding: '2px 7px', borderRadius: 5, whiteSpace: 'nowrap' }}>📈 Dividendo en acciones</span>
+                      ) : (
+                        <span style={{ fontSize: 11, fontWeight: 700, color: t.type === 'sell' ? '#f87171' : '#34d399', background: t.type === 'sell' ? 'rgba(248,113,113,0.1)' : 'rgba(52,211,153,0.1)', padding: '2px 7px', borderRadius: 5 }}>
+                          {t.type === 'sell' ? 'Venta' : t.type === 'buy_recurring' ? 'Aportación' : 'Compra'}
+                        </span>
+                      )}
                     </td>
                     <td style={{ padding: '7px 8px', ...RIGHT, color: '#8090a8' }}>{fmt(Number(t.shares), 4)}</td>
                     <td style={{ padding: '7px 8px', ...RIGHT, color: '#8090a8' }}>{fmt(Number(t.price))} {txCurrency}</td>
@@ -411,7 +415,10 @@ function TabDividends({ dividends, isPremium }) {
                 <tr key={d.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                   <td style={{ padding: '7px 8px', color: '#4a5270' }}>{new Date(d.date).toLocaleDateString('es-ES')}</td>
                   <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{nameOf(d.ticker)}</td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 600 }}>{fmt(Number(d.amount))}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    {fmt(Number(d.amount))}
+                    {d.payment_method === 'stock' && <span title={`Dividendo cobrado en acciones — ${Number(d.shares_received || 0).toLocaleString('es-ES', { maximumFractionDigits: 4 })} acciones añadidas a la cartera`} style={{ marginLeft: 5 }}>📈</span>}
+                  </td>
                   <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{d.amount_net != null ? fmt(Number(d.amount_net)) : '—'}</td>
                 </tr>
               ))}

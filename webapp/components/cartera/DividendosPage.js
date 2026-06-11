@@ -31,6 +31,8 @@ export default function DividendosPage({ isPremium }) {
   const [config, setConfig] = useState({})
   const [destWHT, setDestWHT] = useState(19)
   const [year, setYear] = useState(new Date().getFullYear())
+  const [notice, setNotice] = useState(null)
+  const showNotice = useCallback((msg) => { setNotice(msg); setTimeout(() => setNotice(null), 8000) }, [])
 
   const fetchRecords = useCallback(async (uid) => {
     const { data } = await sb.from('dividends_received').select('*').eq('user_id', uid).order('payment_date_estimated', { ascending: true })
@@ -51,7 +53,7 @@ export default function DividendosPage({ isPremium }) {
     setDestWHT(settings?.dest_wht != null ? Number(settings.dest_wht) : 19)
     const tickers = [...new Set((pos || []).map(p => p.ticker))]
     if (tickers.length) {
-      const { data: f } = await sb.from('company_fundamentals').select('ticker, country, dps, div_history, dividend_events, next_ex_date, next_pay_date').in('ticker', tickers)
+      const { data: f } = await sb.from('company_fundamentals').select('ticker, country, current_price, dps, div_history, dividend_events, next_ex_date, next_pay_date').in('ticker', tickers)
       setFunds(Object.fromEntries((f || []).map(x => [x.ticker, x])))
     }
     let recs = await fetchRecords(user.id)
@@ -81,6 +83,11 @@ export default function DividendosPage({ isPremium }) {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px 64px' }}>
+      {notice && (
+        <div style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.35)', borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
+          <p style={{ fontSize: 12.5, color: '#34d399', lineHeight: 1.5, whiteSpace: 'pre-line' }}>{notice}</p>
+        </div>
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0' }}>Dividendos</h1>
         <button onClick={recalc} style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 8, padding: '7px 12px', color: '#818cf8', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>↻ Actualizar</button>
@@ -95,15 +102,16 @@ export default function DividendosPage({ isPremium }) {
         ))}
       </div>
 
-      {tab === 'cobros' && <Cobros sb={sb} records={records} setRecords={setRecords} positions={positions} funds={funds} year={year} setYear={setYear} destWHT={destWHT} refresh={refresh} />}
+      {tab === 'cobros' && <Cobros sb={sb} records={records} setRecords={setRecords} positions={positions} funds={funds} year={year} setYear={setYear} destWHT={destWHT} refresh={refresh} showNotice={showNotice} />}
       {tab === 'calendario' && <Calendario records={records} year={year} setYear={setYear} />}
-      {tab === 'config' && <Configuracion sb={sb} positions={positions} funds={funds} config={config} setConfig={setConfig} reload={recalc} />}
+      {tab === 'config' && <Configuracion sb={sb} positions={positions} setPositions={setPositions} funds={funds} config={config} setConfig={setConfig} reload={recalc} />}
     </div>
   )
 }
 
 // ───────────────────────── COBROS ─────────────────────────
-function Cobros({ sb, records, setRecords, positions, funds, year, setYear, destWHT = 19, refresh }) {
+function Cobros({ sb, records, setRecords, positions, funds, year, setYear, destWHT = 19, refresh, showNotice }) {
+  const methodByTicker = useMemo(() => Object.fromEntries(positions.map(p => [p.ticker, p.dividend_payment_method || 'cash'])), [positions])
   const [filter, setFilter] = useState('all')
   const [editId, setEditId] = useState(null)
   const [draft, setDraft] = useState({})
@@ -150,11 +158,71 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
     const amount = shares * dps, { originW, destW, net } = calcNet(amount, pctO, pctD)
     if (await patch(r.id, { shares, dps, withholding_origin_pct: pctO, withholding_origin: originW, withholding_dest_pct: pctD, withholding_dest: destW, amount, amount_net: net, source: 'manual' })) setEditId(null)
   }
-  const startConfirm = r => { setConfirmId(r.id); setEditId(null); setConfDraft({ amount_net: r.amount_net ?? r.amount ?? '', date: r.payment_date_estimated || r.date || today }) }
+  const startConfirm = async r => {
+    setEditId(null); setConfirmId(r.id)
+    const payDate = r.payment_date_estimated || r.date || today
+    if (methodByTicker[r.ticker] !== 'stock') { setConfDraft({ mode: 'cash', amount_net: r.amount_net ?? r.amount ?? '', date: payDate }); return }
+    // Dividendo en acciones: prefill del precio de cierre en la fecha de pago.
+    let price = funds[r.ticker]?.current_price != null ? Number(funds[r.ticker].current_price) : null
+    try {
+      const { data } = await sb.from('daily_prices').select('close_price').eq('ticker', r.ticker).lte('date', payDate).order('date', { ascending: false }).limit(1)
+      if (data?.[0]?.close_price != null) price = Number(data[0].close_price)
+    } catch {}
+    const gross = num(r.amount)
+    const shares = price > 0 ? Math.round(gross / price * 10000) / 10000 : ''
+    setConfDraft({ mode: 'stock', shares, price: price ?? '', date: payDate })
+  }
   const doConfirm = async (r) => {
+    if (confDraft.mode === 'stock') return doConfirmStock(r)
     const newNet = num(confDraft.amount_net), newDate = confDraft.date
     const changed = newNet !== num(r.amount_net) || newDate !== (r.payment_date_estimated || r.date)
     if (await patch(r.id, { status: 'received', amount_net: newNet, date: newDate, source: changed ? 'manual' : r.source })) setConfirmId(null)
+  }
+  // Cobro en acciones: 3 operaciones atómicas (con rollback si alguna falla).
+  const doConfirmStock = async (r) => {
+    const shares = num(confDraft.shares), price = num(confDraft.price), date = confDraft.date
+    if (shares <= 0 || price <= 0) { alert('Introduce acciones y precio válidos'); return }
+    const amount = Math.round(shares * price * 100) / 100
+    const { data: { user } } = await sb.auth.getUser(); if (!user) return
+    const changed = confDraft._touched
+    const fiscalNote = `Dividendo en acciones — valor fiscal: ${amount.toFixed(2)}€`
+
+    // Op1 — dividends_received
+    const { error: e1 } = await sb.from('dividends_received').update({
+      status: 'received', payment_method: 'stock', amount, amount_net: amount,
+      withholding_origin: 0, withholding_origin_pct: 0, withholding_dest: 0, withholding_dest_pct: 0,
+      shares_received: shares, price_per_share_at_payment: price, date, source: changed ? 'manual' : r.source, updated_at: new Date().toISOString(),
+    }).eq('id', r.id)
+    if (e1) { alert('No se pudo registrar el dividendo: ' + e1.message); return }
+
+    // Op2 — transactions (stock_dividend)
+    const { data: txRow, error: e2 } = await sb.from('transactions').insert({
+      user_id: user.id, ticker: r.ticker, type: 'stock_dividend', shares, price, date,
+      commission: 0, fx_commission_eur: 0, total_cost: 0, notes: fiscalNote,
+    }).select('id').single()
+    if (e2) {
+      // rollback Op1
+      await sb.from('dividends_received').update({ status: r.status, payment_method: r.payment_method || 'cash', amount: r.amount, amount_net: r.amount_net, withholding_origin: r.withholding_origin, withholding_origin_pct: r.withholding_origin_pct, shares_received: null, price_per_share_at_payment: null }).eq('id', r.id)
+      alert('No se pudo registrar la operación: ' + e2.message); return
+    }
+
+    // Op3 — positions (recalcular precio medio)
+    const { data: pos } = await sb.from('positions').select('*').eq('user_id', user.id).eq('ticker', r.ticker).maybeSingle()
+    if (pos) {
+      const newShares = num(pos.shares) + shares
+      const newAvg = newShares > 0 ? (num(pos.shares) * num(pos.avg_cost) + shares * price) / newShares : price
+      const { error: e3 } = await sb.from('positions').update({ shares: newShares, avg_cost: newAvg, updated_at: new Date().toISOString() }).eq('id', pos.id)
+      if (e3) {
+        // rollback Op2 y Op1
+        await sb.from('transactions').delete().eq('id', txRow.id)
+        await sb.from('dividends_received').update({ status: r.status, payment_method: r.payment_method || 'cash', amount: r.amount, amount_net: r.amount_net, withholding_origin: r.withholding_origin, withholding_origin_pct: r.withholding_origin_pct, shares_received: null, price_per_share_at_payment: null }).eq('id', r.id)
+        alert('No se pudo actualizar la posición: ' + e3.message); return
+      }
+    }
+
+    setConfirmId(null)
+    if (showNotice) showNotice(`✓ Se han añadido ${shares.toLocaleString('es-ES', { maximumFractionDigits: 4 })} acciones de ${nameOf(r.ticker)} a tu cartera\nValor fiscal declarable: ${amount.toFixed(2)}€ — recuerda incluirlo en tu declaración de la renta`)
+    if (refresh) await refresh()
   }
   const del = async (r, exclude) => {
     const { data: { user } } = await sb.auth.getUser()
@@ -262,13 +330,30 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
                       {confirmId === r.id && (
                         <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(52,211,153,0.04)' }}>
                           <td colSpan={11} style={{ padding: '10px 12px' }}>
-                            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: '#c8d0e0' }}>Confirmar cobro de {nameOf(r.ticker)}</span>
-                              <label style={{ fontSize: 10, color: '#8090a8' }}>Neto recibido<br /><input style={{ ...INPUT, width: 110 }} type="number" step="any" value={confDraft.amount_net} onChange={e => setConfDraft(d => ({ ...d, amount_net: e.target.value }))} /></label>
-                              <label style={{ fontSize: 10, color: '#8090a8' }}>Fecha de cobro<br /><input style={{ ...INPUT, width: 140 }} type="date" value={confDraft.date} onChange={e => setConfDraft(d => ({ ...d, date: e.target.value }))} /></label>
-                              <button onClick={() => doConfirm(r)} style={{ background: GREEN, border: 'none', borderRadius: 7, padding: '7px 16px', color: '#06281c', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>Confirmar</button>
-                              <button onClick={() => setConfirmId(null)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '7px 14px', color: '#8090a8', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
-                            </div>
+                            {confDraft.mode === 'stock' ? (
+                              <div>
+                                <p style={{ fontSize: 12, fontWeight: 700, color: '#c8d0e0', marginBottom: 8 }}>📈 Confirmar dividendo en acciones de {nameOf(r.ticker)}</p>
+                                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                                  <label style={{ fontSize: 10, color: '#8090a8' }}>Acciones recibidas<br /><input style={{ ...INPUT, width: 120 }} type="number" step="0.0001" value={confDraft.shares} onChange={e => setConfDraft(d => ({ ...d, shares: e.target.value, _touched: true }))} /></label>
+                                  <label style={{ fontSize: 10, color: '#8090a8' }}>Precio/acción (fecha pago)<br /><input style={{ ...INPUT, width: 120 }} type="number" step="any" value={confDraft.price} onChange={e => setConfDraft(d => ({ ...d, price: e.target.value, _touched: true }))} /></label>
+                                  <label style={{ fontSize: 10, color: '#8090a8' }}>Valor total recibido<br /><input style={{ ...INPUT, width: 120, opacity: 0.7 }} value={fmtEUR(num(confDraft.shares) * num(confDraft.price))} readOnly /></label>
+                                  <label style={{ fontSize: 10, color: '#8090a8' }}>Fecha de cobro<br /><input style={{ ...INPUT, width: 140 }} type="date" value={confDraft.date} onChange={e => setConfDraft(d => ({ ...d, date: e.target.value, _touched: true }))} /></label>
+                                </div>
+                                <p style={{ fontSize: 10.5, color: '#6b7693', margin: '8px 0 10px', maxWidth: 560, lineHeight: 1.5 }}>Las acciones se añadirán automáticamente a tu cartera con precio de compra igual al valor de mercado en esta fecha — necesario para el cálculo fiscal correcto.</p>
+                                <div style={{ display: 'flex', gap: 10 }}>
+                                  <button onClick={() => doConfirm(r)} style={{ background: GREEN, border: 'none', borderRadius: 7, padding: '8px 16px', color: '#06281c', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>Confirmar y añadir acciones</button>
+                                  <button onClick={() => setConfirmId(null)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '8px 14px', color: '#8090a8', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: '#c8d0e0' }}>Confirmar cobro de {nameOf(r.ticker)}</span>
+                                <label style={{ fontSize: 10, color: '#8090a8' }}>Neto recibido<br /><input style={{ ...INPUT, width: 110 }} type="number" step="any" value={confDraft.amount_net} onChange={e => setConfDraft(d => ({ ...d, amount_net: e.target.value }))} /></label>
+                                <label style={{ fontSize: 10, color: '#8090a8' }}>Fecha de cobro<br /><input style={{ ...INPUT, width: 140 }} type="date" value={confDraft.date} onChange={e => setConfDraft(d => ({ ...d, date: e.target.value }))} /></label>
+                                <button onClick={() => doConfirm(r)} style={{ background: GREEN, border: 'none', borderRadius: 7, padding: '7px 16px', color: '#06281c', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>Confirmar</button>
+                                <button onClick={() => setConfirmId(null)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '7px 14px', color: '#8090a8', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       )}
@@ -402,10 +487,19 @@ function Calendario({ records, year, setYear }) {
 }
 
 // ───────────────────────── CONFIGURACIÓN ─────────────────────────
-function Configuracion({ sb, positions, funds, config, setConfig, reload }) {
+function Configuracion({ sb, positions, setPositions, funds, config, setConfig, reload }) {
   const [editId, setEditId] = useState(null)
   const [draft, setDraft] = useState({ frequency: 4, months: [] })
+  const [methodSaved, setMethodSaved] = useState(null)   // ticker con checkmark temporal
   const stocks = positions.filter(p => (p.asset_type || 'stock') === 'stock' && Number(p.shares) > 0)
+
+  const setMethod = async (ticker, method) => {
+    const { data: { user } } = await sb.auth.getUser(); if (!user) return
+    const { error } = await sb.from('positions').update({ dividend_payment_method: method }).eq('user_id', user.id).eq('ticker', ticker)
+    if (error) { alert('No se pudo guardar: ' + error.message); return }
+    if (setPositions) setPositions(ps => ps.map(p => p.ticker === ticker ? { ...p, dividend_payment_method: method } : p))
+    setMethodSaved(ticker); setTimeout(() => setMethodSaved(s => s === ticker ? null : s), 2000)
+  }
 
   const saveCfg = async (ticker, fields) => {
     const { data: { user } } = await sb.auth.getUser(); if (!user) return
@@ -424,7 +518,7 @@ function Configuracion({ sb, positions, funds, config, setConfig, reload }) {
       <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 14 }}>Ajusta la frecuencia y los meses de pago de cada empresa cuando la detección automática no acierte. Excluye las que prefieras gestionar a mano.</p>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 640 }}>
-          <thead><tr>{['Empresa', 'Frecuencia', 'Meses de pago', 'Excluir prefill', ''].map((h, i) => (
+          <thead><tr>{['Empresa', 'Frecuencia', 'Meses de pago', 'Método de cobro', 'Excluir prefill', ''].map((h, i) => (
             <th key={i} style={{ padding: '6px 8px', textAlign: 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
           ))}</tr></thead>
           <tbody>
@@ -454,6 +548,15 @@ function Configuracion({ sb, positions, funds, config, setConfig, reload }) {
                     ) : (
                       <span style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>{months.map(m => <span key={m} style={{ fontSize: 9.5, color: '#8090a8', background: 'rgba(255,255,255,0.05)', padding: '1px 6px', borderRadius: 4 }}>{monthLabel(m)}</span>)}</span>
                     )}
+                  </td>
+                  <td style={{ padding: '8px' }}>
+                    {(() => { const method = p.dividend_payment_method || 'cash'; return (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <button onClick={() => setMethod(p.ticker, 'cash')} title="En efectivo" style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: method === 'cash' ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.04)', color: method === 'cash' ? '#818cf8' : '#4a5270' }}>💵 Efectivo</button>
+                        <button onClick={() => setMethod(p.ticker, 'stock')} title="En acciones" style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: method === 'stock' ? 'rgba(52,211,153,0.22)' : 'rgba(255,255,255,0.04)', color: method === 'stock' ? '#34d399' : '#4a5270' }}>📈 Acciones</button>
+                        {methodSaved === p.ticker && <span style={{ color: '#34d399', fontSize: 13 }}>✓</span>}
+                      </span>
+                    ) })()}
                   </td>
                   <td style={{ padding: '8px' }}>
                     <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: 11, color: cfg?.excluded ? '#fbbf24' : '#4a5270' }}>

@@ -159,7 +159,8 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
       if (pct == null) pct = gross > 0 ? wh / gross * 100 : fiscalWHT(country)
       const destW = d.withholding_dest != null ? num(d.withholding_dest) : 0
       const net = d.amount_net != null ? num(d.amount_net) : gross - num(wh) - destW
-      return { ticker: d.ticker, company_name: nameOf(d.ticker), country, gross_amount: gross, withholding_origin: num(wh), withholding_origin_pct: pct, withholding_dest: destW, net_amount: net }
+      const isStock = d.payment_method === 'stock'
+      return { ticker: d.ticker, company_name: nameOf(d.ticker), country, gross_amount: gross, withholding_origin: isStock ? 0 : num(wh), withholding_origin_pct: isStock ? 0 : pct, withholding_dest: isStock ? 0 : destW, net_amount: isStock ? gross : net, payment_method: isStock ? 'stock' : 'cash' }
     })
     .sort((a, b) => b.gross_amount - a.gross_amount), [divReceived, year])
   const gainsStored = useMemo(() => entries.filter(e => e.type === 'gain' || e.type === 'loss').sort((a, b) => new Date(a.sell_date) - new Date(b.sell_date)), [entries])
@@ -328,27 +329,37 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
               <p style={{ fontSize: 13, color: '#4a5270' }}>Sin dividendos cobrados confirmados en {year}.</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 680 }}>
-                  <thead><tr>{[Th('Empresa'), Th('País'), Th('Bruto', 'right'), Th('Ret. origen', 'right'), Th('Ret. destino', 'right'), Th('Neto', 'right')]}</tr></thead>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 720 }}>
+                  <thead><tr>{[Th('Empresa'), Th('País'), Th('Forma de pago'), Th('Bruto', 'right'), Th('Ret. origen', 'right'), Th('Ret. destino', 'right'), Th('Neto', 'right')]}</tr></thead>
                   <tbody>
                     {divs.map((e, i) => (
                       <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                         <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{flag(e.country)} {e.company_name} <span style={{ color: '#3a4260', fontSize: 10 }}>{e.ticker}</span></td>
                         <td style={{ padding: '7px 8px', color: '#8090a8' }}>{COUNTRY_NAMES[e.country] || e.country}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'center' }} title={e.payment_method === 'stock' ? 'Dividendo en acciones' : 'Dividendo en efectivo'}>{e.payment_method === 'stock' ? '📈' : '💵'}</td>
                         <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 600 }}>{fmtEUR(e.gross_amount)}</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#fb923c', whiteSpace: 'nowrap' }}>{fmtPct(e.withholding_origin_pct)} · {fmtEUR(e.withholding_origin)}</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#fb923c', whiteSpace: 'nowrap' }}>{e.withholding_dest > 0 ? fmtEUR(e.withholding_dest) : '—'}</td>
+                        {e.payment_method === 'stock'
+                          ? <td colSpan={2} style={{ padding: '7px 8px', textAlign: 'right', color: '#fbbf24', fontSize: 11 }}>Sin retención — declarar en renta</td>
+                          : <>
+                              <td style={{ padding: '7px 8px', textAlign: 'right', color: '#fb923c', whiteSpace: 'nowrap' }}>{fmtPct(e.withholding_origin_pct)} · {fmtEUR(e.withholding_origin)}</td>
+                              <td style={{ padding: '7px 8px', textAlign: 'right', color: '#fb923c', whiteSpace: 'nowrap' }}>{e.withholding_dest > 0 ? fmtEUR(e.withholding_dest) : '—'}</td>
+                            </>}
                         <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600 }}>{fmtEUR(e.net_amount)}</td>
                       </tr>
                     ))}
                     <tr style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                      <td colSpan={2} style={{ padding: '8px', color: '#8090a8', fontWeight: 700 }}>Totales</td>
+                      <td colSpan={3} style={{ padding: '8px', color: '#8090a8', fontWeight: 700 }}>Totales</td>
                       <td style={{ padding: '8px', textAlign: 'right', color: '#34d399', fontWeight: 700 }}>{fmtEUR(t.grossDiv)}</td>
                       <td colSpan={2} style={{ padding: '8px', textAlign: 'right', color: '#fb923c', fontWeight: 700 }}>{fmtEUR(t.retTotal)}</td>
                       <td style={{ padding: '8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 700 }}>{fmtEUR(t.grossDiv - t.retTotal)}</td>
                     </tr>
                   </tbody>
                 </table>
+                {divs.some(e => e.payment_method === 'stock') && (
+                  <p style={{ fontSize: 10.5, color: '#6b7693', marginTop: 10, lineHeight: 1.55 }}>
+                    Los dividendos cobrados en acciones (📈) tributan como rendimiento del capital mobiliario por el valor de mercado en la fecha de cobro. No tienen retención previa. Las acciones recibidas tienen precio de adquisición fiscal igual al valor declarado aquí.
+                  </p>
+                )}
               </div>
             )}
           </div>

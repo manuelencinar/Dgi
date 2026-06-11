@@ -39,6 +39,8 @@ export default function NewPositionPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState(null)
   const [fxAlertPending, setFxAlertPending] = useState(false)
+  const [divModal, setDivModal] = useState(null)   // { ticker, name } — preguntar método de cobro
+  const [divSaved, setDivSaved] = useState(false)
 
   // Ajustes del usuario
   const [userSettings, setUserSettings] = useState({ base_currency: 'EUR', fx_commission_pct: 0 })
@@ -250,7 +252,22 @@ export default function NewPositionPage() {
       setError('Error al guardar la posición: ' + posErr.message + hint); setSaving(false); return
     }
 
+    // Primera vez que se añade esta empresa (acción): preguntar método de cobro.
+    if (form.type === 'buy' && !existing && selected.assetType === 'stock') {
+      setSaving(false)
+      setDivModal({ ticker: selected.ticker, name: selected.name })
+      return
+    }
     router.push('/cartera')
+  }
+
+  const saveDivMethod = async (method) => {
+    const { data: { user } } = await sb.auth.getUser()
+    if (user && divModal) {
+      try { await sb.from('positions').update({ dividend_payment_method: method }).eq('user_id', user.id).eq('ticker', divModal.ticker) } catch {}
+    }
+    setDivSaved(true)
+    setTimeout(() => { router.push('/cartera') }, 1200)
   }
 
   const unit = assetType === 'stock' ? 'acciones' : 'participaciones'
@@ -288,6 +305,30 @@ export default function NewPositionPage() {
 
   return (
     <div style={{ maxWidth: 540, margin: '0 auto', padding: '24px 16px 64px' }}>
+      {divModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(4,6,12,0.72)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ width: '100%', maxWidth: 460, background: '#0d1322', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 24 }}>
+            {divSaved ? (
+              <p style={{ fontSize: 13, color: '#34d399', textAlign: 'center', padding: '14px 0' }}>✓ Preferencia guardada — puedes cambiarla en cualquier momento desde Dividendos → Configuración</p>
+            ) : (
+              <>
+                <h2 style={{ fontSize: 17, fontWeight: 800, color: '#e0e8f0', marginBottom: 16 }}>¿Cómo quieres cobrar los dividendos de {divModal.name}?</h2>
+                <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
+                  <button onClick={() => saveDivMethod('cash')} style={{ textAlign: 'left', padding: '14px 16px', borderRadius: 10, cursor: 'pointer', background: 'rgba(99,102,241,0.12)', border: '2px solid rgba(99,102,241,0.5)', color: '#e0e8f0' }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>💵 En efectivo</p>
+                    <p style={{ fontSize: 11.5, color: '#8090a8' }}>Los dividendos se abonan en tu cuenta. Opción por defecto.</p>
+                  </button>
+                  <button onClick={() => saveDivMethod('stock')} style={{ textAlign: 'left', padding: '14px 16px', borderRadius: 10, cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#e0e8f0' }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>📈 En acciones</p>
+                    <p style={{ fontSize: 11.5, color: '#8090a8' }}>Recibes acciones adicionales en lugar de efectivo. Se añaden automáticamente a tu cartera.</p>
+                  </button>
+                </div>
+                <button onClick={() => { setDivModal(null); router.push('/cartera') }} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', color: '#4a5270', fontSize: 12, padding: '6px' }}>Decidir más tarde — usar efectivo por ahora</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       <div style={{ marginBottom: 20 }}>
         <Link href="/cartera" style={{ fontSize: 12, color: '#4a5270', textDecoration: 'none' }}>← Volver a cartera</Link>
       </div>
