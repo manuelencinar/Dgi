@@ -3,8 +3,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend,
+  AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, Legend, ReferenceLine,
 } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import { enrichPositions, calcSummary } from '@/lib/portfolio'
@@ -14,11 +14,13 @@ import { monthlyEquivalent } from '@/lib/recurring'
 const CARD  = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
 const SLIDER_WRAP = { display: 'flex', flexDirection: 'column', gap: 6 }
 const LABEL = { fontSize: 11, color: '#4a5270' }
+const CAP = 20   // tope de CAGR del dividendo (MAX_CAGR en portfolio-calc)
 
 function fmtEUR(v) {
   if (v == null) return '—'
   return v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €'
 }
+function fmtPct(v) { return v == null || isNaN(v) ? '—' : v.toFixed(1) + '%' }
 
 function Slider({ label, value, min, max, step = 1, onChange, format }) {
   return (
@@ -65,6 +67,7 @@ export default function ProyeccionPage({ isPremium }) {
   const [taxRate,         setTaxRate]         = useState(19)
   const [rentaObjetivo,   setRentaObjetivo]   = useState(0)
   const [showDRIP,        setShowDRIP]        = useState(false)
+  const [showRates,       setShowRates]       = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -90,7 +93,11 @@ export default function ProyeccionPage({ isPremium }) {
 
     const fundMap = Object.fromEntries((funds || []).map(f => [f.ticker, f]))
     const fundsMap = Object.fromEntries((fundsData || []).map(f => [f.ticker, f]))
-    const e = enrichPositions(positions, fundMap, fundsMap)
+    // Inyectamos div_cagr5 real en cada posición — la proyección (projectIncome) ya
+    // lo espera en p.div_cagr5; sin esto caía al 3% genérico para todas.
+    const e = enrichPositions(positions, fundMap, fundsMap).map(p => ({
+      ...p, div_cagr5: p.div_cagr5 ?? fundMap[p.ticker]?.div_cagr5 ?? null,
+    }))
     setEnriched(e)
     setSummary(calcSummary(e))
     setRecurringMonthly((rec || []).filter(c => c.active).reduce((s, c) => s + monthlyEquivalent(c.amount_eur, c.frequency), 0))
@@ -113,6 +120,25 @@ export default function ProyeccionPage({ isPremium }) {
     }))
   }, [proj])
 
+  // Tasas de crecimiento del dividendo usadas (MEJORA 5)
+  const rates = useMemo(() => enriched
+    .filter(p => (p.annualIncomeEUR ?? 0) > 0 || (p.dps ?? 0) > 0)
+    .map(p => {
+      const has = p.div_cagr5 != null && !isNaN(p.div_cagr5)
+      const raw = has ? Number(p.div_cagr5) : 3
+      const used = Math.min(Math.max(raw, 0), CAP)
+      return { name: p.name, ticker: p.ticker, raw, used, capped: raw > CAP, source: has ? 'Histórico 5 años' : 'Por defecto 3%' }
+    })
+    .sort((a, b) => b.used - a.used), [enriched])
+
+  // Yield on cost proyectado (MEJORA 3)
+  const costTotal = summary?.totalCostEUR ?? 0
+  const yocData = useMemo(() => (proj && costTotal > 0)
+    ? proj.base.map(b => ({ year: b.year, yoc: b.income / costTotal * 100 }))
+    : [], [proj, costTotal])
+  const yocToday = costTotal > 0 ? (summary?.totalIncomeEUR ?? 0) / costTotal * 100 : null
+  const yocAt = y => (proj && costTotal > 0 && proj.base[y - 1]) ? proj.base[y - 1].income / costTotal * 100 : null
+
   const keyYears = [5, 10, 15, 20, horizon].filter((y, i, a) => y <= horizon && a.indexOf(y) === i)
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#4a5270' }}>Cargando…</div>
@@ -129,74 +155,120 @@ export default function ProyeccionPage({ isPremium }) {
   )
 
   const baseAtHorizon = proj?.base[horizon - 1]?.income ?? 0
+  const reinvestText = reinvest ? 'Con reinversión de dividendos' : 'Sin reinversión'
+
+  // ── Headline (MEJORA 1) ──
+  let headline = { color: '#34d399', big: <>Cobrarás <span style={{ color: '#34d399' }}>{fmtEUR(Math.round(baseAtHorizon / 12))}/mes</span> en dividendos en el año {horizon}</>, sub: `Escenario base · Renta actual: ${fmtEUR(summary?.totalIncomeEUR)}/año · ${reinvestText}`, accent: false }
+  if (rentaObjetivo > 0 && proj) {
+    const idx = proj.base.findIndex(b => b.income >= rentaObjetivo)
+    if (idx >= 0) {
+      headline = { accent: true, big: <>Alcanzarás tu objetivo de <span style={{ color: '#4ade80' }}>{fmtEUR(rentaObjetivo)}/año</span> en el año {idx + 1}</>, sub: `Escenario base · Renta actual: ${fmtEUR(summary?.totalIncomeEUR)}/año · ${reinvestText}` }
+    } else {
+      const pct = rentaObjetivo > 0 ? baseAtHorizon / rentaObjetivo * 100 : 0
+      const g = proj.base[horizon - 1] && proj.base[horizon - 2] && proj.base[horizon - 2].income > 0
+        ? proj.base[horizon - 1].income / proj.base[horizon - 2].income - 1 : 0
+      const extra = g > 0 && baseAtHorizon > 0 ? Math.ceil(Math.log(rentaObjetivo / baseAtHorizon) / Math.log(1 + g)) : null
+      headline = { accent: false, big: <>En el año {horizon} estarás al <span style={{ color: '#fbbf24' }}>{pct.toFixed(0)}%</span> de tu objetivo de {fmtEUR(rentaObjetivo)}/año</>, sub: extra ? `Necesitarías ~${extra} año${extra > 1 ? 's' : ''} más para alcanzarlo · ${reinvestText}` : `${reinvestText}` }
+    }
+  }
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px 64px' }}>
-      {/* Headline */}
-      <div style={{ ...CARD, marginBottom: 16, background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)' }}>
-        <p style={{ fontSize: 13, color: '#818cf8', marginBottom: 4 }}>Escenario base</p>
-        <p style={{ fontSize: 22, fontWeight: 900, color: '#c8d0e0' }}>
-          Cobrarás <span style={{ color: '#34d399' }}>{fmtEUR(Math.round(baseAtHorizon / 12))}/mes</span> en dividendos en el año {horizon}
-        </p>
-        <p style={{ fontSize: 11, color: '#4a5270', marginTop: 4 }}>
-          Renta anual estimada: {fmtEUR(baseAtHorizon)} · Hoy: {fmtEUR(summary?.totalIncomeEUR)}
-        </p>
+      <style>{`
+        .proj-stack { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
+        .proj-slgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+        @media (max-width: 760px) {
+          .proj-params { order: 2; }
+          .proj-chart { order: 1; }
+        }
+      `}</style>
+
+      {/* 1 · Headline */}
+      <div style={{ ...CARD, marginBottom: 16, background: headline.accent ? 'rgba(52,211,153,0.08)' : 'rgba(99,102,241,0.06)', border: `1px solid ${headline.accent ? 'rgba(52,211,153,0.3)' : 'rgba(99,102,241,0.2)'}` }}>
+        <p style={{ fontSize: 22, fontWeight: 900, color: '#c8d0e0', lineHeight: 1.25 }}>{headline.big}</p>
+        <p style={{ fontSize: 11.5, color: '#4a5270', marginTop: 6 }}>{headline.sub}</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 16, marginBottom: 16 }}>
-        {/* Chart */}
-        <div style={CARD}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>
-            Proyección de renta anual
-          </p>
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="year" stroke="#4a5270" fontSize={10} tickLine={false} label={{ value: 'Año', position: 'insideBottom', offset: -2, fontSize: 10, fill: '#4a5270' }} />
-              <YAxis stroke="#4a5270" fontSize={10} tickLine={false} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
-              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={v => [fmtEUR(v), '']} />
-              <Legend wrapperStyle={{ fontSize: 11, color: '#8090a8' }} />
-              {rentaObjetivo > 0 && (
-                <Area type="monotone" dataKey="objetivo" stroke="#fbbf24" strokeDasharray="5 5" fill="none" data={chartData.map(d => ({ ...d, objetivo: rentaObjetivo }))} />
-              )}
-              <Area type="monotone" dataKey="conservative" name="Conservador" stroke="#f87171" fill="rgba(248,113,113,0.08)" strokeWidth={1.5} dot={false} />
-              <Area type="monotone" dataKey="base"         name="Base"        stroke="#34d399" fill="rgba(52,211,153,0.12)" strokeWidth={2}   dot={false} />
-              <Area type="monotone" dataKey="optimistic"   name="Optimista"   stroke="#818cf8" fill="rgba(129,140,248,0.08)" strokeWidth={1.5} dot={false} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Controls */}
-        <div style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Parámetros</p>
+      <div className="proj-stack">
+        {/* 2 · Parámetros */}
+        <div className="proj-params" style={{ ...CARD }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>Parámetros</p>
           {recurringMonthly > 0 && (
-            <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 8, padding: '10px 12px', fontSize: 11 }}>
+            <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 8, padding: '10px 12px', fontSize: 11, marginBottom: 14 }}>
               <p style={{ color: '#818cf8', fontWeight: 700, marginBottom: 4 }}>Aportaciones combinadas (al mes)</p>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8090a8' }}><span>⚡ Periódicas a ETFs/fondos</span><span style={{ color: '#a78bfa', fontWeight: 700 }}>{recurringMonthly.toFixed(0)} €</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8090a8' }}><span>Extra (slider)</span><span style={{ color: '#c8d0e0', fontWeight: 700 }}>{monthly} €</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8090a8', marginTop: 4, paddingTop: 4, borderTop: '1px solid rgba(255,255,255,0.06)' }}><span>Total</span><span style={{ color: '#34d399', fontWeight: 700 }}>{(recurringMonthly + monthly).toFixed(0)} €</span></div>
             </div>
           )}
-          <Slider label="Horizonte" value={horizon} min={5} max={40} onChange={setHorizon} format={v => `${v} años`} />
-          <Slider label="Aportación mensual extra" value={monthly} min={0} max={5000} step={50} onChange={setMonthly} format={v => `${v} €`} />
-          <Slider label="Crecim. aportación/año" value={monthlyGrowth} min={0} max={10} step={0.5} onChange={setMonthlyGrowth} format={v => `${v}%`} />
-          <Slider label="Retención fiscal" value={taxRate} min={0} max={35} onChange={setTaxRate} format={v => `${v}%`} />
-          <Slider label="Renta objetivo/año (€)" value={rentaObjetivo} min={0} max={60000} step={500} onChange={setRentaObjetivo} format={v => v > 0 ? fmtEUR(v) : 'Sin objetivo'} />
-          {/* Toggle reinvest */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={LABEL}>Reinvertir dividendos</span>
-            <button onClick={() => setReinvest(r => !r)} style={{
-              width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
-              background: reinvest ? 'rgba(52,211,153,0.7)' : 'rgba(255,255,255,0.1)',
-              position: 'relative', transition: 'background 0.2s',
-            }}>
-              <span style={{ position: 'absolute', top: 3, left: reinvest ? 22 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
-            </button>
+          <div className="proj-slgrid">
+            <Slider label="Horizonte" value={horizon} min={5} max={40} onChange={setHorizon} format={v => `${v} años`} />
+            <Slider label="Aportación mensual extra" value={monthly} min={0} max={5000} step={50} onChange={setMonthly} format={v => `${v} €`} />
+            <Slider label="Crecim. aportación/año" value={monthlyGrowth} min={0} max={10} step={0.5} onChange={setMonthlyGrowth} format={v => `${v}%`} />
+            <Slider label="Retención fiscal" value={taxRate} min={0} max={35} onChange={setTaxRate} format={v => `${v}%`} />
+            <Slider label="Renta objetivo/año (€)" value={rentaObjetivo} min={0} max={60000} step={500} onChange={setRentaObjetivo} format={v => v > 0 ? fmtEUR(v) : 'Sin objetivo'} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={LABEL}>Reinvertir dividendos</span>
+              <button onClick={() => setReinvest(r => !r)} style={{
+                width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+                background: reinvest ? 'rgba(52,211,153,0.7)' : 'rgba(255,255,255,0.1)', position: 'relative', transition: 'background 0.2s',
+              }}>
+                <span style={{ position: 'absolute', top: 3, left: reinvest ? 22 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+              </button>
+            </div>
           </div>
+
+          {/* MEJORA 5 — tasas de crecimiento usadas */}
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <button onClick={() => setShowRates(s => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#818cf8', fontSize: 11.5, fontWeight: 700, padding: 0 }}>
+              Ver tasas de crecimiento usadas {showRates ? '▲' : '▼'}
+            </button>
+            {showRates && (
+              <div style={{ overflowX: 'auto', marginTop: 10 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                  <thead><tr>{['Empresa', 'CAGR div usado', 'Fuente'].map(h => (
+                    <th key={h} style={{ padding: '5px 8px', textAlign: h === 'Empresa' ? 'left' : h === 'Fuente' ? 'left' : 'right', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
+                  ))}</tr></thead>
+                  <tbody>
+                    {rates.map((r, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ padding: '5px 8px', color: '#c8d0e0' }}>{r.name} <span style={{ color: '#3a4260' }}>{r.ticker}</span></td>
+                        <td style={{ padding: '5px 8px', textAlign: 'right', color: r.capped ? '#fbbf24' : '#34d399', fontWeight: 600, whiteSpace: 'nowrap' }}>{r.capped ? `${r.raw.toFixed(0)}% → cap ${CAP}%` : `${r.used.toFixed(1)}%`}</td>
+                        <td style={{ padding: '5px 8px', color: '#4a5270' }}>{r.source}{r.capped ? ' (cap aplicado)' : ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 3 · Gráfico */}
+        <div className="proj-chart" style={CARD}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>Proyección de renta anual</p>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <XAxis dataKey="year" stroke="#4a5270" fontSize={10} tickLine={false} label={{ value: 'Año', position: 'insideBottom', offset: -2, fontSize: 10, fill: '#4a5270' }} />
+              <YAxis stroke="#4a5270" fontSize={10} tickLine={false} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={v => [fmtEUR(v), '']} />
+              <Legend wrapperStyle={{ fontSize: 11, color: '#8090a8' }} />
+              <Area type="monotone" dataKey="conservative" name="Conservador" stroke="#f87171" fill="rgba(248,113,113,0.08)" strokeWidth={1.5} dot={false} />
+              <Area type="monotone" dataKey="base"         name="Base"        stroke="#34d399" fill="rgba(52,211,153,0.12)" strokeWidth={2}   dot={false} />
+              <Area type="monotone" dataKey="optimistic"   name="Optimista"   stroke="#818cf8" fill="rgba(129,140,248,0.08)" strokeWidth={1.5} dot={false} />
+              {rentaObjetivo > 0 && (
+                <ReferenceLine y={rentaObjetivo} stroke="#fbbf24" strokeDasharray="6 3" label={{ value: 'Objetivo', position: 'right', fill: '#fbbf24', fontSize: 11 }} />
+              )}
+            </AreaChart>
+          </ResponsiveContainer>
+          <p style={{ fontSize: 10.5, color: '#2e3a55', marginTop: 8 }}>
+            Proyección basada en el CAGR histórico real de cada empresa de tu cartera — no en una tasa genérica.
+          </p>
         </div>
       </div>
 
-      {/* Key years table */}
+      {/* 4 · Valores en años clave */}
       <div style={{ ...CARD, marginBottom: 16 }}>
         <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Valores en años clave</p>
         <div style={{ overflowX: 'auto' }}>
@@ -222,67 +294,102 @@ export default function ProyeccionPage({ isPremium }) {
         </div>
       </div>
 
-      {/* DRIP section */}
-      <div style={CARD}>
-        <button onClick={() => setShowDRIP(s => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', width: '100%', padding: 0, alignItems: 'center' }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Análisis DRIP — efecto del reinvestido</p>
-          <span style={{ color: '#4a5270', fontSize: 14 }}>{showDRIP ? '▲' : '▼'}</span>
-        </button>
-        {showDRIP && (
-          <div style={{ marginTop: 14 }}>
-            {drip.length === 0 ? (
-              <p style={{ fontSize: 12, color: '#4a5270' }}>No hay posiciones con dividendo.</p>
-            ) : (
-              <>
-                {/* Bar chart — extra income at Y10 */}
-                <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 10 }}>Renta adicional por empresa en año 10 reinvirtiendo dividendos</p>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={drip.map(d => ({ name: d.ticker, extra: d.extraY10 }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="name" stroke="#4a5270" fontSize={10} />
-                    <YAxis stroke="#4a5270" fontSize={10} tickFormatter={v => `${v}€`} />
-                    <Tooltip contentStyle={TOOLTIP_STYLE} formatter={v => [fmtEUR(v), 'Extra DRIP Y10']} />
-                    <Bar dataKey="extra" fill="#818cf8" radius={[4,4,0,0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-
-                <div style={{ overflowX: 'auto', marginTop: 14 }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
-                    <thead>
-                      <tr>
-                        {['Empresa','Dividendo actual','Acc. adicionales/año','Renta extra Y1','Extra Y5','Extra Y10'].map(h => (
-                          <th key={h} style={{ padding: '5px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {drip.map((d, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                          <td style={{ padding: '6px 8px', color: '#c8d0e0' }}>{d.name}</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right', color: '#fbbf24' }}>{fmtEUR(d.annualDiv)}</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right', color: '#8090a8' }}>{d.addSharesY1.toFixed(4)}</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right', color: '#34d399' }}>+{fmtEUR(d.addIncomeY1)}</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right', color: '#818cf8' }}>+{fmtEUR(d.extraY5)}</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right', color: '#818cf8', fontWeight: 700 }}>+{fmtEUR(d.extraY10)}</td>
-                        </tr>
-                      ))}
-                      <tr style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                        <td colSpan={3} style={{ padding: '6px 8px', fontWeight: 700, color: '#c8d0e0' }}>Total cartera</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#34d399' }}>+{fmtEUR(drip.reduce((s,d)=>s+d.addIncomeY1,0))}</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#818cf8' }}>+{fmtEUR(drip.reduce((s,d)=>s+d.extraY5,0))}</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#818cf8' }}>+{fmtEUR(drip.reduce((s,d)=>s+d.extraY10,0))}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+      {/* 5 · Yield on cost proyectado (MEJORA 3) */}
+      <div style={{ ...CARD, marginBottom: 16 }}>
+        <p style={{ fontSize: 13, fontWeight: 800, color: '#e0e8f0' }}>Yield on cost proyectado</p>
+        <p style={{ fontSize: 11.5, color: '#4a5270', marginBottom: 14 }}>Cuánto renta tu inversión original con el paso del tiempo</p>
+        {costTotal > 0 ? (
+          <>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={yocData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="year" stroke="#4a5270" fontSize={10} tickLine={false} />
+                <YAxis stroke="#4a5270" fontSize={10} tickLine={false} tickFormatter={v => `${v.toFixed(0)}%`} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={v => [fmtPct(v), 'YoC']} />
+                <Line type="monotone" dataKey="yoc" stroke="#34d399" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginTop: 14 }}>
+              {[['Yield on cost hoy', yocToday], ['Yield on cost año 10', yocAt(10)], ['Yield on cost año 20', yocAt(20)]].map(([l, v]) => (
+                <div key={l} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 8, padding: '12px 14px' }}>
+                  <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 4 }}>{l}</p>
+                  <p style={{ fontSize: 18, fontWeight: 800, color: '#34d399' }}>{fmtPct(v)}</p>
                 </div>
-                <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8 }}>
-                  Los cálculos asumen reinversión al precio actual y crecimiento del CAGR histórico de cada empresa.
-                </p>
-              </>
-            )}
-          </div>
-        )}
+              ))}
+            </div>
+            <p style={{ fontSize: 10.5, color: '#2e3a55', marginTop: 12, lineHeight: 1.55 }}>
+              El yield on cost mide la rentabilidad de tu inversión original — no del precio actual. Una empresa comprada a 50€ que hoy reparte 10€ tiene un yield on cost del 20% independientemente de a cuánto cotice hoy.
+            </p>
+          </>
+        ) : <p style={{ fontSize: 12, color: '#4a5270' }}>Sin coste de cartera registrado para calcular el yield on cost.</p>}
       </div>
+
+      {/* 6 · Análisis DRIP (solo si se reinvierte) */}
+      {reinvest ? (
+        <div style={CARD}>
+          <button onClick={() => setShowDRIP(s => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', width: '100%', padding: 0, alignItems: 'center' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Análisis DRIP — efecto del reinvestido</p>
+            <span style={{ color: '#4a5270', fontSize: 14 }}>{showDRIP ? '▲' : '▼'}</span>
+          </button>
+          {showDRIP && (
+            <div style={{ marginTop: 14 }}>
+              {drip.length === 0 ? (
+                <p style={{ fontSize: 12, color: '#4a5270' }}>No hay posiciones con dividendo.</p>
+              ) : (
+                <>
+                  <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 10 }}>Renta adicional por empresa en año 10 reinvirtiendo dividendos</p>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={drip.map(d => ({ name: d.ticker, extra: d.extraY10 }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="name" stroke="#4a5270" fontSize={10} />
+                      <YAxis stroke="#4a5270" fontSize={10} tickFormatter={v => `${v}€`} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} formatter={v => [fmtEUR(v), 'Extra DRIP Y10']} />
+                      <Bar dataKey="extra" fill="#818cf8" radius={[4,4,0,0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+
+                  <div style={{ overflowX: 'auto', marginTop: 14 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                      <thead>
+                        <tr>
+                          {['Empresa','Dividendo actual','Acc. adicionales/año','Renta extra Y1','Extra Y5','Extra Y10'].map(h => (
+                            <th key={h} style={{ padding: '5px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {drip.map((d, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <td style={{ padding: '6px 8px', color: '#c8d0e0' }}>{d.name}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', color: '#fbbf24' }}>{fmtEUR(d.annualDiv)}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', color: '#8090a8' }}>{d.addSharesY1.toFixed(4)}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', color: '#34d399' }}>+{fmtEUR(d.addIncomeY1)}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', color: '#818cf8' }}>+{fmtEUR(d.extraY5)}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', color: '#818cf8', fontWeight: 700 }}>+{fmtEUR(d.extraY10)}</td>
+                          </tr>
+                        ))}
+                        <tr style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                          <td colSpan={3} style={{ padding: '6px 8px', fontWeight: 700, color: '#c8d0e0' }}>Total cartera</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#34d399' }}>+{fmtEUR(drip.reduce((s,d)=>s+d.addIncomeY1,0))}</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#818cf8' }}>+{fmtEUR(drip.reduce((s,d)=>s+d.extraY5,0))}</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#818cf8' }}>+{fmtEUR(drip.reduce((s,d)=>s+d.extraY10,0))}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8 }}>
+                    Los cálculos asumen reinversión al precio actual y crecimiento del CAGR histórico de cada empresa.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ ...CARD, textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: '#4a5270' }}>Activa <b style={{ color: '#8090a8' }}>Reinvertir dividendos</b> en los parámetros para ver el análisis DRIP.</p>
+        </div>
+      )}
     </div>
   )
 }
