@@ -239,6 +239,9 @@ export default function ProyeccionPage({ isPremium }) {
                     ))}
                   </tbody>
                 </table>
+                <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8, lineHeight: 1.5 }}>
+                  Es el CAGR inicial. En la proyección se modera progresivamente hacia ~3% a lo largo de {10} años — las empresas no sostienen un crecimiento alto para siempre.
+                </p>
               </div>
             )}
           </div>
@@ -262,8 +265,8 @@ export default function ProyeccionPage({ isPremium }) {
               )}
             </AreaChart>
           </ResponsiveContainer>
-          <p style={{ fontSize: 10.5, color: '#2e3a55', marginTop: 8 }}>
-            Proyección basada en el CAGR histórico real de cada empresa de tu cartera — no en una tasa genérica.
+          <p style={{ fontSize: 10.5, color: '#2e3a55', marginTop: 8, lineHeight: 1.5 }}>
+            Proyección basada en el CAGR histórico real de cada empresa de tu cartera — no en una tasa genérica. El crecimiento se modera año a año hacia una tasa sostenible (~3%): ninguna empresa sostiene un CAGR alto indefinidamente.
           </p>
         </div>
       </div>

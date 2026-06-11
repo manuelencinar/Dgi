@@ -4,6 +4,18 @@ import { FX, toEUR } from '@/lib/portfolio'
 
 const MAX_CAGR = 0.20
 
+// Crecimiento del dividendo más realista: ninguna empresa sostiene un CAGR alto
+// indefinidamente. El CAGR inicial decae linealmente hacia una tasa terminal
+// sostenible a lo largo de DIV_FADE_YEARS. Las empresas que ya crecen por debajo
+// de la terminal se mantienen (no se les inventa más crecimiento).
+const DIV_TERMINAL = 0.03      // 3% terminal sostenible
+const DIV_FADE_YEARS = 10      // años hasta converger a la terminal
+function fadedGrowth(g0, k) {   // g0 = CAGR inicial (decimal), k = índice de año (0-based)
+  if (g0 <= DIV_TERMINAL) return g0
+  if (k >= DIV_FADE_YEARS) return DIV_TERMINAL
+  return g0 - (g0 - DIV_TERMINAL) * (k / DIV_FADE_YEARS)
+}
+
 // ── Projection ────────────────────────────────────────────────────────────
 
 export function projectIncome(enriched, { horizon, monthly = 0, monthlyGrowthPct = 0, reinvest = false, taxRate = 19 }) {
@@ -21,8 +33,8 @@ export function projectIncome(enriched, { horizon, monthly = 0, monthlyGrowthPct
     let yearlyContrib = monthly * 12
 
     for (let y = 1; y <= horizon; y++) {
-      // Grow dividends
-      positions = positions.map(p => ({ ...p, dps: p.dps * (1 + p.cagr) }))
+      // Grow dividends — el CAGR se modera año a año hacia la tasa terminal
+      positions = positions.map(p => ({ ...p, dps: p.dps * (1 + fadedGrowth(p.cagr, y - 1)) }))
 
       // Annual income
       const income = positions.reduce((s, p) => s + toEUR(p.dps * p.shares, p.currency), 0)
@@ -82,24 +94,24 @@ export function calcDRIP(enriched) {
       const addSharesY1 = priceEUR > 0 ? annualDiv / priceEUR : 0
       const addIncomeY1 = addSharesY1 * toEUR(p.dps || 0, p.currency)
 
-      // 5-year compound
+      // 5-year compound (el CAGR se modera año a año, igual que la proyección)
       let sh5 = p.shares, dps5 = p.dps || 0
       for (let y = 0; y < 5; y++) {
-        dps5 *= (1 + cagr)
+        dps5 *= (1 + fadedGrowth(cagr, y))
         const divEUR = toEUR(dps5 * sh5, p.currency)
         sh5 += priceEUR > 0 ? divEUR / priceEUR : 0
       }
       // 10-year compound
       let sh10 = p.shares, dps10 = p.dps || 0
       for (let y = 0; y < 10; y++) {
-        dps10 *= (1 + cagr)
+        dps10 *= (1 + fadedGrowth(cagr, y))
         const divEUR = toEUR(dps10 * sh10, p.currency)
         sh10 += priceEUR > 0 ? divEUR / priceEUR : 0
       }
 
-      // Without DRIP (just natural growth)
-      let dpsBase5  = (p.dps || 0) * Math.pow(1 + cagr, 5)
-      let dpsBase10 = (p.dps || 0) * Math.pow(1 + cagr, 10)
+      // Without DRIP (just natural growth, con el mismo fade)
+      let dpsBase5  = p.dps || 0, dpsBase10 = p.dps || 0
+      for (let y = 0; y < 10; y++) { const g = 1 + fadedGrowth(cagr, y); if (y < 5) dpsBase5 *= g; dpsBase10 *= g }
       const incNodrip5  = toEUR(dpsBase5  * p.shares, p.currency)
       const incNodrip10 = toEUR(dpsBase10 * p.shares, p.currency)
       const incDrip5    = toEUR(dps5  * sh5,  p.currency)
