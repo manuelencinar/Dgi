@@ -149,8 +149,9 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
         else { pct = fiscalWHT(country); wh = gross * pct / 100 }
       }
       if (pct == null) pct = gross > 0 ? wh / gross * 100 : fiscalWHT(country)
-      const net = d.amount_net != null ? num(d.amount_net) : gross - num(wh)
-      return { ticker: d.ticker, company_name: nameOf(d.ticker), country, gross_amount: gross, withholding_origin: num(wh), withholding_origin_pct: pct, net_amount: net }
+      const destW = d.withholding_dest != null ? num(d.withholding_dest) : 0
+      const net = d.amount_net != null ? num(d.amount_net) : gross - num(wh) - destW
+      return { ticker: d.ticker, company_name: nameOf(d.ticker), country, gross_amount: gross, withholding_origin: num(wh), withholding_origin_pct: pct, withholding_dest: destW, net_amount: net }
     })
     .sort((a, b) => b.gross_amount - a.gross_amount), [divReceived, year])
   const gains = useMemo(() => entries.filter(e => e.type === 'gain' || e.type === 'loss').sort((a, b) => new Date(a.sell_date) - new Date(b.sell_date)), [entries])
@@ -158,8 +159,12 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
   // ── Totales / casillas (en tiempo real desde las entradas) ──
   const totals = useMemo(() => {
     const grossDiv = divs.reduce((s, e) => s + num(e.gross_amount), 0)
-    const retTotal = divs.reduce((s, e) => s + num(e.withholding_origin), 0)
-    const retSpain = divs.filter(e => e.country === 'ES').reduce((s, e) => s + num(e.withholding_origin), 0)
+    // Retención total = origen + destino
+    const retTotal = divs.reduce((s, e) => s + num(e.withholding_origin) + num(e.withholding_dest), 0)
+    // Casilla 0031 (retenciones en España): la retención de origen de las españolas
+    // (que ya es la española) + la retención de destino de las extranjeras.
+    const retSpain = divs.reduce((s, e) => s + (e.country === 'ES' ? num(e.withholding_origin) : num(e.withholding_dest)), 0)
+    // Casilla 0588 (doble imposición): retención de origen extranjera deducible (≤15%).
     const deductible = divs.filter(e => e.country !== 'ES').reduce((s, e) => s + Math.min(num(e.withholding_origin), num(e.gross_amount) * 0.15), 0)
     const gainsSum = gains.filter(e => num(e.gain_loss) > 0).reduce((s, e) => s + num(e.gain_loss), 0)
     const lossesSum = gains.filter(e => num(e.gain_loss) < 0).reduce((s, e) => s + Math.abs(num(e.gain_loss)), 0)
@@ -313,8 +318,8 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
               <p style={{ fontSize: 13, color: '#4a5270' }}>Sin dividendos cobrados confirmados en {year}.</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 640 }}>
-                  <thead><tr>{[Th('Empresa'), Th('País'), Th('Bruto', 'right'), Th('Retención origen', 'right'), Th('Neto', 'right')]}</tr></thead>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 680 }}>
+                  <thead><tr>{[Th('Empresa'), Th('País'), Th('Bruto', 'right'), Th('Ret. origen', 'right'), Th('Ret. destino', 'right'), Th('Neto', 'right')]}</tr></thead>
                   <tbody>
                     {divs.map((e, i) => (
                       <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
@@ -322,13 +327,14 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
                         <td style={{ padding: '7px 8px', color: '#8090a8' }}>{COUNTRY_NAMES[e.country] || e.country}</td>
                         <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 600 }}>{fmtEUR(e.gross_amount)}</td>
                         <td style={{ padding: '7px 8px', textAlign: 'right', color: '#fb923c', whiteSpace: 'nowrap' }}>{fmtPct(e.withholding_origin_pct)} · {fmtEUR(e.withholding_origin)}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#fb923c', whiteSpace: 'nowrap' }}>{e.withholding_dest > 0 ? fmtEUR(e.withholding_dest) : '—'}</td>
                         <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600 }}>{fmtEUR(e.net_amount)}</td>
                       </tr>
                     ))}
                     <tr style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                       <td colSpan={2} style={{ padding: '8px', color: '#8090a8', fontWeight: 700 }}>Totales</td>
                       <td style={{ padding: '8px', textAlign: 'right', color: '#34d399', fontWeight: 700 }}>{fmtEUR(t.grossDiv)}</td>
-                      <td style={{ padding: '8px', textAlign: 'right', color: '#fb923c', fontWeight: 700 }}>{fmtEUR(t.retTotal)}</td>
+                      <td colSpan={2} style={{ padding: '8px', textAlign: 'right', color: '#fb923c', fontWeight: 700 }}>{fmtEUR(t.retTotal)}</td>
                       <td style={{ padding: '8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 700 }}>{fmtEUR(t.grossDiv - t.retTotal)}</td>
                     </tr>
                   </tbody>

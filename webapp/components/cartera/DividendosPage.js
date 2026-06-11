@@ -29,6 +29,7 @@ export default function DividendosPage({ isPremium }) {
   const [positions, setPositions] = useState([])
   const [funds, setFunds] = useState({})
   const [config, setConfig] = useState({})
+  const [destWHT, setDestWHT] = useState(19)
   const [year, setYear] = useState(new Date().getFullYear())
 
   const fetchRecords = useCallback(async (uid) => {
@@ -40,12 +41,14 @@ export default function DividendosPage({ isPremium }) {
     setLoading(true)
     const { data: { user } } = await sb.auth.getUser()
     if (!user) { router.push('/login'); return }
-    const [{ data: pos }, { data: cfg }] = await Promise.all([
+    const [{ data: pos }, { data: cfg }, { data: settings }] = await Promise.all([
       sb.from('positions').select('*').eq('user_id', user.id),
       sb.from('dividend_config').select('*').eq('user_id', user.id),
+      sb.from('user_settings').select('dest_wht').eq('user_id', user.id).maybeSingle(),
     ])
     setPositions(pos || [])
     setConfig(Object.fromEntries((cfg || []).map(c => [c.ticker, c])))
+    setDestWHT(settings?.dest_wht != null ? Number(settings.dest_wht) : 19)
     const tickers = [...new Set((pos || []).map(p => p.ticker))]
     if (tickers.length) {
       const { data: f } = await sb.from('company_fundamentals').select('ticker, country, dps, div_history, dividend_events, next_ex_date, next_pay_date').in('ticker', tickers)
@@ -59,6 +62,11 @@ export default function DividendosPage({ isPremium }) {
   }, [sb, router, fetchRecords])
 
   useEffect(() => { load() }, [load])
+
+  const refresh = useCallback(async () => {
+    const { data: { user } } = await sb.auth.getUser()
+    if (user) await fetchRecords(user.id)
+  }, [sb, fetchRecords])
 
   const recalc = async () => {
     const { data: { user } } = await sb.auth.getUser(); if (!user) return
@@ -87,7 +95,7 @@ export default function DividendosPage({ isPremium }) {
         ))}
       </div>
 
-      {tab === 'cobros' && <Cobros sb={sb} records={records} setRecords={setRecords} positions={positions} funds={funds} year={year} setYear={setYear} reload={fetchRecords} />}
+      {tab === 'cobros' && <Cobros sb={sb} records={records} setRecords={setRecords} positions={positions} funds={funds} year={year} setYear={setYear} destWHT={destWHT} refresh={refresh} />}
       {tab === 'calendario' && <Calendario records={records} year={year} setYear={setYear} />}
       {tab === 'config' && <Configuracion sb={sb} positions={positions} funds={funds} config={config} setConfig={setConfig} reload={recalc} />}
     </div>
@@ -95,7 +103,7 @@ export default function DividendosPage({ isPremium }) {
 }
 
 // ───────────────────────── COBROS ─────────────────────────
-function Cobros({ sb, records, setRecords, positions, funds, year, setYear }) {
+function Cobros({ sb, records, setRecords, positions, funds, year, setYear, destWHT = 19, refresh }) {
   const [filter, setFilter] = useState('all')
   const [editId, setEditId] = useState(null)
   const [draft, setDraft] = useState({})
@@ -103,7 +111,7 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear }) {
   const [confDraft, setConfDraft] = useState({})
   const [delId, setDelId] = useState(null)
   const [adding, setAdding] = useState(false)
-  const [addDraft, setAddDraft] = useState({ query: '', ticker: '', shares: '', dps: '', pct: '', date: todayStr() })
+  const [addDraft, setAddDraft] = useState({ query: '', ticker: '', shares: '', dps: '', pctO: '', pctD: '', date: todayStr() })
 
   const years = useMemo(() => {
     const ys = new Set([new Date().getFullYear()])
@@ -123,23 +131,30 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear }) {
 
   const filtered = yearRecs.filter(r => filter === 'all' || (filter === 'received' ? r.status === 'received' : r.status === 'pending'))
 
-  const patch = async (id, fields) => {
-    await sb.from('dividends_received').update({ ...fields, updated_at: new Date().toISOString() }).eq('id', id)
-    setRecords(rs => rs.map(r => r.id === id ? { ...r, ...fields } : r))
+  // Importes con doble retención: origen (país) + destino (usuario).
+  const calcNet = (amount, pctO, pctD) => {
+    const originW = amount * pctO / 100
+    const destW = (amount - originW) * pctD / 100
+    return { originW, destW, net: amount - originW - destW }
   }
-  const startEdit = r => { setEditId(r.id); setConfirmId(null); setDraft({ shares: r.shares ?? '', dps: r.dps ?? '', pct: r.withholding_origin_pct ?? '' }) }
+
+  const patch = async (id, fields) => {
+    const { error } = await sb.from('dividends_received').update({ ...fields, updated_at: new Date().toISOString() }).eq('id', id)
+    if (error) { alert('No se pudo guardar: ' + error.message); return false }
+    if (refresh) await refresh()
+    return true
+  }
+  const startEdit = r => { setEditId(r.id); setConfirmId(null); setDraft({ shares: r.shares ?? '', dps: r.dps ?? '', pctO: r.withholding_origin_pct ?? '', pctD: r.withholding_dest_pct ?? '' }) }
   const saveEdit = async (r) => {
-    const shares = num(draft.shares), dps = num(draft.dps), pct = num(draft.pct)
-    const amount = shares * dps, wh = amount * pct / 100
-    await patch(r.id, { shares, dps, withholding_origin_pct: pct, withholding_origin: wh, amount, amount_net: amount - wh, source: 'manual' })
-    setEditId(null)
+    const shares = num(draft.shares), dps = num(draft.dps), pctO = num(draft.pctO), pctD = num(draft.pctD)
+    const amount = shares * dps, { originW, destW, net } = calcNet(amount, pctO, pctD)
+    if (await patch(r.id, { shares, dps, withholding_origin_pct: pctO, withholding_origin: originW, withholding_dest_pct: pctD, withholding_dest: destW, amount, amount_net: net, source: 'manual' })) setEditId(null)
   }
   const startConfirm = r => { setConfirmId(r.id); setEditId(null); setConfDraft({ amount_net: r.amount_net ?? r.amount ?? '', date: r.payment_date_estimated || r.date || today }) }
   const doConfirm = async (r) => {
     const newNet = num(confDraft.amount_net), newDate = confDraft.date
     const changed = newNet !== num(r.amount_net) || newDate !== (r.payment_date_estimated || r.date)
-    await patch(r.id, { status: 'received', amount_net: newNet, date: newDate, source: changed ? 'manual' : r.source })
-    setConfirmId(null)
+    if (await patch(r.id, { status: 'received', amount_net: newNet, date: newDate, source: changed ? 'manual' : r.source })) setConfirmId(null)
   }
   const del = async (r, exclude) => {
     const { data: { user } } = await sb.auth.getUser()
@@ -147,8 +162,10 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear }) {
       const period = (r.payment_date_estimated || r.date || '').slice(0, 7)
       try { await sb.from('dividend_prefill_exclusions').insert({ user_id: user.id, ticker: r.ticker, period }) } catch {}
     }
-    await sb.from('dividends_received').delete().eq('id', r.id)
-    setRecords(rs => rs.filter(x => x.id !== r.id)); setDelId(null)
+    const { error } = await sb.from('dividends_received').delete().eq('id', r.id)
+    if (error) { alert('No se pudo eliminar: ' + error.message); return }
+    setDelId(null)
+    if (refresh) await refresh()
   }
 
   const addResults = useMemo(() => {
@@ -157,15 +174,17 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear }) {
     if (q.length < 1) return DICT.filter(d => tickers.has(d[1])).slice(0, 8)
     return DICT.filter(d => tickers.has(d[1]) && (d[0].toLowerCase().includes(q) || d[1].toLowerCase().includes(q))).slice(0, 8)
   }, [addDraft.query, positions])
+  const pickAdd = d => setAddDraft(a => ({ ...a, ticker: d[1], query: d[0], pctO: String(fiscalWHT(d[2])), pctD: d[2] === 'ES' ? '0' : String(destWHT) }))
   const saveAdd = async () => {
     const { data: { user } } = await sb.auth.getUser()
     if (!user || !addDraft.ticker) return
-    const shares = num(addDraft.shares), dps = num(addDraft.dps), pct = num(addDraft.pct)
-    const amount = shares * dps, wh = amount * pct / 100
-    const row = { user_id: user.id, ticker: addDraft.ticker, date: addDraft.date, payment_date_estimated: addDraft.date, amount, amount_net: amount - wh, shares, dps, withholding_origin_pct: pct, withholding_origin: wh, status: 'received', source: 'manual' }
-    const { data } = await sb.from('dividends_received').insert(row).select().single()
-    if (data) setRecords(rs => [...rs, data])
-    setAdding(false); setAddDraft({ query: '', ticker: '', shares: '', dps: '', pct: '', date: todayStr() })
+    const shares = num(addDraft.shares), dps = num(addDraft.dps), pctO = num(addDraft.pctO), pctD = num(addDraft.pctD)
+    const amount = shares * dps, { originW, destW, net } = calcNet(amount, pctO, pctD)
+    const row = { user_id: user.id, ticker: addDraft.ticker, date: addDraft.date, payment_date_estimated: addDraft.date, amount, amount_net: net, shares, dps, withholding_origin_pct: pctO, withholding_origin: originW, withholding_dest_pct: pctD, withholding_dest: destW, status: 'received', source: 'manual' }
+    const { error } = await sb.from('dividends_received').insert(row)
+    if (error) { alert('No se pudo guardar el cobro: ' + error.message); return }
+    setAdding(false); setAddDraft({ query: '', ticker: '', shares: '', dps: '', pctO: '', pctD: '', date: todayStr() })
+    if (refresh) await refresh()
   }
 
   return (
@@ -198,15 +217,19 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear }) {
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 920 }}>
-              <thead><tr>{['Empresa', 'Acciones', 'DPS', 'Bruto', 'Retención', 'Neto', 'Fecha pago', 'Estado', '', ''].map((h, i) => (
-                <th key={i} style={{ padding: '6px 8px', textAlign: i >= 1 && i <= 5 ? 'right' : 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+              <thead><tr>{['Empresa', 'Acciones', 'DPS', 'Bruto', 'Ret. origen', 'Ret. destino', 'Neto', 'Fecha pago', 'Estado', '', ''].map((h, i) => (
+                <th key={i} style={{ padding: '6px 8px', textAlign: i >= 1 && i <= 6 ? 'right' : 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
               ))}</tr></thead>
               <tbody>
                 {filtered.map(r => {
                   const code = countryCodeOf(r.ticker, null)
                   const editing = editId === r.id
                   const amount = editing ? num(draft.shares) * num(draft.dps) : num(r.amount)
-                  const wh = editing ? amount * num(draft.pct) / 100 : num(r.withholding_origin)
+                  const pctO = editing ? num(draft.pctO) : num(r.withholding_origin_pct)
+                  const pctD = editing ? num(draft.pctD) : num(r.withholding_dest_pct)
+                  const originW = editing ? amount * pctO / 100 : num(r.withholding_origin)
+                  const destW = editing ? (amount - originW) * pctD / 100 : num(r.withholding_dest)
+                  const net = editing ? amount - originW - destW : (r.amount_net != null ? num(r.amount_net) : amount - originW - destW)
                   return (
                     <Fragmentish key={r.id}>
                       <tr style={{ borderBottom: confirmId === r.id ? 'none' : '1px solid rgba(255,255,255,0.04)' }}>
@@ -214,8 +237,9 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear }) {
                         <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="any" value={draft.shares} onChange={e => setDraft(d => ({ ...d, shares: e.target.value }))} /> : <span style={{ color: '#8090a8' }}>{fmtNum(r.shares)}</span>}</td>
                         <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="0.0001" value={draft.dps} onChange={e => setDraft(d => ({ ...d, dps: e.target.value }))} /> : <span style={{ color: '#8090a8' }}>{fmtNum(r.dps)}</span>}</td>
                         <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 600 }}>{fmtEUR(amount)}</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right', color: ORANGE, whiteSpace: 'nowrap' }}>{editing ? <input style={{ ...INPUT, width: 50, display: 'inline-block' }} type="number" step="any" value={draft.pct} onChange={e => setDraft(d => ({ ...d, pct: e.target.value }))} /> : `${r.withholding_origin_pct != null ? r.withholding_origin_pct + '%' : '—'}`} · {fmtEUR(wh)}</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600 }}>{fmtEUR(amount - wh)}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: ORANGE, whiteSpace: 'nowrap' }}>{editing ? <input style={{ ...INPUT, width: 46, display: 'inline-block' }} type="number" step="any" value={draft.pctO} onChange={e => setDraft(d => ({ ...d, pctO: e.target.value }))} /> : `${pctO || 0}%`} · {fmtEUR(originW)}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: ORANGE, whiteSpace: 'nowrap' }}>{editing ? <input style={{ ...INPUT, width: 46, display: 'inline-block' }} type="number" step="any" value={draft.pctD} onChange={e => setDraft(d => ({ ...d, pctD: e.target.value }))} /> : `${pctD || 0}%`} · {fmtEUR(destW)}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600 }}>{fmtEUR(net)}</td>
                         <td style={{ padding: '7px 8px', color: '#8090a8', whiteSpace: 'nowrap' }}>{fmtDate(r.payment_date_estimated || r.date)}</td>
                         <td style={{ padding: '7px 8px' }}>
                           {r.status === 'received'
@@ -237,7 +261,7 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear }) {
                       </tr>
                       {confirmId === r.id && (
                         <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(52,211,153,0.04)' }}>
-                          <td colSpan={10} style={{ padding: '10px 12px' }}>
+                          <td colSpan={11} style={{ padding: '10px 12px' }}>
                             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                               <span style={{ fontSize: 12, fontWeight: 700, color: '#c8d0e0' }}>Confirmar cobro de {nameOf(r.ticker)}</span>
                               <label style={{ fontSize: 10, color: '#8090a8' }}>Neto recibido<br /><input style={{ ...INPUT, width: 110 }} type="number" step="any" value={confDraft.amount_net} onChange={e => setConfDraft(d => ({ ...d, amount_net: e.target.value }))} /></label>
@@ -250,7 +274,7 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear }) {
                       )}
                       {delId === r.id && (
                         <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(248,113,113,0.05)' }}>
-                          <td colSpan={10} style={{ padding: '10px 12px' }}>
+                          <td colSpan={11} style={{ padding: '10px 12px' }}>
                             <DeleteConfirm r={r} onDelete={del} onCancel={() => setDelId(null)} />
                           </td>
                         </tr>
@@ -264,20 +288,21 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear }) {
                       <input style={INPUT} placeholder="Empresa…" value={addDraft.query} onChange={e => setAddDraft(a => ({ ...a, query: e.target.value, ticker: '' }))} />
                       {!addDraft.ticker && addResults.length > 0 && (
                         <div style={{ position: 'absolute', zIndex: 20, top: '100%', left: 0, right: 0, background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, marginTop: 2, maxHeight: 200, overflowY: 'auto' }}>
-                          {addResults.map(d => <button key={d[1]} onClick={() => setAddDraft(a => ({ ...a, ticker: d[1], query: d[0], pct: String(fiscalWHT(d[2])) }))} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#c8d0e0', fontSize: 12 }}>{d[0]} <span style={{ color: '#4a5270' }}>{d[1]}</span></button>)}
+                          {addResults.map(d => <button key={d[1]} onClick={() => pickAdd(d)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#c8d0e0', fontSize: 12 }}>{d[0]} <span style={{ color: '#4a5270' }}>{d[1]}</span></button>)}
                         </div>
                       )}
                     </td>
                     <td style={{ padding: '7px 8px' }}><input style={INPUT} type="number" step="any" placeholder="acc." value={addDraft.shares} onChange={e => setAddDraft(a => ({ ...a, shares: e.target.value }))} /></td>
                     <td style={{ padding: '7px 8px' }}><input style={INPUT} type="number" step="0.0001" placeholder="DPS" value={addDraft.dps} onChange={e => setAddDraft(a => ({ ...a, dps: e.target.value }))} /></td>
                     <td style={{ padding: '7px 8px', textAlign: 'right', color: GREEN }}>{fmtEUR(num(addDraft.shares) * num(addDraft.dps))}</td>
-                    <td style={{ padding: '7px 8px' }}><input style={INPUT} type="number" step="any" placeholder="% ret." value={addDraft.pct} onChange={e => setAddDraft(a => ({ ...a, pct: e.target.value }))} /></td>
-                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0' }}>{fmtEUR(num(addDraft.shares) * num(addDraft.dps) * (1 - num(addDraft.pct) / 100))}</td>
+                    <td style={{ padding: '7px 8px' }}><input style={INPUT} type="number" step="any" placeholder="% orig." value={addDraft.pctO} onChange={e => setAddDraft(a => ({ ...a, pctO: e.target.value }))} /></td>
+                    <td style={{ padding: '7px 8px' }}><input style={INPUT} type="number" step="any" placeholder="% dest." value={addDraft.pctD} onChange={e => setAddDraft(a => ({ ...a, pctD: e.target.value }))} /></td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0' }}>{fmtEUR(calcNet(num(addDraft.shares) * num(addDraft.dps), num(addDraft.pctO), num(addDraft.pctD)).net)}</td>
                     <td style={{ padding: '7px 8px' }}><input style={INPUT} type="date" value={addDraft.date} onChange={e => setAddDraft(a => ({ ...a, date: e.target.value }))} /></td>
                     <td colSpan={2} />
                     <td style={{ padding: '7px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <button onClick={saveAdd} disabled={!addDraft.ticker} style={mini(GREEN)} title="Guardar">💾</button>
-                      <button onClick={() => { setAdding(false); setAddDraft({ query: '', ticker: '', shares: '', dps: '', pct: '', date: todayStr() }) }} style={mini('#8090a8')} title="Cancelar">✕</button>
+                      <button onClick={() => { setAdding(false); setAddDraft({ query: '', ticker: '', shares: '', dps: '', pctO: '', pctD: '', date: todayStr() }) }} style={mini('#8090a8')} title="Cancelar">✕</button>
                     </td>
                   </tr>
                 )}

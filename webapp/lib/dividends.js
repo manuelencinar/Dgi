@@ -52,7 +52,7 @@ function sharesBefore(txs, ref) {
 }
 
 // Dividendos automáticos esperados: año en curso ya transcurrido + próximos 3 meses.
-export function computeAutoDividends({ positions, transactions, fundamentals, config = {}, today = new Date() }) {
+export function computeAutoDividends({ positions, transactions, fundamentals, config = {}, destWHT = 19, today = new Date() }) {
   const txByTicker = {}
   ;(transactions || []).forEach(t => { (txByTicker[t.ticker] ||= []).push(t) })
   const yearStart = new Date(today.getFullYear(), 0, 1)
@@ -92,13 +92,19 @@ export function computeAutoDividends({ positions, transactions, fundamentals, co
         const shares = sharesBefore(txs, exDate)
         if (shares <= 1e-9) continue
         const amount = shares * perDps
-        const wh = amount * whtPct / 100
+        // Retención en origen (país de la empresa) + retención en destino (la del
+        // usuario, p.ej. 19% en España). En empresas españolas la retención de
+        // origen ya ES la española → no se aplica destino adicional.
+        const destPct = code === 'ES' ? 0 : (destWHT || 0)
+        const originW = amount * whtPct / 100
+        const destW = (amount - originW) * destPct / 100
         out.push({
           ticker: pos.ticker, name: nameOf(pos.ticker), country: code,
           shares: Math.round(shares * 10000) / 10000, dps: Math.round(perDps * 10000) / 10000,
           amount: Math.round(amount * 100) / 100,
-          withholding_origin_pct: whtPct, withholding_origin: Math.round(wh * 100) / 100,
-          amount_net: Math.round((amount - wh) * 100) / 100,
+          withholding_origin_pct: whtPct, withholding_origin: Math.round(originW * 100) / 100,
+          withholding_dest_pct: destPct, withholding_dest: Math.round(destW * 100) / 100,
+          amount_net: Math.round((amount - originW - destW) * 100) / 100,
           ex_dividend_date: iso(exDate), payment_date_estimated: iso(payDate),
           period: `${y}-${String(m).padStart(2, '0')}`,
         })

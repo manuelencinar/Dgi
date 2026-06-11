@@ -16,14 +16,16 @@ export async function POST() {
     const { data: { user } } = await sb.auth.getUser()
     if (!user) return NextResponse.json({ error: 'no auth' }, { status: 401 })
 
-    const [{ data: positions }, { data: transactions }, { data: existing }, { data: excl }, { data: cfgRows }] = await Promise.all([
+    const [{ data: positions }, { data: transactions }, { data: existing }, { data: excl }, { data: cfgRows }, { data: settings }] = await Promise.all([
       sb.from('positions').select('*').eq('user_id', user.id),
       sb.from('transactions').select('ticker, type, shares, date').eq('user_id', user.id),
       sb.from('dividends_received').select('*').eq('user_id', user.id),
       sb.from('dividend_prefill_exclusions').select('ticker, period').eq('user_id', user.id),
       sb.from('dividend_config').select('*').eq('user_id', user.id),
+      sb.from('user_settings').select('dest_wht').eq('user_id', user.id).maybeSingle(),
     ])
     const config = Object.fromEntries((cfgRows || []).map(c => [c.ticker, c]))
+    const destWHT = settings?.dest_wht != null ? Number(settings.dest_wht) : 19
     if (!positions?.length) return NextResponse.json({ inserted: 0 })
 
     const tickers = [...new Set(positions.map(p => p.ticker))]
@@ -42,13 +44,14 @@ export async function POST() {
     })
     ;(excl || []).forEach(e => taken.add(`${e.ticker}|${e.period}`))
 
-    const auto = computeAutoDividends({ positions, transactions: transactions || [], fundamentals, config })
+    const auto = computeAutoDividends({ positions, transactions: transactions || [], fundamentals, config, destWHT })
     const toInsert = auto
       .filter(d => !taken.has(`${d.ticker}|${d.period}`))
       .map(d => ({
         user_id: user.id, ticker: d.ticker, date: d.payment_date_estimated,
         amount: d.amount, amount_net: d.amount_net, shares: d.shares, dps: d.dps,
         withholding_origin_pct: d.withholding_origin_pct, withholding_origin: d.withholding_origin,
+        withholding_dest_pct: d.withholding_dest_pct, withholding_dest: d.withholding_dest,
         ex_dividend_date: d.ex_dividend_date, payment_date_estimated: d.payment_date_estimated,
         status: 'pending', source: 'auto',
       }))

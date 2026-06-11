@@ -9,6 +9,8 @@ alter table dividends_received
   add column if not exists dps                     numeric,
   add column if not exists withholding_origin_pct  numeric,
   add column if not exists withholding_origin       numeric,
+  add column if not exists withholding_dest_pct     numeric,
+  add column if not exists withholding_dest         numeric,
   add column if not exists source                  text default 'manual',
   add column if not exists notes                   text,
   add column if not exists updated_at              timestamptz default now();
