@@ -126,10 +126,15 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
     setPrefilling(false)
   }
 
-  // Avisos (recalculados en cliente)
-  const { missingDivHistory, excludedSells } = useMemo(
+  // Cálculo en vivo (cliente): ganancias FIFO + avisos. Sirve de fuente fiable
+  // de las transmisiones aunque el prefill a fiscal_entries no se haya ejecutado.
+  const { gainEntries: liveGainEntries, missingDivHistory, excludedSells } = useMemo(
     () => computeAutoEntries({ positions, transactions, fundamentals, exercise: year }),
     [positions, transactions, fundamentals, year]
+  )
+  const liveGains = useMemo(
+    () => (liveGainEntries || []).map((g, i) => ({ ...g, id: `live-${i}`, is_confirmed: false, source: 'auto', _live: true })),
+    [liveGainEntries]
   )
 
   const years = useMemo(() => {
@@ -157,7 +162,9 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
       return { ticker: d.ticker, company_name: nameOf(d.ticker), country, gross_amount: gross, withholding_origin: num(wh), withholding_origin_pct: pct, withholding_dest: destW, net_amount: net }
     })
     .sort((a, b) => b.gross_amount - a.gross_amount), [divReceived, year])
-  const gains = useMemo(() => entries.filter(e => e.type === 'gain' || e.type === 'loss').sort((a, b) => new Date(a.sell_date) - new Date(b.sell_date)), [entries])
+  const gainsStored = useMemo(() => entries.filter(e => e.type === 'gain' || e.type === 'loss').sort((a, b) => new Date(a.sell_date) - new Date(b.sell_date)), [entries])
+  // Si fiscal_entries aún no tiene transmisiones, mostramos las calculadas en vivo.
+  const gains = gainsStored.length ? gainsStored : liveGains
 
   // ── Totales / casillas (en tiempo real desde las entradas) ──
   const totals = useMemo(() => {
@@ -369,9 +376,9 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
                           <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="any" value={draft.buy} onChange={ev => setDraft(d => ({ ...d, buy: ev.target.value }))} /> : <span style={{ color: '#8090a8' }}>{fmtEUR(e.buy_price_total)}</span>}</td>
                           <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="any" value={draft.sell} onChange={ev => setDraft(d => ({ ...d, sell: ev.target.value }))} /> : <span style={{ color: '#8090a8' }}>{fmtEUR(e.sell_price_total)}</span>}</td>
                           <td style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 700, color: gl >= 0 ? '#34d399' : '#f87171' }}>{(gl >= 0 ? '+' : '') + fmtEUR(gl)}</td>
-                          <td style={{ padding: '7px 8px' }}><StatusBadges e={e} /></td>
+                          <td style={{ padding: '7px 8px' }}>{e._live ? <span style={{ fontSize: 9.5, fontWeight: 700, color: '#60a5fa', background: 'rgba(96,165,250,0.14)', padding: '1px 6px', borderRadius: 4 }}>Calculado</span> : <StatusBadges e={e} />}</td>
                           <td style={{ padding: '7px 8px', textAlign: 'right' }}>
-                            {editing ? (
+                            {e._live ? null : editing ? (
                               <ActionBtns><button onClick={() => saveGain(e)} style={mini('#34d399')} title="Guardar">💾</button><button onClick={() => setEditId(null)} style={mini('#8090a8')} title="Cancelar">✕</button></ActionBtns>
                             ) : delId === e.id ? (
                               <span style={{ fontSize: 10.5, color: '#fbbf24' }}>¿Eliminar? <button onClick={() => softDelete(e.id)} style={mini('#f87171')}>Sí</button><button onClick={() => setDelId(null)} style={mini('#8090a8')}>No</button></span>
