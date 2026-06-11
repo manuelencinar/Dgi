@@ -57,7 +57,9 @@ export async function POST(req) {
     const { divEntries, gainEntries, missingDivHistory, excludedSells } =
       computeAutoEntries({ positions: positions || [], transactions: transactions || [], fundamentals, exercise })
 
-    const toInsert = [...divEntries, ...gainEntries]
+    // Los dividendos de la fiscalidad vienen de dividends_received (sección Dividendos).
+    // El prefill de fiscal_entries solo genera las transmisiones (ganancias/pérdidas).
+    const toInsert = [...gainEntries]
       .filter(e => { const s = sigOf(e); return !deletedSigs.has(s) && !keptSigs.has(s) })
       .map(e => ({ ...e, user_id: user.id, exercise, source: 'auto', is_manual: false, is_confirmed: false, deleted: false }))
 

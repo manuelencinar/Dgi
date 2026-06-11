@@ -73,7 +73,7 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
   const [addDraft, setAddDraft] = useState({ query: '', ticker: '', company_name: '', country: '', shares: '', dps: '', pct: '' })
   const [delId, setDelId] = useState(null)
   const [showExcluded, setShowExcluded] = useState(false)
-  const [receivedCount, setReceivedCount] = useState(null)   // dividendos cobrados confirmados del ejercicio
+  const [divReceived, setDivReceived] = useState([])   // dividendos cobrados confirmados (fuente: sección Dividendos)
 
   const fetchEntries = useCallback(async (uid, ex) => {
     const { data } = await sb.from('fiscal_entries').select('*').eq('user_id', uid).eq('exercise', ex).eq('deleted', false)
@@ -90,11 +90,12 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
       sb.from('transactions').select('*').eq('user_id', user.id),
     ])
     setPositions(pos || []); setTransactions(tx || [])
-    // Dividendos cobrados confirmados del ejercicio (fuente: sección Dividendos)
+    // Dividendos cobrados confirmados (fuente: sección Dividendos). La fiscalidad
+    // solo cuenta los 'received' — los pendientes nunca entran en el cálculo.
     try {
-      const { data: drecs } = await sb.from('dividends_received').select('date,status').eq('user_id', user.id).eq('status', 'received')
-      setReceivedCount((drecs || []).filter(d => d.date && new Date(d.date).getFullYear() === year).length)
-    } catch { setReceivedCount(null) }
+      const { data: drecs } = await sb.from('dividends_received').select('*').eq('user_id', user.id).eq('status', 'received')
+      setDivReceived(drecs || [])
+    } catch { setDivReceived([]) }
     const tickers = [...new Set([...(pos || []).map(p => p.ticker), ...(tx || []).map(t => t.ticker)])]
     if (tickers.length) {
       const { data: funds } = await sb.from('company_fundamentals').select('ticker, country, div_history, dividend_events').in('ticker', tickers)
@@ -135,7 +136,23 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
     return [...ys].sort((a, b) => b - a)
   }, [transactions, entries])
 
-  const divs  = useMemo(() => entries.filter(e => e.type === 'dividend').sort((a, b) => (b.gross_amount || 0) - (a.gross_amount || 0)), [entries])
+  // Dividendos del ejercicio = cobros confirmados de dividends_received (solo lectura).
+  const divs = useMemo(() => divReceived
+    .filter(d => { const dt = d.date || d.payment_date_estimated; return dt && new Date(dt).getFullYear() === year })
+    .map(d => {
+      const country = countryCodeOf(d.ticker, null)
+      const gross = num(d.amount)
+      let wh = d.withholding_origin != null ? num(d.withholding_origin) : null
+      let pct = d.withholding_origin_pct != null ? num(d.withholding_origin_pct) : null
+      if (wh == null) {
+        if (d.amount_net != null) { wh = gross - num(d.amount_net); pct = gross > 0 ? wh / gross * 100 : null }
+        else { pct = fiscalWHT(country); wh = gross * pct / 100 }
+      }
+      if (pct == null) pct = gross > 0 ? wh / gross * 100 : fiscalWHT(country)
+      const net = d.amount_net != null ? num(d.amount_net) : gross - num(wh)
+      return { ticker: d.ticker, company_name: nameOf(d.ticker), country, gross_amount: gross, withholding_origin: num(wh), withholding_origin_pct: pct, net_amount: net }
+    })
+    .sort((a, b) => b.gross_amount - a.gross_amount), [divReceived, year])
   const gains = useMemo(() => entries.filter(e => e.type === 'gain' || e.type === 'loss').sort((a, b) => new Date(a.sell_date) - new Date(b.sell_date)), [entries])
 
   // ── Totales / casillas (en tiempo real desde las entradas) ──
@@ -148,14 +165,16 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
     const lossesSum = gains.filter(e => num(e.gain_loss) < 0).reduce((s, e) => s + Math.abs(num(e.gain_loss)), 0)
     const netCG = gainsSum - lossesSum
     const taxBase = (grossDiv - retTotal) + netCG
-    const total = entries.length
-    const confirmed = entries.filter(e => e.is_confirmed).length
+    // El indicador de confirmación aplica solo a las transmisiones (fiscal_entries);
+    // los dividendos vienen ya confirmados de la sección Dividendos.
+    const total = gains.length
+    const confirmed = gains.filter(e => e.is_confirmed).length
     return {
       grossDiv, retTotal, retSpain, deductible, gainsSum, lossesSum, netCG, taxBase,
       total, confirmed, allConfirmed: total > 0 && confirmed === total,
       boxes: { '0029': grossDiv, '0031': retSpain, '0380': gainsSum, '0382': lossesSum, '0588': deductible },
     }
-  }, [divs, gains, entries])
+  }, [divs, gains])
 
   // ── CRUD ──
   const patch = async (id, fields) => {
@@ -250,7 +269,7 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
       </div>
 
       {/* Aviso: la fiscalidad de dividendos se basa en los cobros confirmados */}
-      {receivedCount === 0 && (
+      {divs.length === 0 && (
         <div style={{ background: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <p style={{ fontSize: 12.5, color: '#8090a8' }}>Para calcular tu fiscalidad confirma los dividendos cobrados en la sección Dividendos.</p>
           <Link href="/cartera/dividendos" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'rgba(96,165,250,0.85)', padding: '7px 14px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>Ir a Dividendos →</Link>
@@ -282,77 +301,36 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
         </div>
       ) : (
         <>
-          {/* ── DIVIDENDOS ── */}
+          {/* ── DIVIDENDOS (solo lectura — cobros confirmados en la sección Dividendos) ── */}
           <div style={{ ...CARD, marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
               <p style={{ fontSize: 13, fontWeight: 800, color: '#e0e8f0' }}>Rendimientos del capital mobiliario — Dividendos</p>
-              <button onClick={() => setAdding(a => !a)} style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.3)', borderRadius: 7, padding: '6px 12px', color: '#34d399', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>+ Añadir dividendo</button>
+              <Link href="/cartera/dividendos" style={{ fontSize: 12, color: '#818cf8', fontWeight: 700, textDecoration: 'none' }}>Gestionar dividendos →</Link>
             </div>
-            <Progress confirmed={divs.filter(e => e.is_confirmed).length} total={divs.length} />
+            <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 12 }}>Solo entran los dividendos confirmados como cobrados en la sección Dividendos. Los pendientes no computan.</p>
 
-            {missingDivHistory.length > 0 && (
-              <div style={{ background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 8, padding: '9px 13px', marginBottom: 12 }}>
-                <p style={{ fontSize: 11.5, color: '#fbbf24' }}>{missingDivHistory.length} empresa(s) sin historial de dividendos disponible — añade manualmente si procede: {missingDivHistory.map(m => m.name).join(', ')}</p>
-              </div>
-            )}
-
-            {divs.length === 0 && !adding ? (
-              <p style={{ fontSize: 13, color: '#4a5270' }}>No hay dividendos calculados para {year}.</p>
+            {divs.length === 0 ? (
+              <p style={{ fontSize: 13, color: '#4a5270' }}>Sin dividendos cobrados confirmados en {year}.</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 820 }}>
-                  <thead><tr>{[Th('Empresa'), Th('Acciones', 'right'), Th('DPS', 'right'), Th('Bruto', 'right'), Th('País / %ret.', 'right'), Th('Retención', 'right'), Th('Neto', 'right'), Th('Estado'), Th('')]}</tr></thead>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 640 }}>
+                  <thead><tr>{[Th('Empresa'), Th('País'), Th('Bruto', 'right'), Th('Retención origen', 'right'), Th('Neto', 'right')]}</tr></thead>
                   <tbody>
-                    {divs.map(e => {
-                      const editing = editId === e.id
-                      const g = editing ? num(draft.shares) * num(draft.dps) : num(e.gross_amount)
-                      const wh = editing ? g * num(draft.pct) / 100 : num(e.withholding_origin)
-                      return (
-                        <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                          <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{flag(e.country)} {e.company_name || nameOf(e.ticker)} <span style={{ color: '#3a4260', fontSize: 10 }}>{e.ticker}</span></td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="any" value={draft.shares} onChange={ev => setDraft(d => ({ ...d, shares: ev.target.value }))} /> : <span style={{ color: '#8090a8' }}>{Number(e.shares).toLocaleString('es-ES', { maximumFractionDigits: 4 })}</span>}</td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="0.0001" value={draft.dps} onChange={ev => setDraft(d => ({ ...d, dps: ev.target.value }))} /> : <span style={{ color: '#8090a8' }}>{Number(e.dps).toLocaleString('es-ES', { maximumFractionDigits: 4 })}</span>}</td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 600 }}>{fmtEUR(g)}</td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>{COUNTRY_NAMES[e.country] || e.country} · {editing ? <input style={{ ...INPUT, width: 56, display: 'inline-block' }} type="number" step="any" value={draft.pct} onChange={ev => setDraft(d => ({ ...d, pct: ev.target.value }))} /> : fmtPct(e.withholding_origin_pct)}</td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right', color: '#fb923c' }}>{fmtEUR(wh)}</td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600 }}>{fmtEUR(g - wh)}</td>
-                          <td style={{ padding: '7px 8px' }}><StatusBadges e={e} /></td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right' }}>
-                            {editing ? (
-                              <ActionBtns><button onClick={() => saveDiv(e)} style={mini('#34d399')} title="Guardar">💾</button><button onClick={() => setEditId(null)} style={mini('#8090a8')} title="Cancelar">✕</button></ActionBtns>
-                            ) : delId === e.id ? (
-                              <span style={{ fontSize: 10.5, color: '#fbbf24' }}>¿Eliminar? <button onClick={() => softDelete(e.id)} style={mini('#f87171')}>Sí</button><button onClick={() => setDelId(null)} style={mini('#8090a8')}>No</button></span>
-                            ) : (
-                              <ActionBtns>
-                                <button onClick={() => startEdit(e)} style={mini('#818cf8')} title="Editar">✏</button>
-                                {!e.is_confirmed && <button onClick={() => confirm(e.id)} style={mini('#34d399')} title="Confirmar">✓</button>}
-                                <button onClick={() => setDelId(e.id)} style={mini('#f87171')} title="Eliminar">🗑</button>
-                              </ActionBtns>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                    {adding && (
-                      <tr style={{ background: 'rgba(52,211,153,0.04)' }}>
-                        <td style={{ padding: '7px 8px', position: 'relative' }}>
-                          <input style={INPUT} placeholder="Buscar empresa…" value={addDraft.query} onChange={ev => setAddDraft(a => ({ ...a, query: ev.target.value, ticker: '' }))} />
-                          {addResults.length > 0 && !addDraft.ticker && (
-                            <div style={{ position: 'absolute', zIndex: 20, top: '100%', left: 0, right: 0, background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, marginTop: 2, maxHeight: 200, overflowY: 'auto' }}>
-                              {addResults.map(d => <button key={d[1]} onClick={() => pickAdd(d)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#c8d0e0', fontSize: 12 }}>{d[0]} <span style={{ color: '#4a5270' }}>{d[1]}</span></button>)}
-                            </div>
-                          )}
-                        </td>
-                        <td style={{ padding: '7px 8px' }}><input style={INPUT} type="number" step="any" placeholder="acc." value={addDraft.shares} onChange={ev => setAddDraft(a => ({ ...a, shares: ev.target.value }))} /></td>
-                        <td style={{ padding: '7px 8px' }}><input style={INPUT} type="number" step="0.0001" placeholder="DPS" value={addDraft.dps} onChange={ev => setAddDraft(a => ({ ...a, dps: ev.target.value }))} /></td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399' }}>{fmtEUR(num(addDraft.shares) * num(addDraft.dps))}</td>
-                        <td style={{ padding: '7px 8px' }}><input style={INPUT} type="number" step="any" placeholder="% ret." value={addDraft.pct} onChange={ev => setAddDraft(a => ({ ...a, pct: ev.target.value }))} /></td>
-                        <td colSpan={2} style={{ padding: '7px 8px', textAlign: 'right', color: '#4a5270' }}>{addDraft.country ? `${COUNTRY_NAMES[addDraft.country] || addDraft.country}` : ''}</td>
-                        <td colSpan={2} style={{ padding: '7px 8px', textAlign: 'right' }}>
-                          <ActionBtns><button onClick={saveAdd} disabled={!addDraft.ticker} style={mini('#34d399')} title="Guardar">💾</button><button onClick={() => { setAdding(false); setAddDraft({ query: '', ticker: '', company_name: '', country: '', shares: '', dps: '', pct: '' }) }} style={mini('#8090a8')} title="Cancelar">✕</button></ActionBtns>
-                        </td>
+                    {divs.map((e, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{flag(e.country)} {e.company_name} <span style={{ color: '#3a4260', fontSize: 10 }}>{e.ticker}</span></td>
+                        <td style={{ padding: '7px 8px', color: '#8090a8' }}>{COUNTRY_NAMES[e.country] || e.country}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 600 }}>{fmtEUR(e.gross_amount)}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#fb923c', whiteSpace: 'nowrap' }}>{fmtPct(e.withholding_origin_pct)} · {fmtEUR(e.withholding_origin)}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600 }}>{fmtEUR(e.net_amount)}</td>
                       </tr>
-                    )}
+                    ))}
+                    <tr style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                      <td colSpan={2} style={{ padding: '8px', color: '#8090a8', fontWeight: 700 }}>Totales</td>
+                      <td style={{ padding: '8px', textAlign: 'right', color: '#34d399', fontWeight: 700 }}>{fmtEUR(t.grossDiv)}</td>
+                      <td style={{ padding: '8px', textAlign: 'right', color: '#fb923c', fontWeight: 700 }}>{fmtEUR(t.retTotal)}</td>
+                      <td style={{ padding: '8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 700 }}>{fmtEUR(t.grossDiv - t.retTotal)}</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
