@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
-import { getCountry, streakBadge } from '@/lib/helpers'
+import { getCountry, streakBadge, dividendTierInfo } from '@/lib/helpers'
 import { project10y, paybackYear, getWHT, rentaScore, netYieldOf } from '@/lib/screener'
 import WatchlistEyeButton from '@/components/watchlist/WatchlistEyeButton'
 
@@ -65,6 +65,22 @@ const SORTS_RENTA = [
   { k: 'payback',  l: '⏱ Recuperación' },
 ]
 const MODE_DEFAULT = { calidad: 'score', renta: 'renta' }
+
+// Tarjeta del screener responsive: en móvil colapsa a una sola línea (nombre +
+// badge de nivel + yield + nota); en escritorio (≥760px) la tarjeta completa.
+const SCR_CARD_CSS = `
+.scr-card{padding:6px 11px;margin-bottom:5px}
+.scr-mobile{display:flex;align-items:center;gap:8px}
+.scr-desktop{display:none}
+.scr-m-name{flex:1 1 auto;min-width:0;font-size:13px;font-weight:700;color:#d0d8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scr-m-tier{flex-shrink:0;font-size:14px}
+.scr-m-yield{flex-shrink:0;font-size:12px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
+.scr-m-score{flex-shrink:0;font-size:16px;font-weight:900;min-width:28px;text-align:right;font-variant-numeric:tabular-nums}
+@media(min-width:760px){
+  .scr-card{padding:12px 14px;margin-bottom:8px}
+  .scr-mobile{display:none}
+  .scr-desktop{display:block}
+}`
 function curSym(c) { return CUR_SYM[c] || (c ? c + ' ' : '') }
 function fmtPx(v, cur) { if (v == null) return '—'; const s = curSym(cur); const n = v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); return cur === 'EUR' ? `${n} ${s}` : `${s}${n}` }
 function fmtEUR0(v) { return v == null ? '—' : v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }
@@ -128,11 +144,27 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
   const proj = projectCompany(co, destWHT)
   const ny = netYieldOf(co, destWHT)
   const sb = streakBadge(co.streak)
+  const tierName = dividendTierInfo(co.streak)?.name
   const mb = moatBadge(co.moat)
   const secColor = SECTOR_COLOR[co.s] || '#6a7090'
 
   return (
-    <div style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${selected ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 12, padding: '12px 14px', marginBottom: 8 }}>
+    <div className="scr-card" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${selected ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 12 }}>
+      {/* Móvil: una sola línea */}
+      <div className="scr-mobile">
+        <input type="checkbox" checked={selected} disabled={!selected && !canSelect} onChange={() => onSelect(co.t)} style={{ accentColor: '#818cf8', cursor: 'pointer', flexShrink: 0 }} />
+        <span style={{ fontSize: 14, flexShrink: 0 }}>{ct?.flag || '🌐'}</span>
+        <Link href={`/empresa/${encodeURIComponent(co.t)}`} className="scr-m-name" style={{ textDecoration: 'none' }}>
+          {co.n} <span style={{ fontSize: 10, color: '#2e3a55', fontWeight: 600 }}>{co.t}</span>
+        </Link>
+        {sb && <span className="scr-m-tier" title={tierName ? `${tierName} · ${co.streak} años subiendo el dividendo` : undefined}>{sb}</span>}
+        {co.r1010 && <span title="Regla 10/10: yield + CAGR ≥ 10%" style={{ fontSize: 12, flexShrink: 0 }}>⚡</span>}
+        {co.y != null && <span className="scr-m-yield" title="Yield bruto">{co.y.toFixed(1)}%</span>}
+        <span className="scr-m-score" style={{ color: scoreColor(co.sc) }}>{co.sc != null ? co.sc.toFixed(1) : '—'}</span>
+      </div>
+
+      {/* Escritorio: tarjeta completa */}
+      <div className="scr-desktop">
       {/* Fila superior */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <input type="checkbox" checked={selected} disabled={!selected && !canSelect} onChange={() => onSelect(co.t)} style={{ accentColor: '#818cf8', cursor: 'pointer', flexShrink: 0 }} />
@@ -191,6 +223,7 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
           ? <Metric label="ROIC" value="N/A" color="#4a5270" title="No aplica en banca, seguros o REITs — se usa ROE" />
           : co.roic != null && <Metric label="ROIC" value={(co.roicWarn ? '⚠ ' : '') + co.roic.toFixed(1) + '%'} color={co.roicWarn ? '#fb923c' : '#8090a8'} title={co.roicWarn ? 'ROIC muy elevado — posible bajo capital contable por recompras o intangibles. Comparar con peers.' : undefined} />}
         {co.cagr != null && <Metric label="CAGR div" value={(co.cagrWarn ? '⚠ ' : '') + co.cagr.toFixed(1) + '%'} color={co.cagrWarn ? '#fb923c' : '#8090a8'} title={co.cagrWarn ? 'CAGR muy elevado — posible base de comparación baja o dato atípico' : undefined} />}
+      </div>
       </div>
     </div>
   )
@@ -389,6 +422,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px 100px' }}>
+      <style>{SCR_CARD_CSS}</style>
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', marginBottom: 4 }}>Screener DGI</h1>
