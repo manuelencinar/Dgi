@@ -901,20 +901,30 @@ def fetch_ticker(sym):
         next_ex_date    = ts_to_date(info.get("exDividendDate"))
         next_pay_date   = ts_to_date(info.get("dividendDate"))
 
-        dps = safe(info.get("dividendRate") or info.get("lastDividendValue"))
-        if dps is None and div_history:
-            full = [h for h in div_history if not h.get("isPartial")]
-            if full:
-                dps = full[-1]["dps"]
+        # ── ¿Reparte dividendo? (basado en RECENCIA) ─────────────────────
+        # Año del último reparto real (dps>0) según el histórico.
+        _div_years = [h["year"] for h in (div_history or [])
+                      if h.get("year") is not None and (h.get("dps") or 0) > 0]
+        last_div_year = max(_div_years) if _div_years else None
+        cur_year = datetime.now().year
+        # Reparte actualmente = repartió el año anterior o en el año en curso.
+        recent_div = last_div_year is not None and last_div_year >= cur_year - 1
 
-        # ── ¿Reparte dividendo? ───────────────────────────────────────────
-        # Distingue empresas que NO pagan (Google, Berkshire…) de las que
-        # pagan pero les falta el DPS. Si cualquiera de las tres señales de
-        # yfinance es > 0, la empresa reparte dividendo.
-        dividend_rate  = float(info.get("dividendRate") or 0)
-        dividend_yield = float(info.get("dividendYield") or 0)
-        five_year_avg  = float(info.get("fiveYearAvgDividendYield") or 0)
-        pays_dividend  = dividend_rate > 0 or dividend_yield > 0 or five_year_avg > 0
+        dividend_rate = float(info.get("dividendRate") or 0)
+        # DPS: NUNCA lastDividendValue (puede ser de hace una década, p.ej.
+        # Prisa 2011 → yield falso). Tasa forward si la hay; si no, el dps del
+        # último año del histórico, pero solo si el reparto es reciente.
+        dps = safe(info.get("dividendRate"))
+        if dps is None and recent_div:
+            recent = [h for h in div_history if (h.get("dps") or 0) > 0]
+            if recent:
+                dps = recent[-1]["dps"]
+
+        # Empresas que dejaron de pagar (sin reparto el año anterior ni en el
+        # año en curso) quedan como que NO reparten y sin dps → sin yield falso.
+        pays_dividend = recent_div or dividend_rate > 0
+        if not pays_dividend:
+            dps = None
         no_dividend_confirmed_at = None if pays_dividend else datetime.now().isoformat()
 
         # ── FCF per share ─────────────────────────────────────────────────

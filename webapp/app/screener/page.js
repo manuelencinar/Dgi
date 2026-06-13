@@ -61,13 +61,8 @@ async function buildCompanies(destWHT, baseDict) {
 
   return dict.map(([name, ticker, country, currency, sector, , type]) => {
     const f = fundMap[ticker] || null
-    if (!f) {
-      return { n: name, t: ticker, c: country, cont: getContinent(country), s: sector, cur: currency, tp: type || 'general',
-        px: null, y: null, sc: null, mos: null, mosUnreliable: false, roic: null, streak: null, cagr: null, payout: null,
-        debt: null, icov: null, opm: null, rev: null, pe: null, ev: null, mcap: null,
-        moat: 'none', ero: false, dq: null, r1010: false, pays: null,
-        bonus: 0, bRoic: 0, bMargin: 0, bDebt: 0, bFcf: 0 }
-    }
+    // Empresas sin precio válido (0,00 o sin dato) no se muestran al usuario.
+    if (!f || f.current_price == null || Number(f.current_price) <= 0) return null
     const t = type || 'general'
     const rawCagr = f.div_cagr5 != null ? Number(f.div_cagr5) : null
     const roicVal = ROIC_NA_TYPES.has(t) ? null : resolveRoic(f)
@@ -107,7 +102,7 @@ async function buildCompanies(destWHT, baseDict) {
       bDebt:  f.bonus_debt_reduction != null ? Number(f.bonus_debt_reduction) : 0,
       bFcf:   f.bonus_fcf_growth != null ? Number(f.bonus_fcf_growth) : 0,
     }
-  })
+  }).filter(Boolean)
 }
 
 export default async function ScreenerPage() {
