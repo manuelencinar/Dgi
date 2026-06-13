@@ -20,31 +20,33 @@ const FREE_PREVIEW = 5
 function scoreColor(s) { if (s == null) return '#3a4260'; if (s >= 8) return '#34d399'; if (s >= 6.5) return '#86efac'; if (s >= 5) return '#fbbf24'; if (s >= 3) return '#f97316'; return '#f87171' }
 function streakIcon(n) { if (n >= 50) return '👑'; if (n >= 35) return '🥇'; if (n >= 25) return '🥈'; return '🥉' }
 
-// Estilos responsive. Móvil: una sola fila compacta — nombre completo (puede
-// envolver) con una sub-línea fina de métricas, y la nota a la derecha dentro
-// de la tarjeta. Escritorio (≥760px): layout de bloques de una sola fila.
+// Estilos responsive. Móvil: una SOLA línea compacta — bandera · nombre (… si
+// es muy largo) · racha · nota. Escritorio (≥760px): layout de bloques con
+// etiquetas (Racha / Yield neto / Score), como estaba.
 const ROW_CSS = `
-.aristo-row{display:flex;align-items:center;gap:8px;padding:3px 11px;background:rgba(255,255,255,0.02);border-radius:9px;margin-bottom:3px}
-.aristo-rank{font-size:12px;font-weight:800;color:#3a4260;width:18px;text-align:right;flex-shrink:0}
-.aristo-flag{font-size:15px;flex-shrink:0}
-.aristo-namewrap{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:0}
-.aristo-name{font-size:13px;font-weight:700;color:#d0d8e8;line-height:1.2;overflow-wrap:anywhere}
+.aristo-row{display:flex;align-items:center;gap:8px;padding:5px 11px;background:rgba(255,255,255,0.02);border-radius:8px;margin-bottom:2px}
+.aristo-rank{display:none}
+.aristo-flag{font-size:14px;flex-shrink:0}
+.aristo-namewrap{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.aristo-name{font-size:13px;font-weight:700;color:#d0d8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
 .aristo-ticker{font-size:10px;color:#2e3a55;font-weight:600}
 .aristo-buy{display:none}
-.aristo-sub{display:flex;flex-wrap:wrap;gap:7px;font-size:11px;line-height:1.2;font-weight:600;color:#6a7490;font-variant-numeric:tabular-nums}
-.aristo-sub .buy{color:#34d399;font-weight:700}
+.aristo-buydot{flex-shrink:0;font-size:9px;color:#34d399}
+.aristo-chip{flex-shrink:0;font-size:11px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
 .aristo-m{display:none;flex-direction:column;text-align:right;min-width:52px;flex-shrink:0}
 .aristo-mlabel{font-size:9px;color:#3a4260;font-weight:400}
 .aristo-mval{font-size:13px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
-.aristo-score{font-size:18px;font-weight:900;font-variant-numeric:tabular-nums;flex-shrink:0;min-width:30px;text-align:right}
+.aristo-score{font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;flex-shrink:0;min-width:28px;text-align:right}
 @media(min-width:760px){
-  .aristo-row{gap:10px;padding:8px 12px;margin-bottom:5px}
-  .aristo-rank{width:22px}
-  .aristo-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:normal}
+  .aristo-row{gap:10px;padding:8px 12px;margin-bottom:5px;border-radius:9px}
+  .aristo-rank{display:inline;width:22px;text-align:right;font-size:12px;font-weight:800;color:#3a4260;flex-shrink:0}
+  .aristo-flag{font-size:15px}
   .aristo-namewrap{gap:2px}
-  .aristo-sub{display:none}
   .aristo-buy{display:inline-block;align-self:flex-start;font-size:9px;font-weight:700;color:#34d399;background:rgba(52,211,153,0.12);padding:1px 6px;border-radius:4px}
+  .aristo-buydot{display:none}
+  .aristo-chip{display:none}
   .aristo-m{display:flex}
+  .aristo-score{font-size:18px;min-width:32px}
 }`
 
 function Row({ co, rank, destWHT }) {
@@ -59,12 +61,9 @@ function Row({ co, rank, destWHT }) {
         <div className="aristo-namewrap">
           <p className="aristo-name">{co.n} <span className="aristo-ticker">{co.t}</span></p>
           {co.buyZone && <span className="aristo-buy">● En zona de compra</span>}
-          <p className="aristo-sub">
-            <span>{streakIcon(co.streak)} {co.streak}a</span>
-            <span>· {nyTxt} neto</span>
-            {co.buyZone && <span className="buy">· en zona</span>}
-          </p>
         </div>
+        {co.buyZone && <span className="aristo-buydot" title="En zona de compra">●</span>}
+        <span className="aristo-chip" title="Años consecutivos subiendo el dividendo">{streakIcon(co.streak)} {co.streak}a</span>
         <div className="aristo-m" title="Años consecutivos subiendo el dividendo">
           <span className="aristo-mlabel">Racha</span>
           <span className="aristo-mval" style={{ color: '#c8d0e0' }}>{streakIcon(co.streak)} {co.streak}a</span>
