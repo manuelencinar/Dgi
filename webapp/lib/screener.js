@@ -227,6 +227,17 @@ export function mosUnreliable(f) {
   return m != null && Math.abs(m) > MOS_UNRELIABLE
 }
 
+// Clasificación DGI por racha de años consecutivos subiendo el dividendo:
+//   Reyes ≥50 · Aristócratas ≥25 · Aspirantes 10–24. Por debajo de 10 → null.
+export function dividendTier(streak) {
+  const s = num(streak)
+  if (s == null) return null
+  if (s >= 50) return 'rey'
+  if (s >= 25) return 'aristocrata'
+  if (s >= 10) return 'aspirante'
+  return null
+}
+
 // ── Ranking "Renta DGI" ──────────────────────────────────────────────────────
 // Pondera el yield neto (tras retención) y la rapidez de recuperación de la
 // inversión. Pensado para el inversor que busca renta, no calidad pura: un yield

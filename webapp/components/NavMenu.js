@@ -6,10 +6,11 @@ import GlobalSearch from '@/components/GlobalSearch'
 
 // Menú principal
 const PRIMARY = [
-  { href: '/mercados',  label: 'Mercados' },
-  { href: '/screener',  label: 'Screener' },
-  { href: '/watchlist', label: 'Watchlist' },
-  { href: '/cartera',   label: 'Cartera' },
+  { href: '/mercados',     label: 'Mercados' },
+  { href: '/screener',     label: 'Screener' },
+  { href: '/aristocratas', label: 'Aristócratas' },
+  { href: '/watchlist',    label: 'Watchlist' },
+  { href: '/cartera',      label: 'Cartera' },
 ]
 // Secundarios — accesibles desde sus flujos; en móvil aparecen apagados
 const SECONDARY = [
