@@ -33,7 +33,7 @@ async function getUserContext() {
 // Mismos campos escalares que el screener para que computeScore coincida.
 async function fetchFundamentals() {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
-  const FIELDS = 'ticker, current_price, dps, pays_dividend, div_streak, div_cagr5, payout_fcf, payout_eps, fcf_cagr5, debt_ebitda, net_debt_ebitda, interest_coverage, roic, roic_reported, roic_tangible, roic_display, roe, operating_margin, gross_margin, revenue_cagr5, eps_cagr5, pe_trailing, ev_ebitda, market_cap_m, intrinsic_value, sector, industry, country'
+  const FIELDS = 'ticker, current_price, dps, pays_dividend, div_streak, div_cagr5, payout_fcf, payout_eps, fcf_cagr5, debt_ebitda, net_debt_ebitda, interest_coverage, roic, roic_reported, roic_tangible, roic_display, roe, operating_margin, gross_margin, revenue_cagr5, pe_trailing, ev_ebitda, market_cap_m, intrinsic_value, sector, industry, country'
   const all = []
   try {
     for (let from = 0; ; from += 1000) {
