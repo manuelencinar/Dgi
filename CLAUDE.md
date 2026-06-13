@@ -28,6 +28,7 @@ URL del repositorio: https://github.com/manuelencinar/Dgi
 - Página de mercados — lista de 43 mercados globales con tarjetas resumen
 - Página de cada mercado individual — empresas del índice con análisis DGI
 - Screener avanzado rediseñado (`/screener`) — tarjetas, filtros free+premium, proyección €1k, comparador — ver "Screener rediseñado"
+- Reyes, Aristócratas y Aspirantes (`/aristocratas`) — clasificación por racha de dividendo — ver "Clasificación DGI por racha"
 - Comparador de empresas (`/comparador`) — radar, tabla, proyección, export CSV/PNG — ver "Comparador"
 - Página de detalle de cada empresa — gauge salud financiera, valoración sector-aware, ROIC, historial dividendos, gráfico de precios (daily_prices), estados financieros
 - Módulo de cartera completo (app/cartera/) — ver sección "Módulo de cartera"
@@ -141,9 +142,17 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - Visible en cartera (sección activas), historial (pestaña dedicada) y proyección (desglose periódicas/extra).
 
 ## Screener rediseñado (lib/screener.js + components/ScreenerClient.js)
-- Vista de tarjetas, filtros free (yield, zona, sector) + premium con candado (racha, CAGR div, ROIC, deuda, foso, margen seguridad), 4 ordenaciones, selección para comparador, guía de métricas (HelpGuide), proyección €1k a 10 años.
-- `lib/screener.js`: `resolveRoic(f)` = `roic_display ?? min(reported, tangible)` (nunca el legacy roic). `project10y` con fade lineal del CAGR (CAGR_CAP=12, CAGR_TERMINAL=3, FADE_YEARS=10) vía `divGrowthFactor` — el crecimiento se modera con los años (decisión del usuario). `paybackYear`, `computeScore` (null si no hay dividendo), `calcDivQuality`, `deriveMoat`, `moatErosion`, `rule1010`, `scoreRadar`, `RADAR_METRICS`, `cleanGrossMargin` (null para financieras con ~100% margen bruto), `netYield`, `getWHT`.
-- Reglas: empresa sin dividendo (payout_fcf=0) → score/calidad null, NO puntúa 10. CAGR cap 50%. VIX/VVIX excluidos. Dedup de tickers (bug JUN3.DE).
+- Vista de tarjetas, filtros free (yield, zona, sector) + premium con candado (racha, CAGR div, ROIC, deuda, foso, margen seguridad), selección para comparador, guía de métricas (HelpGuide), proyección €1k a 10 años.
+- **Dos modos de ranking** (toggle superior): **⭐ Calidad DGI** (órdenes ⭐ Nota / 💰 Rentables / 🎯 Baratas / 💎 Dividendo) y **🏦 Renta DGI** (órdenes 🏦 Renta / 📈 Yield neto / ⏱ Recuperación). `rentaScore(co, destWHT)` = 60% yield neto + 40% rapidez de recuperación; `netYieldOf(co, destWHT)`.
+- `lib/screener.js`: `resolveRoic(f)` = `roic_display ?? min(reported, tangible)` (nunca el legacy roic). `project10y` con fade lineal del CAGR (CAGR_CAP=12, CAGR_TERMINAL=3, FADE_YEARS=10) vía `divGrowthFactor`. `paybackYear`, `computeScore`, `calcDivQuality`, `deriveMoat`, `moatErosion`, `mosUnreliable`, `rule1010`, `scoreRadar`, `RADAR_METRICS`, `cleanGrossMargin`, `netYield`, `getWHT`.
+- **Reglas de fiabilidad del Score** (en `computeScore`): empresa sin dividendo → score null (no puntúa 10). **Métricas sin datos puntúan 0** (no se omiten) → evita notas infladas cuando faltan financieros (p.ej. ADR NVO con solo precio+dividendo); las métricas especializadas que el screener no calcula (cet1, npl, p_affo…) se excluyen para no hundir bancos/REITs (clave: `m.id in vals`). **CAGR div >50%** (capeado/atípico) → puntuación neutra 5. **|MoS|>500%** (valor intrínseco no fiable, p.ej. investment trusts) → excluido del Score y del orden "Baratas", etiqueta "MoS no fiable". **Erosión del foso** (`moatErosion`) → **−1,0** a la nota (ya no es solo el badge 📉). CAGR cap visual 50%. VIX/VVIX excluidos. Dedup de tickers.
+- **Empresas con precio 0/sin dato no se muestran** (filtradas en `buildCompanies`). Mismo enfoque en `/aristocratas` y en la búsqueda global.
+- **Diseño responsive de la tarjeta** (clases `.scr-*` + media query 760px): en móvil una sola línea (bandera · nombre · badge de nivel · yield · nota); en escritorio la tarjeta completa con proyección/métricas.
+
+## Clasificación DGI por racha (Reyes/Aristócratas/Aspirantes)
+- **Fuente única** en `lib/helpers.js`: `DIVIDEND_TIERS` (array) + `dividendTier(streak)` (devuelve id `rey`/`aristocrata`/`aspirante`/null) + `dividendTierInfo(streak)` (objeto del nivel) + `streakBadge(streak)` (solo el emoji). Umbrales: **Rey 👑 ≥50 · Aristócrata 🏆 25–49 · Aspirante ⭐ 10–24** (colores #fbbf24/#a78bfa/#60a5fa).
+- Reemplazó las medallas/etiquetas antiguas inconsistentes (🥇🥈🥉, "Campeón DGI") en TODA la app: screener, comparador, ficha de empresa (`streakBadge` local + `computeBadges`/insights en `lib/company-detail.js`), índices y CompanyRow.
+- Página `/aristocratas`: `app/aristocratas/page.js` (server, reutiliza patrón del screener: dict + company_fundamentals) → `components/AristocratasClient.js`. Tres niveles con contador, buscador, filtro por continente y toggle "solo zona de compra". Freemium: niveles+contadores y 5 primeras por nivel visibles, resto tras CTA. Entrada "Aristócratas" en `NavMenu` entre Screener y Watchlist.
 
 ## Comparador de empresas (`/comparador`)
 - Páginas/componentes: `app/comparador/page.js`, `components/ComparadorClient.js`, API `app/api/comparador/route.js`. Lógica en `lib/comparador.js`.
@@ -174,7 +183,7 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 
 ## Navegación
 - `components/NavMenu.js` (app), `components/PublicNav.js` (landing), `components/cartera/CarteraNav.js` (cartera).
-- Items principales: Mercados, Screener, Watchlist, Cartera. Comparador y ETFs como secundarios en el menú hamburguesa móvil. Campana de notificaciones (`NotificationBell`) junto a Ajustes cuando hay sesión. Se eliminó el botón "Mi Índice" (no aportaba). CarteraNav incluye "ETFs y Fondos".
+- Items principales: Mercados, Screener, Aristócratas, Watchlist, Cartera. Comparador y ETFs como secundarios en el menú hamburguesa móvil. Campana de notificaciones (`NotificationBell`) junto a Ajustes cuando hay sesión. Se eliminó el botón "Mi Índice" (no aportaba). CarteraNav incluye "ETFs y Fondos".
 
 ## Infraestructura / despliegue
 - Repo GitHub: rama por defecto **master** (la app vive ahí); `main` es el proyecto HTML original + funds.json de GitHub Pages (historiales independientes).
@@ -242,8 +251,10 @@ updated_at
 
 ## Scripts Python (scripts/) — YA CREADOS
 - `update_fundamentals.py` — descarga yfinance de ~2000 empresas, calcula métricas (ROIC con la fórmula nueva, div_streak, div_cagr5, payout_fcf, net_debt_ebitda…), estados financieros 4 años anuales+trimestrales traducidos al español, upsert en Supabase via service role, NaN/Infinity→None.
+  - **Dividendo por RECENCIA**: `dps` NUNCA usa `lastDividendValue` (podía ser de hace una década → yield falso, p.ej. Prisa 2011). `pays_dividend` y `dps` se basan en si repartió el año anterior o en el año en curso (según `div_history`) o hay tasa forward; si no, `pays_dividend=false` y `dps=None`.
 - `update_prices.py` — daily_prices + exchange_rates + benchmarks (Yahoo).
 - `recalc_roic.mjs` (Node) — recalcula ROIC en BD desde los estados ya guardados (sin yfinance). `--write` para persistir.
+- `fix_stale_dividends.mjs` (Node) — script de una vez: marca como que NO reparten (dps=null, pays_dividend=false) las empresas con dividendo obsoleto (sin reparto el año anterior ni en curso según `div_history`). Sin yfinance. `--write`. Ya ejecutado (142 empresas). Mismo patrón que `recalc_roic.mjs` (createRequire desde webapp).
 
 ## GitHub Actions (.github/workflows/) — YA CREADOS
 - `update_fundamentals.yml` — domingos 6:00 UTC + manual. Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
