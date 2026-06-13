@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import AlertsSettings from '@/components/cartera/AlertsSettings'
 
 // ── Design tokens ──────────────────────────────────────────────────────────
 const ADMIN_EMAIL = 'vayaebookk@gmail.com'
@@ -349,6 +350,9 @@ export default function AjustesGlobalPage() {
           <SaveFeedback saved={s4.saved} error={s4.err} />
         </div>
       </div>
+
+      {/* ── SECCIÓN 4b: Alertas de cartera (antes en /cartera/alertas) ────── */}
+      <AlertsSettings isPremium={isPremium} />
 
       {/* ── SECCIÓN 5: Suscripción ───────────────────────────────────────── */}
       <div style={CARD}>

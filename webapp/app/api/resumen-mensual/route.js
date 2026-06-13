@@ -169,7 +169,7 @@ function buildEmailHTML(email, data) {
 
     <p style="color:#2e3a55;font-size:11px;text-align:center;margin-top:20px">
       Recibes este email porque activaste el resumen mensual.
-      <a href="${APP_URL}/cartera/alertas" style="color:#4a5270">Desactivar resumen mensual</a>
+      <a href="${APP_URL}/ajustes" style="color:#4a5270">Desactivar resumen mensual</a>
     </p>
   </td></tr>
 </table>

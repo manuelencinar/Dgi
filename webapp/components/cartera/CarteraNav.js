@@ -7,7 +7,6 @@ const TABS = [
   { href: '/cartera/proyeccion', label: 'Proyección' },
   { href: '/cartera/dividendos', label: 'Dividendos' },
   { href: '/cartera/historial',  label: 'Historial'  },
-  { href: '/cartera/alertas',    label: 'Alertas'    },
   { href: '/etfs',               label: 'ETFs y Fondos' },
   { href: '/cartera/fiscalidad', label: 'Fiscalidad' },
 ]

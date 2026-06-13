@@ -1,13 +1,13 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { computeDGIScore, detectSectorType } from '@/lib/dgi-score'
 import { DICT } from '@/data/dict'
 
-const CARD  = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
-const INPUT = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '5px 8px', color: '#c8d0e0', fontSize: 12, outline: 'none', width: 64 }
+const CARD    = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 24, marginBottom: 20 }
+const INPUT   = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '5px 8px', color: '#c8d0e0', fontSize: 12, outline: 'none', width: 64 }
+const SEC_TIT = { fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 18 }
 
 const DEFAULT_CONFIG = {
   priceDrop:    { enabled: true,  threshold: 20 },
@@ -34,7 +34,7 @@ function Toggle({ value, onChange, disabled }) {
   )
 }
 
-// ── Alert computation ──────────────────────────────────────────────────────
+// ── Alert computation (idéntica a la antigua AlertasPage) ───────────────────
 function computeAlerts(positions, fundamentals, config) {
   const alerts = []
   const now = new Date().toISOString().slice(0, 10)
@@ -46,7 +46,6 @@ function computeAlerts(positions, fundamentals, config) {
     const entry = DICT.find(d => d[1] === pos.ticker)
     const type = entry?.[6] ?? 'general'
 
-    // 1. Caída de precio desde máximos 52sem
     if (config.priceDrop?.enabled && f.current_price > 0 && f.week52_high > 0) {
       const drop = (f.week52_high - f.current_price) / f.week52_high * 100
       if (drop >= config.priceDrop.threshold) {
@@ -55,7 +54,6 @@ function computeAlerts(positions, fundamentals, config) {
       }
     }
 
-    // 2. Crecimiento del dividendo bajo
     const divHistory = Array.isArray(f.div_history) ? f.div_history : []
     const fullYears = divHistory.filter(h => !h.isPartial && h.growth != null)
     const lastFull  = fullYears[fullYears.length - 1]
@@ -67,13 +65,11 @@ function computeAlerts(positions, fundamentals, config) {
       }
     }
 
-    // 6. Recorte de dividendo (siempre activa)
     if (config.divCut?.enabled && lastFull && lastFull.growth != null && lastFull.growth < 0) {
       alerts.push({ key: `${pos.ticker}:divCut`, ticker: pos.ticker, name, level: 'alto', date: now,
         type: 'Recorte de dividendo', current: `${(lastFull.growth * 100).toFixed(1)}%`, threshold: 'recorte' })
     }
 
-    // 3. Score DGI bajo
     if (config.scoreLow?.enabled) {
       const streak = f.div_streak ?? 0
       const cagr   = f.div_cagr5 != null ? f.div_cagr5 / 100 : null
@@ -84,13 +80,11 @@ function computeAlerts(positions, fundamentals, config) {
       }
     }
 
-    // 4. Payout elevado
     if (config.payoutHigh?.enabled && f.payout_fcf != null && f.payout_fcf > config.payoutHigh.threshold) {
       alerts.push({ key: `${pos.ticker}:payoutHigh`, ticker: pos.ticker, name, level: f.payout_fcf > 110 ? 'alto' : 'medio', date: now,
         type: 'Payout FCF elevado', current: `${f.payout_fcf.toFixed(0)}%`, threshold: `>${config.payoutHigh.threshold}%` })
     }
 
-    // 5. Deuda elevada (umbral del sector)
     if (config.debtHigh?.enabled) {
       const nd  = f.net_debt_ebitda ?? f.debt_ebitda
       const sec = detectSectorType(type, f.sector, f.industry)
@@ -114,31 +108,33 @@ const ALERT_TYPES = [
   { key: 'divCut',       label: 'Recorte de dividendo (siempre activa)', unit: '', configurable: false, locked: true },
 ]
 
-export default function AlertasPage({ isPremium }) {
-  const router = useRouter()
+// Configuración y vista de alertas de cartera — antes era /cartera/alertas.
+// Ahora vive dentro de Ajustes. Carga su propia cartera y persiste vía /api/ajustes
+// (service_role), preservando el resto de claves de alert_config (p.ej. emailAlerts,
+// que lee /api/procesar-aportaciones).
+export default function AlertsSettings({ isPremium }) {
   const [loading, setLoading]   = useState(true)
   const [config, setConfig]     = useState(DEFAULT_CONFIG)
   const [dismissed, setDismissed] = useState([])
-  const [monthlySummary, setMonthlySummary] = useState(false)
   const [positions, setPositions] = useState([])
   const [fundamentals, setFundamentals] = useState({})
   const [showHistory, setShowHistory] = useState(false)
-  const [sqlNeeded, setSqlNeeded] = useState(false)
+  const [saveErr, setSaveErr] = useState(false)
 
-  const sb = createClient()
+  const sb = useMemo(() => createClient(), [])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { if (isPremium) load() }, [isPremium])
 
   const load = async () => {
     setLoading(true)
     const { data: { user } } = await sb.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    if (!user) { setLoading(false); return }
 
-    const { data: settings } = await sb.from('user_settings').select('alert_config, alert_dismissed, monthly_summary').eq('user_id', user.id).maybeSingle()
+    // user_settings es legible desde el cliente (RLS SELECT); la escritura va por API.
+    const { data: settings } = await sb.from('user_settings').select('alert_config, alert_dismissed').eq('user_id', user.id).maybeSingle()
     if (settings) {
       if (settings.alert_config)    setConfig({ ...DEFAULT_CONFIG, ...settings.alert_config })
       if (settings.alert_dismissed) setDismissed(settings.alert_dismissed)
-      if (settings.monthly_summary != null) setMonthlySummary(settings.monthly_summary)
     }
 
     const { data: pos } = await sb.from('positions').select('*').eq('user_id', user.id)
@@ -153,24 +149,20 @@ export default function AlertasPage({ isPremium }) {
     setLoading(false)
   }
 
-  const persist = async (newConfig, newDismissed, newMonthly) => {
-    const { data: { user } } = await sb.auth.getUser()
-    if (!user) return
-    const payload = { user_id: user.id }
-    if (newConfig    !== undefined) payload.alert_config    = newConfig
-    if (newDismissed !== undefined) payload.alert_dismissed = newDismissed
-    if (newMonthly   !== undefined) payload.monthly_summary = newMonthly
-    const { error } = await sb.from('user_settings').upsert(payload, { onConflict: 'user_id' })
-    if (error) setSqlNeeded(true)
+  // Persistencia vía API (whitelist incluye alert_config / alert_dismissed)
+  const persist = async (patch) => {
+    setSaveErr(false)
+    try {
+      const res = await fetch('/api/ajustes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) })
+      if (!res.ok) setSaveErr(true)
+    } catch { setSaveErr(true) }
   }
 
   const updateConfig = (key, patch) => {
     const next = { ...config, [key]: { ...config[key], ...patch } }
     setConfig(next)
-    persist(next)
+    persist({ alert_config: next })
   }
-  const updateEmail = (v) => { const next = { ...config, emailAlerts: v }; setConfig(next); persist(next) }
-  const updateMonthly = (v) => { setMonthlySummary(v); persist(undefined, undefined, v) }
 
   const allAlerts = useMemo(() => computeAlerts(positions, fundamentals, config), [positions, fundamentals, config])
   const activeAlerts = allAlerts.filter(a => !dismissed.includes(a.key))
@@ -179,37 +171,41 @@ export default function AlertasPage({ isPremium }) {
   const dismiss = (key) => {
     const next = [...dismissed, key]
     setDismissed(next)
-    persist(undefined, next)
+    persist({ alert_dismissed: next })
   }
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#4a5270' }}>Cargando alertas…</div>
-
-  if (!isPremium) return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 16px', textAlign: 'center' }}>
-      <p style={{ fontSize: 18, fontWeight: 700, color: '#818cf8', marginBottom: 8 }}>Alertas personalizadas — solo Premium</p>
-      <p style={{ fontSize: 13, color: '#4a5270', marginBottom: 20, maxWidth: 400, margin: '0 auto 20px' }}>
-        Recibe avisos cuando tus empresas recortan el dividendo, suben el payout o caen de precio.
-      </p>
-      <Link href="/pricing" style={{ padding: '10px 22px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>Activar Premium →</Link>
-    </div>
-  )
+  if (!isPremium) {
+    return (
+      <div style={CARD}>
+        <p style={SEC_TIT}>Alertas de cartera</p>
+        <p style={{ fontSize: 13, color: '#8090a8', marginBottom: 14 }}>
+          Recibe avisos cuando tus empresas recortan el dividendo, suben el payout o caen de precio.
+        </p>
+        <Link href="/pricing" style={{ padding: '9px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
+          Activar Premium →
+        </Link>
+      </div>
+    )
+  }
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px 64px' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', marginBottom: 20 }}>Alertas</h1>
+    <div style={CARD}>
+      <p style={SEC_TIT}>Alertas de cartera</p>
 
-      {sqlNeeded && (
-        <div style={{ ...CARD, marginBottom: 16, background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)' }}>
-          <p style={{ fontSize: 12, color: '#fbbf24' }}>⚠ La configuración no se pudo guardar. Faltan columnas en la base de datos — ejecuta el SQL indicado en la documentación (alert_config, alert_dismissed, monthly_summary).</p>
+      {saveErr && (
+        <div style={{ marginBottom: 14, padding: '10px 14px', background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 8 }}>
+          <p style={{ fontSize: 12, color: '#fbbf24' }}>⚠ No se pudo guardar la configuración. Si el problema persiste, faltan columnas en la base de datos (alert_config, alert_dismissed).</p>
         </div>
       )}
 
-      {/* Active alerts */}
-      <div style={{ ...CARD, marginBottom: 16 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
+      {/* Alertas activas */}
+      <div style={{ marginBottom: 22 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: '#8090a8', marginBottom: 12 }}>
           Alertas activas {activeAlerts.length > 0 && <span style={{ color: '#f87171' }}>({activeAlerts.length})</span>}
         </p>
-        {positions.length === 0 ? (
+        {loading ? (
+          <p style={{ fontSize: 13, color: '#4a5270' }}>Cargando alertas…</p>
+        ) : positions.length === 0 ? (
           <p style={{ fontSize: 13, color: '#4a5270' }}>Añade posiciones a tu cartera para recibir alertas.</p>
         ) : activeAlerts.length === 0 ? (
           <p style={{ fontSize: 13, color: '#34d399' }}>✓ No hay alertas activas en este momento.</p>
@@ -232,7 +228,6 @@ export default function AlertasPage({ isPremium }) {
           </div>
         )}
 
-        {/* History */}
         {dismissedAlerts.length > 0 && (
           <div style={{ marginTop: 14 }}>
             <button onClick={() => setShowHistory(s => !s)} style={{ background: 'none', border: 'none', color: '#4a5270', cursor: 'pointer', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -252,51 +247,28 @@ export default function AlertasPage({ isPremium }) {
         )}
       </div>
 
-      {/* Config panel */}
-      <div style={{ ...CARD, marginBottom: 16 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Configuración de alertas</p>
-        <div style={{ display: 'grid', gap: 12 }}>
-          {ALERT_TYPES.map(t => (
-            <div key={t.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ fontSize: 13, color: '#c8d0e0', flex: 1 }}>{t.label}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                {t.configurable && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <input type="number" style={INPUT} value={config[t.key]?.threshold ?? ''} disabled={!config[t.key]?.enabled}
-                      onChange={e => updateConfig(t.key, { threshold: parseFloat(e.target.value) || 0 })} />
-                    {t.unit && <span style={{ fontSize: 11, color: '#4a5270' }}>{t.unit}</span>}
-                  </div>
-                )}
-                <Toggle value={config[t.key]?.enabled ?? false} disabled={t.locked} onChange={v => updateConfig(t.key, { enabled: v })} />
-              </div>
+      {/* Configuración de umbrales */}
+      <p style={{ fontSize: 12, fontWeight: 700, color: '#8090a8', marginBottom: 12 }}>Umbrales de alerta</p>
+      <div style={{ display: 'grid', gap: 12 }}>
+        {ALERT_TYPES.map(t => (
+          <div key={t.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+            <span style={{ fontSize: 13, color: '#c8d0e0', flex: 1 }}>{t.label}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {t.configurable && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <input type="number" style={INPUT} value={config[t.key]?.threshold ?? ''} disabled={!config[t.key]?.enabled}
+                    onChange={e => updateConfig(t.key, { threshold: parseFloat(e.target.value) || 0 })} />
+                  {t.unit && <span style={{ fontSize: 11, color: '#4a5270' }}>{t.unit}</span>}
+                </div>
+              )}
+              <Toggle value={config[t.key]?.enabled ?? false} disabled={t.locked} onChange={v => updateConfig(t.key, { enabled: v })} />
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Email + monthly summary */}
-      <div style={{ ...CARD }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Notificaciones por email</p>
-        <div style={{ display: 'grid', gap: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-            <div>
-              <p style={{ fontSize: 13, color: '#c8d0e0' }}>Recibir alertas por email</p>
-              <p style={{ fontSize: 11, color: '#4a5270' }}>Te avisamos cuando se detecta una alerta nueva. Requiere email verificado.</p>
-            </div>
-            <Toggle value={config.emailAlerts} onChange={updateEmail} />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-            <div>
-              <p style={{ fontSize: 13, color: '#c8d0e0' }}>Resumen mensual por email</p>
-              <p style={{ fontSize: 11, color: '#4a5270' }}>El día 1 de cada mes recibes un resumen de tu cartera, renta y alertas.</p>
-            </div>
-            <Toggle value={monthlySummary} onChange={updateMonthly} />
-          </div>
-        </div>
-        <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 14 }}>
-          Las alertas se comprueban cada domingo al actualizar los datos de mercado. El envío de emails requiere la configuración de Resend (pendiente).
-        </p>
+        ))}
       </div>
+      <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 14 }}>
+        Las alertas se comprueban cada domingo al actualizar los datos de mercado. El envío por email se activa en la sección <b style={{ color: '#4a5270' }}>Notificaciones</b>.
+      </p>
     </div>
   )
 }
