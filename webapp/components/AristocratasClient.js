@@ -20,29 +20,55 @@ const FREE_PREVIEW = 5
 function scoreColor(s) { if (s == null) return '#3a4260'; if (s >= 8) return '#34d399'; if (s >= 6.5) return '#86efac'; if (s >= 5) return '#fbbf24'; if (s >= 3) return '#f97316'; return '#f87171' }
 function streakIcon(n) { if (n >= 50) return '👑'; if (n >= 35) return '🥇'; if (n >= 25) return '🥈'; return '🥉' }
 
+// Estilos responsive: en móvil la ficha es más baja y el nombre se lee entero
+// (puede envolver); en escritorio (≥760px) es el layout de una sola fila.
+const ROW_CSS = `
+.aristo-row{display:flex;align-items:center;gap:8px;padding:7px 11px;background:rgba(255,255,255,0.02);border-radius:9px;margin-bottom:5px;flex-wrap:wrap}
+.aristo-rank{font-size:12px;font-weight:800;color:#3a4260;width:18px;text-align:right;flex-shrink:0}
+.aristo-flag{font-size:15px;flex-shrink:0}
+.aristo-namewrap{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.aristo-name{font-size:13px;font-weight:700;color:#d0d8e8;line-height:1.3;overflow-wrap:anywhere}
+.aristo-ticker{font-size:10px;color:#2e3a55;font-weight:600}
+.aristo-buy{align-self:flex-start;font-size:9px;font-weight:700;color:#34d399;background:rgba(52,211,153,0.12);padding:1px 6px;border-radius:4px}
+.aristo-metrics{display:flex;align-items:baseline;gap:16px;flex:1 0 100%;padding-left:41px;margin-top:1px}
+.aristo-m{display:flex;flex-direction:column}
+.aristo-mlabel{display:none;font-size:9px;color:#3a4260;font-weight:400}
+.aristo-mval{font-size:12px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
+.aristo-score{font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;margin-left:auto}
+@media(min-width:760px){
+  .aristo-row{flex-wrap:nowrap;gap:10px;padding:8px 12px}
+  .aristo-rank{width:22px}
+  .aristo-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:normal}
+  .aristo-metrics{flex:0 0 auto;padding-left:0;margin-top:0;gap:14px;align-items:stretch}
+  .aristo-m{text-align:right;min-width:52px}
+  .aristo-mlabel{display:block}
+  .aristo-mval{font-size:13px}
+  .aristo-score{font-size:18px;min-width:32px;text-align:right;margin-left:0}
+}`
+
 function Row({ co, rank, destWHT }) {
   const ct = getCountry(co.c)
   const ny = co.y != null ? netYield(co.y, getWHT(co.c), destWHT) : null
   return (
     <Link href={`/empresa/${encodeURIComponent(co.t)}`} style={{ textDecoration: 'none' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: 9, marginBottom: 5 }}>
-        <span style={{ fontSize: 12, fontWeight: 800, color: '#3a4260', width: 22, textAlign: 'right', flexShrink: 0 }}>{rank}</span>
-        <span style={{ fontSize: 15, flexShrink: 0 }}>{ct?.flag || '🌐'}</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#d0d8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {co.n} <span style={{ fontSize: 10, color: '#2e3a55', fontWeight: 600 }}>{co.t}</span>
-          </p>
-          {co.buyZone && <span style={{ fontSize: 9, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.12)', padding: '1px 6px', borderRadius: 4 }}>● En zona de compra</span>}
+      <div className="aristo-row">
+        <span className="aristo-rank">{rank}</span>
+        <span className="aristo-flag">{ct?.flag || '🌐'}</span>
+        <div className="aristo-namewrap">
+          <p className="aristo-name">{co.n} <span className="aristo-ticker">{co.t}</span></p>
+          {co.buyZone && <span className="aristo-buy">● En zona de compra</span>}
         </div>
-        <div title="Años consecutivos subiendo el dividendo" style={{ textAlign: 'right', flexShrink: 0, minWidth: 52 }}>
-          <p style={{ fontSize: 9, color: '#3a4260' }}>Racha</p>
-          <p style={{ fontSize: 13, fontWeight: 800, color: '#c8d0e0', fontVariantNumeric: 'tabular-nums' }}>{streakIcon(co.streak)} {co.streak}a</p>
+        <div className="aristo-metrics">
+          <div className="aristo-m" title="Años consecutivos subiendo el dividendo">
+            <span className="aristo-mlabel">Racha</span>
+            <span className="aristo-mval" style={{ color: '#c8d0e0' }}>{streakIcon(co.streak)} {co.streak}a</span>
+          </div>
+          <div className="aristo-m">
+            <span className="aristo-mlabel">Yield neto</span>
+            <span className="aristo-mval">{ny != null ? ny.toFixed(2) + '%' : '—'}</span>
+          </div>
+          <span className="aristo-score" style={{ color: scoreColor(co.sc) }}>{co.sc != null ? co.sc.toFixed(1) : '—'}</span>
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 56 }}>
-          <p style={{ fontSize: 9, color: '#3a4260' }}>Yield neto</p>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#8090a8', fontVariantNumeric: 'tabular-nums' }}>{ny != null ? ny.toFixed(2) + '%' : '—'}</p>
-        </div>
-        <span style={{ fontSize: 18, fontWeight: 900, color: scoreColor(co.sc), minWidth: 32, textAlign: 'right', flexShrink: 0 }}>{co.sc != null ? co.sc.toFixed(1) : '—'}</span>
       </div>
     </Link>
   )
@@ -71,6 +97,7 @@ export default function AristocratasClient({ companies = [], isPremium = false, 
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px 100px' }}>
+      <style>{ROW_CSS}</style>
       <div style={{ marginBottom: 14 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', marginBottom: 4 }}>👑 Reyes, Aristócratas y Aspirantes</h1>
         <p style={{ fontSize: 12, color: '#5a6480', lineHeight: 1.5 }}>
