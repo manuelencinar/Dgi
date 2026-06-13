@@ -24,14 +24,14 @@ function streakIcon(n) { if (n >= 50) return '👑'; if (n >= 35) return '🥇';
 // envolver) con una sub-línea fina de métricas, y la nota a la derecha dentro
 // de la tarjeta. Escritorio (≥760px): layout de bloques de una sola fila.
 const ROW_CSS = `
-.aristo-row{display:flex;align-items:center;gap:8px;padding:6px 11px;background:rgba(255,255,255,0.02);border-radius:9px;margin-bottom:4px}
+.aristo-row{display:flex;align-items:center;gap:8px;padding:3px 11px;background:rgba(255,255,255,0.02);border-radius:9px;margin-bottom:3px}
 .aristo-rank{font-size:12px;font-weight:800;color:#3a4260;width:18px;text-align:right;flex-shrink:0}
 .aristo-flag{font-size:15px;flex-shrink:0}
-.aristo-namewrap{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
-.aristo-name{font-size:13px;font-weight:700;color:#d0d8e8;line-height:1.25;overflow-wrap:anywhere}
+.aristo-namewrap{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:0}
+.aristo-name{font-size:13px;font-weight:700;color:#d0d8e8;line-height:1.2;overflow-wrap:anywhere}
 .aristo-ticker{font-size:10px;color:#2e3a55;font-weight:600}
 .aristo-buy{display:none}
-.aristo-sub{display:flex;flex-wrap:wrap;gap:7px;font-size:11px;font-weight:600;color:#6a7490;font-variant-numeric:tabular-nums}
+.aristo-sub{display:flex;flex-wrap:wrap;gap:7px;font-size:11px;line-height:1.2;font-weight:600;color:#6a7490;font-variant-numeric:tabular-nums}
 .aristo-sub .buy{color:#34d399;font-weight:700}
 .aristo-m{display:none;flex-direction:column;text-align:right;min-width:52px;flex-shrink:0}
 .aristo-mlabel{font-size:9px;color:#3a4260;font-weight:400}
