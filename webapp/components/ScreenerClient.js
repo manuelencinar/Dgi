@@ -2,7 +2,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { getCountry } from '@/lib/helpers'
-import { project10y, paybackYear, getWHT } from '@/lib/screener'
+import { project10y, paybackYear, getWHT, rentaScore, netYieldOf } from '@/lib/screener'
 import WatchlistEyeButton from '@/components/watchlist/WatchlistEyeButton'
 
 // ── Opciones de filtros ────────────────────────────────────────────────────
@@ -51,6 +51,20 @@ const SECTOR_COLOR = {
 }
 
 function scoreColor(s) { if (s == null) return '#3a4260'; if (s >= 8) return '#34d399'; if (s >= 6.5) return '#86efac'; if (s >= 5) return '#fbbf24'; if (s >= 3) return '#f97316'; return '#f87171' }
+
+// Dos modos de ranking: "Calidad DGI" (Score) y "Renta DGI" (yield + recuperación).
+const SORTS_CALIDAD = [
+  { k: 'score',    l: '⭐ Nota' },
+  { k: 'profit',   l: '💰 Rentables' },
+  { k: 'cheap',    l: '🎯 Baratas' },
+  { k: 'dividend', l: '💎 Dividendo' },
+]
+const SORTS_RENTA = [
+  { k: 'renta',    l: '🏦 Renta' },
+  { k: 'netyield', l: '📈 Yield neto' },
+  { k: 'payback',  l: '⏱ Recuperación' },
+]
+const MODE_DEFAULT = { calidad: 'score', renta: 'renta' }
 function curSym(c) { return CUR_SYM[c] || (c ? c + ' ' : '') }
 function fmtPx(v, cur) { if (v == null) return '—'; const s = curSym(cur); const n = v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); return cur === 'EUR' ? `${n} ${s}` : `${s}${n}` }
 function fmtEUR0(v) { return v == null ? '—' : v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }
@@ -113,6 +127,7 @@ function Toggle({ label, value, onChange, locked }) {
 function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect, following, isAuthed }) {
   const ct = getCountry(co.c)
   const proj = projectCompany(co, destWHT)
+  const ny = netYieldOf(co, destWHT)
   const sb = streakBadge(co.streak)
   const mb = moatBadge(co.moat)
   const secColor = SECTOR_COLOR[co.s] || '#6a7090'
@@ -124,7 +139,9 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
         <input type="checkbox" checked={selected} disabled={!selected && !canSelect} onChange={() => onSelect(co.t)} style={{ accentColor: '#818cf8', cursor: 'pointer', flexShrink: 0 }} />
         <span style={{ fontSize: 12, fontWeight: 800, color: '#3a4260', width: 28, flexShrink: 0 }}>
           {sortKey === 'profit' && proj ? <span style={{ color: '#34d399' }}>{fmtEUR0(proj.cum10)}</span>
-            : sortKey === 'cheap' && co.mos != null ? <span style={{ color: co.mos >= 0 ? '#34d399' : '#f87171' }}>{co.mos.toFixed(0)}%</span>
+            : sortKey === 'cheap' && co.mos != null && !co.mosUnreliable ? <span style={{ color: co.mos >= 0 ? '#34d399' : '#f87171' }}>{co.mos.toFixed(0)}%</span>
+            : (sortKey === 'renta' || sortKey === 'netyield') && ny != null ? <span style={{ color: '#34d399' }}>{ny.toFixed(1)}%</span>
+            : sortKey === 'payback' && proj?.payback ? <span style={{ color: '#818cf8' }}>r{proj.payback}</span>
             : `#${rank}`}
         </span>
         <span style={{ fontSize: 15, flexShrink: 0 }}>{ct?.flag || '🌐'}</span>
@@ -148,13 +165,15 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
         {/* Precio + MoS */}
         <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 70 }}>
           <p style={{ fontSize: 12, fontWeight: 700, color: '#c8d0e0', fontVariantNumeric: 'tabular-nums' }}>{fmtPx(co.px, co.cur)}</p>
-          {co.mos != null && <p style={{ fontSize: 10, fontWeight: 700, color: co.mos >= 0 ? '#34d399' : '#f87171' }}>{co.mos >= 0 ? '+' : ''}{co.mos.toFixed(0)}% MoS</p>}
+          {co.mosUnreliable
+            ? <p title="Valor intrínseco no fiable para este tipo de activo (p. ej. investment trust)" style={{ fontSize: 9, fontWeight: 700, color: '#fb923c', cursor: 'help' }}>MoS no fiable</p>
+            : co.mos != null && <p style={{ fontSize: 10, fontWeight: 700, color: co.mos >= 0 ? '#34d399' : '#f87171' }}>{co.mos >= 0 ? '+' : ''}{co.mos.toFixed(0)}% MoS</p>}
         </div>
 
         {/* Score + calidad */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           {co.dq != null && <span title="Calidad del dividendo" style={{ fontSize: 11, fontWeight: 700, color: '#a78bfa', background: 'rgba(167,139,250,0.12)', padding: '2px 6px', borderRadius: 5 }}>💎 {co.dq.toFixed(1)}</span>}
-          <span style={{ fontSize: 20, fontWeight: 900, color: scoreColor(co.sc), minWidth: 34, textAlign: 'right' }}>{co.sc != null ? co.sc.toFixed(1) : '—'}</span>
+          <span title={co.ero ? 'Incluye −1,0 por señales de erosión del foso 📉' : undefined} style={{ fontSize: 20, fontWeight: 900, color: scoreColor(co.sc), minWidth: 34, textAlign: 'right', cursor: co.ero ? 'help' : 'default' }}>{co.sc != null ? co.sc.toFixed(1) : '—'}</span>
         </div>
       </div>
 
@@ -201,7 +220,7 @@ function Comparator({ companies, destWHT, onClose }) {
     ['Deuda/EBITDA', co => co.debt != null ? co.debt.toFixed(1) + 'x' : '—'],
     ['PER', co => co.pe != null ? co.pe.toFixed(1) + 'x' : '—'],
     ['EV/EBITDA', co => co.ev != null ? co.ev.toFixed(1) + 'x' : '—'],
-    ['Margen seguridad', co => co.mos != null ? (co.mos >= 0 ? '+' : '') + co.mos.toFixed(0) + '%' : '—'],
+    ['Margen seguridad', co => co.mosUnreliable ? 'no fiable' : co.mos != null ? (co.mos >= 0 ? '+' : '') + co.mos.toFixed(0) + '%' : '—'],
     ['€1k total 10a', co => { const p = projectCompany(co, destWHT); return p ? fmtEUR0(p.cum10) : '—' }],
   ]
   return (
@@ -244,6 +263,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
   const [filters, setFilters] = useState(INIT)
   const [search, setSearch]   = useState('')
   const [sortKey, setSortKey] = useState('score')
+  const [mode, setMode] = useState('calidad')
   const [visible, setVisible] = useState(PAGE)
   const [panelOpen, setPanelOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
@@ -311,9 +331,20 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       const val = co => { const p = projectCompany(co, destWHT); return p ? p.cum10 : -Infinity }
       arr.sort((a, b) => val(b) - val(a))
     } else if (sortKey === 'cheap') {
-      arr.sort((a, b) => (b.mos ?? -Infinity) - (a.mos ?? -Infinity))
+      // Las valoraciones no fiables (|MoS|>500%) se hunden al fondo del ranking.
+      const val = co => co.mosUnreliable ? -Infinity : (co.mos ?? -Infinity)
+      arr.sort((a, b) => val(b) - val(a))
     } else if (sortKey === 'dividend') {
       arr.sort((a, b) => (b.dq ?? -Infinity) - (a.dq ?? -Infinity))
+    } else if (sortKey === 'renta') {
+      const val = co => rentaScore(co, destWHT) ?? -Infinity
+      arr.sort((a, b) => val(b) - val(a))
+    } else if (sortKey === 'netyield') {
+      const val = co => netYieldOf(co, destWHT) ?? -Infinity
+      arr.sort((a, b) => val(b) - val(a))
+    } else if (sortKey === 'payback') {
+      const val = co => { const p = projectCompany(co, destWHT); return p && p.payback ? p.payback : Infinity }
+      arr.sort((a, b) => val(a) - val(b))   // menos años de recuperación primero
     } else {
       arr.sort((a, b) => (b.sc ?? -Infinity) - (a.sc ?? -Infinity))
     }
@@ -354,12 +385,8 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
   const toggleSelect = (t) => setSelected(s => s.includes(t) ? s.filter(x => x !== t) : (s.length < 4 ? [...s, t] : s))
   const selectedCompanies = companies.filter(c => selected.includes(c.t))
 
-  const SORTS = [
-    { k: 'score',    l: '⭐ Nota' },
-    { k: 'profit',   l: '💰 Rentables' },
-    { k: 'cheap',    l: '🎯 Baratas' },
-    { k: 'dividend', l: '💎 Dividendo' },
-  ]
+  const SORTS = mode === 'renta' ? SORTS_RENTA : SORTS_CALIDAD
+  const switchMode = (m) => { setMode(m); setSortKey(MODE_DEFAULT[m]) }
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px 100px' }}>
@@ -367,6 +394,21 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', marginBottom: 4 }}>Screener DGI</h1>
         <p style={{ fontSize: 12, color: '#3a4260' }}>{companies.length.toLocaleString('es-ES')} empresas de 43 mercados</p>
+      </div>
+
+      {/* Modo de ranking: Calidad DGI ↔ Renta DGI */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+        {[
+          { m: 'calidad', l: '⭐ Calidad DGI', d: 'Ordena por calidad del negocio y el dividendo (Score DGI).' },
+          { m: 'renta',   l: '🏦 Renta DGI',   d: 'Prioriza el yield neto y la rapidez de recuperación de la inversión.' },
+        ].map(o => (
+          <button key={o.m} onClick={() => switchMode(o.m)} title={o.d} style={{
+            fontSize: 13, padding: '9px 16px', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit',
+            border: '1px solid ' + (mode === o.m ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.08)'),
+            background: mode === o.m ? 'rgba(52,211,153,0.14)' : 'transparent',
+            color: mode === o.m ? '#34d399' : '#4a5270', fontWeight: mode === o.m ? 800 : 500,
+          }}>{o.l}</button>
+        ))}
       </div>
 
       {/* Buscador + ordenación */}
@@ -557,10 +599,9 @@ const GUIDE = [
     ['Recuperación (rX)', 'Año en el que la suma de dividendos cobrados iguala la inversión inicial. Cuanto antes, mejor.'],
   ]},
   { group: 'Ordenación', items: [
-    ['⭐ Nota', 'Ordena por Score DGI (las de mayor calidad primero).'],
-    ['💰 Rentables', 'Ordena por el total de dividendos proyectado a 10 años.'],
-    ['🎯 Baratas', 'Ordena por margen de seguridad (las más infravaloradas primero).'],
-    ['💎 Dividendo', 'Ordena por calidad del dividendo.'],
+    ['⭐ Calidad DGI', 'Modo que ordena por calidad: ⭐ Nota (Score DGI), 💰 Rentables (total de dividendos a 10 años), 🎯 Baratas (margen de seguridad) y 💎 Dividendo (calidad del dividendo).'],
+    ['🏦 Renta DGI', 'Modo enfocado en renta: 🏦 Renta (yield neto + recuperación), 📈 Yield neto (tras retenciones) y ⏱ Recuperación (años hasta recuperar la inversión vía dividendos).'],
+    ['📉 Erosión', 'Las empresas con señales de erosión del foso pierden 1,0 punto en la nota. Las valoraciones no fiables (MoS extremo) se excluyen del orden 🎯 Baratas.'],
   ]},
 ]
 

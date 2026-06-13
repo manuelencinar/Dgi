@@ -42,6 +42,14 @@ const CAGR_CAP      = 12   // tope del CAGR inicial (%)
 const CAGR_TERMINAL = 3    // crecimiento terminal sostenible (%)
 const FADE_YEARS    = 10   // años hasta converger a la terminal
 
+// Umbrales de "dato no fiable" usados en el scoring:
+//  - CAGR de dividendo por encima del 50% suele venir de una base de comparación
+//    ínfima o de un dato atípico → no puntúa como excelente, se neutraliza.
+//  - Margen de seguridad |>500%| implica un valor intrínseco disparado (típico de
+//    investment trusts que no encajan en los métodos DCF) → se excluye del Score.
+export const CAGR_UNRELIABLE = 50
+export const MOS_UNRELIABLE   = 500
+
 // Factor acumulado de crecimiento del dividendo hasta el inicio del año `i` (0-based).
 function divGrowthFactor(growthPct, i) {
   const g0 = Math.min(growthPct, CAGR_CAP)
@@ -133,7 +141,11 @@ export function computeScore(f, type) {
   for (const m of metrics) {
     const v = vals[m.id]
     if (v == null || v === '') continue
-    const s = m.score(v)
+    // Valoración con MoS extremo (|MoS|>500%): valor intrínseco no fiable → fuera del Score.
+    if (m.id === 'margin_safety' && Math.abs(v) > MOS_UNRELIABLE) continue
+    let s = m.score(v)
+    // CAGR del dividendo capeado/atípico (>50%): dato no fiable → puntuación neutra.
+    if (m.id === 'div_cagr5' && v > CAGR_UNRELIABLE && s != null) s = 5
     if (s != null) { tot += s; cnt++ }
   }
   return cnt > 0 ? Math.round(tot / cnt * 10) / 10 : null
@@ -182,7 +194,9 @@ export function calcDivQuality(f, type, country, destWHT = 19) {
   }
   const cagr = num(f.div_cagr5)
   if (cagr != null && cagr > 0) {
-    const s = cagr > 12 ? 10 : cagr > 9 ? 9 : cagr > 7 ? 8 : cagr > 5 ? 6 : cagr > 3 ? 4 : 2
+    // CAGR > 50% es casi siempre un dato no fiable → puntuación neutra (5).
+    const s = cagr > CAGR_UNRELIABLE ? 5
+      : cagr > 12 ? 10 : cagr > 9 ? 9 : cagr > 7 ? 8 : cagr > 5 ? 6 : cagr > 3 ? 4 : 2
     score += s * 1.5; weight += 1.5
   }
   const streak = num(f.div_streak) || 0
@@ -205,6 +219,42 @@ export function rule1010(f) {
   const y = yieldPct(f), c = num(f.div_cagr5)
   if (y == null || c == null) return false
   return (y + c) >= 10
+}
+
+// MoS no fiable: valor intrínseco disparado (|margen de seguridad| > 500%).
+export function mosUnreliable(f) {
+  const m = marginSafety(f)
+  return m != null && Math.abs(m) > MOS_UNRELIABLE
+}
+
+// ── Ranking "Renta DGI" ──────────────────────────────────────────────────────
+// Pondera el yield neto (tras retención) y la rapidez de recuperación de la
+// inversión. Pensado para el inversor que busca renta, no calidad pura: un yield
+// alto con recuperación rápida manda, aunque el Score DGI sea modesto.
+function ynScore(ny) {
+  if (ny == null) return null
+  if (ny >= 6) return 10; if (ny >= 5) return 9; if (ny >= 4) return 8
+  if (ny >= 3.25) return 7; if (ny >= 2.5) return 6; if (ny >= 1.75) return 5
+  if (ny >= 1) return 4; if (ny >= 0.5) return 3; if (ny > 0) return 2; return 0
+}
+function pbScore(pb) {
+  if (pb == null) return 1   // no recupera en el horizonte → penaliza
+  if (pb <= 12) return 10; if (pb <= 16) return 9; if (pb <= 20) return 8
+  if (pb <= 25) return 6; if (pb <= 30) return 4; if (pb <= 40) return 2; return 1
+}
+
+// Yield neto (tras doble imposición) de una empresa ya construida (shape `co`).
+export function netYieldOf(co, destWHT) {
+  if (co?.y == null || co.y <= 0) return null
+  return netYield(co.y, getWHT(co.c), destWHT)
+}
+
+// Nota de renta 0-10: 60% yield neto, 40% rapidez de recuperación.
+export function rentaScore(co, destWHT) {
+  const ny = netYieldOf(co, destWHT)
+  if (ny == null) return null
+  const pb = paybackYear(1000, co.y, co.cagr || 0, getWHT(co.c), destWHT)
+  return Math.round((ynScore(ny) * 0.6 + pbScore(pb) * 0.4) * 10) / 10
 }
 
 // ── Radar del comparador ─────────────────────────────────────────────────────

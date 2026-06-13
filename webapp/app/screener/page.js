@@ -63,7 +63,7 @@ async function buildCompanies(destWHT, baseDict) {
     const f = fundMap[ticker] || null
     if (!f) {
       return { n: name, t: ticker, c: country, cont: getContinent(country), s: sector, cur: currency, tp: type || 'general',
-        px: null, y: null, sc: null, mos: null, roic: null, streak: null, cagr: null, payout: null,
+        px: null, y: null, sc: null, mos: null, mosUnreliable: false, roic: null, streak: null, cagr: null, payout: null,
         debt: null, icov: null, opm: null, rev: null, pe: null, ev: null, mcap: null,
         moat: 'none', ero: false, dq: null, r1010: false, pays: null,
         bonus: 0, bRoic: 0, bMargin: 0, bDebt: 0, bFcf: 0 }
@@ -71,12 +71,17 @@ async function buildCompanies(destWHT, baseDict) {
     const t = type || 'general'
     const rawCagr = f.div_cagr5 != null ? Number(f.div_cagr5) : null
     const roicVal = ROIC_NA_TYPES.has(t) ? null : resolveRoic(f)
+    // Erosión del foso: ya no es solo decorativa, resta 1,0 a la nota final.
+    const rawSc = computeScore(f, t)
+    const ero = moatErosion(f)
+    const rawMos = marginSafety(f)
     return {
       n: name, t: ticker, c: country, cont: getContinent(country), s: sector, cur: currency, tp: t,
       px:   f.current_price != null ? Number(f.current_price) : null,
       y:    yieldPct(f),
-      sc:   computeScore(f, t),
-      mos:  marginSafety(f),
+      sc:   rawSc != null && ero ? Math.max(1, Math.round((rawSc - 1) * 10) / 10) : rawSc,
+      mos:  rawMos,
+      mosUnreliable: rawMos != null && Math.abs(rawMos) > 500,
       roic: roicVal,
       roicNA: ROIC_NA_TYPES.has(t),
       roicWarn: roicVal != null && roicVal > 60,
@@ -92,7 +97,7 @@ async function buildCompanies(destWHT, baseDict) {
       ev:     f.ev_ebitda != null ? Number(f.ev_ebitda) : null,
       mcap:   f.market_cap_m != null ? Number(f.market_cap_m) : null,
       moat:   deriveMoat(f),
-      ero:    moatErosion(f),
+      ero,
       dq:     calcDivQuality(f, t, country, destWHT),
       r1010:  rule1010(f),
       pays:   f.pays_dividend ?? null,
