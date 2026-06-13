@@ -20,35 +20,37 @@ const FREE_PREVIEW = 5
 function scoreColor(s) { if (s == null) return '#3a4260'; if (s >= 8) return '#34d399'; if (s >= 6.5) return '#86efac'; if (s >= 5) return '#fbbf24'; if (s >= 3) return '#f97316'; return '#f87171' }
 function streakIcon(n) { if (n >= 50) return '👑'; if (n >= 35) return '🥇'; if (n >= 25) return '🥈'; return '🥉' }
 
-// Estilos responsive: en móvil la ficha es más baja y el nombre se lee entero
-// (puede envolver); en escritorio (≥760px) es el layout de una sola fila.
+// Estilos responsive. Móvil: una sola fila compacta — nombre completo (puede
+// envolver) con una sub-línea fina de métricas, y la nota a la derecha dentro
+// de la tarjeta. Escritorio (≥760px): layout de bloques de una sola fila.
 const ROW_CSS = `
-.aristo-row{display:flex;align-items:center;gap:8px;padding:7px 11px;background:rgba(255,255,255,0.02);border-radius:9px;margin-bottom:5px;flex-wrap:wrap}
+.aristo-row{display:flex;align-items:center;gap:8px;padding:6px 11px;background:rgba(255,255,255,0.02);border-radius:9px;margin-bottom:4px}
 .aristo-rank{font-size:12px;font-weight:800;color:#3a4260;width:18px;text-align:right;flex-shrink:0}
 .aristo-flag{font-size:15px;flex-shrink:0}
-.aristo-namewrap{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
-.aristo-name{font-size:13px;font-weight:700;color:#d0d8e8;line-height:1.3;overflow-wrap:anywhere}
+.aristo-namewrap{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
+.aristo-name{font-size:13px;font-weight:700;color:#d0d8e8;line-height:1.25;overflow-wrap:anywhere}
 .aristo-ticker{font-size:10px;color:#2e3a55;font-weight:600}
-.aristo-buy{align-self:flex-start;font-size:9px;font-weight:700;color:#34d399;background:rgba(52,211,153,0.12);padding:1px 6px;border-radius:4px}
-.aristo-metrics{display:flex;align-items:baseline;gap:16px;flex:1 0 100%;padding-left:41px;margin-top:1px}
-.aristo-m{display:flex;flex-direction:column}
-.aristo-mlabel{display:none;font-size:9px;color:#3a4260;font-weight:400}
-.aristo-mval{font-size:12px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
-.aristo-score{font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;margin-left:auto}
+.aristo-buy{display:none}
+.aristo-sub{display:flex;flex-wrap:wrap;gap:7px;font-size:11px;font-weight:600;color:#6a7490;font-variant-numeric:tabular-nums}
+.aristo-sub .buy{color:#34d399;font-weight:700}
+.aristo-m{display:none;flex-direction:column;text-align:right;min-width:52px;flex-shrink:0}
+.aristo-mlabel{font-size:9px;color:#3a4260;font-weight:400}
+.aristo-mval{font-size:13px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
+.aristo-score{font-size:18px;font-weight:900;font-variant-numeric:tabular-nums;flex-shrink:0;min-width:30px;text-align:right}
 @media(min-width:760px){
-  .aristo-row{flex-wrap:nowrap;gap:10px;padding:8px 12px}
+  .aristo-row{gap:10px;padding:8px 12px;margin-bottom:5px}
   .aristo-rank{width:22px}
   .aristo-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:normal}
-  .aristo-metrics{flex:0 0 auto;padding-left:0;margin-top:0;gap:14px;align-items:stretch}
-  .aristo-m{text-align:right;min-width:52px}
-  .aristo-mlabel{display:block}
-  .aristo-mval{font-size:13px}
-  .aristo-score{font-size:18px;min-width:32px;text-align:right;margin-left:0}
+  .aristo-namewrap{gap:2px}
+  .aristo-sub{display:none}
+  .aristo-buy{display:inline-block;align-self:flex-start;font-size:9px;font-weight:700;color:#34d399;background:rgba(52,211,153,0.12);padding:1px 6px;border-radius:4px}
+  .aristo-m{display:flex}
 }`
 
 function Row({ co, rank, destWHT }) {
   const ct = getCountry(co.c)
   const ny = co.y != null ? netYield(co.y, getWHT(co.c), destWHT) : null
+  const nyTxt = ny != null ? ny.toFixed(2) + '%' : '—'
   return (
     <Link href={`/empresa/${encodeURIComponent(co.t)}`} style={{ textDecoration: 'none' }}>
       <div className="aristo-row">
@@ -57,18 +59,21 @@ function Row({ co, rank, destWHT }) {
         <div className="aristo-namewrap">
           <p className="aristo-name">{co.n} <span className="aristo-ticker">{co.t}</span></p>
           {co.buyZone && <span className="aristo-buy">● En zona de compra</span>}
+          <p className="aristo-sub">
+            <span>{streakIcon(co.streak)} {co.streak}a</span>
+            <span>· {nyTxt} neto</span>
+            {co.buyZone && <span className="buy">· en zona</span>}
+          </p>
         </div>
-        <div className="aristo-metrics">
-          <div className="aristo-m" title="Años consecutivos subiendo el dividendo">
-            <span className="aristo-mlabel">Racha</span>
-            <span className="aristo-mval" style={{ color: '#c8d0e0' }}>{streakIcon(co.streak)} {co.streak}a</span>
-          </div>
-          <div className="aristo-m">
-            <span className="aristo-mlabel">Yield neto</span>
-            <span className="aristo-mval">{ny != null ? ny.toFixed(2) + '%' : '—'}</span>
-          </div>
-          <span className="aristo-score" style={{ color: scoreColor(co.sc) }}>{co.sc != null ? co.sc.toFixed(1) : '—'}</span>
+        <div className="aristo-m" title="Años consecutivos subiendo el dividendo">
+          <span className="aristo-mlabel">Racha</span>
+          <span className="aristo-mval" style={{ color: '#c8d0e0' }}>{streakIcon(co.streak)} {co.streak}a</span>
         </div>
+        <div className="aristo-m">
+          <span className="aristo-mlabel">Yield neto</span>
+          <span className="aristo-mval">{nyTxt}</span>
+        </div>
+        <span className="aristo-score" style={{ color: scoreColor(co.sc) }}>{co.sc != null ? co.sc.toFixed(1) : '—'}</span>
       </div>
     </Link>
   )
