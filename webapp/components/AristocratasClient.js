@@ -33,6 +33,7 @@ const ROW_CSS = `
 .aristo-buy{display:none}
 .aristo-buydot{flex-shrink:0;font-size:9px;color:#34d399}
 .aristo-chip{flex-shrink:0;font-size:11px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
+.aristo-ychip{color:#6a9b86}
 .aristo-m{display:none;flex-direction:column;text-align:right;min-width:52px;flex-shrink:0}
 .aristo-mlabel{font-size:9px;color:#3a4260;font-weight:400}
 .aristo-mval{font-size:13px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
@@ -64,6 +65,7 @@ function Row({ co, rank, destWHT }) {
         </div>
         {co.buyZone && <span className="aristo-buydot" title="En zona de compra">●</span>}
         <span className="aristo-chip" title="Años consecutivos subiendo el dividendo">{streakIcon(co.streak)} {co.streak}a</span>
+        <span className="aristo-chip aristo-ychip" title="Yield neto (tras retención)">{nyTxt}</span>
         <div className="aristo-m" title="Años consecutivos subiendo el dividendo">
           <span className="aristo-mlabel">Racha</span>
           <span className="aristo-mval" style={{ color: '#c8d0e0' }}>{streakIcon(co.streak)} {co.streak}a</span>
