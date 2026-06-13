@@ -6,3 +6,10 @@ scripts/run*.log
 .env*.local
 
 .vercel
+
+# build artifacts (Next.js trace files at repo root)
+/.next/
+
+# reference spreadsheets (kept local, not versioned)
+/*.xlsx
+~$*
