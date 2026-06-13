@@ -52,7 +52,7 @@ function Row({ co, rank, destWHT }) {
   const ny = co.y != null ? netYield(co.y, getWHT(co.c), destWHT) : null
   const nyTxt = ny != null ? ny.toFixed(2) + '%' : '—'
   return (
-    <Link href={`/empresa/${encodeURIComponent(co.t)}`} style={{ textDecoration: 'none' }}>
+    <Link href={`/empresa/${encodeURIComponent(co.t)}`} style={{ textDecoration: 'none', display: 'block' }}>
       <div className="aristo-row">
         <span className="aristo-rank">{rank}</span>
         <span className="aristo-flag">{ct?.flag || '🌐'}</span>
