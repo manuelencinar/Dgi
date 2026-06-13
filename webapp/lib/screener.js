@@ -139,14 +139,20 @@ export function computeScore(f, type) {
   const vals = mapValues(f)
   let tot = 0, cnt = 0
   for (const m of metrics) {
+    // Métricas especializadas que el screener no calcula (cet1, npl, p_affo…) no
+    // cuentan: si no, hundirían a bancos/REITs. Solo cuentan las que mapValues
+    // sí sabe derivar (presentes como clave, aunque su valor sea null).
+    if (!(m.id in vals)) continue
     const v = vals[m.id]
-    if (v == null || v === '') continue
     // Valoración con MoS extremo (|MoS|>500%): valor intrínseco no fiable → fuera del Score.
-    if (m.id === 'margin_safety' && Math.abs(v) > MOS_UNRELIABLE) continue
+    if (m.id === 'margin_safety' && v != null && Math.abs(v) > MOS_UNRELIABLE) continue
     let s = m.score(v)
     // CAGR del dividendo capeado/atípico (>50%): dato no fiable → puntuación neutra.
-    if (m.id === 'div_cagr5' && v > CAGR_UNRELIABLE && s != null) s = 5
-    if (s != null) { tot += s; cnt++ }
+    if (m.id === 'div_cagr5' && v != null && v > CAGR_UNRELIABLE && s != null) s = 5
+    // Dato no disponible → vale 0 (no se omite): evita notas infladas cuando
+    // faltan los financieros (p.ej. un ADR con solo precio y dividendo).
+    if (s == null) s = 0
+    tot += s; cnt++
   }
   return cnt > 0 ? Math.round(tot / cnt * 10) / 10 : null
 }
