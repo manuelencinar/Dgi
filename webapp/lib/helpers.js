@@ -90,14 +90,30 @@ export function getCapSize(co) {
   return "Small cap"
 }
 
-export function streakBadge(streak) {
+// Clasificación DGI por racha de años consecutivos subiendo el dividendo.
+// FUENTE ÚNICA de niveles + dibujos en toda la app (screener, comparador,
+// ficha, índices y la página /aristocratas).
+export const DIVIDEND_TIERS = [
+  { id: 'rey',         name: 'Rey',         plural: 'Reyes',        emoji: '👑', color: '#fbbf24', min: 50 },
+  { id: 'aristocrata', name: 'Aristócrata', plural: 'Aristócratas', emoji: '🏆', color: '#a78bfa', min: 25 },
+  { id: 'aspirante',   name: 'Aspirante',   plural: 'Aspirantes',   emoji: '⭐', color: '#60a5fa', min: 10 },
+]
+
+// Devuelve el objeto del nivel (o null si la racha < 10).
+export function dividendTierInfo(streak) {
   const n = parseInt(streak)
-  if(isNaN(n)||n<5) return null
-  if(n>=50) return "👑"
-  if(n>=35) return "🥇"
-  if(n>=25) return "🥈"
-  if(n>=10) return "🥉"
-  return null
+  if (isNaN(n)) return null
+  return DIVIDEND_TIERS.find(t => n >= t.min) || null
+}
+
+// Devuelve el id del nivel: 'rey' | 'aristocrata' | 'aspirante' | null.
+export function dividendTier(streak) {
+  return dividendTierInfo(streak)?.id ?? null
+}
+
+// Solo el dibujo del nivel (para badges compactos). null si < 10 años.
+export function streakBadge(streak) {
+  return dividendTierInfo(streak)?.emoji ?? null
 }
 
 export function is1010(co) {

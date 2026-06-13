@@ -1,14 +1,16 @@
 'use client'
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { getCountry } from '@/lib/helpers'
+import { getCountry, DIVIDEND_TIERS, dividendTierInfo } from '@/lib/helpers'
 import { netYield, getWHT } from '@/lib/screener'
 
-const TIERS = [
-  { id: 'rey',         name: 'Reyes',        emoji: '👑', color: '#fbbf24', desc: '50+ años subiendo el dividendo sin interrupción' },
-  { id: 'aristocrata', name: 'Aristócratas', emoji: '🏆', color: '#a78bfa', desc: '25–49 años de incrementos consecutivos' },
-  { id: 'aspirante',   name: 'Aspirantes',   emoji: '⭐', color: '#60a5fa', desc: '10–24 años — camino a la aristocracia' },
-]
+const TIER_DESC = {
+  rey:         '50+ años subiendo el dividendo sin interrupción',
+  aristocrata: '25–49 años de incrementos consecutivos',
+  aspirante:   '10–24 años — camino a la aristocracia',
+}
+// Niveles (nombre en plural para los encabezados) derivados de la fuente única.
+const TIERS = DIVIDEND_TIERS.map(t => ({ id: t.id, name: t.plural, emoji: t.emoji, color: t.color, desc: TIER_DESC[t.id] }))
 
 const ZONA_OPTS = [
   { v: 'all', l: 'Todas' }, { v: 'América', l: 'América' }, { v: 'Europa', l: 'Europa' },
@@ -18,7 +20,7 @@ const ZONA_OPTS = [
 const FREE_PREVIEW = 5
 
 function scoreColor(s) { if (s == null) return '#3a4260'; if (s >= 8) return '#34d399'; if (s >= 6.5) return '#86efac'; if (s >= 5) return '#fbbf24'; if (s >= 3) return '#f97316'; return '#f87171' }
-function streakIcon(n) { if (n >= 50) return '👑'; if (n >= 35) return '🥇'; if (n >= 25) return '🥈'; return '🥉' }
+function streakIcon(n) { return dividendTierInfo(n)?.emoji || '' }
 
 // Estilos responsive. Móvil: una SOLA línea compacta — bandera · nombre (… si
 // es muy largo) · racha · nota. Escritorio (≥760px): layout de bloques con

@@ -3,7 +3,7 @@ import { useState, useMemo, useRef, useEffect, Fragment } from 'react'
 import Link from 'next/link'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts'
 import { project10y, paybackYear, getWHT, RADAR_METRICS } from '@/lib/screener'
-import { getCountry } from '@/lib/helpers'
+import { getCountry, streakBadge } from '@/lib/helpers'
 
 const CC = ['#34d399', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6']
 
@@ -12,7 +12,6 @@ function fmtEUR0(v) { return v == null ? '—' : Math.round(v).toLocaleString('e
 function pct(v, d = 1) { return v == null ? '—' : v.toFixed(d) + '%' }
 function x(v, d = 1) { return v == null ? '—' : v.toFixed(d) + 'x' }
 function moatBadge(m) { return m === 'wide' ? '🏰 Foso ancho' : m === 'narrow' ? '🧱 Foso estrecho' : null }
-function streakBadge(n) { if (!n) return null; if (n > 35) return '🥇'; if (n > 25) return '🥈'; if (n > 10) return '🥉'; return null }
 
 // ── Radar multidimensional (geometría idéntica al original) ──────────────────
 function MultiRadar({ companies, highlight, onHighlight }) {

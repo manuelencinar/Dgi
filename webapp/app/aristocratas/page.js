@@ -3,8 +3,8 @@ import { createClient as authClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/PublicNav'
 import AristocratasClient from '@/components/AristocratasClient'
 import { getEffectiveDict } from '@/lib/dict'
-import { getContinent } from '@/lib/helpers'
-import { computeScore, yieldPct, marginSafety, mosUnreliable, dividendTier } from '@/lib/screener'
+import { getContinent, dividendTier } from '@/lib/helpers'
+import { computeScore, yieldPct, marginSafety, mosUnreliable } from '@/lib/screener'
 
 export const dynamic = 'force-dynamic'
 

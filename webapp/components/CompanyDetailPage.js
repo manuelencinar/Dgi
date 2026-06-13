@@ -12,6 +12,7 @@ import LocalPrice from '@/components/LocalPrice'
 import HealthTwoLevel, { Semaforo } from '@/components/empresa/HealthPanel'
 import CompanyNews from '@/components/news/CompanyNews'
 import { recomputeValuation } from '@/lib/valuation'
+import { dividendTierInfo } from '@/lib/helpers'
 import { project10y, paybackYear, netYield, getWHT } from '@/lib/screener'
 
 // ── helpers ───────────────────────────────────────────────────────────────
@@ -40,11 +41,11 @@ function scoreColor(s) {
   return '#f87171'
 }
 function streakBadge(n) {
-  if (!n || n < 5) return null
-  if (n >= 50) return { label: 'Aristócrata 50+', color: '#fbbf24' }
-  if (n >= 25) return { label: 'Aristócrata',     color: '#fbbf24' }
-  if (n >= 10) return { label: 'Campeón DGI',     color: '#86efac' }
-  return { label: `${n}a racha`, color: '#818cf8' }
+  const t = dividendTierInfo(n)
+  if (t) return { emoji: t.emoji, label: t.name, color: t.color }
+  const v = parseInt(n)
+  if (!isNaN(v) && v >= 5) return { emoji: '', label: `${v}a racha`, color: '#818cf8' }
+  return null
 }
 
 const DEFAULT_DEST_WHT = 19   // fallback si el usuario no tiene residencia fiscal guardada
@@ -220,7 +221,7 @@ function DividendHistorySection({ divHistory, streak, cagr, currency }) {
           )}
           {badge && (
             <span style={{ fontSize: 11, fontWeight: 700, color: badge.color, background: `${badge.color}18`, padding: '2px 8px', borderRadius: 5 }}>
-              {badge.label}
+              {badge.emoji ? badge.emoji + ' ' : ''}{badge.label}
             </span>
           )}
         </div>
@@ -1247,7 +1248,7 @@ export default function CompanyDetailPage(props) {
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
               {flag && <span style={{ fontSize: 16 }}>{flag}</span>}
               {sector && <span style={{ fontSize: 11, color: '#818cf8', background: 'rgba(99,102,241,0.1)', padding: '2px 8px', borderRadius: 5 }}>{sector}</span>}
-              {paysDividend !== false && sBadge && <span style={{ fontSize: 11, fontWeight: 700, color: sBadge.color, background: `${sBadge.color}18`, padding: '2px 8px', borderRadius: 5 }}>{streak >= 25 ? '🥇' : streak >= 10 ? '🥈' : '🥉'} {sBadge.label}</span>}
+              {paysDividend !== false && sBadge && <span style={{ fontSize: 11, fontWeight: 700, color: sBadge.color, background: `${sBadge.color}18`, padding: '2px 8px', borderRadius: 5 }}>{sBadge.emoji ? sBadge.emoji + ' ' : ''}{sBadge.label}</span>}
               {paysDividend === false && <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7693', background: 'rgba(107,118,147,0.14)', padding: '2px 8px', borderRadius: 5 }}>Sin dividendo</span>}
               {badges?.filter(b => b.id?.startsWith('moat') || b.id === '1010').map(b => (
                 <span key={b.id} style={{ fontSize: 11, fontWeight: 700, color: b.color, background: b.bg, padding: '2px 8px', borderRadius: 5 }} title={b.title}>{b.label}</span>

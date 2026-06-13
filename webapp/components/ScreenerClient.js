@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
-import { getCountry } from '@/lib/helpers'
+import { getCountry, streakBadge } from '@/lib/helpers'
 import { project10y, paybackYear, getWHT, rentaScore, netYieldOf } from '@/lib/screener'
 import WatchlistEyeButton from '@/components/watchlist/WatchlistEyeButton'
 
@@ -68,7 +68,6 @@ const MODE_DEFAULT = { calidad: 'score', renta: 'renta' }
 function curSym(c) { return CUR_SYM[c] || (c ? c + ' ' : '') }
 function fmtPx(v, cur) { if (v == null) return '—'; const s = curSym(cur); const n = v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); return cur === 'EUR' ? `${n} ${s}` : `${s}${n}` }
 function fmtEUR0(v) { return v == null ? '—' : v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }
-function streakBadge(n) { if (!n) return null; if (n > 35) return '🥇'; if (n > 25) return '🥈'; if (n > 10) return '🥉'; return null }
 function moatBadge(m) { return m === 'wide' ? '🏰' : m === 'narrow' ? '🧱' : null }
 
 // Proyección €1k para una empresa (idéntica al HTML original).
@@ -579,7 +578,7 @@ const GUIDE = [
   { group: 'Dividendo', items: [
     ['Yield', 'Rentabilidad por dividendo actual: dividendo anual / precio. El óptimo DGI suele estar entre 2% y 6%; muy por encima puede señalar riesgo de recorte.'],
     ['CAGR dividendo', 'Crecimiento anual compuesto del dividendo en los últimos 5 años. Mide la velocidad a la que sube la renta.'],
-    ['Racha', 'Años consecutivos subiendo el dividendo. Badges: 🥉 >10 años · 🥈 >25 años · 🥇 >35 años (aristócratas/reyes del dividendo).'],
+    ['Racha', 'Años consecutivos subiendo el dividendo. Niveles: ⭐ Aspirante (10+) · 🏆 Aristócrata (25+) · 👑 Rey (50+).'],
     ['Payout', 'Porcentaje del flujo de caja libre (o beneficio) que se reparte como dividendo. Más bajo = más margen y seguridad.'],
     ['⚡ Regla 10/10', 'La empresa cumple que yield + CAGR del dividendo ≥ 10%. Equilibrio entre renta inmediata y crecimiento futuro.'],
   ]},
