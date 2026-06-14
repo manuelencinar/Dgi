@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import { MARKETS } from '@/lib/markets'
+import { getEffectiveMarkets } from '@/lib/markets-overrides'
 import LandingFaq from '@/components/LandingFaq'
 import PublicNav from '@/components/PublicNav'
 
@@ -411,20 +412,20 @@ function HowItWorks() {
   )
 }
 
-function MarketsSection() {
+function MarketsSection({ markets = MARKETS }) {
   return (
     <section style={{ padding: '80px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 44 }}>
           <h2 style={{ fontSize: 28, fontWeight: 900, color: '#e0e8f0', marginBottom: 10 }}>
-            43 mercados globales
+            {markets.length} mercados globales
           </h2>
           <p style={{ fontSize: 14, color: '#4a5270' }}>
             América · Europa · Asia-Pacífico · ETFs globales
           </p>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
-          {MARKETS.map(m => (
+          {markets.map(m => (
             <div key={m.symbol} style={{
               display: 'flex', alignItems: 'center', gap: 8,
               background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
@@ -745,6 +746,11 @@ function Footer() {
 
 export default async function LandingPage() {
   const companyCount = await getCompanyCount()
+  // Mercados ACTIVOS (mismos que /mercados) — evita mostrar en la landing índices
+  // desactivados (p.ej. Dow Jones Global Titans) y descuadrar el recuento.
+  let markets
+  try { markets = await getEffectiveMarkets() } catch {}
+  if (!markets?.length) markets = MARKETS
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>
       <PublicNav />
@@ -755,7 +761,7 @@ export default async function LandingPage() {
       <DualRanking />
       <UseCase />
       <HowItWorks />
-      <MarketsSection />
+      <MarketsSection markets={markets} />
       <PlatformMetrics companyCount={companyCount} />
       <Pricing />
       <FaqSection />

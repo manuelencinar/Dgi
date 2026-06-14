@@ -130,7 +130,7 @@ export default function PricingClient({
         <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '28px 24px' }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: '#6a7090', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Premium mensual</p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
-            <span style={{ fontSize: 38, fontWeight: 900, color: '#e0e8f0' }}>9,95€</span>
+            <span style={{ fontSize: 38, fontWeight: 900, color: '#e0e8f0' }}>9,99€</span>
             <span style={{ fontSize: 13, color: '#4a5270' }}>/mes</span>
           </div>
           <p style={{ fontSize: 11, color: '#3a4260', marginBottom: 22 }}>Cancela en cualquier momento.</p>

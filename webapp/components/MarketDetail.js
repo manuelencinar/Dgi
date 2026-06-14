@@ -180,10 +180,10 @@ function ConstituentRow({ company, quote }) {
   const cur = quote?.cur || company.cur
 
   return (
-    <div style={{
+    <Link href={`/empresa/${encodeURIComponent(company.ticker)}`} className="mkt-constituent" style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.04)',
-      gap: 8,
+      padding: '6px 6px', margin: '0 -6px', borderRadius: 6, borderBottom: '1px solid rgba(255,255,255,0.04)',
+      gap: 8, textDecoration: 'none',
     }}>
       <p style={{
         fontSize: 12, fontWeight: 600, color: '#c8d4e4',
@@ -209,7 +209,7 @@ function ConstituentRow({ company, quote }) {
       }}>
         {pctStr}
       </p>
-    </div>
+    </Link>
   )
 }
 
@@ -224,6 +224,7 @@ function ConstituentsList({ constituents, quotes }) {
 
   return (
     <div style={{ marginBottom: 24 }}>
+      <style>{`.mkt-constituent:hover{background:rgba(99,102,241,0.08)}`}</style>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
         <p style={{
           fontSize: 10, fontWeight: 700, color: '#4a5270',

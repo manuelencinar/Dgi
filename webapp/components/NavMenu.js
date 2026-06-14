@@ -10,12 +10,12 @@ const PRIMARY = [
   { href: '/screener',     label: 'Screener' },
   { href: '/aristocratas', label: 'Rankings' },
   { href: '/watchlist',    label: 'Watchlist' },
+  { href: '/comparador',   label: 'Comparador' },
   { href: '/cartera',      label: 'Cartera' },
 ]
 // Secundarios — accesibles desde sus flujos; en móvil aparecen apagados
 const SECONDARY = [
   { href: '/construir-cartera', label: 'Construir cartera' },
-  { href: '/comparador', label: 'Comparador' },
   { href: '/etfs',       label: 'ETFs y Fondos' },
 ]
 

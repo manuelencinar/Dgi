@@ -227,7 +227,8 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 
 ## Navegación
 - `components/NavMenu.js` (app), `components/PublicNav.js` (landing), `components/cartera/CarteraNav.js` (cartera).
-- Items principales: Mercados, Screener, Aristócratas, Watchlist, Cartera. Comparador y ETFs como secundarios en el menú hamburguesa móvil. Campana de notificaciones (`NotificationBell`) junto a Ajustes cuando hay sesión. Se eliminó el botón "Mi Índice" (no aportaba). CarteraNav incluye "ETFs y Fondos".
+- Items principales: Mercados, Screener, **Rankings** (Aristócratas/Caníbales/Compounding), Watchlist, **Comparador**, Cartera. Construir cartera y ETFs como secundarios. (Comparador subido a primario para hacerlo descubrible.)
+- **Empresas del mercado clicables**: `ConstituentRow` (`MarketDetail.js`) es un `Link` a la ficha. **Recuento de mercados consistente**: la landing usa `getEffectiveMarkets()` (activos, igual que /mercados) — antes mostraba los 48 de `MARKETS` crudo (incl. desactivados como Dow Jones Global Titans) descuadrando con el "43" de la copy. **MoS/payout saneados** también en el screener (`buildScreenerCompanies` usa `mosUnreliable(f)` y `sanePayout(f)`, no cálculos en línea). Campana de notificaciones (`NotificationBell`) junto a Ajustes cuando hay sesión. Se eliminó el botón "Mi Índice" (no aportaba). CarteraNav incluye "ETFs y Fondos".
 
 ## Infraestructura / despliegue
 - Repo GitHub: rama por defecto **master** (la app vive ahí); `main` es el proyecto HTML original + funds.json de GitHub Pages (historiales independientes).
