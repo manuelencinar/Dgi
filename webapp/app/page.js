@@ -191,6 +191,73 @@ function Benefits() {
   )
 }
 
+function DualRanking() {
+  const modes = [
+    {
+      icon: '⭐', tag: 'Calidad DGI', color: '#34d399',
+      title: 'Para construir una cartera de empresas excelentes',
+      text: 'Ordena por la calidad del negocio y del dividendo con el Score DGI: rentabilidad sobre el capital, foso, payout sostenible, deuda y crecimiento. Encuentra los mejores compounders, no solo los que más reparten.',
+      bullets: ['⭐ Nota (Score DGI)', '💰 Rentables (renta a 10 años)', '🎯 Baratas (margen de seguridad)', '💎 Calidad del dividendo'],
+    },
+    {
+      icon: '🏦', tag: 'Renta DGI', color: '#fbbf24',
+      title: 'Para maximizar la renta que cobras',
+      text: 'Cambia el chip y reordena las mismas empresas por el yield neto tras retenciones y la rapidez con la que recuperas la inversión vía dividendos. Pensado para quien busca renta hoy, no solo crecimiento futuro.',
+      bullets: ['🏦 Renta (yield neto + recuperación)', '📈 Yield neto tras retenciones', '⏱ Años hasta recuperar la inversión'],
+    },
+  ]
+  return (
+    <section style={{ padding: '80px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(99,102,241,0.03)' }}>
+      <style>{`
+        .dual-grid { display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 920px; margin: 0 auto; }
+        @media (min-width: 760px) { .dual-grid { grid-template-columns: 1fr 1fr; } }
+      `}</style>
+      <div style={{ textAlign: 'center', marginBottom: 14 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#6366f1', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 14 }}>
+          Único en el screener
+        </p>
+        <h2 style={{ fontSize: 28, fontWeight: 900, color: '#e0e8f0', marginBottom: 10 }}>
+          Dos formas de buscar. Una sola herramienta.
+        </h2>
+        <p style={{ fontSize: 14, color: '#4a5270', maxWidth: 520, margin: '0 auto 40px' }}>
+          Calidad y renta no son lo mismo. Con un clic reordenas casi 2.000 empresas según lo que de verdad buscas.
+        </p>
+      </div>
+      <div className="dual-grid">
+        {modes.map((m, i) => (
+          <div key={i} style={{
+            background: 'rgba(255,255,255,0.02)', border: `1px solid ${m.color}33`,
+            borderRadius: 16, padding: '28px 24px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <span style={{ fontSize: 26 }}>{m.icon}</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: m.color, background: `${m.color}1a`, padding: '4px 12px', borderRadius: 20 }}>{m.tag}</span>
+            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#e0e8f0', marginBottom: 10, lineHeight: 1.35 }}>{m.title}</h3>
+            <p style={{ fontSize: 13, color: '#4a5270', lineHeight: 1.7, marginBottom: 18 }}>{m.text}</p>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {m.bullets.map((b, j) => (
+                <div key={j} style={{ fontSize: 12.5, color: '#8090a8', display: 'flex', gap: 8 }}>
+                  <span style={{ color: m.color, flexShrink: 0 }}>›</span>{b}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ textAlign: 'center', marginTop: 36 }}>
+        <Link href="/screener" style={{
+          fontSize: 14, fontWeight: 700, color: '#fff', textDecoration: 'none',
+          padding: '12px 26px', background: '#6366f1', borderRadius: 10,
+          boxShadow: '0 4px 20px rgba(99,102,241,0.35)',
+        }}>
+          Probar el screener gratis →
+        </Link>
+      </div>
+    </section>
+  )
+}
+
 function HowItWorks() {
   const steps = [
     { n: '01', title: 'Elige un mercado', text: 'Accede a cualquiera de los 43 índices disponibles. Desde los grandes americanos hasta mercados europeos, asiáticos y emergentes.' },
@@ -478,6 +545,7 @@ export default async function LandingPage() {
       <PublicNav />
       <Hero />
       <Benefits />
+      <DualRanking />
       <HowItWorks />
       <MarketsSection />
       <PlatformMetrics companyCount={companyCount} />

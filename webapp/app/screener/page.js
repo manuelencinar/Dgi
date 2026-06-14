@@ -36,7 +36,7 @@ async function getUserContext() {
 // Lee company_fundamentals (campos escalares) paginado — PostgREST limita a 1000 filas.
 async function fetchFundamentals() {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
-  const FIELDS = 'ticker, current_price, dps, pays_dividend, div_streak, div_cagr5, payout_fcf, payout_eps, fcf_cagr5, debt_ebitda, net_debt_ebitda, interest_coverage, roic, roic_reported, roic_tangible, roe, operating_margin, gross_margin, revenue_cagr5, pe_trailing, ev_ebitda, market_cap_m, intrinsic_value, sector, industry, country, bonus_total, improving_flag, bonus_roic_trend, bonus_margin_trend, bonus_debt_reduction, bonus_fcf_growth'
+  const FIELDS = 'ticker, current_price, dps, pays_dividend, div_streak, div_cagr5, payout_fcf, payout_eps, fcf_cagr5, debt_ebitda, net_debt_ebitda, interest_coverage, roic, roic_reported, roic_tangible, roe, operating_margin, gross_margin, revenue_cagr5, pe_trailing, pe_forward, ev_ebitda, market_cap_m, intrinsic_value, week52_high, week52_low, yield_avg, yield_avg_years, sector, industry, country, bonus_total, improving_flag, bonus_roic_trend, bonus_margin_trend, bonus_debt_reduction, bonus_fcf_growth'
   const all = []
   try {
     for (let from = 0; ; from += 1000) {
@@ -89,8 +89,13 @@ async function buildCompanies(destWHT, baseDict) {
       opm:    f.operating_margin != null ? Number(f.operating_margin) : null,
       rev:    f.revenue_cagr5 != null ? Number(f.revenue_cagr5) : null,
       pe:     f.pe_trailing != null ? Number(f.pe_trailing) : null,
+      peFwd:  f.pe_forward != null ? Number(f.pe_forward) : null,
       ev:     f.ev_ebitda != null ? Number(f.ev_ebitda) : null,
       mcap:   f.market_cap_m != null ? Number(f.market_cap_m) : null,
+      hi52:   f.week52_high != null ? Number(f.week52_high) : null,
+      lo52:   f.week52_low != null ? Number(f.week52_low) : null,
+      yieldAvg:      f.yield_avg != null ? Number(f.yield_avg) : null,
+      yieldAvgYears: f.yield_avg_years != null ? Number(f.yield_avg_years) : null,
       moat:   deriveMoat(f),
       ero,
       dq:     calcDivQuality(f, t, country, destWHT),
@@ -105,11 +110,29 @@ async function buildCompanies(destWHT, baseDict) {
   }).filter(Boolean)
 }
 
-export default async function ScreenerPage() {
+// Filtros iniciales desde la URL — usado por el detector de huecos de la cartera
+// (CompanyDetector → /screener?sector=…&zona=…&yield=…&from=cartera&hueco=…).
+function parseInitialFilters(sp) {
+  const f = {}
+  if (sp.sector) f.sector = String(sp.sector)
+  if (sp.zona)   f.zona   = String(sp.zona)
+  if (sp.score)  { const v = Number(sp.score); if (v > 0) f.score = v }
+  if (sp.yield)  { let v = Number(sp.yield); if (v > 0 && v <= 1) v *= 100; if (v > 0) f.yield = v }  // acepta 0.035 o 3.5
+  if (sp.cagr)   { const v = Number(sp.cagr);   if (v > 0) f.cagr = v }
+  if (sp.streak) { const v = Number(sp.streak); if (v > 0) f.streak = v }
+  if (sp.roic)   { const v = Number(sp.roic);   if (v > 0) f.roic = v }
+  return f
+}
+
+export default async function ScreenerPage({ searchParams }) {
+  const sp = (await searchParams) || {}
   const { plan, destWHT, followed, isAuthed } = await getUserContext()
   const dict = await getEffectiveDict()
   const companies = await buildCompanies(destWHT, dict)
   const sectors = [...new Set(dict.map(d => d[4]))].filter(Boolean).sort()
+
+  const initial = parseInitialFilters(sp)
+  const hueco = sp.from === 'cartera' && sp.hueco ? String(sp.hueco) : null
 
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>
@@ -121,6 +144,8 @@ export default async function ScreenerPage() {
         destWHT={destWHT}
         followed={followed}
         isAuthed={isAuthed}
+        initial={Object.keys(initial).length ? initial : null}
+        hueco={hueco}
       />
     </div>
   )

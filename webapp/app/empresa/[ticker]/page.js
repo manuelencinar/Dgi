@@ -211,7 +211,7 @@ export default async function EmpresaPage({ params, searchParams }) {
   const supabase = await authClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [plan, detail, liveQuote, dailyRow, positionRow, watchRow, settingsRow] = await Promise.all([
+  const [plan, detail, liveQuote, dailyRow, positionRow, watchRow, settingsRow, scoreHistory] = await Promise.all([
     getUserPlan(),
     getCompanyDetail(t),
     getCompanyQuote(t),
@@ -231,6 +231,10 @@ export default async function EmpresaPage({ params, searchParams }) {
     user ? supabase.from('user_settings').select('dest_wht')
       .eq('user_id', user.id).maybeSingle()
       .then(r => r.data).catch(() => null) : null,
+    // Histórico del Score DGI (sparkline de evolución) — lectura pública (RLS)
+    supabase.from('score_history').select('date, score')
+      .eq('ticker', t).order('date', { ascending: true })
+      .then(r => r.data || []).catch(() => []),
   ])
 
   const isPremium = plan === 'premium'
@@ -362,6 +366,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         dcf={dcf}
         projection={projection}
         dgiScore={dgiScore}
+        scoreHistory={scoreHistory}
         insights={insights}
         badges={badges}
         buybacks={buybacks}

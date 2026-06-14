@@ -8,6 +8,7 @@ import FinancialTables from '@/components/empresa/FinancialTables'
 import StatementCharts from '@/components/empresa/StatementCharts'
 import FinanzasDeepDive, { FinanzasKpis } from '@/components/empresa/FinanzasSections'
 import FollowButton from '@/components/watchlist/FollowButton'
+import ScoreHistory from '@/components/empresa/ScoreHistory'
 import LocalPrice from '@/components/LocalPrice'
 import HealthTwoLevel, { Semaforo } from '@/components/empresa/HealthPanel'
 import CompanyNews from '@/components/news/CompanyNews'
@@ -927,7 +928,7 @@ function CategoryBars({ categories }) {
   )
 }
 
-function DGIScoreCard({ dgiScore, isPremium, compact }) {
+function DGIScoreCard({ dgiScore, isPremium, compact, scoreHistory }) {
   if (!dgiScore) return null
 
   if (compact) {
@@ -949,6 +950,7 @@ function DGIScoreCard({ dgiScore, isPremium, compact }) {
         <span style={{ fontSize: 36, fontWeight: 900, color: scoreColor(dgiScore.total), lineHeight: 1 }}>{dgiScore.total ?? '—'}</span>
       </div>
       {!dgiScore.hasData && <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 12 }}>Datos insuficientes para calcular el score.</p>}
+      <ScoreHistory data={scoreHistory} />
 
       <div style={{ display: 'grid', gap: 16 }}>
         {dgiScore.categories?.map(cat => (
@@ -1181,7 +1183,7 @@ export default function CompanyDetailPage(props) {
     peTrailing, peForward, evEbitda, eps, payout, mktCap, priceToBook,
     divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, originWHT, peHistory,
     paysDividend, noDividendAt,
-    healthPanel, moat, dcf, projection, dgiScore, insights, roicData, badges, buybacks,
+    healthPanel, moat, dcf, projection, dgiScore, scoreHistory, insights, roicData, badges, buybacks,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
     manualImport, finScalars, initialTab,
   } = props
@@ -1477,7 +1479,7 @@ export default function CompanyDetailPage(props) {
             <HealthTwoLevel panel={healthPanel} isPremium={isPremium} ticker={ticker} sectorLabel={healthPanel?.sectorLabel} />
             <MoatSection moat={moat} isPremium={isPremium} />
             <InsightsSection insights={insights} isPremium={isPremium} />
-            <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} />
+            <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} scoreHistory={scoreHistory} />
             <RoicCard roicData={roicData} isPremium={isPremium} />
           </div>
         )}

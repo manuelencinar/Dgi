@@ -129,6 +129,7 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - Campana 🔔 en el menú (`components/NotificationBell.js`, dentro de `NavMenu.js`): dropdown con últimas 5, punto rojo con nº no leídas, "Ver todas".
 - Enlace Watchlist en `NavMenu` entre Screener y Cartera. Mini watchlist en la cartera (`components/cartera/WatchlistMini.js`, debajo de posiciones): 5 más próximas al objetivo.
 - Botón Seguir/Siguiendo en la ficha de empresa (`components/watchlist/FollowButton.js`, junto a "Comparar con otras") con modal (precio/yield objetivo, notas, toggles de alerta). Icono ojo 👁 en las tarjetas del screener (`components/watchlist/WatchlistEyeButton.js`, alta directa sin modal; relleno si se sigue). Sin sesión → redirige a `/login?next=…&msg=watchlist` (mensaje en `app/login/page.js`).
+- **Alerta de precio rápida** (`components/watchlist/PriceAlertButton.js`, botón 🔔 junto al ojo en la tarjeta del screener): mini-modal "avísame cuando baje a X€" con atajos −5/−10/−15% sobre el precio actual. Sin salir de la página: crea/actualiza la entrada de watchlist (`target_price` + `alert_price_active`) vía POST y PUT-si-existe. El cron de alertas existente hace el resto. Para free cuenta contra el límite de 10.
 - Lógica: `lib/watchlist.js` (helpers puros: `FREE_WATCHLIST_LIMIT=10`, `priceProximity`, `priceForYield`), `lib/watchlist-enrich.js` (`buildWatchlistRows` server-side: combina watchlist + DICT + fundamentales + daily_prices → precio, score, yield, proximidad; `sortByProximity`).
 - APIs: `/api/watchlist` (GET/POST/PUT/DELETE, RLS, aplica límite freemium en POST), `/api/watchlist/enriched` (GET, para la mini), `/api/notifications` (GET lista+nº no leídas, POST marca leídas).
 - Cron `/api/check-watchlist-alerts` (service_role, en `vercel.json`: `30 16` y `30 22` L-V, 30 min tras cada cierre). Comprueba alertas activas, crea notificación in-app siempre y envía email (Resend) solo a premium. Anti-spam: no repite hasta que el precio/yield sale de zona y vuelve a entrar. CRON_SECRET opcional.
@@ -148,6 +149,15 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - **Reglas de fiabilidad del Score** (en `computeScore`): empresa sin dividendo → score null (no puntúa 10). **Métricas sin datos puntúan 0** (no se omiten) → evita notas infladas cuando faltan financieros (p.ej. ADR NVO con solo precio+dividendo); las métricas especializadas que el screener no calcula (cet1, npl, p_affo…) se excluyen para no hundir bancos/REITs (clave: `m.id in vals`). **CAGR div >50%** (capeado/atípico) → puntuación neutra 5. **|MoS|>500%** (valor intrínseco no fiable, p.ej. investment trusts) → excluido del Score y del orden "Baratas", etiqueta "MoS no fiable". **Erosión del foso** (`moatErosion`) → **−1,0** a la nota (ya no es solo el badge 📉). CAGR cap visual 50%. VIX/VVIX excluidos. Dedup de tickers.
 - **Empresas con precio 0/sin dato no se muestran** (filtradas en `buildCompanies`). Mismo enfoque en `/aristocratas` y en la búsqueda global.
 - **Diseño responsive de la tarjeta** (clases `.scr-*` + media query 760px): en móvil una sola línea (bandera · nombre · badge de nivel · yield · nota); en escritorio la tarjeta completa con proyección/métricas.
+- **Cartera ↔ screener** (#5): el screener LEE params de la URL (`app/screener/page.js` → `parseInitialFilters`): `sector`, `zona`, `yield` (acepta 0.035 o 3.5), `cagr`, `streak`, `roic`, `score`. Si `from=cartera` + `hueco=…`, `ScreenerClient` muestra un banner "Para complementar tu cartera: …" con cierre que limpia filtros. Esto completa el flujo del detector de huecos (`components/cartera/CompanyDetector.js`), que antes redirigía a un screener que ignoraba los params (bug).
+- **Explicación de "zona de compra"** (`buyZoneReason(co)` en `lib/screener.js`): línea verde bajo cada tarjeta (móvil+escritorio) que justifica la infravaloración, con hasta 2 razones: **yield sobre su media histórica** (`yield_avg`/`yield_avg_years`, ≥3 años, ≥+10%), descuento sobre el valor intrínseco (MoS), cercanía al mínimo de 52 sem, PER previsto < actual, o regla 10/10. Solo aparece si hay señal real de infravaloración (la 10/10 o un PER bajo por sí solos no bastan). El screener lee `pe_forward`, `week52_high/low`, `yield_avg`, `yield_avg_years` además de los campos previos.
+- **Doble modo de ranking explicado**: bajo el toggle Calidad/Renta hay una línea descriptiva del modo activo (antes solo tooltip). La landing (`app/page.js`, sección `DualRanking`) presenta ambos modos al usuario no registrado.
+- **Gate de yield mínimo DGI** (`MIN_DGI_YIELD = 0.3` en `lib/screener.js`): `computeScore` y `calcDivQuality` devuelven null si el yield < 0,3% → empresas con dividendo testimonial (p.ej. NVDA) no rankean como calidad. **CAGR div >50% se muestra como "⚠ atípico"** (no el número capeado).
+
+## Score DGI histórico (#6)
+- Tabla `score_history` (SQL en `webapp/sql/score_history.sql`, RLS lectura pública): `ticker`, `date`, `score` (= `dgiScore.total`), `prepenalty`, `sector_type`, `unique(ticker,date)`. **Sin backfill posible** — acumula desde el primer run.
+- Snapshot: **API route** `app/api/cron/snapshot-scores/route.js` (NO un script Node: reúsa `computeMoat`/`computeValuation`/`computeDGIScore` de `@/lib/company-detail`, que usan el alias `@/` y solo resuelven dentro de Next). Pagina company_fundamentals de 100 en 100, calcula el MISMO score que la ficha y hace upsert. Protegida con `CRON_SECRET`. Cron semanal en `vercel.json` (lunes 6:00 UTC, tras el run de fundamentals).
+- UI: sparkline `components/empresa/ScoreHistory.js` (SVG puro) en la `DGIScoreCard` detallada de la ficha. Muestra delta y nº de semanas; estado "acumulando histórico" si <2 puntos. `scoreHistory` se lee en `app/empresa/[ticker]/page.js` y baja por `CompanyDetailPage`.
 
 ## Clasificación DGI por racha (Reyes/Aristócratas/Aspirantes)
 - **Fuente única** en `lib/helpers.js`: `DIVIDEND_TIERS` (array) + `dividendTier(streak)` (devuelve id `rey`/`aristocrata`/`aspirante`/null) + `dividendTierInfo(streak)` (objeto del nivel) + `streakBadge(streak)` (solo el emoji). Umbrales: **Rey 👑 ≥50 · Aristócrata 🏆 25–49 · Aspirante ⭐ 10–24** (colores #fbbf24/#a78bfa/#60a5fa).
@@ -196,7 +206,7 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 ## SQL pendiente de ejecutar en Supabase (todos los ficheros en webapp/sql/)
 Estado: el usuario ya ejecutó admin.sql, valuation_columns.sql, roic_columns.sql, cartera_parte3.sql, funds.sql, recurring.sql, fx_and_settings.sql y daily_prices.sql.
 Ficheros que el usuario PUEDE tener aún pendientes de ejecutar (confirmar en entorno nuevo):
-`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), y el ALTER de `premium_until` en user_settings.
+`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), `yield_avg.sql` (columnas yield_avg + yield_avg_years), `score_history.sql` (tabla de histórico del Score DGI), y el ALTER de `premium_until` en user_settings.
 Si se monta un entorno nuevo, ejecutar en orden todos los ficheros de webapp/sql/.
 
 ## Planes y precios
@@ -244,7 +254,7 @@ nopat, invested_capital, invested_capital_tangible, tax_rate_effective,
 intrinsic_value, valuation_warning, growth_input_used,
 roe, roa, operating_margin, net_margin, gross_margin,
 current_ratio, revenue_cagr5, pe_trailing, pe_forward, ev_ebitda, beta,
-week52_high, week52_low, market_cap_m, sector, industry, country,
+week52_high, week52_low, yield_avg, yield_avg_years, market_cap_m, sector, industry, country,
 income_statement_annual, balance_sheet_annual, cashflow_annual,
 income_statement_quarterly, balance_sheet_quarterly, cashflow_quarterly,
 updated_at
@@ -252,9 +262,11 @@ updated_at
 ## Scripts Python (scripts/) — YA CREADOS
 - `update_fundamentals.py` — descarga yfinance de ~2000 empresas, calcula métricas (ROIC con la fórmula nueva, div_streak, div_cagr5, payout_fcf, net_debt_ebitda…), estados financieros 4 años anuales+trimestrales traducidos al español, upsert en Supabase via service role, NaN/Infinity→None.
   - **Dividendo por RECENCIA**: `dps` NUNCA usa `lastDividendValue` (podía ser de hace una década → yield falso, p.ej. Prisa 2011). `pays_dividend` y `dps` se basan en si repartió el año anterior o en el año en curso (según `div_history`) o hay tasa forward; si no, `pays_dividend=false` y `dps=None`.
+  - **Yield histórico medio** (`compute_yield_avg`): calcula `yield_avg`/`yield_avg_years` desde `div_history` + `tk.history(period="6y", auto_adjust=False)` (media de hasta 5 años completos). Es la **fuente autoritativa** (cobertura total, divisa consistente con los dividendos). Alimenta la señal "zona de compra" del screener. ⚠️ requiere `yield_avg.sql` ejecutado antes del próximo run (si no, los upserts fallan).
 - `update_prices.py` — daily_prices + exchange_rates + benchmarks (Yahoo).
 - `recalc_roic.mjs` (Node) — recalcula ROIC en BD desde los estados ya guardados (sin yfinance). `--write` para persistir.
 - `fix_stale_dividends.mjs` (Node) — script de una vez: marca como que NO reparten (dps=null, pays_dividend=false) las empresas con dividendo obsoleto (sin reparto el año anterior ni en curso según `div_history`). Sin yfinance. `--write`. Ya ejecutado (142 empresas). Mismo patrón que `recalc_roic.mjs` (createRequire desde webapp).
+- `backfill_yield_avg_yahoo.py` (Python) — backfill de **cobertura total** de `yield_avg`/`yield_avg_years`: reutiliza el `div_history` ya en BD y descarga SOLO el histórico de precios de Yahoo en bloque (`yf.download` por lotes), sin correr el pipeline completo. Misma lógica que `compute_yield_avg`. Para poblar ya sin esperar al run semanal o re-poblar periódicamente. `--write` (upsert por bloques de 500), `--limit N`, `--ticker X`. Requiere `yield_avg.sql` ejecutado. (Nota: `daily_prices` NO sirve de fuente porque solo tiene profundidad para tickers charteados — `update_prices.py --history` no está cableado.)
 
 ## GitHub Actions (.github/workflows/) — YA CREADOS
 - `update_fundamentals.yml` — domingos 6:00 UTC + manual. Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.

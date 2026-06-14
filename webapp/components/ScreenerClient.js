@@ -2,8 +2,9 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { getCountry, streakBadge, dividendTierInfo } from '@/lib/helpers'
-import { project10y, paybackYear, getWHT, rentaScore, netYieldOf } from '@/lib/screener'
+import { project10y, paybackYear, getWHT, rentaScore, netYieldOf, buyZoneReason } from '@/lib/screener'
 import WatchlistEyeButton from '@/components/watchlist/WatchlistEyeButton'
+import PriceAlertButton from '@/components/watchlist/PriceAlertButton'
 
 // ── Opciones de filtros ────────────────────────────────────────────────────
 const SCORE_OPTS  = [{ v: 0, l: 'Todas' }, { v: 5, l: '≥5' }, { v: 6, l: '≥6' }, { v: 7, l: '≥7' }, { v: 8, l: '≥8' }]
@@ -65,6 +66,10 @@ const SORTS_RENTA = [
   { k: 'payback',  l: '⏱ Recuperación' },
 ]
 const MODE_DEFAULT = { calidad: 'score', renta: 'renta' }
+const MODES = [
+  { m: 'calidad', l: '⭐ Calidad DGI', d: 'Ordena por la calidad del negocio y del dividendo (Score DGI): para construir una cartera de empresas excelentes.' },
+  { m: 'renta',   l: '🏦 Renta DGI',   d: 'Prioriza el yield neto (tras retenciones) y la rapidez de recuperación: para maximizar la renta que cobras.' },
+]
 
 // Tarjeta del screener responsive: en móvil colapsa a una sola línea (nombre +
 // badge de nivel + yield + nota); en escritorio (≥760px) la tarjeta completa.
@@ -139,7 +144,7 @@ function Toggle({ label, value, onChange, locked }) {
 }
 
 // ── Tarjeta de empresa ───────────────────────────────────────────────────────
-function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect, following, isAuthed }) {
+function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect, following, isAuthed, isPremium }) {
   const ct = getCountry(co.c)
   const proj = projectCompany(co, destWHT)
   const ny = netYieldOf(co, destWHT)
@@ -147,6 +152,7 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
   const tierName = dividendTierInfo(co.streak)?.name
   const mb = moatBadge(co.moat)
   const secColor = SECTOR_COLOR[co.s] || '#6a7090'
+  const buyReason = buyZoneReason(co)
 
   return (
     <div className="scr-card" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${selected ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 12 }}>
@@ -185,6 +191,7 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
         {/* Badges */}
         <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
           <WatchlistEyeButton ticker={co.t} isAuthed={isAuthed} initialFollowing={following} />
+          <PriceAlertButton ticker={co.t} name={co.n} currency={co.cur} price={co.px} isAuthed={isAuthed} isPremium={isPremium} />
           {co.s && <span style={{ fontSize: 9, fontWeight: 700, color: secColor, background: `${secColor}1a`, padding: '2px 7px', borderRadius: 5 }}>{co.s}</span>}
           {sb && <span title="Racha de dividendos" style={{ fontSize: 13 }}>{sb}</span>}
           {mb && <span title={co.moat === 'wide' ? 'Foso ancho' : 'Foso estrecho'} style={{ fontSize: 12 }}>{mb}</span>}
@@ -222,9 +229,17 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
         {co.roicNA
           ? <Metric label="ROIC" value="N/A" color="#4a5270" title="No aplica en banca, seguros o REITs — se usa ROE" />
           : co.roic != null && <Metric label="ROIC" value={(co.roicWarn ? '⚠ ' : '') + co.roic.toFixed(1) + '%'} color={co.roicWarn ? '#fb923c' : '#8090a8'} title={co.roicWarn ? 'ROIC muy elevado — posible bajo capital contable por recompras o intangibles. Comparar con peers.' : undefined} />}
-        {co.cagr != null && <Metric label="CAGR div" value={(co.cagrWarn ? '⚠ ' : '') + co.cagr.toFixed(1) + '%'} color={co.cagrWarn ? '#fb923c' : '#8090a8'} title={co.cagrWarn ? 'CAGR muy elevado — posible base de comparación baja o dato atípico' : undefined} />}
+        {co.cagr != null && <Metric label="CAGR div" value={co.cagrWarn ? '⚠ atípico' : co.cagr.toFixed(1) + '%'} color={co.cagrWarn ? '#fb923c' : '#8090a8'} title={co.cagrWarn ? 'CAGR no fiable (>50%) — base de comparación baja o recuperación tras un recorte (p.ej. post-COVID). Neutralizado en el Score.' : undefined} />}
       </div>
       </div>
+
+      {/* Por qué está en zona de compra (visible en móvil y escritorio) */}
+      {buyReason && (
+        <div style={{ marginTop: 6, fontSize: 11, lineHeight: 1.45, display: 'flex', gap: 6, alignItems: 'baseline' }}>
+          <span style={{ color: '#34d399', flexShrink: 0 }}>●</span>
+          <span style={{ color: '#86efac' }}><span style={{ fontWeight: 700, color: '#34d399' }}>Zona de compra:</span> {buyReason}</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -290,9 +305,10 @@ function Comparator({ companies, destWHT, onClose }) {
 }
 
 // ── Componente principal ───────────────────────────────────────────────────
-export default function ScreenerClient({ companies = [], isPremium = false, sectors = [], destWHT = 19, followed = [], isAuthed = false }) {
+export default function ScreenerClient({ companies = [], isPremium = false, sectors = [], destWHT = 19, followed = [], isAuthed = false, initial = null, hueco = null }) {
   const followedSet = useMemo(() => new Set(followed), [followed])
-  const [filters, setFilters] = useState(INIT)
+  const [filters, setFilters] = useState(initial ? { ...INIT, ...initial } : INIT)
+  const [showHueco, setShowHueco] = useState(!!hueco)
   const [search, setSearch]   = useState('')
   const [sortKey, setSortKey] = useState('score')
   const [mode, setMode] = useState('calidad')
@@ -429,19 +445,33 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
         <p style={{ fontSize: 12, color: '#3a4260' }}>{companies.length.toLocaleString('es-ES')} empresas de 43 mercados</p>
       </div>
 
+      {/* Banner: viene del detector de huecos de la cartera */}
+      {showHueco && hueco && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>🧩</span>
+          <p style={{ flex: 1, fontSize: 12.5, color: '#c8d0e0', lineHeight: 1.5 }}>
+            Para complementar tu cartera: <span style={{ fontWeight: 700, color: '#a5b4fc' }}>{hueco}</span>.
+            <Link href="/cartera" style={{ color: '#818cf8', textDecoration: 'none', marginLeft: 6 }}>← Volver a la cartera</Link>
+          </p>
+          <button onClick={() => { setShowHueco(false); clearAll() }} title="Quitar filtros" style={{ background: 'none', border: 'none', color: '#4a5270', cursor: 'pointer', fontSize: 18, lineHeight: 1, flexShrink: 0 }}>×</button>
+        </div>
+      )}
+
       {/* Modo de ranking: Calidad DGI ↔ Renta DGI */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-        {[
-          { m: 'calidad', l: '⭐ Calidad DGI', d: 'Ordena por calidad del negocio y el dividendo (Score DGI).' },
-          { m: 'renta',   l: '🏦 Renta DGI',   d: 'Prioriza el yield neto y la rapidez de recuperación de la inversión.' },
-        ].map(o => (
-          <button key={o.m} onClick={() => switchMode(o.m)} title={o.d} style={{
-            fontSize: 13, padding: '9px 16px', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit',
-            border: '1px solid ' + (mode === o.m ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.08)'),
-            background: mode === o.m ? 'rgba(52,211,153,0.14)' : 'transparent',
-            color: mode === o.m ? '#34d399' : '#4a5270', fontWeight: mode === o.m ? 800 : 500,
-          }}>{o.l}</button>
-        ))}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {MODES.map(o => (
+            <button key={o.m} onClick={() => switchMode(o.m)} title={o.d} style={{
+              fontSize: 13, padding: '9px 16px', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit',
+              border: '1px solid ' + (mode === o.m ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.08)'),
+              background: mode === o.m ? 'rgba(52,211,153,0.14)' : 'transparent',
+              color: mode === o.m ? '#34d399' : '#4a5270', fontWeight: mode === o.m ? 800 : 500,
+            }}>{o.l}</button>
+          ))}
+        </div>
+        <p style={{ fontSize: 11.5, color: '#4a5270', marginTop: 7, lineHeight: 1.5 }}>
+          {MODES.find(o => o.m === mode)?.d}
+        </p>
       </div>
 
       {/* Buscador + ordenación */}
@@ -558,7 +588,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
           {pageRows.map((co, i) => (
             <CompanyCard key={`${co.t}-${i}`} co={co} rank={i + 1} destWHT={destWHT} sortKey={sortKey}
               selected={selected.includes(co.t)} onSelect={toggleSelect} canSelect={selected.length < 4}
-              following={followedSet.has(co.t)} isAuthed={isAuthed} />
+              following={followedSet.has(co.t)} isAuthed={isAuthed} isPremium={isPremium} />
           ))}
           {visible < sorted.length && (
             <div style={{ textAlign: 'center', marginTop: 16 }}>
@@ -605,6 +635,7 @@ const GUIDE = [
     ['💎 Calidad del dividendo', 'Mide la solidez y sostenibilidad del dividendo (0–10): payout, deuda/EBITDA, CAGR del dividendo, racha de años subiéndolo y yield neto tras retenciones. Un número alto = dividendo fiable y con margen para seguir creciendo.'],
   ]},
   { group: 'Valoración', items: [
+    ['● Zona de compra', 'Línea verde bajo la tarjeta que explica por qué la empresa cotiza atractiva: yield por encima de su media histórica (calculada con el dividendo y el precio de los últimos años), descuento sobre el valor intrínseco, cercanía a su mínimo de 52 semanas, mejora de beneficios esperada (PER previsto por debajo del actual) o regla 10/10. Solo aparece cuando hay señal real de infravaloración.'],
     ['Margen de seguridad (MoS)', 'Diferencia entre el valor intrínseco estimado (DCF sector-aware) y el precio actual. Positivo (verde) = cotiza por debajo de su valor → potencialmente barata. Negativo (rojo) = cotiza por encima → cara.'],
     ['PER', 'Precio / Beneficio por acción. Cuántos años de beneficio actual cuesta la empresa. Más bajo suele ser más barato.'],
     ['EV/EBITDA', 'Valor de empresa (incluida la deuda) sobre el beneficio operativo bruto. Útil para comparar empresas con distinto nivel de deuda.'],

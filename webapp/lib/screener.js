@@ -50,6 +50,11 @@ const FADE_YEARS    = 10   // años hasta converger a la terminal
 export const CAGR_UNRELIABLE = 50
 export const MOS_UNRELIABLE   = 500
 
+// Yield mínimo para tratar a una empresa como candidata DGI evaluable. Por
+// debajo (p.ej. NVDA ~0,02%) el dividendo es testimonial: no es DGI y no debe
+// puntuar ni rankear como calidad aunque el negocio sea excelente.
+export const MIN_DGI_YIELD = 0.3
+
 // Factor acumulado de crecimiento del dividendo hasta el inicio del año `i` (0-based).
 function divGrowthFactor(growthPct, i) {
   const g0 = Math.min(growthPct, CAGR_CAP)
@@ -131,9 +136,11 @@ const SECTOR_KEY = { banco: 'banco', aseguradora: 'aseguradora', reit: 'reit', b
 
 export function computeScore(f, type) {
   if (!f) return null
-  // Sin dividendo no es una empresa DGI evaluable → sin Score DGI
+  // Sin dividendo (o testimonial, < MIN_DGI_YIELD) no es una empresa DGI
+  // evaluable → sin Score DGI. Evita que negocios excelentes con yield ínfimo
+  // (p.ej. NVDA) suban al top de "Calidad DGI".
   const yld = yieldPct(f)
-  if (yld == null || yld <= 0) return null
+  if (yld == null || yld < MIN_DGI_YIELD) return null
   const key = SECTOR_KEY[type] || 'general'
   const metrics = (SECTORS[key] || SECTORS.general).metrics
   const vals = mapValues(f)
@@ -180,9 +187,9 @@ function mapValues(f) {
 
 // Calidad del dividendo 💎 — portado de calcDivQuality del HTML original.
 export function calcDivQuality(f, type, country, destWHT = 19) {
-  // Sin dividendo no hay calidad del dividendo que medir
+  // Sin dividendo (o testimonial, < MIN_DGI_YIELD) no hay calidad que medir
   const yldGate = yieldPct(f)
-  if (yldGate == null || yldGate <= 0) return null
+  if (yldGate == null || yldGate < MIN_DGI_YIELD) return null
 
   let score = 0, weight = 0
   const isReitLike = type === 'reit' || type === 'bdc'
@@ -231,6 +238,55 @@ export function rule1010(f) {
 export function mosUnreliable(f) {
   const m = marginSafety(f)
   return m != null && Math.abs(m) > MOS_UNRELIABLE
+}
+
+// Explicación accionable de POR QUÉ una empresa está en zona de compra.
+// Recibe el shape `co` ya construido (no la fila cruda). Devuelve un string
+// corto (1-2 razones) o null si no hay señal de valoración. Se apoya solo en
+// datos del screener (MoS vs valor intrínseco, rango 52 sem, PER forward, 10/10)
+// para ser coherente con los insights de la ficha (lib/company-detail.js).
+export function buyZoneReason(co) {
+  if (!co || co.mosUnreliable) return null
+  const reasons = []
+  const mos = co.mos
+  let yieldSignal = false
+
+  // 1. Yield por encima de su propia media histórica (señal DGI principal):
+  //    un yield bastante por encima de su media suele indicar precio deprimido.
+  //    yield_avg / yield_avg_years se precalculan desde div_history + daily_prices.
+  if (co.y != null && co.yieldAvg != null && co.yieldAvg > 0 && (co.yieldAvgYears ?? 0) >= 3) {
+    const pct = (co.y / co.yieldAvg - 1) * 100
+    if (pct >= 10) {
+      reasons.push(`yield un ${pct.toFixed(0)}% sobre su media de ${co.yieldAvgYears} años`)
+      yieldSignal = true
+    }
+  }
+  // 2. Descuento sobre el valor intrínseco
+  if (mos != null) {
+    if (mos >= 30)      reasons.push(`${mos.toFixed(0)}% por debajo de su valor intrínseco`)
+    else if (mos >= 10) reasons.push(`${mos.toFixed(0)}% de margen de seguridad`)
+    else if (mos >= 0)  reasons.push('cotiza por debajo de su valor intrínseco')
+  }
+  // 3. Cerca de mínimos de 52 semanas
+  if (co.lo52 != null && co.px != null && co.lo52 > 0) {
+    const distLow = (co.px - co.lo52) / co.px * 100
+    if (distLow >= 0 && distLow < 10) reasons.push(`a ${distLow.toFixed(0)}% de su mínimo anual`)
+  }
+  // 4. Mejora de beneficios esperada (PER forward claramente por debajo del actual)
+  if (co.peFwd != null && co.pe != null && co.peFwd > 0 && co.pe > 0 && co.peFwd < co.pe * 0.9) {
+    reasons.push(`PER previsto ${co.peFwd.toFixed(0)} < actual ${co.pe.toFixed(0)}`)
+  }
+  // 5. Equilibrio renta + crecimiento
+  if (co.r1010) reasons.push('cumple la regla 10/10')
+
+  // Solo cuenta como "zona de compra" si hay infravaloración real: yield sobre su
+  // media, descuento sobre valor intrínseco o cercanía a mínimos (la 10/10 o un
+  // PER bajo por sí solos no bastan).
+  const hasValuation = yieldSignal || (mos != null && mos >= 0) || reasons.some(r => r.includes('mínimo'))
+  if (!hasValuation || !reasons.length) return null
+
+  const text = reasons.slice(0, 2).join(' · ')
+  return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
 // La clasificación DGI por racha (Reyes/Aristócratas/Aspirantes) vive en

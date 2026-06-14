@@ -5,6 +5,7 @@
     { "path": "/api/update-exchange-rates",    "schedule": "0 7 * * 1-5" },
     { "path": "/api/recovery-email",           "schedule": "0 10 * * *"  },
     { "path": "/api/check-watchlist-alerts",   "schedule": "30 16 * * 1-5" },
-    { "path": "/api/check-watchlist-alerts",   "schedule": "30 22 * * 1-5" }
+    { "path": "/api/check-watchlist-alerts",   "schedule": "30 22 * * 1-5" },
+    { "path": "/api/cron/snapshot-scores",     "schedule": "0 6 * * 1"   }
   ]
 }

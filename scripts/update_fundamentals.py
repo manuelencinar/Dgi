@@ -279,6 +279,43 @@ def compute_div_cagr5(div_history):
     except Exception:
         return None
 
+
+def compute_yield_avg(div_history, price_hist, max_years=5, min_years=2):
+    """Yield histórico medio: media del yield anual (dps_año / precio_medio_del_año)
+    de los hasta `max_years` últimos años COMPLETOS con datos. Devuelve
+    (yield_avg_%, nº_años) o (None, None). dps (div_history) y precio (price_hist)
+    deben estar en la misma divisa — ambos vienen de Yahoo, así que coinciden.
+    Alimenta la señal "zona de compra" del screener (yield sobre su media)."""
+    if not div_history or price_hist is None or len(price_hist) == 0:
+        return None, None
+    try:
+        closes = price_hist["Close"] if "Close" in price_hist else price_hist
+        closes = closes.dropna()
+        if len(closes) == 0:
+            return None, None
+        by_year = closes.groupby(closes.index.year).mean()
+        cur_year = datetime.now().year
+        per_year = []
+        for h in div_history:
+            if not h or h.get("isPartial"):
+                continue
+            year, dps = h.get("year"), h.get("dps")
+            if year is None or dps is None or dps <= 0 or year >= cur_year:
+                continue
+            if year not in by_year.index:
+                continue
+            px = float(by_year[year])
+            if px > 0:
+                per_year.append((int(year), dps / px * 100))
+        per_year.sort(reverse=True)
+        recent = per_year[:max_years]
+        if len(recent) < min_years:
+            return None, None
+        avg = sum(y for _, y in recent) / len(recent)
+        return safe2(avg), len(recent)
+    except Exception:
+        return None, None
+
 # ── Derived metrics ────────────────────────────────────────────────────────
 
 ROIC_HIGH_WARNING = ("ROIC muy elevado — puede reflejar estructura de capital con bajo patrimonio "
@@ -897,6 +934,11 @@ def fetch_ticker(sym):
                     print(f"  [{sym}] dividendos vía Twelve Data ({len(div_history)} años)")
         div_streak  = compute_streak(div_history)
         div_cagr5   = compute_div_cagr5(div_history)
+        # Yield histórico medio (para la señal "zona de compra" del screener).
+        # auto_adjust=False → Close real (ajustado solo por splits, igual que los
+        # dividendos de Yahoo) para que dps/precio quede en la misma base.
+        price_hist = safe_df(lambda: tk.history(period="6y", auto_adjust=False))
+        yield_avg_v, yield_avg_years_v = compute_yield_avg(div_history, price_hist)
         dividend_events = build_dividend_events(div_series)   # fechas ex históricas
         next_ex_date    = ts_to_date(info.get("exDividendDate"))
         next_pay_date   = ts_to_date(info.get("dividendDate"))
@@ -1038,6 +1080,8 @@ def fetch_ticker(sym):
             "no_dividend_confirmed_at": no_dividend_confirmed_at,
             "div_streak":       div_streak,
             "div_cagr5":        div_cagr5,
+            "yield_avg":        yield_avg_v,
+            "yield_avg_years":  yield_avg_years_v,
             "div_history":      div_history,
             "dividend_events":  dividend_events,
             "next_ex_date":     next_ex_date,
