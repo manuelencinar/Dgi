@@ -97,7 +97,9 @@ export default function PriceAlertButton({ ticker, name, currency = 'EUR', price
                   ))}
                 </div>
               )}
-              {!isPremium && <p style={{ fontSize: 10, color: '#fbbf24' }}>El aviso por email es Premium. Lo verás igualmente en la campana de notificaciones.</p>}
+              <div style={{ fontSize: 10.5, color: '#5a6480', lineHeight: 1.5, background: 'rgba(255,255,255,0.03)', borderRadius: 7, padding: '8px 10px' }}>
+                Cómo funciona: cuando el precio baje a tu objetivo te avisamos en la <span style={{ color: '#a5b4fc', fontWeight: 700 }}>🔔 campana de notificaciones</span> (dentro de la app){isPremium ? <> y por <span style={{ color: '#34d399', fontWeight: 700 }}>email</span></> : <> — el aviso por <span style={{ color: '#fbbf24', fontWeight: 700 }}>email es Premium</span></>}. Comprobamos los precios tras el cierre de cada mercado. La empresa se añade a tu watchlist.
+              </div>
               {err && <p style={{ fontSize: 11, color: '#f87171' }}>{err}</p>}
               <button type="submit" disabled={saving} style={{ padding: '9px 16px', background: 'rgba(251,191,36,0.9)', border: 'none', borderRadius: 8, color: '#0d1424', fontWeight: 800, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
                 {saving ? 'Guardando…' : 'Activar aviso'}

@@ -250,6 +250,17 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
     return options.filter(o => !have.has(o[1]) && (o[0].toLowerCase().includes(q) || o[1].toLowerCase().includes(q))).slice(0, 8)
   }, [search, options, companies])
 
+  // Peers del MISMO SECTOR de las empresas ya cargadas → sugerencias de un clic
+  // (p.ej. desde Munich Re sugiere Hannover Re, AXA, Allianz…).
+  const sectorByTicker = useMemo(() => Object.fromEntries(options.map(o => [o[1], o[2]])), [options])
+  const peers = useMemo(() => {
+    if (!companies.length) return []
+    const have = new Set(companies.map(c => c.ticker))
+    const secs = new Set(companies.map(c => sectorByTicker[c.ticker]).filter(Boolean))
+    if (!secs.size) return []
+    return options.filter(o => o[2] && secs.has(o[2]) && !have.has(o[1])).slice(0, 12)
+  }, [companies, options, sectorByTicker])
+
   // Proyecciones (recalcular cuando cambian empresas o importe)
   const projections = useMemo(() => companies.map(co => {
     if (co.yield == null || co.yield <= 0) return null
@@ -329,6 +340,23 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
         ) : (
           <p style={{ fontSize: 12, color: '#4a5270' }}>{isPremium ? 'Máximo 5 empresas alcanzado.' : 'Límite gratuito de 2 empresas.'}</p>
         )}
+
+        {/* Peers del sector — añadir de un clic */}
+        {companies.length < maxCompanies && peers.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 6 }}>Compara con otras de su sector:</p>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {peers.map(o => (
+                <button key={o[1]} onClick={() => addCompany(o[1])} title={`${o[0]} · ${o[2]}`} style={{
+                  fontSize: 12, padding: '5px 11px', borderRadius: 16, cursor: 'pointer', fontFamily: 'inherit',
+                  border: '1px solid rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.08)', color: '#a5b4fc',
+                  maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>+ {o[0]}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {showUpgrade && !isPremium && (
           <div style={{ marginTop: 12, padding: '12px 16px', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <p style={{ fontSize: 12, color: '#c8d0e0' }}>Compara hasta 5 empresas con radar y proyecciones completas con Premium.</p>
