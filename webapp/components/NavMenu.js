@@ -14,6 +14,7 @@ const PRIMARY = [
 ]
 // Secundarios — accesibles desde sus flujos; en móvil aparecen apagados
 const SECONDARY = [
+  { href: '/construir-cartera', label: 'Construir cartera' },
   { href: '/comparador', label: 'Comparador' },
   { href: '/etfs',       label: 'ETFs y Fondos' },
 ]

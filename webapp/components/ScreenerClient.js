@@ -446,6 +446,9 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', marginBottom: 4 }}>Screener DGI</h1>
         <p style={{ fontSize: 12, color: '#3a4260' }}>{companies.length.toLocaleString('es-ES')} empresas de 43 mercados</p>
+        <Link href="/construir-cartera" style={{ display: 'inline-block', marginTop: 10, fontSize: 12.5, fontWeight: 700, color: '#a5b4fc', textDecoration: 'none', padding: '8px 14px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 9 }}>
+          🧭 ¿No sabes por dónde empezar? Construye tu cartera desde cero →
+        </Link>
       </div>
 
       {/* Banner: viene del detector de huecos de la cartera */}
