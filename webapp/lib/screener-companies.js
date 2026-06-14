@@ -8,7 +8,7 @@ import { computeScore, resolveRoic, marginSafety, yieldPct, deriveMoat, moatEros
 // Lee company_fundamentals (campos escalares) paginado — PostgREST limita a 1000 filas.
 async function fetchFundamentals() {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
-  const FIELDS = 'ticker, current_price, dps, pays_dividend, div_streak, div_cagr5, payout_fcf, payout_eps, fcf_cagr5, debt_ebitda, net_debt_ebitda, interest_coverage, roic, roic_reported, roic_tangible, roe, operating_margin, gross_margin, revenue_cagr5, pe_trailing, pe_forward, ev_ebitda, market_cap_m, intrinsic_value, week52_high, week52_low, yield_avg, yield_avg_years, sector, industry, country, bonus_total, improving_flag, bonus_roic_trend, bonus_margin_trend, bonus_debt_reduction, bonus_fcf_growth'
+  const FIELDS = 'ticker, current_price, dps, pays_dividend, div_streak, div_cagr5, payout_fcf, payout_eps, fcf_cagr5, debt_ebitda, net_debt_ebitda, interest_coverage, roic, roic_reported, roic_tangible, roe, operating_margin, gross_margin, revenue_cagr5, pe_trailing, pe_forward, ev_ebitda, market_cap_m, intrinsic_value, week52_high, week52_low, yield_avg, yield_avg_years, ma200, sector, industry, country, bonus_total, improving_flag, bonus_roic_trend, bonus_margin_trend, bonus_debt_reduction, bonus_fcf_growth'
   const all = []
   try {
     for (let from = 0; ; from += 1000) {
@@ -68,6 +68,7 @@ export async function buildScreenerCompanies(destWHT, baseDict) {
       lo52:   f.week52_low != null ? Number(f.week52_low) : null,
       yieldAvg:      f.yield_avg != null ? Number(f.yield_avg) : null,
       yieldAvgYears: f.yield_avg_years != null ? Number(f.yield_avg_years) : null,
+      ma200:  f.ma200 != null ? Number(f.ma200) : null,
       moat:   deriveMoat(f),
       ero,
       dq:     calcDivQuality(f, t, country, destWHT),

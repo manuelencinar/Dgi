@@ -536,7 +536,7 @@ function ValuationBar({ price, iv }) {
 
 // ── DCF / valuation section ────────────────────────────────────────────────
 
-function DCFSection({ dcf, ticker, isPremium }) {
+function DCFSection({ dcf, ticker, isPremium, ma200 }) {
   const [expanded, setExpanded] = useState(false)
   const [mode, setMode]         = useState('auto')
   const [custom, setCustom]     = useState(null)
@@ -628,6 +628,21 @@ function DCFSection({ dcf, ticker, isPremium }) {
           )}
 
           <ValuationBar price={dcf.price} iv={iv} />
+
+          {(() => {
+            if (ma200 == null || !(dcf.price > 0) || !(ma200 > 0)) return null
+            const dist = (dcf.price - ma200) / ma200 * 100
+            const below = dist <= 0
+            const col = below ? '#34d399' : '#8090a8'
+            return (
+              <div title="Media móvil de 200 sesiones — referencia técnica de tendencia/entrada" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+                <span style={{ fontSize: 11, color: '#8090a8' }}>Media móvil 200 sesiones (MM200) · {fmt(ma200)}</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: col }}>
+                  {Math.abs(dist).toFixed(1)}% <span style={{ fontWeight: 600, color: '#4a5270' }}>{below ? 'por debajo' : 'por encima'}</span>
+                </span>
+              </div>
+            )
+          })()}
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, gap: 8, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 3 }}>
@@ -1183,7 +1198,7 @@ export default function CompanyDetailPage(props) {
     peTrailing, peForward, evEbitda, eps, payout, mktCap, priceToBook,
     divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, originWHT, peHistory,
     paysDividend, noDividendAt,
-    healthPanel, moat, dcf, projection, dgiScore, scoreHistory, insights, roicData, badges, buybacks,
+    healthPanel, moat, dcf, projection, dgiScore, scoreHistory, insights, roicData, badges, buybacks, ma200,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
     manualImport, finScalars, initialTab,
   } = props
@@ -1457,7 +1472,7 @@ export default function CompanyDetailPage(props) {
         {/* ═══ VALORACIÓN ═══ */}
         {tab === 'valoracion' && (
           <div style={{ display: 'grid', gap: 16 }}>
-            <DCFSection dcf={dcf} ticker={ticker} isPremium={isPremium} />
+            <DCFSection dcf={dcf} ticker={ticker} isPremium={isPremium} ma200={ma200} />
             <MultiplesGrid valuationMetrics={valuationMetrics} isPremium={isPremium} />
             <Card>
               <SectionTitle>Posición en el rango anual</SectionTitle>

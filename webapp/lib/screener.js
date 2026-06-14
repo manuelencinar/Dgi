@@ -285,6 +285,11 @@ export function buyZoneReason(co) {
   if (!strong) return null
 
   // Razones secundarias (solo acompañan a una señal fuerte; nunca disparan solas).
+  // MM200: el precio por debajo de la media de 200 sesiones confirma la entrada.
+  if (reasons.length < 2 && co.ma200 != null && co.px != null && co.ma200 > 0 && co.px < co.ma200) {
+    const below = (co.ma200 - co.px) / co.ma200 * 100
+    if (below >= 5) reasons.push(`${below.toFixed(0)}% por debajo de su MM200`)
+  }
   if (reasons.length < 2 && co.peFwd != null && co.pe != null && co.peFwd > 0 && co.pe > 0 && co.peFwd < co.pe * 0.85) {
     reasons.push(`PER previsto ${co.peFwd.toFixed(0)} < actual ${co.pe.toFixed(0)}`)
   }

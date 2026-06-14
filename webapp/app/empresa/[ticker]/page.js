@@ -367,6 +367,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         projection={projection}
         dgiScore={dgiScore}
         scoreHistory={scoreHistory}
+        ma200={detail?.ma200 ?? null}
         insights={insights}
         badges={badges}
         buybacks={buybacks}

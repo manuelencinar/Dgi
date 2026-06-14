@@ -280,6 +280,20 @@ def compute_div_cagr5(div_history):
         return None
 
 
+def compute_ma200(price_hist):
+    """Media móvil de las últimas 200 sesiones (cierres). None si faltan datos.
+    Indicador técnico: el precio por debajo de la MM200 sugiere zona de entrada."""
+    if price_hist is None or len(price_hist) == 0:
+        return None
+    try:
+        closes = (price_hist["Close"] if "Close" in price_hist else price_hist).dropna()
+        if len(closes) < 200:
+            return None
+        return safe2(float(closes.tail(200).mean()))
+    except Exception:
+        return None
+
+
 def compute_yield_avg(div_history, price_hist, max_years=5, min_years=2):
     """Yield histórico medio: media del yield anual (dps_año / precio_medio_del_año)
     de los hasta `max_years` últimos años COMPLETOS con datos. Devuelve
@@ -939,6 +953,7 @@ def fetch_ticker(sym):
         # dividendos de Yahoo) para que dps/precio quede en la misma base.
         price_hist = safe_df(lambda: tk.history(period="6y", auto_adjust=False))
         yield_avg_v, yield_avg_years_v = compute_yield_avg(div_history, price_hist)
+        ma200_v = compute_ma200(price_hist)
         dividend_events = build_dividend_events(div_series)   # fechas ex históricas
         next_ex_date    = ts_to_date(info.get("exDividendDate"))
         next_pay_date   = ts_to_date(info.get("dividendDate"))
@@ -1082,6 +1097,7 @@ def fetch_ticker(sym):
             "div_cagr5":        div_cagr5,
             "yield_avg":        yield_avg_v,
             "yield_avg_years":  yield_avg_years_v,
+            "ma200":            ma200_v,
             "div_history":      div_history,
             "dividend_events":  dividend_events,
             "next_ex_date":     next_ex_date,

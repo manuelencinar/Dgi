@@ -35,7 +35,7 @@ function slim(co) {
     sc: co.sc, y: co.y, cagr: co.cagr, pays: co.pays, ero: co.ero,
     mos: co.mos, mosUnreliable: co.mosUnreliable, lo52: co.lo52,
     peFwd: co.peFwd, pe: co.pe, r1010: co.r1010,
-    yieldAvg: co.yieldAvg, yieldAvgYears: co.yieldAvgYears,
+    yieldAvg: co.yieldAvg, yieldAvgYears: co.yieldAvgYears, ma200: co.ma200,
   }
 }
 

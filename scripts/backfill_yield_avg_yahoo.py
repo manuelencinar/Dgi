@@ -64,6 +64,19 @@ def fetch_fundamentals(sb, ticker=None):
     return rows
 
 
+def compute_ma200(closes):
+    """Media móvil de las últimas 200 sesiones. None si <200 cierres."""
+    if closes is None:
+        return None
+    try:
+        closes = closes.dropna()
+        if len(closes) < 200:
+            return None
+        return round(float(closes.tail(200).mean()), 2)
+    except Exception:
+        return None
+
+
 def compute_yield_avg(div_history, closes):
     """closes: pandas Series de cierres con DatetimeIndex. Igual que en update_fundamentals.py."""
     if not div_history or closes is None or len(closes) == 0:
@@ -125,12 +138,11 @@ def main():
     sb = get_supabase(env)
 
     rows = fetch_fundamentals(sb, args.ticker)
-    div_map = {r["ticker"]: r.get("div_history") for r in rows
-               if isinstance(r.get("div_history"), list) and r["div_history"]}
-    tickers = list(div_map.keys())
+    div_map = {r["ticker"]: (r.get("div_history") if isinstance(r.get("div_history"), list) else None) for r in rows}
+    tickers = [r["ticker"] for r in rows]
     if args.limit:
         tickers = tickers[:args.limit]
-    print(f"Empresas con div_history: {len(tickers)}", "(MODO ESCRITURA)" if args.write else "(dry-run)")
+    print(f"Empresas: {len(tickers)}", "(MODO ESCRITURA)" if args.write else "(dry-run)")
 
     updates = []
     skipped = 0
@@ -150,13 +162,17 @@ def main():
             continue
         for t in batch:
             closes = closes_for(raw, t)
-            avg, yrs = compute_yield_avg(div_map[t], closes)
-            if avg is None:
+            avg, yrs = compute_yield_avg(div_map.get(t), closes)
+            ma200 = compute_ma200(closes)
+            if avg is None and ma200 is None:
                 skipped += 1
                 continue
-            updates.append({"ticker": t, "yield_avg": avg, "yield_avg_years": yrs})
+            upd = {"ticker": t}
+            if avg is not None:   upd["yield_avg"] = avg; upd["yield_avg_years"] = yrs
+            if ma200 is not None: upd["ma200"] = ma200
+            updates.append(upd)
             if t in sample:
-                print(f"  {t}: media {avg}% ({yrs} años)")
+                print(f"  {t}: yield_avg={avg}% ({yrs}a) · MM200={ma200}")
         print(f"  lote {i//BATCH+1}/{(len(tickers)-1)//BATCH+1} - acumulado {len(updates)} calculados")
 
     print(f"Calculados: {len(updates)} | sin datos suficientes: {skipped}")
