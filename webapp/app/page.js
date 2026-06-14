@@ -232,11 +232,11 @@ function ForWhom() {
 
 // Mockup de tarjetas del screener filtrado para el bloque "Así se usa".
 const MOCKUP_SCREENER = [
-  { flag: '🇺🇸', name: 'Johnson & Johnson', t: 'JNJ',  score: 8.4, yield: 3.1, reason: 'yield +12% sobre su media de 5 años' },
-  { flag: '🇬🇧', name: 'British American Tobacco', t: 'BATS', score: 7.3, yield: 7.8, reason: 'yield +22% sobre su media de 5 años' },
-  { flag: '🇩🇪', name: 'Münchener Rück', t: 'MUV2', score: 7.9, yield: 3.7, reason: 'a 6% de su mínimo anual' },
-  { flag: '🇪🇸', name: 'Inditex',          t: 'ITX',  score: 7.6, yield: 3.4, reason: '15% de margen de seguridad' },
-  { flag: '🇺🇸', name: 'PepsiCo',          t: 'PEP',  score: 8.1, yield: 3.4, reason: 'cumple la regla 10/10' },
+  { flag: '🇺🇸', name: 'Johnson & Johnson', t: 'JNJ',  score: 8.4, yield: 3.1, reason: 'yield +26% sobre su media de 5 años' },
+  { flag: '🇬🇧', name: 'British American Tobacco', t: 'BATS', score: 7.3, yield: 7.8, reason: 'yield +31% sobre su media de 5 años' },
+  { flag: '🇩🇪', name: 'Münchener Rück', t: 'MUV2', score: 7.9, yield: 3.7, reason: 'a 4% de su mínimo anual' },
+  { flag: '🇪🇸', name: 'Inditex',          t: 'ITX',  score: 7.6, yield: 3.4, reason: '27% de margen de seguridad' },
+  { flag: '🇺🇸', name: 'PepsiCo',          t: 'PEP',  score: 8.1, yield: 3.4, reason: '36% por debajo de su valor intrínseco' },
 ]
 
 function scColor(s) { return s >= 8 ? '#34d399' : s >= 6.5 ? '#86efac' : '#fbbf24' }

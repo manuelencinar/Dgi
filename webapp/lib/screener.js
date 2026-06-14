@@ -245,45 +245,50 @@ export function mosUnreliable(f) {
 // corto (1-2 razones) o null si no hay señal de valoración. Se apoya solo en
 // datos del screener (MoS vs valor intrínseco, rango 52 sem, PER forward, 10/10)
 // para ser coherente con los insights de la ficha (lib/company-detail.js).
+// Umbrales EXIGENTES: solo se marca "zona de compra" ante oportunidades claras.
+// Las señales de valoración por separado son comunes (~10% cada una); la
+// selectividad real viene del gate de CALIDAD: "barata Y buena" es lo raro.
+const BZ_MIN_SCORE   = 6.5   // calidad clara — barato + flojo es trampa de valor, no oportunidad
+const BZ_YIELD_OVER  = 25    // yield ≥25% sobre su media histórica
+const BZ_MOS_STRONG  = 35    // descuento amplio sobre el valor intrínseco
+const BZ_MOS_MIN     = 25    // margen de seguridad mínimo para contar
+const BZ_LOW_DIST    = 6     // a <6% de su mínimo de 52 semanas
+
 export function buyZoneReason(co) {
   if (!co || co.mosUnreliable) return null
+  // Calidad clara: evita trampas de valor (barato pero flojo no es oportunidad).
+  if (co.sc == null || co.sc < BZ_MIN_SCORE) return null
+  // Foso erosionándose → no es una oportunidad clara aunque esté barata.
+  if (co.ero) return null
+
   const reasons = []
   const mos = co.mos
-  let yieldSignal = false
+  let strong = false   // ¿hay al menos una señal de infravaloración CLARA?
 
-  // 1. Yield por encima de su propia media histórica (señal DGI principal):
-  //    un yield bastante por encima de su media suele indicar precio deprimido.
-  //    yield_avg / yield_avg_years se precalculan desde div_history + daily_prices.
+  // 1. Yield muy por encima de su propia media histórica (precio deprimido).
   if (co.y != null && co.yieldAvg != null && co.yieldAvg > 0 && (co.yieldAvgYears ?? 0) >= 3) {
     const pct = (co.y / co.yieldAvg - 1) * 100
-    if (pct >= 10) {
-      reasons.push(`yield un ${pct.toFixed(0)}% sobre su media de ${co.yieldAvgYears} años`)
-      yieldSignal = true
-    }
+    if (pct >= BZ_YIELD_OVER) { reasons.push(`yield un ${pct.toFixed(0)}% sobre su media de ${co.yieldAvgYears} años`); strong = true }
   }
-  // 2. Descuento sobre el valor intrínseco
+  // 2. Descuento claro sobre el valor intrínseco (margen de seguridad ≥20%).
   if (mos != null) {
-    if (mos >= 30)      reasons.push(`${mos.toFixed(0)}% por debajo de su valor intrínseco`)
-    else if (mos >= 10) reasons.push(`${mos.toFixed(0)}% de margen de seguridad`)
-    else if (mos >= 0)  reasons.push('cotiza por debajo de su valor intrínseco')
+    if (mos >= BZ_MOS_STRONG)   { reasons.push(`${mos.toFixed(0)}% por debajo de su valor intrínseco`); strong = true }
+    else if (mos >= BZ_MOS_MIN) { reasons.push(`${mos.toFixed(0)}% de margen de seguridad`); strong = true }
   }
-  // 3. Cerca de mínimos de 52 semanas
+  // 3. Muy cerca de su mínimo de 52 semanas.
   if (co.lo52 != null && co.px != null && co.lo52 > 0) {
     const distLow = (co.px - co.lo52) / co.px * 100
-    if (distLow >= 0 && distLow < 10) reasons.push(`a ${distLow.toFixed(0)}% de su mínimo anual`)
+    if (distLow >= 0 && distLow < BZ_LOW_DIST) { reasons.push(`a ${distLow.toFixed(0)}% de su mínimo anual`); strong = true }
   }
-  // 4. Mejora de beneficios esperada (PER forward claramente por debajo del actual)
-  if (co.peFwd != null && co.pe != null && co.peFwd > 0 && co.pe > 0 && co.peFwd < co.pe * 0.9) {
+
+  // Sin al menos UNA señal fuerte de infravaloración → no es zona de compra.
+  if (!strong) return null
+
+  // Razones secundarias (solo acompañan a una señal fuerte; nunca disparan solas).
+  if (reasons.length < 2 && co.peFwd != null && co.pe != null && co.peFwd > 0 && co.pe > 0 && co.peFwd < co.pe * 0.85) {
     reasons.push(`PER previsto ${co.peFwd.toFixed(0)} < actual ${co.pe.toFixed(0)}`)
   }
-  // 5. Equilibrio renta + crecimiento
-  if (co.r1010) reasons.push('cumple la regla 10/10')
-
-  // Solo cuenta como "zona de compra" si hay infravaloración real: yield sobre su
-  // media, descuento sobre valor intrínseco o cercanía a mínimos (la 10/10 o un
-  // PER bajo por sí solos no bastan).
-  const hasValuation = yieldSignal || (mos != null && mos >= 0) || reasons.some(r => r.includes('mínimo'))
-  if (!hasValuation || !reasons.length) return null
+  if (reasons.length < 2 && co.r1010) reasons.push('cumple la regla 10/10')
 
   const text = reasons.slice(0, 2).join(' · ')
   return text.charAt(0).toUpperCase() + text.slice(1)
