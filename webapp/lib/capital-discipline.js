@@ -63,13 +63,22 @@ export function computeCDR(cashflow, balance) {
 
   // Variación de deuda neta en ~4 años
   const ndYears = Object.keys(f.netDebt).map(Number).sort((a, b) => a - b)
-  let netDebtChange = null, netDebtChangePct = null
+  let netDebtChange = null, netDebtChangePct = null, netDebtEnd = null
   if (ndYears.length >= 2) {
     const yE = ndYears[ndYears.length - 1], yS = ndYears[Math.max(0, ndYears.length - 5)]
     const nE = f.netDebt[yE], nS = f.netDebt[yS]
+    netDebtEnd = nE
     netDebtChange = nE - nS
     netDebtChangePct = nS !== 0 ? (nE - nS) / Math.abs(nS) * 100 : null
   }
+
+  // ¿La distribución se está financiando REALMENTE con deuda? Solo si la deuda
+  // neta termina en positivo (deuda real, no caja neta), ha crecido y de forma
+  // significativa. Evita el falso positivo de empresas que recompran con caja
+  // (p.ej. Munich Re): distribución > FCF pero sin aumentar deuda → NO es problema.
+  const debtRising = netDebtEnd != null && netDebtEnd > 0 &&
+    netDebtChange != null && netDebtChange > 0 &&
+    netDebtChangePct != null && netDebtChangePct > 15
 
   // Flag de disciplina de capital
   const allCdr = byYear.map(r => r.cdr).filter(v => v != null)
@@ -83,5 +92,5 @@ export function computeCDR(cashflow, balance) {
     else flag = 'good'
   }
 
-  return { byYear, last4, avg4y, yearsAbove100, consec2, cdrLastYear, lastYear, netDebtChange, netDebtChangePct, flag }
+  return { byYear, last4, avg4y, yearsAbove100, consec2, cdrLastYear, lastYear, netDebtChange, netDebtChangePct, netDebtEnd, debtRising, flag }
 }

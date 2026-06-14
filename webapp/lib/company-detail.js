@@ -445,10 +445,21 @@ export function buildInsights(data, streak, cagr, dcf) {
   }
 
   // ── DISCIPLINA DE CAPITAL (CDR) ────────────────────────────────────────
-  const cdr = computeCDR(data.cashflow_annual, data.balance_sheet_annual)
+  // Se OMITE en banca/seguros/REITs: el FCF y "deuda neta = deuda − caja" no son
+  // representativos en esos balances → el CDR sería ruido (p.ej. Munich Re).
+  const _sec = (data.sector || '').toLowerCase(), _ind = (data.industry || '').toLowerCase()
+  const isFinOrReit = _sec.includes('financ') || _sec.includes('real estate') ||
+    _ind.includes('bank') || _ind.includes('insur') || _ind.includes('reit') ||
+    _ind.includes('capital market') || _ind.includes('mortgage') || _ind.includes('asset manage')
+  const cdr = isFinOrReit ? null : computeCDR(data.cashflow_annual, data.balance_sheet_annual)
   if (cdr) {
-    if (cdr.yearsAbove100 >= 3) {
-      add('dividendo', 'negative', 'Distribución sistemáticamente superior al FCF en los últimos años — el dividendo puede estar siendo financiado con deuda. Revisar sostenibilidad antes de invertir.')
+    const sysAbove = cdr.yearsAbove100 >= 3 || (cdr.avg4y != null && cdr.avg4y > 110)
+    if (sysAbove && cdr.debtRising) {
+      // El caso que SÍ merece aviso: la deuda neta crece año a año.
+      add('dividendo', 'negative', 'Aunque el payout del dividendo es contenido, la distribución total (dividendos + recompras + adquisiciones) supera al FCF y la deuda neta crece año a año — vigilar la disciplina de capital.')
+    } else if (sysAbove) {
+      // Distribución > FCF pero SIN aumentar deuda → recompras con caja: no es problema.
+      add('dividendo', 'neutral', 'La distribución total supera al FCF por las recompras de acciones, pero se financia con caja y la deuda neta no aumenta — no compromete el dividendo.')
     } else if (cdr.cdrLastYear != null && cdr.cdrLastYear > 100 && cdr.lastYear) {
       add('dividendo', 'neutral', `La distribución total (dividendos + recompras + adquisiciones) superó el FCF generado en ${cdr.lastYear.year} — revisar evolución de la deuda.`)
     }

@@ -84,7 +84,6 @@ const ROIC_T = {
 function row(key, name, color, diagSet, valueStr, note) {
   return { key, name, color: COL[color], diagnosis: DIAG[diagSet][color], value: valueStr, note: note || null }
 }
-const degrade = c => c === 'green' ? 'yellow' : c === 'yellow' ? 'red' : c
 
 export function buildSemaforo(detail, sectorKey, paysDividend) {
   const roic = resolveRoic(detail)
@@ -126,10 +125,19 @@ export function buildSemaforo(detail, sectorKey, paysDividend) {
     const [t1, t2] = permissive ? [80, 95] : [60, 80]
     let c = classify(payout, t1, t2, false)
     let note = null
-    const cdr = computeCDR(detail.cashflow_annual, detail.balance_sheet_annual)
-    if (cdr?.avg4y != null) {
-      if (cdr.avg4y > 110) { c = 'red'; note = 'Distribución sistemáticamente superior al FCF — dividendo financiado parcialmente con deuda' }
-      else if (cdr.avg4y >= 90) { c = degrade(c); note = 'Distribución en el límite del FCF generado' }
+    // Disciplina de capital (CDR = distribución total / FCF). NO penaliza el color
+    // del dividendo (eso depende del payout): que la distribución supere el FCF por
+    // RECOMPRAS no compromete el dividendo si no se financia con deuda. Solo añade
+    // una nota. Se OMITE en banca/seguros/REITs: ahí el FCF y "deuda neta = deuda −
+    // caja" no son representativos (balance lleno de inversiones/pasivos técnicos),
+    // así que el CDR sería ruido (p.ej. Munich Re).
+    if (!isBankish && sectorKey !== 'reit') {
+      const cdr = computeCDR(detail.cashflow_annual, detail.balance_sheet_annual)
+      if (cdr?.avg4y != null && cdr.avg4y > 100) {
+        note = cdr.debtRising
+          ? 'El payout del dividendo es cómodo, pero la deuda neta crece: las recompras/adquisiciones superan el FCF (ver insights)'
+          : 'Distribuye por encima del FCF vía recompras, sin aumentar la deuda neta (se financia con caja) — no compromete el dividendo'
+      }
     }
     rows.push(row('dividendo', 'Dividendo', c, 'dividendo', fmtVal(payout, '%'), note))
   }

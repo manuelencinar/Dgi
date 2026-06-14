@@ -40,6 +40,10 @@ export default function OnboardingClient({ initial, hasPositions }) {
 
   const skip = async () => { setBusy(true); await save('skip'); router.push('/mercados') }
 
+  // Engancha el wizard: marca el onboarding como completado (para que el proxy no
+  // devuelva al usuario aquí) y lleva a "construir cartera desde cero".
+  const goWizard = async () => { setBusy(true); await save('complete', { via: 'wizard' }); router.push('/construir-cartera') }
+
   const goStep2 = async () => {
     setBusy(true)
     await save('save', { step: 2 })
@@ -82,6 +86,11 @@ export default function OnboardingClient({ initial, hasPositions }) {
           <button onClick={() => router.push(selected ? `/cartera/nueva-posicion?ticker=${encodeURIComponent(selected)}` : '/mercados')} style={{ ...BTN, width: '100%', maxWidth: 320 }}>
             {selected ? `Añadir ${nameOf(selected)} a mi cartera →` : 'Explorar mercados →'}
           </button>
+          <div style={{ marginTop: 12 }}>
+            <button onClick={() => router.push('/construir-cartera')} style={{ fontSize: 13, fontWeight: 700, padding: '11px 18px', borderRadius: 9, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.1)', color: '#a5b4fc', cursor: 'pointer', fontFamily: 'inherit', width: '100%', maxWidth: 320 }}>
+              🧭 Construir mi cartera desde cero →
+            </button>
+          </div>
           <div style={{ marginTop: 14 }}>
             <button onClick={() => router.push('/mercados')} style={{ background: 'none', border: 'none', color: '#4a5270', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>Ir al inicio</button>
           </div>
@@ -215,6 +224,13 @@ export default function OnboardingClient({ initial, hasPositions }) {
             <button onClick={finish} disabled={busy || !selected} style={{ ...BTN, width: '100%', opacity: (busy || !selected) ? 0.5 : 1 }}>
               {busy ? 'Terminando…' : 'Añadir al índice y terminar →'}
             </button>
+
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+              <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 8 }}>¿No sabes qué comprar? Deja que te propongamos una cartera entera.</p>
+              <button onClick={goWizard} disabled={busy} style={{ fontSize: 13, fontWeight: 700, padding: '10px 18px', borderRadius: 9, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.1)', color: '#a5b4fc', cursor: 'pointer', fontFamily: 'inherit' }}>
+                🧭 Construir mi cartera desde cero →
+              </button>
+            </div>
           </div>
         </div>
       )}

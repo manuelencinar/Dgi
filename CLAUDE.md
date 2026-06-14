@@ -111,6 +111,11 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - Ficha de empresa: sección verde "Bonificaciones por tendencia positiva" al pie del Score DGI (solo si hay bonificaciones).
 - Screener: badge "↑ Mejorando" (bonus_total ≥ 0.5) / "↗ Tendencia +" (≥ 0.3) junto a racha/foso, y filtro premium "Empresas mejorando" con selector (ROIC/Márgenes/Deuda/FCF). El screener lee `bonus_total`/`improving_flag` de la BD (los rellena el script Python).
 
+## Disciplina de capital (CDR) — `lib/capital-discipline.js`
+- CDR = (dividendos + recompras + adquisiciones) / FCF. Que la distribución total supere el FCF suele venir de **recompras**, NO de un dividendo insostenible.
+- **Regla clave**: solo es problema si se financia con DEUDA. `computeCDR` expone `debtRising` (deuda neta termina positiva, ha crecido y >15% en ~4a) para distinguir "recompras con caja" (Munich Re) de "distribución financiada con deuda".
+- **No baja la nota** del dividendo (se quitó la penalización del CDR en `dgi-score.js`) ni el color del gauge de salud (`health.js`, depende solo del payout). El aviso vive en los **insights** (`company-detail.js`): negativo solo si `debtRising`; si no, nota neutra "recompras con caja, no compromete el dividendo".
+
 ## ETFs y fondos (módulo cartera)
 - Tabla `funds` (SQL en `webapp/sql/funds.sql`, con 14 ETFs DGI precargados) + `positions.asset_type` (stock/etf/fund).
 - API `/api/fund/lookup` (POST busca/descarga de Yahoo, resuelve ISIN→símbolo vía endpoint de búsqueda; PUT alta manual). Lógica compartida en `lib/fund-fetch.js` (`fetchAndStoreFund`).
@@ -160,7 +165,9 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - Página `/construir-cartera` (`app/construir-cartera/page.js` server → `components/ConstruirCarteraClient.js`). Wizard de 4 preguntas (aportación mensual, yield objetivo, horizonte, sectores a excluir) → plan de ~12 empresas DGI **ordenadas por prioridad de entrada** con asignación mensual sugerida (%, €/mes).
 - Lógica en `lib/build-plan.js` (`buildPortfolioPlan(companies, {monthly, targetYield, horizon, excludeSectors, destWHT, size})`, pura, corre en cliente): filtra calidad (`sc≥6`, sin erosión, paga dividendo), puntúa con pesos yield/calidad/crecimiento según horizonte, **bonus de entrada si está en zona de compra** (`buyZoneReason`), diversifica (máx 3/sector), ordena entrada-ahora primero. Reúsa `buyZoneReason`/`netYield`.
 - **Motor de empresas compartido**: `lib/screener-companies.js` (`buildScreenerCompanies(destWHT, dict)`) — extraído del screener; lo usan `/screener` y `/construir-cartera` (DRY). La página del wizard adelgaza el `co` a los campos necesarios antes de pasarlo al cliente.
-- **Freemium**: free ve las 5 primeras del plan; el resto + la asignación completa tras CTA Premium. Entradas: CTA en la cabecera del screener + "Construir cartera" en `NavMenu` (secundario).
+- **Freemium**: free ve las 5 primeras del plan; el resto + la asignación completa tras CTA Premium. Entradas: CTA en la cabecera del screener + "Construir cartera" en `NavMenu` (secundario) + CTA en el onboarding.
+- **Persistencia**: respuestas y estado (plan generado) guardados en `localStorage` (`construir-cartera:v1`) → al volver, recupera el último plan.
+- **Seguir el plan**: botón "👁 Seguir el plan en mi watchlist" añade todas las empresas (en orden de prioridad) vía `/api/watchlist`; respeta el límite freemium (10) con mensaje + CTA Premium.
 
 ## Score DGI histórico (#6)
 - Tabla `score_history` (SQL en `webapp/sql/score_history.sql`, RLS lectura pública): `ticker`, `date`, `score` (= `dgiScore.total`), `prepenalty`, `sector_type`, `unique(ticker,date)`. **Sin backfill posible** — acumula desde el primer run.
@@ -185,6 +192,7 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 ## Onboarding (`/onboarding`)
 - `app/onboarding/page.js`, `components/OnboardingClient.js`, API `app/api/onboarding/route.js`. 3 pasos tras el registro.
 - `proxy.js` redirige a `/onboarding` si `onboarding_completed=false`. SQL en `webapp/sql/onboarding.sql`.
+- **Enganche al wizard #11**: en el paso "primera empresa" y en la pantalla final hay un CTA "🧭 Construir mi cartera desde cero →" a `/construir-cartera`. El handler `goWizard` llama antes a `save('complete')` para marcar el onboarding completado (si no, el proxy devolvería al usuario al onboarding al navegar).
 
 ## Flujo de cancelación con retención (`/cancelar`)
 - `app/cancelar/page.js`, `components/CancelarClient.js`. APIs en `app/api/cancelar/{pausa,descuento,feedback,confirmar}/route.js` + `app/api/recovery-email/route.js`.

@@ -1,8 +1,10 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { getCountry } from '@/lib/helpers'
 import { buildPortfolioPlan } from '@/lib/build-plan'
+
+const STORE_KEY = 'construir-cartera:v1'
 
 const CUR_SYM = { EUR: '€', USD: '$', GBP: '£', GBp: 'p', JPY: '¥', CHF: 'Fr', CAD: 'C$', AUD: 'A$', SEK: 'kr', DKK: 'kr', NOK: 'kr', HKD: 'HK$', SGD: 'S$' }
 function fmtPx(v, cur) {
@@ -32,6 +34,27 @@ export default function ConstruirCarteraClient({ companies = [], sectors = [], d
   const [exclude, setExclude] = useState([])
 
   const effMonthly = customMonthly !== '' ? Number(customMonthly) || 0 : monthly
+
+  // Persistencia: recuperar respuestas (y plan) del último uso.
+  const [loaded, setLoaded] = useState(false)
+  useEffect(() => {
+    try {
+      const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null')
+      if (s) {
+        if (typeof s.monthly === 'number') setMonthly(s.monthly)
+        if (typeof s.customMonthly === 'string') setCustomMonthly(s.customMonthly)
+        if (typeof s.targetYield === 'number') setTargetYield(s.targetYield)
+        if (s.horizon) setHorizon(s.horizon)
+        if (Array.isArray(s.exclude)) setExclude(s.exclude)
+        if (s.generated) setStep('result')
+      }
+    } catch {}
+    setLoaded(true)
+  }, [])
+  useEffect(() => {
+    if (!loaded) return
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({ monthly, customMonthly, targetYield, horizon, exclude, generated: step === 'result' })) } catch {}
+  }, [loaded, monthly, customMonthly, targetYield, horizon, exclude, step])
 
   const result = useMemo(() => {
     if (step !== 'result') return null
@@ -147,6 +170,24 @@ function Result({ result, isPremium, isAuthed, freeVisible, onRestart }) {
   const visible = isPremium ? plan : plan.slice(0, freeVisible)
   const hidden = plan.length - visible.length
 
+  const [add, setAdd] = useState({ status: 'idle', added: 0, msg: null })
+  const addToWatchlist = async () => {
+    if (!isAuthed) { window.location.href = `/login?next=${encodeURIComponent('/construir-cartera')}&msg=watchlist`; return }
+    if (!plan.length || add.status === 'adding') return
+    setAdd({ status: 'adding', added: 0, msg: null })
+    let added = 0
+    // En orden de prioridad: si el free toca el límite (10), entran primero las mejores.
+    for (const p of plan) {
+      try {
+        const res = await fetch('/api/watchlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticker: p.ticker }) })
+        if (res.status === 403) { setAdd({ status: 'limit', added, msg: `Añadidas ${added}. Límite del plan gratuito (10) — Premium para seguir todas.` }); return }
+        if (res.ok) added++
+      } catch {}
+      setAdd(a => ({ ...a, added }))
+    }
+    setAdd({ status: 'done', added, msg: null })
+  }
+
   return (
     <div>
       {/* Cabecera de métricas */}
@@ -163,6 +204,27 @@ function Result({ result, isPremium, isAuthed, freeVisible, onRestart }) {
         <MetaCard label="Yield medio" value={`${meta.avgYield.toFixed(1)}%`} color="#34d399" />
         <MetaCard label="Yield neto" value={`${meta.avgYieldNet.toFixed(1)}%`} color="#86efac" />
         <MetaCard label="Sectores" value={meta.sectors} />
+      </div>
+
+      {/* Acción: seguir el plan en la watchlist */}
+      <div style={{ marginBottom: 14 }}>
+        {add.status === 'done' ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.3)', borderRadius: 10, color: '#34d399', fontSize: 13, fontWeight: 700 }}>
+            ✓ {add.added} {add.added === 1 ? 'empresa añadida' : 'empresas añadidas'} a tu watchlist
+          </div>
+        ) : add.status === 'limit' ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: '11px 14px', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 10 }}>
+            <span style={{ fontSize: 12.5, color: '#fbbf24' }}>{add.msg}</span>
+            <Link href="/pricing" style={{ ...primaryBtn, textDecoration: 'none', flexShrink: 0 }}>Ver Premium →</Link>
+          </div>
+        ) : (
+          <button onClick={addToWatchlist} disabled={add.status === 'adding'} style={{
+            width: '100%', padding: '12px', borderRadius: 10, cursor: add.status === 'adding' ? 'default' : 'pointer', fontFamily: 'inherit',
+            border: '1px solid rgba(99,102,241,0.35)', background: 'rgba(99,102,241,0.12)', color: '#a5b4fc', fontSize: 13.5, fontWeight: 700,
+          }}>
+            {add.status === 'adding' ? `Añadiendo… (${add.added})` : `👁 Seguir el plan en mi watchlist (${plan.length})`}
+          </button>
+        )}
       </div>
 
       {/* Lista del plan */}
