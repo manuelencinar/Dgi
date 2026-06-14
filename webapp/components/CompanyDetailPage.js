@@ -974,6 +974,11 @@ function DGIScoreCard({ dgiScore, isPremium, compact, scoreHistory }) {
         <span style={{ fontSize: 36, fontWeight: 900, color: scoreColor(dgiScore.total), lineHeight: 1 }}>{dgiScore.total ?? '—'}</span>
       </div>
       {!dgiScore.hasData && <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 12 }}>Datos insuficientes para calcular el score.</p>}
+      <p style={{ fontSize: 11.5, color: '#5a6480', lineHeight: 1.55, marginBottom: 4 }}>
+        Nota de <strong style={{ color: '#8090a8' }}>0 a 10</strong> que combina, ponderadas según el sector ({dgiScore.sectorLabel || 'general'}), cuatro dimensiones —
+        <strong style={{ color: '#8090a8' }}> calidad del negocio, dividendo, solidez financiera y valoración</strong>. Se le restan penalizaciones por riesgos y se suman bonificaciones por tendencias positivas.
+        <span style={{ color: '#3a4260' }}> Verde ≥6,5 · amarillo 5–6,5 · rojo &lt;5.</span>
+      </p>
       <ScoreHistory data={scoreHistory} />
 
       <div style={{ display: 'grid', gap: 16 }}>

@@ -1,8 +1,8 @@
-import { redirect } from 'next/navigation'
 import { createClient as authClient } from '@/lib/supabase/server'
 import { createClient as serviceClient } from '@supabase/supabase-js'
 import PublicNav from '@/components/PublicNav'
 import WatchlistClient from '@/components/WatchlistClient'
+import LoggedOutPreview from '@/components/LoggedOutPreview'
 import { buildWatchlistRows, sortByProximity } from '@/lib/watchlist-enrich'
 
 export const dynamic = 'force-dynamic'
@@ -17,7 +17,14 @@ const ADMIN_EMAIL = 'vayaebookk@gmail.com'
 export default async function WatchlistPage() {
   const supabase = await authClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login?next=/watchlist&msg=watchlist')
+  if (!user) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#080b14' }}>
+        <PublicNav active="/watchlist" />
+        <LoggedOutPreview variant="watchlist" />
+      </div>
+    )
+  }
 
   // Plan del usuario
   let isPremium = user.email === ADMIN_EMAIL

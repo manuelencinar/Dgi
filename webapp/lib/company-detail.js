@@ -207,6 +207,33 @@ export function computeMoat(data, streak) {
   const revCagr = n(data.revenue_cagr5)
   const rg      = data.revenue_growth_yoy != null ? n(data.revenue_growth_yoy) : null
 
+  // ── Foso sector-aware para BANCA/SEGUROS ──────────────────────────────────
+  // El ROIC y los márgenes brutos no aplican a financieras (de ahí el falso
+  // "Sin foso" pese a un Score alto). Se mide con ROE sostenido, escala y racha.
+  const _sec = (data.sector || '').toLowerCase(), _ind = (data.industry || '').toLowerCase()
+  const isBankIns = _sec.includes('financ') || _ind.includes('bank') || _ind.includes('insur') ||
+    _ind.includes('capital market') || _ind.includes('asset manage')
+  if (isBankIns) {
+    const roe = n(data.roe), mcap = n(data.market_cap_m)
+    let s = 0; const sig = [], neg = []
+    if (roe != null) {
+      if      (roe > 18) { s += 40; sig.push(`ROE excepcional (${roe.toFixed(1)}%) — rentabilidad muy superior a su coste de capital`) }
+      else if (roe > 13) { s += 28; sig.push(`ROE sólido (${roe.toFixed(1)}%)`) }
+      else if (roe > 10) { s += 15 }
+      else if (roe < 8)    neg.push(`ROE bajo (${roe.toFixed(1)}%) — rentabilidad insuficiente para el sector`)
+    }
+    if (streak >= 20) { s += 20; sig.push(`${streak} años consecutivos aumentando el dividendo`) }
+    else if (streak >= 10) s += 10
+    if (mcap != null) {
+      if      (mcap > 50000) { s += 20; sig.push('Gran escala y diversificación del riesgo') }
+      else if (mcap > 10000)   s += 10
+    }
+    const w = s >= 60 ? 'wide' : s >= 35 ? 'narrow' : 'none'
+    const lbl = w === 'wide' ? 'Foso ancho' : w === 'narrow' ? 'Foso estrecho'
+      : 'Foso difícil de medir con métricas estándar en banca/seguros'
+    return { width: w, label: lbl, signals: sig, negative: neg, sources: w !== 'none' ? ['ROE sostenido', 'Escala y marca'] : [], score: s }
+  }
+
   let score = 0
   const signals  = []
   const negative = []

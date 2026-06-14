@@ -1,8 +1,8 @@
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/PublicNav'
 import CarteraNav from '@/components/cartera/CarteraNav'
 import PortfolioPage from '@/components/cartera/PortfolioPage'
+import LoggedOutPreview from '@/components/LoggedOutPreview'
 
 const ADMIN_EMAIL = 'vayaebookk@gmail.com'
 
@@ -29,7 +29,14 @@ export const dynamic = 'force-dynamic'
 
 export default async function CarteraPage() {
   const plan = await getUserPlan()
-  if (!plan) redirect('/login')
+  if (!plan) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#080b14' }}>
+        <PublicNav active="/cartera" />
+        <LoggedOutPreview variant="cartera" />
+      </div>
+    )
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>

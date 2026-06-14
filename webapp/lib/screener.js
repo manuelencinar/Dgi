@@ -167,13 +167,14 @@ export function computeScore(f, type) {
 // Mapea company_fundamentals a los ids de métricas de SECTORS.
 function mapValues(f) {
   const roic = resolveRoic(f)
-  // Un payout de 0 significa que no reparte, no que sea excelente → se ignora
-  const payoutFcf = num(f.payout_fcf), payoutEps = num(f.payout_eps)
+  // Un payout de 0 significa que no reparte, no que sea excelente → se ignora.
+  // payout_fcf saneado (evita artefactos como Infosys 5422% que hundirían la nota).
+  const payoutEps = num(f.payout_eps)
   return {
     yield_pct:    yieldPct(f),
     div_years:    num(f.div_streak),
     div_cagr5:    num(f.div_cagr5),
-    payout_fcf:   payoutFcf != null && payoutFcf > 0 ? payoutFcf : null,
+    payout_fcf:   sanePayout(f),
     payout_earn:  payoutEps != null && payoutEps > 0 ? payoutEps : null,
     fcf_cagr5:    num(f.fcf_cagr5),
     debt_ebitda:  num(f.net_debt_ebitda) ?? num(f.debt_ebitda),
@@ -234,10 +235,20 @@ export function rule1010(f) {
   return (y + c) >= 10
 }
 
-// MoS no fiable: valor intrínseco disparado (|margen de seguridad| > 500%).
+// MoS no fiable: valor intrínseco disparado (|MoS| > 500%) o DCF roto cuando el
+// valor intrínseco es una fracción ínfima del precio (MoS < −90%, p.ej. Infosys
+// con iv en unidades/divisa erróneas).
 export function mosUnreliable(f) {
   const m = marginSafety(f)
-  return m != null && Math.abs(m) > MOS_UNRELIABLE
+  return m != null && (Math.abs(m) > MOS_UNRELIABLE || m < -90)
+}
+
+// Payout "saneado": evita artefactos cuando la base de FCF es ínfima y el payout
+// sale absurdo (p.ej. Infosys 5422%). Prefiere FCF si es razonable; si no, EPS;
+// null si ambos lo son. Un payout >300% no es real.
+export function sanePayout(f) {
+  const sane = v => (v != null && !isNaN(v) && v > 0 && v <= 300) ? Number(v) : null
+  return sane(f?.payout_fcf) ?? sane(f?.payout_eps)
 }
 
 // Explicación accionable de POR QUÉ una empresa está en zona de compra.

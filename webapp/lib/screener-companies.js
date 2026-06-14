@@ -3,7 +3,7 @@
 // (`/screener`) y el wizard "construir cartera" (`/construir-cartera`).
 import { createClient } from '@supabase/supabase-js'
 import { getContinent } from '@/lib/helpers'
-import { computeScore, resolveRoic, marginSafety, yieldPct, deriveMoat, moatErosion, calcDivQuality, rule1010 } from '@/lib/screener'
+import { computeScore, resolveRoic, marginSafety, yieldPct, deriveMoat, moatErosion, calcDivQuality, rule1010, sanePayout } from '@/lib/screener'
 
 // Lee company_fundamentals (campos escalares) paginado — PostgREST limita a 1000 filas.
 async function fetchFundamentals() {
@@ -55,7 +55,7 @@ export async function buildScreenerCompanies(destWHT, baseDict) {
       streak: f.div_streak != null ? Number(f.div_streak) : null,
       cagr:   rawCagr != null ? Math.min(rawCagr, 50) : null,
       cagrWarn: rawCagr != null && rawCagr > 50,
-      payout: f.payout_fcf != null ? Number(f.payout_fcf) : (f.payout_eps != null ? Number(f.payout_eps) : null),
+      payout: sanePayout(f),
       debt:   f.net_debt_ebitda != null ? Number(f.net_debt_ebitda) : (f.debt_ebitda != null ? Number(f.debt_ebitda) : null),
       icov:   f.interest_coverage != null ? Number(f.interest_coverage) : null,
       opm:    f.operating_margin != null ? Number(f.operating_margin) : null,
