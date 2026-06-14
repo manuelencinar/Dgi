@@ -268,13 +268,22 @@ def compute_streak(div_history):
     n = len(full)
     if n < 2:
         return 0
+    dps = [h["dps"] for h in full]
     streak = 0
     for i in range(n - 1, 0, -1):
-        cur, prev = full[i]["dps"], full[i - 1]["dps"]
-        prev2 = full[i - 2]["dps"] if i >= 2 else None
+        cur, prev = dps[i], dps[i - 1]
+        prev2 = dps[i - 2] if i >= 2 else None
+        rec1 = dps[i + 1] if i + 1 <= n - 1 else None   # año(s) más recientes (ya en la racha)
+        rec2 = dps[i + 2] if i + 2 <= n - 1 else None
         increased = cur > prev * 1.001
-        timing_ok = prev2 is not None and cur >= prev2 and prev > prev2 * 1.001
-        if increased or timing_ok:
+        # Pico→normalización (KO 2001→2002): el previo fue un pico y seguimos por
+        # encima del nivel de hace 2 años.
+        spike_norm = prev2 is not None and cur >= prev2 and prev > prev2 * 1.001
+        # Caída puntual que se RECUPERA en ≤2 años por encima del nivel previo
+        # (pagadores mensuales / timing, p.ej. Realty Income 2024→2025). Un
+        # recorte real recupera tarde o nunca → rompe.
+        recovered = (rec1 is not None and rec1 > prev * 1.001) or (rec2 is not None and rec2 > prev * 1.001)
+        if increased or spike_norm or recovered:
             streak += 1
         else:
             break

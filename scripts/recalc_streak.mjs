@@ -27,13 +27,17 @@ function computeStreak(divHistory) {
     .sort((a, b) => a.year - b.year)
   const n = full.length
   if (n < 2) return 0
+  const dps = full.map(h => Number(h.dps))
   let s = 0
   for (let i = n - 1; i >= 1; i--) {
-    const cur = Number(full[i].dps), prev = Number(full[i - 1].dps)
-    const prev2 = i >= 2 ? Number(full[i - 2].dps) : null
+    const cur = dps[i], prev = dps[i - 1]
+    const prev2 = i >= 2 ? dps[i - 2] : null
+    const rec1 = i + 1 <= n - 1 ? dps[i + 1] : null
+    const rec2 = i + 2 <= n - 1 ? dps[i + 2] : null
     const increased = cur > prev * 1.001
-    const timingOk = prev2 != null && cur >= prev2 && prev > prev2 * 1.001
-    if (increased || timingOk) s++
+    const spikeNorm = prev2 != null && cur >= prev2 && prev > prev2 * 1.001          // pico→normalización (KO)
+    const recovered = (rec1 != null && rec1 > prev * 1.001) || (rec2 != null && rec2 > prev * 1.001) // caída que recupera ≤2a (O)
+    if (increased || spikeNorm || recovered) s++
     else break
   }
   return s
