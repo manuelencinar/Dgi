@@ -296,6 +296,40 @@ def compute_ma200(price_hist):
         return None
 
 
+def compute_capex_cfo(cf_stmt):
+    """CapEx / Flujo de Caja Operativo (%) medio para el ranking de compounding.
+    CFO = FCF + |CapEx| (ambos del cashflow). Bajo = negocio capital-light."""
+    if not cf_stmt:
+        return None
+    data = cf_stmt.get("data") or {}
+    def row(keys):
+        for k in keys:
+            if isinstance(data.get(k), list):
+                return data[k]
+        return None
+    capex = row(["Capex", "Capital Expenditure", "Capital Expenditure Reported"])
+    fcf   = row(["Flujo de Caja Libre", "Free Cash Flow"])
+    if not capex or not fcf:
+        return None
+    sum_capex = sum_cfo = 0.0
+    for i in range(min(len(capex), len(fcf))):
+        try:
+            cap = abs(float(capex[i])) if capex[i] is not None else None
+            f = float(fcf[i]) if fcf[i] is not None else None
+        except (TypeError, ValueError):
+            continue
+        if cap is None or f is None:
+            continue
+        cfo = f + cap
+        if cfo <= 0:
+            continue
+        sum_capex += cap
+        sum_cfo += cfo
+    if sum_cfo <= 0:
+        return None
+    return safe2(sum_capex / sum_cfo * 100)
+
+
 def compute_shares_reduction(is_stmt, bs_stmt):
     """Reducción de acciones en circulación desde el año base (~2022) para el
     ranking de Caníbales. + = ha reducido acciones (recompra neta real, en número
@@ -1124,6 +1158,7 @@ def fetch_ticker(sym):
         bonus_fields = compute_bonus_fields(is_annual, bs_annual, cf_annual, div_history,
                                             info.get("sector"), info.get("industry"))
         shares_pct, shares_base = compute_shares_reduction(is_annual, bs_annual)
+        capex_cfo = compute_capex_cfo(cf_annual)
 
         return sanitize({
             "ticker":           sym,
@@ -1189,6 +1224,7 @@ def fetch_ticker(sym):
             "tax_rate_effective":        roic_full["tax_rate_effective"],
             "shares_reduced_pct":         shares_pct,
             "shares_base_year":           shares_base,
+            "capex_cfo_pct":              capex_cfo,
             "income_statement_annual":    is_annual,
             "balance_sheet_annual":       bs_annual,
             "cashflow_annual":            cf_annual,

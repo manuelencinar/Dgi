@@ -5,6 +5,7 @@ import Link from 'next/link'
 const TABS = [
   { href: '/aristocratas', label: '👑 Aristócratas', key: 'aristocratas' },
   { href: '/canibales',    label: '🦈 Caníbales',    key: 'canibales' },
+  { href: '/compounders',  label: '⚙️ Compounding',  key: 'compounders' },
 ]
 
 export default function RankingsTabs({ active }) {

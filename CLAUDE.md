@@ -175,7 +175,8 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - UI: sparkline `components/empresa/ScoreHistory.js` (SVG puro) en la `DGIScoreCard` detallada de la ficha. Muestra delta y nº de semanas; estado "acumulando histórico" si <2 puntos. `scoreHistory` se lee en `app/empresa/[ticker]/page.js` y baja por `CompanyDetailPage`.
 
 ## Rankings (sección) — Aristócratas + Caníbales
-- Sección "Rankings" en el nav (antes "Aristócratas"): entrada `NavMenu` → `/aristocratas`. Pestañas compartidas `components/RankingsTabs.js` (👑 Aristócratas ↔ 🦈 Caníbales) al pie de ambas páginas; la página de caníbales pasa `active="/aristocratas"` a `PublicNav` para resaltar "Rankings".
+- Sección "Rankings" en el nav (antes "Aristócratas"): entrada `NavMenu` → `/aristocratas`. Pestañas compartidas `components/RankingsTabs.js` (👑 Aristócratas · 🦈 Caníbales · ⚙️ Compounding) al pie de las páginas; las páginas de caníbales/compounders pasan `active="/aristocratas"` a `PublicNav` para resaltar "Rankings".
+- **Máquinas de Compounding** (`/compounders` → `app/compounders/page.js` + `components/CompoundersClient.js`): ranking de negocios capital-light de alta calidad. Gates: ROIC 18–100% (resolveRoic), CapEx/CFO ≤20% (`capex_cfo_pct`), crecimiento ingresos 4–60% (`revenue_cagr5`); topes para descartar artefactos de bajo capital. Excluye banca/seguros/REIT. Orden por ROIC desc. Free top 10. Headline ROIC + CapEx/CFO + Ingresos 5a + Score.
 - **Caníbales de acciones** (`/canibales` → `app/canibales/page.js` + `components/CanibalesClient.js`): ranking por **% de acciones reducidas desde ~2022** (recompra neta real en NÚMERO de acciones). Mismo diseño que aristócratas. Free ve top 10, premium completo. Datos: columna `shares_reduced_pct` (+ `shares_base_year`) calculada desde "Diluted Average Shares" (ver `recalc_shares.mjs` / `compute_shares_reduction`). Caps de artefactos: descarta |>50%| (splits).
 
 ## Clasificación DGI por racha (Reyes/Aristócratas/Aspirantes)
@@ -229,7 +230,7 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 ## SQL pendiente de ejecutar en Supabase (todos los ficheros en webapp/sql/)
 Estado: el usuario ya ejecutó admin.sql, valuation_columns.sql, roic_columns.sql, cartera_parte3.sql, funds.sql, recurring.sql, fx_and_settings.sql y daily_prices.sql.
 Ficheros que el usuario PUEDE tener aún pendientes de ejecutar (confirmar en entorno nuevo):
-`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), `yield_avg.sql` (columnas yield_avg + yield_avg_years), `ma200.sql` (columna MM200), `score_history.sql` (tabla de histórico del Score DGI), `canibales.sql` (columnas shares_reduced_pct + shares_base_year), y el ALTER de `premium_until` en user_settings.
+`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), `yield_avg.sql` (columnas yield_avg + yield_avg_years), `ma200.sql` (columna MM200), `score_history.sql` (tabla de histórico del Score DGI), `canibales.sql` (columnas shares_reduced_pct + shares_base_year), `compounders.sql` (columna capex_cfo_pct), y el ALTER de `premium_until` en user_settings.
 Si se monta un entorno nuevo, ejecutar en orden todos los ficheros de webapp/sql/.
 
 ## Planes y precios
@@ -277,7 +278,7 @@ nopat, invested_capital, invested_capital_tangible, tax_rate_effective,
 intrinsic_value, valuation_warning, growth_input_used,
 roe, roa, operating_margin, net_margin, gross_margin,
 current_ratio, revenue_cagr5, pe_trailing, pe_forward, ev_ebitda, beta,
-week52_high, week52_low, yield_avg, yield_avg_years, ma200, shares_reduced_pct, shares_base_year, market_cap_m, sector, industry, country,
+week52_high, week52_low, yield_avg, yield_avg_years, ma200, shares_reduced_pct, shares_base_year, capex_cfo_pct, market_cap_m, sector, industry, country,
 income_statement_annual, balance_sheet_annual, cashflow_annual,
 income_statement_quarterly, balance_sheet_quarterly, cashflow_quarterly,
 updated_at
@@ -291,6 +292,7 @@ updated_at
 - `recalc_roic.mjs` (Node) — recalcula ROIC en BD desde los estados ya guardados (sin yfinance). `--write` para persistir.
 - `recalc_streak.mjs` (Node) — recalcula `div_streak` en BD desde `div_history` con la regla `growth > 0` (un congelamiento rompe la racha). `--write`. Ya ejecutado (561 empresas).
 - `recalc_shares.mjs` (Node) — calcula `shares_reduced_pct`/`shares_base_year` (ranking de Caníbales) desde los estados ya guardados (Diluted Average Shares), sin yfinance. Descarta artefactos (|>50%| = split). `--write`. SQL: `webapp/sql/canibales.sql`. La fuente autoritativa ongoing es `update_fundamentals.py` (`compute_shares_reduction`).
+- `recalc_capex_cfo.mjs` (Node) — calcula `capex_cfo_pct` (= CapEx/CFO medio, CFO = FCF+|CapEx|) para el ranking de Compounding, desde el cashflow ya guardado. `--write`. SQL: `webapp/sql/compounders.sql`. Ongoing: `compute_capex_cfo` en `update_fundamentals.py`.
 - `fix_stale_dividends.mjs` (Node) — script de una vez: marca como que NO reparten (dps=null, pays_dividend=false) las empresas con dividendo obsoleto (sin reparto el año anterior ni en curso según `div_history`). Sin yfinance. `--write`. Ya ejecutado (142 empresas). Mismo patrón que `recalc_roic.mjs` (createRequire desde webapp).
 - `backfill_yield_avg_yahoo.py` (Python) — backfill de **cobertura total** de `yield_avg`/`yield_avg_years`: reutiliza el `div_history` ya en BD y descarga SOLO el histórico de precios de Yahoo en bloque (`yf.download` por lotes), sin correr el pipeline completo. Misma lógica que `compute_yield_avg`. Para poblar ya sin esperar al run semanal o re-poblar periódicamente. `--write` (upsert por bloques de 500), `--limit N`, `--ticker X`. Requiere `yield_avg.sql` ejecutado. (Nota: `daily_prices` NO sirve de fuente porque solo tiene profundidad para tickers charteados — `update_prices.py --history` no está cableado.)
 
