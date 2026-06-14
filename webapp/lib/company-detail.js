@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { roicForScoring } from '@/lib/metrics'
 import { computeCDR } from '@/lib/capital-discipline'
+import { dividendTrend, dividendTrendBadges } from '@/lib/helpers'
 
 function sb() {
   return createClient(
@@ -377,6 +378,16 @@ export function buildInsights(data, streak, cagr, dcf) {
   else if (streak >= 10) add('dividendo', 'positive', `${streak} años seguidos aumentando el dividendo — Aspirante a aristócrata.`)
   else if (streak >= 5)  add('dividendo', 'neutral',  `${streak} años subiendo el dividendo — historial en construcción.`)
 
+  // Tendencia negativa: caída / congelación reciente y recortes en 10 años.
+  if (streak === 0) {
+    const tr = dividendTrend(data.divHistory)
+    if (tr) {
+      if (tr.down > 0)        add('dividendo', 'negative', `Lleva ${tr.down} ${tr.down === 1 ? 'año' : 'años'} consecutivos recortando el dividendo — tendencia contraria al DGI.`)
+      else if (tr.noRaise > 0) add('dividendo', 'negative', `El dividendo lleva ${tr.noRaise} ${tr.noRaise === 1 ? 'año' : 'años'} sin subir (congelado).`)
+      if (tr.cuts10 >= 3)      add('dividendo', 'negative', `Ha recortado el dividendo ${tr.cuts10} veces en los últimos 10 años — historial poco fiable para una estrategia de dividendo creciente.`)
+    }
+  }
+
   // ── DEUDA Y LIQUIDEZ ──────────────────────────────────────────────────
   if (nd != null && nd < 0)     add('valoracion', 'positive', `Tiene más efectivo que deuda neta — posición financiera de fortaleza.`)
 
@@ -490,6 +501,11 @@ export function computeBadges(data, streak, cagr, moat) {
   if      (streak >= 50) badges.push({ id: 'streak50', label: '👑 Rey',         color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',  title: `${streak} años consecutivos subiendo el dividendo` })
   else if (streak >= 25) badges.push({ id: 'streak25', label: '🏆 Aristócrata', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)', title: `${streak} años consecutivos subiendo el dividendo` })
   else if (streak >= 10) badges.push({ id: 'streak10', label: '⭐ Aspirante',   color: '#60a5fa', bg: 'rgba(96,165,250,0.12)',  title: `${streak} años consecutivos subiendo el dividendo` })
+
+  // Tendencia negativa del dividendo (caída / congelación / historial de recortes)
+  for (const b of dividendTrendBadges(dividendTrend(data?.divHistory))) {
+    badges.push({ id: `trend-${b.kind}`, label: `${b.emoji} ${b.label}`, color: b.color, bg: `${b.color}1a`, title: b.title })
+  }
 
   // Regla 10/10: yield + CAGR dividendo ≥ 10%
   if (data && cagr != null) {

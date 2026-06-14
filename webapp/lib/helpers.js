@@ -116,6 +116,42 @@ export function streakBadge(streak) {
   return dividendTierInfo(streak)?.emoji ?? null
 }
 
+// Tendencia RECIENTE del dividendo desde el histórico anual
+// [{year, dps, growth, isPartial}]. Detecta caída / congelación / recortes,
+// que la racha positiva (años consecutivos subiendo) no captura.
+export function dividendTrend(history) {
+  const full = (history || []).filter(h => h && !h.isPartial && h.growth != null).sort((a, b) => a.year - b.year)
+  if (full.length < 2) return null
+  const g = full.map(h => Number(h.growth))
+  let pos = 0;     for (let i = g.length - 1; i >= 0; i--) { if (g[i] > 0)  pos++;     else break }
+  let down = 0;    for (let i = g.length - 1; i >= 0; i--) { if (g[i] < 0)  down++;    else break }
+  let noRaise = 0; for (let i = g.length - 1; i >= 0; i--) { if (g[i] <= 0) noRaise++; else break }
+  const cuts10 = full.slice(-10).filter(h => Number(h.growth) < 0).length
+  return { pos, down, noRaise, cuts10, lastYear: full[full.length - 1].year, n: full.length }
+}
+
+// Badges derivadas de la tendencia: caída/congelación actual + historial de
+// recortes. Devuelve [{ kind, emoji, label, color, title }].
+export function dividendTrendBadges(trend) {
+  if (!trend) return []
+  const yrs = n => `${n} ${n === 1 ? 'año' : 'años'}`
+  const out = []
+  if (trend.pos === 0) {
+    if (trend.down > 0) {
+      out.push({ kind: 'down', emoji: '📉', label: 'Dividendo en caída', color: '#f87171',
+        title: `${yrs(trend.down)} consecutivos recortando el dividendo` })
+    } else if (trend.noRaise > 0) {
+      out.push({ kind: 'flat', emoji: '🧊', label: 'Dividendo congelado', color: '#fbbf24',
+        title: `${yrs(trend.noRaise)} sin subir el dividendo` })
+    }
+  }
+  if (trend.cuts10 >= 3) {
+    out.push({ kind: 'cuts', emoji: '⚠️', label: `${trend.cuts10} recortes en 10 años`, color: '#f87171',
+      title: `Ha recortado el dividendo ${trend.cuts10} veces en los últimos 10 años — historial poco fiable para DGI` })
+  }
+  return out
+}
+
 export function is1010(co) {
   const y = parseFloat(co.values?.yield_pct)||0
   const g = parseFloat(co.values?.div_cagr5)||0

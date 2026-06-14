@@ -13,7 +13,7 @@ import LocalPrice from '@/components/LocalPrice'
 import HealthTwoLevel, { Semaforo } from '@/components/empresa/HealthPanel'
 import CompanyNews from '@/components/news/CompanyNews'
 import { recomputeValuation } from '@/lib/valuation'
-import { dividendTierInfo } from '@/lib/helpers'
+import { dividendTierInfo, dividendTrend, dividendTrendBadges } from '@/lib/helpers'
 import { project10y, paybackYear, netYield, getWHT } from '@/lib/screener'
 
 // ── helpers ───────────────────────────────────────────────────────────────
@@ -209,6 +209,7 @@ function DividendHistorySection({ divHistory, streak, cagr, currency }) {
   const chartHistory = fullHistory.slice(-count)    // últimos N años en el gráfico
   const older        = fullHistory.slice(0, -count) // años anteriores → listado desplegable
   const startYear   = streak > 0 ? new Date().getFullYear() - streak : null
+  const trendBadges = streak > 0 ? [] : dividendTrendBadges(dividendTrend(divHistory))
 
   return (
     <Card>
@@ -227,11 +228,19 @@ function DividendHistorySection({ divHistory, streak, cagr, currency }) {
           )}
         </div>
       </div>
-      {startYear && (
+      {startYear ? (
         <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 12 }}>
           {streak} años consecutivos subiendo el dividendo · racha desde ~{startYear}
         </p>
-      )}
+      ) : trendBadges.length > 0 ? (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+          {trendBadges.map(b => (
+            <span key={b.kind} title={b.title} style={{ fontSize: 11, fontWeight: 700, color: b.color, background: `${b.color}18`, padding: '3px 9px', borderRadius: 6 }}>
+              {b.emoji} {b.title}
+            </span>
+          ))}
+        </div>
+      ) : null}
       <DividendBars history={chartHistory} />
       {older.length > 0 && (
         <>

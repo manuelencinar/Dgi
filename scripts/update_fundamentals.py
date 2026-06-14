@@ -259,7 +259,9 @@ def compute_streak(div_history):
         return 0
     streak = 0
     for h in reversed(full):
-        if h["growth"] >= 0:
+        # Solo cuenta como racha DGI un INCREMENTO real (>0). Un dividendo
+        # congelado (growth == 0) o recortado rompe la racha (p.ej. Telefónica).
+        if h["growth"] > 0:
             streak += 1
         else:
             break

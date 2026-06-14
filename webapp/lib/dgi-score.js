@@ -1,6 +1,7 @@
 // DGI Scoring System v2 — lógica completa sector-aware
 import { roicForScoring } from '@/lib/metrics'
 import { computeBonuses } from '@/lib/bonuses'
+import { dividendTrend } from '@/lib/helpers'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -538,10 +539,13 @@ function buildPenalties(data, sectorType) {
 
   if (pfcf != null && pfcf > 110) penalties.push({ reason: 'Payout insostenible sobre el flujo de caja libre', amount: 1.0 })
 
-  if (Array.isArray(data.divHistory)) {
-    const curY = new Date().getFullYear()
-    const recentCuts = data.divHistory.filter(h => !h.isPartial && h.year >= curY - 5 && h.year !== 2020 && h.growth != null && h.growth < 0)
-    if (recentCuts.length > 0) penalties.push({ reason: 'Recorte de dividendo reciente (últimos 5 años)', amount: 0.5 })
+  // Fiabilidad del dividendo para DGI: caída/congelación reciente o historial de
+  // recortes. Escalado y con tope (no acumula): recortar/caer pesa más que congelar.
+  const tr = dividendTrend(data.divHistory)
+  if (tr) {
+    if (tr.down > 0)         penalties.push({ reason: `Dividendo en caída — ${tr.down} ${tr.down === 1 ? 'año' : 'años'} consecutivos recortándolo`, amount: 1.0 })
+    else if (tr.cuts10 >= 3) penalties.push({ reason: `Historial de recortes — ${tr.cuts10} recortes del dividendo en 10 años`, amount: 1.0 })
+    else if (tr.noRaise >= 2) penalties.push({ reason: `Dividendo congelado ${tr.noRaise} años — sin crecimiento`, amount: 0.4 })
   }
 
   const debtLimits = { reit: 7, utilities: 6.5, energy: 2.8, bank: null, insurer: null, general: 4.5 }
