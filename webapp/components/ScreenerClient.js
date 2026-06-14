@@ -34,22 +34,7 @@ const INIT = {
   improving: false, improvingType: 'any',
 }
 
-// Badge de tendencia positiva (bonificaciones del scoring)
-function improvingBadge(bonus) {
-  if (bonus == null) return null
-  if (bonus >= 0.5) return { label: '↑ Mejorando', color: '#34d399', bg: 'rgba(52,211,153,0.14)' }
-  if (bonus >= 0.3) return { label: '↗ Tendencia +', color: '#6ee7b7', bg: 'rgba(52,211,153,0.08)' }
-  return null
-}
-
 const PAGE = 50
-const CUR_SYM = { EUR: '€', USD: '$', GBP: '£', GBp: 'p', JPY: '¥', CHF: 'Fr', CAD: 'C$', AUD: 'A$', SEK: 'kr', DKK: 'kr', NOK: 'kr', HKD: 'HK$', SGD: 'S$' }
-const SECTOR_COLOR = {
-  'Technology': '#60a5fa', 'Healthcare': '#34d399', 'Financial Services': '#fbbf24',
-  'Industrials': '#f59e0b', 'Consumer Defensive': '#a78bfa', 'Consumer Cyclical': '#fb923c',
-  'Utilities': '#38bdf8', 'Energy': '#f87171', 'Real Estate': '#4ade80', 'Basic Materials': '#c084fc',
-  'Communication Services': '#f472b6',
-}
 
 function scoreColor(s) { if (s == null) return '#3a4260'; if (s >= 8) return '#34d399'; if (s >= 6.5) return '#86efac'; if (s >= 5) return '#fbbf24'; if (s >= 3) return '#f97316'; return '#f87171' }
 
@@ -72,22 +57,30 @@ const MODES = [
 ]
 
 // Tarjeta del screener responsive: en móvil colapsa a una sola línea (nombre +
-// badge de nivel + yield + nota); en escritorio (≥760px) la tarjeta completa.
+// badge de nivel + yield + nota); en escritorio (≥760px) también UNA línea pero
+// densa (mismo tamaño de bloque que aristócratas, con muchas más columnas).
 const SCR_CARD_CSS = `
-.scr-card{padding:6px 11px;margin-bottom:5px}
+.scr-card{padding:5px 11px;margin-bottom:4px}
 .scr-mobile{display:flex;align-items:center;gap:8px}
 .scr-desktop{display:none}
 .scr-m-name{flex:1 1 auto;min-width:0;font-size:13px;font-weight:700;color:#d0d8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scr-m-tier{flex-shrink:0;font-size:14px}
 .scr-m-yield{flex-shrink:0;font-size:12px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
 .scr-m-score{flex-shrink:0;font-size:16px;font-weight:900;min-width:28px;text-align:right;font-variant-numeric:tabular-nums}
+.scr-buyline{margin-top:6px;font-size:11px;line-height:1.4}
 @media(min-width:760px){
-  .scr-card{padding:12px 14px;margin-bottom:8px}
+  .scr-card{padding:8px 12px;margin-bottom:5px}
   .scr-mobile{display:none}
-  .scr-desktop{display:block}
+  .scr-desktop{display:flex;align-items:center;gap:9px}
+  .scr-buyline{display:none}
+  .scr-d-rank{width:34px;flex-shrink:0;font-size:11px;font-weight:800;color:#3a4260;text-align:right;font-variant-numeric:tabular-nums}
+  .scr-d-namewrap{flex:1 1 0;min-width:60px;display:flex;align-items:center;gap:6px;overflow:hidden}
+  .scr-d-name{font-size:13px;font-weight:700;color:#d0d8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .scr-d-m{display:flex;flex-direction:column;text-align:right;min-width:44px;flex-shrink:0;line-height:1.2}
+  .scr-d-mlabel{font-size:8.5px;color:#3a4260;font-weight:400}
+  .scr-d-mval{font-size:12px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
+  .scr-d-score{font-size:18px;font-weight:900;min-width:30px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
 }`
-function curSym(c) { return CUR_SYM[c] || (c ? c + ' ' : '') }
-function fmtPx(v, cur) { if (v == null) return '—'; const s = curSym(cur); const n = v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); return cur === 'EUR' ? `${n} ${s}` : `${s}${n}` }
 function fmtEUR0(v) { return v == null ? '—' : v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }
 function moatBadge(m) { return m === 'wide' ? '🏰' : m === 'narrow' ? '🧱' : null }
 
@@ -151,7 +144,6 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
   const sb = streakBadge(co.streak)
   const tierName = dividendTierInfo(co.streak)?.name
   const mb = moatBadge(co.moat)
-  const secColor = SECTOR_COLOR[co.s] || '#6a7090'
   const buyReason = buyZoneReason(co)
 
   return (
@@ -169,12 +161,10 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
         <span className="scr-m-score" style={{ color: scoreColor(co.sc) }}>{co.sc != null ? co.sc.toFixed(1) : '—'}</span>
       </div>
 
-      {/* Escritorio: tarjeta completa */}
+      {/* Escritorio: UNA línea densa (tamaño de bloque como aristócratas) */}
       <div className="scr-desktop">
-      {/* Fila superior */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <input type="checkbox" checked={selected} disabled={!selected && !canSelect} onChange={() => onSelect(co.t)} style={{ accentColor: '#818cf8', cursor: 'pointer', flexShrink: 0 }} />
-        <span style={{ fontSize: 12, fontWeight: 800, color: '#3a4260', width: 28, flexShrink: 0 }}>
+        <span className="scr-d-rank">
           {sortKey === 'profit' && proj ? <span style={{ color: '#34d399' }}>{fmtEUR0(proj.cum10)}</span>
             : sortKey === 'cheap' && co.mos != null && !co.mosUnreliable ? <span style={{ color: co.mos >= 0 ? '#34d399' : '#f87171' }}>{co.mos.toFixed(0)}%</span>
             : (sortKey === 'renta' || sortKey === 'netyield') && ny != null ? <span style={{ color: '#34d399' }}>{ny.toFixed(1)}%</span>
@@ -182,60 +172,34 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
             : `#${rank}`}
         </span>
         <span style={{ fontSize: 15, flexShrink: 0 }}>{ct?.flag || '🌐'}</span>
-        <Link href={`/empresa/${encodeURIComponent(co.t)}`} style={{ textDecoration: 'none', minWidth: 0, flex: 1 }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#d0d8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div className="scr-d-namewrap">
+          <Link href={`/empresa/${encodeURIComponent(co.t)}`} className="scr-d-name" style={{ textDecoration: 'none' }}>
             {co.n} <span style={{ fontSize: 10, color: '#2e3a55', fontWeight: 600 }}>{co.t}</span>
-          </p>
-        </Link>
-
-        {/* Badges */}
-        <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
-          <WatchlistEyeButton ticker={co.t} isAuthed={isAuthed} initialFollowing={following} />
-          <PriceAlertButton ticker={co.t} name={co.n} currency={co.cur} price={co.px} isAuthed={isAuthed} isPremium={isPremium} />
-          {co.s && <span style={{ fontSize: 9, fontWeight: 700, color: secColor, background: `${secColor}1a`, padding: '2px 7px', borderRadius: 5 }}>{co.s}</span>}
-          {sb && <span title="Racha de dividendos" style={{ fontSize: 13 }}>{sb}</span>}
-          {mb && <span title={co.moat === 'wide' ? 'Foso ancho' : 'Foso estrecho'} style={{ fontSize: 12 }}>{mb}</span>}
-          {co.r1010 && <span title="Regla 10/10: yield + CAGR ≥ 10%" style={{ fontSize: 12 }}>⚡</span>}
-          {co.ero && <span title="Señales de erosión del foso" style={{ fontSize: 12 }}>📉</span>}
-          {(() => { const ib = improvingBadge(co.bonus); return ib ? <span title="Tendencias financieras positivas sostenidas (bonificaciones del scoring)" style={{ fontSize: 9, fontWeight: 700, color: ib.color, background: ib.bg, padding: '2px 7px', borderRadius: 5, whiteSpace: 'nowrap' }}>{ib.label}</span> : null })()}
+          </Link>
+          {sb && <span title={tierName ? `${tierName} · ${co.streak} años subiendo el dividendo` : 'Racha de dividendos'} style={{ fontSize: 12, flexShrink: 0 }}>{sb}</span>}
+          {mb && <span title={co.moat === 'wide' ? 'Foso ancho' : 'Foso estrecho'} style={{ fontSize: 11, flexShrink: 0 }}>{mb}</span>}
+          {co.r1010 && <span title="Regla 10/10: yield + CAGR ≥ 10%" style={{ fontSize: 11, flexShrink: 0 }}>⚡</span>}
+          {co.ero && <span title="Señales de erosión del foso" style={{ fontSize: 11, flexShrink: 0 }}>📉</span>}
+          {buyReason && <span title={`Zona de compra: ${buyReason}`} style={{ fontSize: 9, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.14)', padding: '1px 5px', borderRadius: 4, flexShrink: 0, whiteSpace: 'nowrap', cursor: 'help' }}>● zona</span>}
         </div>
 
-        {/* Precio + MoS */}
-        <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 70 }}>
-          <p style={{ fontSize: 12, fontWeight: 700, color: '#c8d0e0', fontVariantNumeric: 'tabular-nums' }}>{fmtPx(co.px, co.cur)}</p>
-          {co.mosUnreliable
-            ? <p title="Valor intrínseco no fiable para este tipo de activo (p. ej. investment trust)" style={{ fontSize: 9, fontWeight: 700, color: '#fb923c', cursor: 'help' }}>MoS no fiable</p>
-            : co.mos != null && <p style={{ fontSize: 10, fontWeight: 700, color: co.mos >= 0 ? '#34d399' : '#f87171' }}>{co.mos >= 0 ? '+' : ''}{co.mos.toFixed(0)}% MoS</p>}
+        {co.y != null && <DM label="Yield" val={co.y.toFixed(1) + '%'} />}
+        <DM label="CAGR" val={co.cagr == null ? '—' : co.cagrWarn ? 'atíp.' : co.cagr.toFixed(0) + '%'} color={co.cagrWarn ? '#fb923c' : undefined} title={co.cagrWarn ? 'CAGR no fiable (>50%) — neutralizado en el Score' : undefined} />
+        <DM label="ROIC" val={co.roicNA ? 'N/A' : co.roic == null ? '—' : (co.roicWarn ? '⚠' : '') + co.roic.toFixed(0) + '%'} color={co.roicWarn ? '#fb923c' : undefined} title={co.roicNA ? 'No aplica en banca/seguros/REITs — se usa ROE' : co.roicWarn ? 'ROIC muy elevado — comparar con peers' : undefined} />
+        <DM label="Payout" val={co.payout == null ? '—' : co.payout.toFixed(0) + '%'} />
+        <DM label="Deuda" val={co.debt == null ? '—' : co.debt.toFixed(1) + 'x'} title="Deuda neta / EBITDA" />
+        <DM label="MoS" val={co.mosUnreliable ? 'n/f' : co.mos == null ? '—' : (co.mos >= 0 ? '+' : '') + co.mos.toFixed(0) + '%'} color={!co.mosUnreliable && co.mos != null ? (co.mos >= 0 ? '#34d399' : '#f87171') : undefined} title={co.mosUnreliable ? 'Valor intrínseco no fiable para este tipo de activo' : 'Margen de seguridad sobre el valor intrínseco'} />
+
+        <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+          <WatchlistEyeButton ticker={co.t} isAuthed={isAuthed} initialFollowing={following} size={13} />
+          <PriceAlertButton ticker={co.t} name={co.n} currency={co.cur} price={co.px} isAuthed={isAuthed} isPremium={isPremium} size={12} />
         </div>
-
-        {/* Score + calidad */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          {co.dq != null && <span title="Calidad del dividendo" style={{ fontSize: 11, fontWeight: 700, color: '#a78bfa', background: 'rgba(167,139,250,0.12)', padding: '2px 6px', borderRadius: 5 }}>💎 {co.dq.toFixed(1)}</span>}
-          <span title={co.ero ? 'Incluye −1,0 por señales de erosión del foso 📉' : undefined} style={{ fontSize: 20, fontWeight: 900, color: scoreColor(co.sc), minWidth: 34, textAlign: 'right', cursor: co.ero ? 'help' : 'default' }}>{co.sc != null ? co.sc.toFixed(1) : '—'}</span>
-        </div>
+        <span className="scr-d-score" title={co.ero ? 'Incluye −1,0 por señales de erosión del foso 📉' : undefined} style={{ color: scoreColor(co.sc), cursor: co.ero ? 'help' : 'default' }}>{co.sc != null ? co.sc.toFixed(1) : '—'}</span>
       </div>
 
-      {/* Fila inferior: proyección €1.000 + métricas */}
-      <div style={{ display: 'flex', gap: 16, marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.04)', flexWrap: 'wrap', alignItems: 'center' }}>
-        {proj ? (
-          <>
-            <Metric label="€1k → renta año 1" value={fmtEUR0(proj.y1) + '/año'} color="#34d399" />
-            <Metric label="Total dividendos 10a" value={fmtEUR0(proj.cum10)} color="#86efac" />
-            <Metric label="Recuperación" value={proj.payback ? `r${proj.payback}` : '—'} color="#818cf8" />
-          </>
-        ) : <span style={{ fontSize: 11, color: '#2e3a55' }}>Sin datos de dividendo para proyectar</span>}
-        <div style={{ flex: 1 }} />
-        {co.y != null && <Metric label="Yield" value={co.y.toFixed(2) + '%'} color="#8090a8" />}
-        {co.roicNA
-          ? <Metric label="ROIC" value="N/A" color="#4a5270" title="No aplica en banca, seguros o REITs — se usa ROE" />
-          : co.roic != null && <Metric label="ROIC" value={(co.roicWarn ? '⚠ ' : '') + co.roic.toFixed(1) + '%'} color={co.roicWarn ? '#fb923c' : '#8090a8'} title={co.roicWarn ? 'ROIC muy elevado — posible bajo capital contable por recompras o intangibles. Comparar con peers.' : undefined} />}
-        {co.cagr != null && <Metric label="CAGR div" value={co.cagrWarn ? '⚠ atípico' : co.cagr.toFixed(1) + '%'} color={co.cagrWarn ? '#fb923c' : '#8090a8'} title={co.cagrWarn ? 'CAGR no fiable (>50%) — base de comparación baja o recuperación tras un recorte (p.ej. post-COVID). Neutralizado en el Score.' : undefined} />}
-      </div>
-      </div>
-
-      {/* Por qué está en zona de compra (visible en móvil y escritorio) */}
+      {/* Por qué está en zona de compra — línea aparte solo en móvil */}
       {buyReason && (
-        <div style={{ marginTop: 6, fontSize: 11, lineHeight: 1.45, display: 'flex', gap: 6, alignItems: 'baseline' }}>
+        <div className="scr-buyline" style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
           <span style={{ color: '#34d399', flexShrink: 0 }}>●</span>
           <span style={{ color: '#86efac' }}><span style={{ fontWeight: 700, color: '#34d399' }}>Zona de compra:</span> {buyReason}</span>
         </div>
@@ -244,11 +208,12 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
   )
 }
 
-function Metric({ label, value, color, title }) {
+// Columna compacta (etiqueta arriba / valor abajo) para la fila densa de escritorio.
+function DM({ label, val, color, title }) {
   return (
-    <div title={title}>
-      <p style={{ fontSize: 9, color: '#3a4260', marginBottom: 1 }}>{label}</p>
-      <p style={{ fontSize: 12, fontWeight: 700, color, fontVariantNumeric: 'tabular-nums', cursor: title ? 'help' : 'default' }}>{value}</p>
+    <div className="scr-d-m" title={title} style={{ cursor: title ? 'help' : 'default' }}>
+      <span className="scr-d-mlabel">{label}</span>
+      <span className="scr-d-mval" style={color ? { color } : undefined}>{val}</span>
     </div>
   )
 }
