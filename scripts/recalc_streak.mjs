@@ -28,15 +28,18 @@ function computeStreak(divHistory) {
   const n = full.length
   if (n < 2) return 0
   const dps = full.map(h => Number(h.dps))
+  const yrs = full.map(h => h.year)
   let s = 0
   for (let i = n - 1; i >= 1; i--) {
+    if (yrs[i] - yrs[i - 1] > 1) break          // hueco de años = suspensión → rompe (Airbus)
     const cur = dps[i], prev = dps[i - 1]
     const prev2 = i >= 2 ? dps[i - 2] : null
     const rec1 = i + 1 <= n - 1 ? dps[i + 1] : null
     const rec2 = i + 2 <= n - 1 ? dps[i + 2] : null
     const increased = cur > prev * 1.001
     const spikeNorm = prev2 != null && cur >= prev2 && prev > prev2 * 1.001          // pico→normalización (KO)
-    const recovered = (rec1 != null && rec1 > prev * 1.001) || (rec2 != null && rec2 > prev * 1.001) // caída que recupera ≤2a (O)
+    const isDip = cur < prev * 0.999
+    const recovered = isDip && ((rec1 != null && rec1 > prev * 1.001) || (rec2 != null && rec2 > prev * 1.001)) // caída puntual que recupera ≤2a (O)
     if (increased || spikeNorm || recovered) s++
     else break
   }

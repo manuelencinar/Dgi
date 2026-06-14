@@ -269,8 +269,13 @@ def compute_streak(div_history):
     if n < 2:
         return 0
     dps = [h["dps"] for h in full]
+    yrs = [h["year"] for h in full]
     streak = 0
     for i in range(n - 1, 0, -1):
+        # Hueco de años = el dividendo se SUSPENDIÓ (p.ej. Airbus 2020-2021 no
+        # aparecen). Una suspensión rompe la racha (no se puede puentear).
+        if yrs[i] - yrs[i - 1] > 1:
+            break
         cur, prev = dps[i], dps[i - 1]
         prev2 = dps[i - 2] if i >= 2 else None
         rec1 = dps[i + 1] if i + 1 <= n - 1 else None   # año(s) más recientes (ya en la racha)
@@ -279,10 +284,11 @@ def compute_streak(div_history):
         # Pico→normalización (KO 2001→2002): el previo fue un pico y seguimos por
         # encima del nivel de hace 2 años.
         spike_norm = prev2 is not None and cur >= prev2 and prev > prev2 * 1.001
-        # Caída puntual que se RECUPERA en ≤2 años por encima del nivel previo
-        # (pagadores mensuales / timing, p.ej. Realty Income 2024→2025). Un
-        # recorte real recupera tarde o nunca → rompe.
-        recovered = (rec1 is not None and rec1 > prev * 1.001) or (rec2 is not None and rec2 > prev * 1.001)
+        # Caída PUNTUAL que se recupera en ≤2 años (pagadores mensuales / timing,
+        # p.ej. Realty Income). Solo aplica a una caída real (cur<prev), NO a años
+        # planos/congelados (si no, congelaciones como GE 2020-22 colarían).
+        is_dip = cur < prev * 0.999
+        recovered = is_dip and ((rec1 is not None and rec1 > prev * 1.001) or (rec2 is not None and rec2 > prev * 1.001))
         if increased or spike_norm or recovered:
             streak += 1
         else:
