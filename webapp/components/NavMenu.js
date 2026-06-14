@@ -8,7 +8,7 @@ import GlobalSearch from '@/components/GlobalSearch'
 const PRIMARY = [
   { href: '/mercados',     label: 'Mercados' },
   { href: '/screener',     label: 'Screener' },
-  { href: '/aristocratas', label: 'Aristócratas' },
+  { href: '/aristocratas', label: 'Rankings' },
   { href: '/watchlist',    label: 'Watchlist' },
   { href: '/cartera',      label: 'Cartera' },
 ]

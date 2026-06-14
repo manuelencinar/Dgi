@@ -296,6 +296,43 @@ def compute_ma200(price_hist):
         return None
 
 
+def compute_shares_reduction(is_stmt, bs_stmt):
+    """Reducción de acciones en circulación desde el año base (~2022) para el
+    ranking de Caníbales. + = ha reducido acciones (recompra neta real, en número
+    de acciones, no €). Descarta artefactos (|>50%| = split/cambio de unidad).
+    Devuelve (pct, año_base) o (None, None)."""
+    def series(stmt, key):
+        if not stmt:
+            return None
+        data = stmt.get("data") or {}
+        cols = stmt.get("columns") or []
+        arr = data.get(key)
+        if not arr or not cols:
+            return None
+        out = []
+        for c, v in zip(cols, arr):
+            try:
+                y = int(str(c)[:4])
+                if v is not None and float(v) > 0:
+                    out.append((y, float(v)))
+            except (ValueError, TypeError):
+                pass
+        return out or None
+    s = (series(is_stmt, "Diluted Average Shares") or series(is_stmt, "Basic Average Shares")
+         or series(bs_stmt, "Ordinary Shares Number") or series(bs_stmt, "Share Issued"))
+    if not s or len(s) < 2:
+        return None, None
+    s.sort(key=lambda p: p[0])
+    (by, bv), (ly, lv) = s[0], s[-1]
+    cur = datetime.now().year
+    if ly < cur - 2 or by < 2019 or bv <= 0:
+        return None, None
+    pct = (bv - lv) / bv * 100
+    if pct > 50 or pct < -100:
+        return None, None
+    return safe2(pct), by
+
+
 def compute_yield_avg(div_history, price_hist, max_years=5, min_years=2):
     """Yield histórico medio: media del yield anual (dps_año / precio_medio_del_año)
     de los hasta `max_years` últimos años COMPLETOS con datos. Devuelve
@@ -1086,6 +1123,7 @@ def fetch_ticker(sym):
         cdr_fields = compute_cdr_fields(cf_annual, bs_annual)
         bonus_fields = compute_bonus_fields(is_annual, bs_annual, cf_annual, div_history,
                                             info.get("sector"), info.get("industry"))
+        shares_pct, shares_base = compute_shares_reduction(is_annual, bs_annual)
 
         return sanitize({
             "ticker":           sym,
@@ -1149,6 +1187,8 @@ def fetch_ticker(sym):
             "invested_capital":          roic_full["invested_capital"],
             "invested_capital_tangible": roic_full["invested_capital_tangible"],
             "tax_rate_effective":        roic_full["tax_rate_effective"],
+            "shares_reduced_pct":         shares_pct,
+            "shares_base_year":           shares_base,
             "income_statement_annual":    is_annual,
             "balance_sheet_annual":       bs_annual,
             "cashflow_annual":            cf_annual,

@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { getCountry, DIVIDEND_TIERS, dividendTierInfo } from '@/lib/helpers'
 import { netYield, getWHT } from '@/lib/screener'
+import RankingsTabs from '@/components/RankingsTabs'
 
 const TIER_DESC = {
   rey:         '50+ años subiendo el dividendo sin interrupción',
@@ -106,6 +107,7 @@ export default function AristocratasClient({ companies = [], isPremium = false, 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px 100px' }}>
       <style>{ROW_CSS}</style>
+      <RankingsTabs active="aristocratas" />
       <div style={{ marginBottom: 14 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', marginBottom: 4 }}>👑 Reyes, Aristócratas y Aspirantes</h1>
         <p style={{ fontSize: 12, color: '#5a6480', lineHeight: 1.5 }}>
