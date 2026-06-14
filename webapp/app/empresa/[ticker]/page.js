@@ -1,4 +1,5 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { primaryOf, otherListings } from '@/lib/listings'
 import { createClient as authClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/PublicNav'
 import CompanyDetailPage from '@/components/CompanyDetailPage'
@@ -202,6 +203,10 @@ export default async function EmpresaPage({ params, searchParams }) {
   const initialTab = typeof sp?.tab === 'string' ? sp.tab : 'resumen'
   const t = decodeURIComponent(ticker)
 
+  // Cotización secundaria (mismo valor en otro mercado) → redirige a la matriz.
+  const primary = primaryOf(t)
+  if (primary !== t) redirect(`/empresa/${encodeURIComponent(primary)}`)
+
   const entry = await findDictEntry(t)
   if (!entry) notFound()
 
@@ -239,6 +244,18 @@ export default async function EmpresaPage({ params, searchParams }) {
 
   const isPremium = plan === 'premium'
   const destWHT   = settingsRow?.dest_wht != null ? Number(settingsRow.dest_wht) : 19
+
+  // Otras cotizaciones de la misma empresa (mercado · precio · ticker pequeño).
+  const otherTickers = otherListings(t)
+  let crossListings = []
+  if (otherTickers.length) {
+    const { data: orows } = await supabase.from('company_fundamentals').select('ticker, current_price').in('ticker', otherTickers)
+    const pm = Object.fromEntries((orows || []).map(r => [r.ticker, r.current_price]))
+    crossListings = otherTickers.map(tk => {
+      const e = DICT.find(d => d[1] === tk)
+      return { ticker: tk, country: e?.[2] ?? null, currency: e?.[3] ?? null, price: pm[tk] != null ? Number(pm[tk]) : null }
+    })
+  }
 
   const dailyPrice = dailyRow ? {
     price:     Number(dailyRow.close_price),
@@ -368,6 +385,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         dgiScore={dgiScore}
         scoreHistory={scoreHistory}
         ma200={detail?.ma200 ?? null}
+        crossListings={crossListings}
         insights={insights}
         badges={badges}
         buybacks={buybacks}

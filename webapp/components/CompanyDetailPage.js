@@ -1200,7 +1200,7 @@ const TAB_IDS = TABS.map(t => t.id)
 
 export default function CompanyDetailPage(props) {
   const {
-    ticker, name, country, currency, sector, subsector, type,
+    ticker, name, country, currency, sector, subsector, type, crossListings,
     isPremium, hasData, isAuthed, watchEntry,
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
@@ -1280,6 +1280,18 @@ export default function CompanyDetailPage(props) {
                 <span key={b.id} style={{ fontSize: 11, fontWeight: 700, color: b.color, background: b.bg, padding: '2px 8px', borderRadius: 5 }} title={b.title}>{b.label}</span>
               ))}
             </div>
+            {crossListings?.length > 0 && (
+              <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: 10.5, color: '#4a5270' }}>También cotiza en:</span>
+                {crossListings.map(l => (
+                  <span key={l.ticker} title={`${l.ticker} · ${l.country || ''}`} style={{ fontSize: 11, color: '#8090a8', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    {countryFlag(l.country) && <span style={{ fontSize: 13 }}>{countryFlag(l.country)}</span>}
+                    {l.price != null && <span style={{ fontWeight: 700, color: '#c8d0e0', fontVariantNumeric: 'tabular-nums' }}>{l.price.toLocaleString('es-ES', { maximumFractionDigits: 2 })} {l.currency}</span>}
+                    <span style={{ fontSize: 9.5, color: '#3a4260' }}>{l.ticker}</span>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Precio */}

@@ -215,6 +215,11 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - Requiere env var `GITHUB_TOKEN` (ya configurada en Vercel) para disparar el workflow.
 - IMPORTANTE: paginar consultas a company_fundamentals (límite 1000 de PostgREST) con `.range()`.
 
+## Cotizaciones múltiples (unificación de fundamentales)
+- `lib/listings.js`: mapa **curado a mano** `PRIMARY` (ticker secundario → matriz/mercado de origen) + `primaryOf`, `isSecondary`, `otherListings`. NO heurístico: agrupar por nombre da falsos positivos graves (p.ej. Domino's Pizza Inc/DPZ, Domino's Australia/DMP.AX y Domino's UK/DOM.L son TRES empresas distintas). Solo pares verificados (ADRs claros, espejos OTC suizos `.SS`→`.SW`, y empresas de origen EEUU con CDI extranjero como ResMed/Amcor/Smurfit WestRock/CCEP → EEUU).
+- `app/empresa/[ticker]/page.js`: si el ticker es secundario, `redirect()` a la matriz. La matriz carga `otherListings` (precio + divisa + país de cada mercado) y los muestra en la cabecera ("También cotiza en: 🏳 precio · ticker pequeño") vía prop `crossListings` en `CompanyDetailPage`.
+- Pendiente/mejora futura: importar a la matriz los fundamentales que falten desde el ADR (convirtiendo importes a la divisa local); ampliar el mapa con más pares revisados; deduplicar el screener.
+
 ## Navegación
 - `components/NavMenu.js` (app), `components/PublicNav.js` (landing), `components/cartera/CarteraNav.js` (cartera).
 - Items principales: Mercados, Screener, Aristócratas, Watchlist, Cartera. Comparador y ETFs como secundarios en el menú hamburguesa móvil. Campana de notificaciones (`NotificationBell`) junto a Ajustes cuando hay sesión. Se eliminó el botón "Mi Índice" (no aportaba). CarteraNav incluye "ETFs y Fondos".
