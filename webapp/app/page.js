@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import { MARKETS } from '@/lib/markets'
 import LandingFaq from '@/components/LandingFaq'
-import LandingNews from '@/components/news/LandingNews'
 import PublicNav from '@/components/PublicNav'
 
 export const metadata = {
@@ -608,6 +607,89 @@ function Pricing() {
   )
 }
 
+function CompanyShowcase() {
+  const cats = [
+    { l: 'Calidad del negocio', v: 9.1, w: 35 },
+    { l: 'Dividendo', v: 8.6, w: 30 },
+    { l: 'Solidez financiera', v: 8.9, w: 20 },
+    { l: 'Valoración', v: 7.4, w: 15 },
+  ]
+  const health = [
+    { l: 'Rentabilidad', c: '#34d399' }, { l: 'Deuda', c: '#34d399' },
+    { l: 'Dividendo', c: '#34d399' }, { l: 'Márgenes', c: '#34d399' }, { l: 'Crecimiento', c: '#fbbf24' },
+  ]
+  return (
+    <section style={{ padding: '80px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(99,102,241,0.02)' }}>
+      <style>{`
+        .cs-grid { display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center; max-width: 1000px; margin: 0 auto; }
+        @media (min-width: 860px) { .cs-grid { grid-template-columns: 1fr 1fr; } }
+      `}</style>
+      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#6366f1', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 14 }}>La ficha de cada empresa</p>
+        <h2 style={{ fontSize: 28, fontWeight: 900, color: '#e0e8f0', marginBottom: 10 }}>Todo el análisis DGI, empresa por empresa</h2>
+        <p style={{ fontSize: 14, color: '#4a5270', maxWidth: 520, margin: '0 auto' }}>Score DGI con desglose, mapa de salud financiera, valor intrínseco, proyección de renta e insights — de casi 2.000 empresas.</p>
+      </div>
+      <div className="cs-grid">
+        {/* Mockup de la ficha */}
+        <div style={{ background: 'rgba(13,18,32,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 24px 48px rgba(0,0,0,0.5)' }}>
+          <div style={{ padding: '13px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 900, color: '#e0e8f0' }}>🇺🇸 Automatic Data Processing <span style={{ fontSize: 10, color: '#3a4260' }}>ADP</span></p>
+              <p style={{ fontSize: 10, color: '#34d399', marginTop: 2 }}>🏆 Aristócrata · 49 años subiendo el dividendo</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontSize: 18, fontWeight: 900, color: '#e0e8f0', lineHeight: 1 }}>305,40 <span style={{ fontSize: 10, color: '#4a5270' }}>$</span></p>
+              <p style={{ fontSize: 10, color: '#34d399' }}>Yield 2,1%</p>
+            </div>
+          </div>
+          <div style={{ padding: '14px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Score DGI</span>
+              <span style={{ fontSize: 30, fontWeight: 900, color: '#34d399', lineHeight: 1 }}>8,7</span>
+            </div>
+            {cats.map(c => (
+              <div key={c.l} style={{ marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                  <span style={{ fontSize: 10, color: '#8090a8' }}>{c.l} <span style={{ color: '#2e3a55' }}>{c.w}%</span></span>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: c.v >= 8 ? '#34d399' : '#fbbf24' }}>{c.v.toFixed(1)}</span>
+                </div>
+                <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${c.v * 10}%`, background: c.v >= 8 ? '#34d399' : '#fbbf24', borderRadius: 2 }} />
+                </div>
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              {health.map(h => (
+                <span key={h.l} style={{ fontSize: 9, color: '#8090a8', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: h.c }} />{h.l}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* Lista de lo que incluye */}
+        <div style={{ display: 'grid', gap: 14 }}>
+          {[
+            ['📊', 'Score DGI con desglose', 'Nota 0–10 ponderada por sector, con las cuatro dimensiones y el detalle métrica a métrica.'],
+            ['💚', 'Mapa de salud financiera', 'Semáforo de rentabilidad, deuda, dividendo, márgenes y crecimiento — adaptado al sector.'],
+            ['🎯', 'Valor intrínseco y zona de compra', 'DCF sector-aware con margen de seguridad, MM200 e insights de por qué (in)fravalorada.'],
+            ['💰', 'Proyección de renta a 10 años', 'Cuánto cobrarás en dividendos con tu aportación, en tres escenarios y con CAGR real.'],
+          ].map(([icon, t, d]) => (
+            <div key={t} style={{ display: 'flex', gap: 14 }}>
+              <span style={{ fontSize: 22, flexShrink: 0 }}>{icon}</span>
+              <div>
+                <h3 style={{ fontSize: 14.5, fontWeight: 800, color: '#e0e8f0', marginBottom: 3 }}>{t}</h3>
+                <p style={{ fontSize: 12.5, color: '#4a5270', lineHeight: 1.6 }}>{d}</p>
+              </div>
+            </div>
+          ))}
+          <Link href="/empresa/ADP" style={{ fontSize: 13, fontWeight: 700, color: '#818cf8', textDecoration: 'none', marginTop: 4 }}>Ver una ficha real (ADP) →</Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function FaqSection() {
   return (
     <section style={{ padding: '80px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -668,13 +750,13 @@ export default async function LandingPage() {
       <PublicNav />
       <Hero />
       <ForWhom />
+      <CompanyShowcase />
       <Benefits />
       <DualRanking />
       <UseCase />
       <HowItWorks />
       <MarketsSection />
       <PlatformMetrics companyCount={companyCount} />
-      <LandingNews />
       <Pricing />
       <FaqSection />
       <Footer />

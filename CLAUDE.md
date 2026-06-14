@@ -24,7 +24,7 @@ URL del repositorio: https://github.com/manuelencinar/Dgi
 ```
 
 ## Páginas construidas y funcionando
-- Landing page pública — presenta la app y los planes de precio; testimonios sustituidos por **métricas reales** (nº mercados, empresas, etc.). Secciones (en `app/page.js`): Hero → **ForWhom** ("¿Es para ti?", perfil concreto del inversor DGI, #9) → Benefits → **DualRanking** (doble modo de ranking) → **UseCase** ("Así se usa cada mes" con mockup del screener filtrado, #8) → HowItWorks → Markets → PlatformMetrics → News → Pricing → FAQ.
+- Landing page pública — presenta la app y los planes de precio; testimonios sustituidos por **métricas reales** (nº mercados, empresas, etc.). Secciones (en `app/page.js`): Hero → **ForWhom** ("¿Es para ti?", #9) → **CompanyShowcase** (mockup de la ficha de empresa con Score/salud/insights, #11) → Benefits → **DualRanking** → **UseCase** (mockup del screener filtrado, #8) → HowItWorks → Markets → PlatformMetrics → Pricing → FAQ. (La sección de noticias `LandingNews` se quitó de la landing — daba sensación de incompleta cuando NewsAPI no responde; el componente sigue existiendo.) FAQ ampliado (`LandingFaq.js`): cómo se calcula el Score, datos no en tiempo real, diferencias vs competidores, uso desde España/brókers.
 - Página de mercados — lista de 43 mercados globales con tarjetas resumen
 - Página de cada mercado individual — empresas del índice con análisis DGI
 - Screener avanzado rediseñado (`/screener`) — tarjetas, filtros free+premium, proyección €1k, comparador — ver "Screener rediseñado"

@@ -8,7 +8,7 @@ const ZONA_OPTS = [
   { v: 'all', l: 'Todas' }, { v: 'América', l: 'América' }, { v: 'Europa', l: 'Europa' },
   { v: 'Asia', l: 'Asia' }, { v: 'Oceanía', l: 'Oceanía' }, { v: 'África', l: 'África' },
 ]
-const FREE_PREVIEW = 10
+const FREE_PREVIEW = 25
 
 function scoreColor(s) { if (s == null) return '#3a4260'; if (s >= 8) return '#34d399'; if (s >= 6.5) return '#86efac'; if (s >= 5) return '#fbbf24'; if (s >= 3) return '#f97316'; return '#f87171' }
 function redColor(p) { if (p >= 20) return '#34d399'; if (p >= 10) return '#86efac'; if (p >= 4) return '#fbbf24'; return '#8090a8' }

@@ -7,6 +7,22 @@ const ITEMS = [
     a: 'El Dividend Growth Investing (DGI) es una estrategia que consiste en invertir en empresas que llevan años aumentando su dividendo de forma consecutiva. El objetivo no es maximizar el yield hoy, sino construir una renta creciente y sostenible a largo plazo. Empresas como Coca-Cola, Johnson & Johnson o Nestlé llevan más de 25 años subiendo su dividendo sin interrupciones.',
   },
   {
+    q: '¿Cómo se calcula el Score DGI?',
+    a: 'Es una nota de 0 a 10, ponderada según el sector de cada empresa, que combina cuatro dimensiones: calidad del negocio (ROIC/ROE, márgenes, crecimiento), dividendo (yield, racha de años subiéndolo, CAGR y payout sostenible), solidez financiera (deuda, cobertura de intereses, FCF) y valoración (margen de seguridad frente al valor intrínseco). Se le restan penalizaciones por riesgos (recortes, payout insostenible, deterioro) y se suman bonificaciones por tendencias positivas sostenidas. Verde ≥6,5 · amarillo 5–6,5 · rojo <5.',
+  },
+  {
+    q: '¿Los datos son en tiempo real?',
+    a: 'No, y a propósito: el DGI es inversión a largo plazo, no trading. Las cotizaciones se actualizan dos veces al día (cierre de Europa y cierre de EEUU) y los fundamentales (yield, payout, ROIC, deuda, estados financieros) se refrescan semanalmente desde Yahoo Finance. Los Scores DGI se recalculan tras cada actualización.',
+  },
+  {
+    q: '¿En qué se diferencia de Simply Safe Dividends o Dividend.com?',
+    a: 'Tres cosas: (1) cobertura realmente global — 43 mercados y casi 2.000 empresas de más de 30 países, no solo EEUU; (2) un Score DGI ponderado por sector (un banco, un REIT y una tecnológica no se miden igual) con valoración por valor intrínseco incluida; y (3) en español, con la fiscalidad de dividendos (retenciones en origen y destino) integrada en los cálculos de renta neta. Además el plan gratuito es permanente y sin tarjeta.',
+  },
+  {
+    q: '¿Funciona si invierto desde España con ING, DEGIRO o Interactive Brokers?',
+    a: 'Sí. La herramienta es de análisis, independiente de tu bróker: te ayuda a decidir qué comprar y a qué precio, y tú ejecutas en el bróker que uses (ING, MyInvestor, DEGIRO, Interactive Brokers, etc.). Puedes registrar tus posiciones manualmente en la cartera y los cálculos de renta neta tienen en cuenta las retenciones según tu residencia fiscal.',
+  },
+  {
     q: '¿Qué incluye el plan gratuito?',
     a: 'El plan gratuito incluye acceso permanente a los 43 mercados globales con Score DGI, el termómetro de salud del índice, el yield promedio y el ranking comparativo. En el screener puedes filtrar por yield, zona geográfica y sector. No se requiere tarjeta de crédito.',
   },
