@@ -401,6 +401,9 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
 
   const pageRows = sorted.slice(0, visible)
 
+  // Cuántos de los resultados actuales están en zona de compra (para el aviso free).
+  const buyZoneCount = useMemo(() => filtered.reduce((n, co) => n + (buyZoneReason(co) ? 1 : 0), 0), [filtered])
+
   // Chips activos
   const activeChips = useMemo(() => {
     const chips = []
@@ -570,6 +573,18 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
 
       {/* Guía de métricas */}
       {helpOpen && <HelpGuide />}
+
+      {/* Aviso freemium: qué es gratis vs. premium */}
+      {!isPremium && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.18)', borderRadius: 10, padding: '10px 14px', marginBottom: 12 }}>
+          <p style={{ fontSize: 12.5, color: '#8090a8', lineHeight: 1.55, flex: 1, minWidth: 220 }}>
+            Plan gratuito: filtras por <span style={{ color: '#c8d0e0', fontWeight: 700 }}>yield, zona y sector</span>.
+            {buyZoneCount > 0 && <> Hay <span style={{ color: '#34d399', fontWeight: 800 }}>{buyZoneCount}</span> en zona de compra entre los resultados.</>}
+            {' '}Premium añade <span style={{ color: '#c8d0e0', fontWeight: 700 }}>racha, CAGR, ROIC, deuda y margen de seguridad</span> para aislarlas.
+          </p>
+          <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '8px 14px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>Ver Premium →</Link>
+        </div>
+      )}
 
       {/* Contador */}
       <p style={{ fontSize: 12, color: filtered.length > 0 ? '#4a5270' : '#f87171', marginBottom: 12 }}>

@@ -714,6 +714,15 @@ export default function MarketDetail({ market, quote, initialChartData, stats, r
           <SectionTitle>Analytics premium</SectionTitle>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
+            {!isPremium && dgiMetrics.opportunities?.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: 10, padding: '12px 16px' }}>
+                <p style={{ fontSize: 13, color: '#c8d0e0', lineHeight: 1.5 }}>
+                  <span style={{ fontWeight: 800, color: '#34d399' }}>{dgiMetrics.opportunities.length}</span> {dgiMetrics.opportunities.length === 1 ? 'empresa' : 'empresas'} de este índice en <span style={{ fontWeight: 700 }}>zona de compra</span> ahora mismo. Estás viendo <span style={{ fontWeight: 700, color: '#f87171' }}>0</span> — Premium revela cuáles.
+                </p>
+                <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '8px 14px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>Revelar →</Link>
+              </div>
+            )}
+
             <PremiumGate isPremium={isPremium}>
               <OpportunityRadar opportunities={dgiMetrics.opportunities} />
             </PremiumGate>

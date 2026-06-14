@@ -191,6 +191,129 @@ function Benefits() {
   )
 }
 
+function ForWhom() {
+  const yes = [
+    'Construyes una cartera de dividendos crecientes a largo plazo, no buscas pelotazos.',
+    'Aportas cada mes y quieres decidir con criterio qué empresa añadir y a qué precio.',
+    'Quieres analizar la calidad real (foso, payout, deuda, ROIC), no solo mirar el yield.',
+  ]
+  return (
+    <section style={{ padding: '80px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ maxWidth: 820, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 36 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#6366f1', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 14 }}>
+            ¿Es para ti?
+          </p>
+          <h2 style={{ fontSize: 28, fontWeight: 900, color: '#e0e8f0', marginBottom: 14 }}>
+            Hecha para el inversor en dividendos
+          </h2>
+          <p style={{ fontSize: 16, color: '#8090a8', maxWidth: 600, margin: '0 auto', lineHeight: 1.7 }}>
+            Si inviertes <span style={{ color: '#e0e8f0', fontWeight: 700 }}>entre 300€ y 2.000€ al mes</span> en
+            empresas sólidas con dividendo creciente y quieres saber <span style={{ color: '#e0e8f0', fontWeight: 700 }}>cuáles
+            y cuándo comprar</span>, esta herramienta es para ti.
+          </p>
+        </div>
+        <div style={{ display: 'grid', gap: 12, maxWidth: 640, margin: '0 auto' }}>
+          {yes.map((t, i) => (
+            <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'rgba(52,211,153,0.05)', border: '1px solid rgba(52,211,153,0.15)', borderRadius: 10, padding: '14px 16px' }}>
+              <span style={{ color: '#34d399', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>✓</span>
+              <span style={{ fontSize: 14, color: '#c8d0e0', lineHeight: 1.5 }}>{t}</span>
+            </div>
+          ))}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '10px 16px' }}>
+            <span style={{ color: '#f87171', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>✕</span>
+            <span style={{ fontSize: 13, color: '#4a5270', lineHeight: 1.5 }}>No es para trading, análisis técnico ni para buscar la próxima acción de moda.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Mockup de tarjetas del screener filtrado para el bloque "Así se usa".
+const MOCKUP_SCREENER = [
+  { flag: '🇺🇸', name: 'Johnson & Johnson', t: 'JNJ',  score: 8.4, yield: 3.1, reason: 'yield +12% sobre su media de 5 años' },
+  { flag: '🇬🇧', name: 'British American Tobacco', t: 'BATS', score: 7.3, yield: 7.8, reason: 'yield +22% sobre su media de 5 años' },
+  { flag: '🇩🇪', name: 'Münchener Rück', t: 'MUV2', score: 7.9, yield: 3.7, reason: 'a 6% de su mínimo anual' },
+  { flag: '🇪🇸', name: 'Inditex',          t: 'ITX',  score: 7.6, yield: 3.4, reason: '15% de margen de seguridad' },
+  { flag: '🇺🇸', name: 'PepsiCo',          t: 'PEP',  score: 8.1, yield: 3.4, reason: 'cumple la regla 10/10' },
+]
+
+function scColor(s) { return s >= 8 ? '#34d399' : s >= 6.5 ? '#86efac' : '#fbbf24' }
+
+function UseCase() {
+  return (
+    <section style={{ padding: '80px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(99,102,241,0.02)' }}>
+      <style>{`
+        .use-grid { display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center; max-width: 1000px; margin: 0 auto; }
+        @media (min-width: 860px) { .use-grid { grid-template-columns: 0.85fr 1fr; } }
+      `}</style>
+      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#6366f1', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 14 }}>
+          Así se usa cada mes
+        </p>
+        <h2 style={{ fontSize: 28, fontWeight: 900, color: '#e0e8f0', marginBottom: 10 }}>
+          Cada aportación, una decisión con criterio
+        </h2>
+        <p style={{ fontSize: 14, color: '#4a5270', maxWidth: 480, margin: '0 auto' }}>
+          El flujo real: del dinero del mes a la empresa que de verdad encaja.
+        </p>
+      </div>
+      <div className="use-grid">
+        {/* Narrativa */}
+        <div style={{ display: 'grid', gap: 20 }}>
+          {[
+            ['1', 'Filtras por calidad', 'Yield mínimo, racha de dividendo, deuda contenida y margen de seguridad. De casi 2.000 empresas a una lista corta.'],
+            ['2', 'Miras quién está barato', 'La etiqueta verde "zona de compra" te dice por qué: yield por encima de su media, descuento sobre su valor o cerca de mínimos.'],
+            ['3', 'Eliges y registras la compra', 'Comparas las finalistas, decides cuál añadir este mes y la anotas en tu cartera. El mes que viene, repites.'],
+          ].map(([n, t, d]) => (
+            <div key={n} style={{ display: 'flex', gap: 14 }}>
+              <div style={{ flexShrink: 0, width: 30, height: 30, borderRadius: '50%', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{n}</div>
+              <div>
+                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#e0e8f0', marginBottom: 4 }}>{t}</h3>
+                <p style={{ fontSize: 13, color: '#4a5270', lineHeight: 1.65 }}>{d}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Mockup del screener filtrado */}
+        <div style={{ background: 'rgba(13,18,32,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 24px 48px rgba(0,0,0,0.5)' }}>
+          <div style={{ padding: '11px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 900, color: '#e0e8f0' }}>Screener DGI</span>
+            <span style={{ fontSize: 9, color: '#34d399', background: 'rgba(52,211,153,0.12)', padding: '2px 7px', borderRadius: 5 }}>Yield &gt;3%</span>
+            <span style={{ fontSize: 9, color: '#34d399', background: 'rgba(52,211,153,0.12)', padding: '2px 7px', borderRadius: 5 }}>Racha &gt;10a</span>
+            <span style={{ fontSize: 9, color: '#34d399', background: 'rgba(52,211,153,0.12)', padding: '2px 7px', borderRadius: 5 }}>Deuda &lt;3x</span>
+          </div>
+          {MOCKUP_SCREENER.map((c, i) => (
+            <div key={i} style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                <span style={{ fontSize: 14 }}>{c.flag}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 11.5, fontWeight: 700, color: '#d0d8e8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name} <span style={{ fontSize: 9, color: '#2e3a55' }}>{c.t}</span></p>
+                </div>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#8090a8' }}>{c.yield.toFixed(1)}%</span>
+                <span style={{ fontSize: 15, fontWeight: 900, color: scColor(c.score), minWidth: 26, textAlign: 'right' }}>{c.score.toFixed(1)}</span>
+              </div>
+              <p style={{ fontSize: 9.5, color: '#34d399', marginTop: 3, display: 'flex', gap: 5 }}>
+                <span>●</span><span style={{ color: '#86efac' }}>Zona de compra: {c.reason}</span>
+              </p>
+            </div>
+          ))}
+          <div style={{ padding: '9px 14px', textAlign: 'center' }}>
+            <span style={{ fontSize: 9, color: '#2e3a55' }}>5 finalistas de 1.900+ analizadas</span>
+          </div>
+        </div>
+      </div>
+      <div style={{ textAlign: 'center', marginTop: 44 }}>
+        <Link href="/screener" style={{ fontSize: 14, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '12px 26px', background: '#6366f1', borderRadius: 10, boxShadow: '0 4px 20px rgba(99,102,241,0.35)' }}>
+          Ver el screener real →
+        </Link>
+      </div>
+    </section>
+  )
+}
+
 function DualRanking() {
   const modes = [
     {
@@ -544,8 +667,10 @@ export default async function LandingPage() {
     <div style={{ minHeight: '100vh', background: '#080b14' }}>
       <PublicNav />
       <Hero />
+      <ForWhom />
       <Benefits />
       <DualRanking />
+      <UseCase />
       <HowItWorks />
       <MarketsSection />
       <PlatformMetrics companyCount={companyCount} />

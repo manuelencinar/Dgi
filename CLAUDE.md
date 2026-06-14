@@ -24,7 +24,7 @@ URL del repositorio: https://github.com/manuelencinar/Dgi
 ```
 
 ## Páginas construidas y funcionando
-- Landing page pública — presenta la app y los planes de precio; testimonios sustituidos por **métricas reales** (nº mercados, empresas, etc.)
+- Landing page pública — presenta la app y los planes de precio; testimonios sustituidos por **métricas reales** (nº mercados, empresas, etc.). Secciones (en `app/page.js`): Hero → **ForWhom** ("¿Es para ti?", perfil concreto del inversor DGI, #9) → Benefits → **DualRanking** (doble modo de ranking) → **UseCase** ("Así se usa cada mes" con mockup del screener filtrado, #8) → HowItWorks → Markets → PlatformMetrics → News → Pricing → FAQ.
 - Página de mercados — lista de 43 mercados globales con tarjetas resumen
 - Página de cada mercado individual — empresas del índice con análisis DGI
 - Screener avanzado rediseñado (`/screener`) — tarjetas, filtros free+premium, proyección €1k, comparador — ver "Screener rediseñado"
@@ -153,6 +153,7 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - **Explicación de "zona de compra"** (`buyZoneReason(co)` en `lib/screener.js`): línea verde bajo cada tarjeta (móvil+escritorio) que justifica la infravaloración, con hasta 2 razones: **yield sobre su media histórica** (`yield_avg`/`yield_avg_years`, ≥3 años, ≥+10%), descuento sobre el valor intrínseco (MoS), cercanía al mínimo de 52 sem, PER previsto < actual, o regla 10/10. Solo aparece si hay señal real de infravaloración (la 10/10 o un PER bajo por sí solos no bastan). El screener lee `pe_forward`, `week52_high/low`, `yield_avg`, `yield_avg_years` además de los campos previos.
 - **Doble modo de ranking explicado**: bajo el toggle Calidad/Renta hay una línea descriptiva del modo activo (antes solo tooltip). La landing (`app/page.js`, sección `DualRanking`) presenta ambos modos al usuario no registrado.
 - **Gate de yield mínimo DGI** (`MIN_DGI_YIELD = 0.3` en `lib/screener.js`): `computeScore` y `calcDivQuality` devuelven null si el yield < 0,3% → empresas con dividendo testimonial (p.ej. NVDA) no rankean como calidad. **CAGR div >50% se muestra como "⚠ atípico"** (no el número capeado).
+- **Aviso freemium (#7)**: para usuarios free, banner sobre los resultados ("Plan gratuito: filtras por yield, zona y sector. Hay N en zona de compra. Premium añade racha, CAGR, ROIC, deuda y margen de seguridad…"). En el screener NO se ocultan filas a los free (solo se atenúan los filtros premium). El patrón "premium revela cuáles" sí está en el radar de mercados (`MarketDetail.js`): contador "N en zona de compra · estás viendo 0 — Premium revela cuáles" sobre el radar difuminado (`OpportunityRadar` dentro de `PremiumGate`).
 
 ## Score DGI histórico (#6)
 - Tabla `score_history` (SQL en `webapp/sql/score_history.sql`, RLS lectura pública): `ticker`, `date`, `score` (= `dgiScore.total`), `prepenalty`, `sector_type`, `unique(ticker,date)`. **Sin backfill posible** — acumula desde el primer run.
