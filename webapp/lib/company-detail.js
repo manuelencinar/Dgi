@@ -291,13 +291,22 @@ export function computeProjection(history, cagr) {
   const full = history.filter(h => !h.isPartial)
   if (!full.length) return []
   const baseDps     = full[full.length - 1].dps
-  const g           = cagr ?? 0.05
+  // Crecimiento base acotado a una banda razonable (evita artefactos del CAGR).
+  const g           = Math.max(-0.5, Math.min(cagr ?? 0.05, 0.5))
+  // Escenarios como OFFSET ADITIVO (no multiplicativo): así el optimista queda
+  // SIEMPRE por encima del base y del conservador, también con dividendo
+  // decreciente (g<0). Antes (g*0.6 / g*1.4) se invertían con CAGR negativo:
+  // el "conservador" caía más lento y dejaba más renta que el "optimista".
+  // El spread escala con la magnitud del crecimiento (mínimo 2 pp).
+  const spread = Math.max(0.02, Math.abs(g) * 0.4)
+  const gCons  = Math.max(g - spread, -0.9)
+  const gOpt   = g + spread
   const currentYear = new Date().getFullYear()
   return Array.from({ length: 10 }, (_, i) => ({
     year:         currentYear + i + 1,
-    conservative: parseFloat((baseDps * Math.pow(1 + g * 0.6, i + 1)).toFixed(4)),
-    base:         parseFloat((baseDps * Math.pow(1 + g,       i + 1)).toFixed(4)),
-    optimistic:   parseFloat((baseDps * Math.pow(1 + g * 1.4, i + 1)).toFixed(4)),
+    conservative: parseFloat((baseDps * Math.pow(1 + gCons, i + 1)).toFixed(4)),
+    base:         parseFloat((baseDps * Math.pow(1 + g,     i + 1)).toFixed(4)),
+    optimistic:   parseFloat((baseDps * Math.pow(1 + gOpt,  i + 1)).toFixed(4)),
   }))
 }
 
