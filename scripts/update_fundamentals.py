@@ -254,14 +254,27 @@ def ts_to_date(v):
 
 
 def compute_streak(div_history):
-    full = [h for h in div_history if not h.get("isPartial") and h.get("growth") is not None]
-    if not full:
+    # Racha de años consecutivos subiendo el dividendo, ROBUSTA a los artefactos
+    # de agrupar dividendos por AÑO NATURAL (un pago se desplaza de año y crea un
+    # falso pico+caída, p.ej. KO 2001→2002 −26% sin recorte real).
+    #  - Cuenta un año si subió de verdad (dps > previo).
+    #  - Tolera una caída puntual si el dividendo sigue por encima del nivel de
+    #    hace 2 años Y el año previo fue un pico (patrón timing).
+    #  - Un congelamiento/recorte SOSTENIDO sí rompe la racha (p.ej. Telefónica).
+    full = sorted(
+        [h for h in (div_history or [])
+         if not h.get("isPartial") and h.get("year") is not None and (h.get("dps") or 0) > 0],
+        key=lambda h: h["year"])
+    n = len(full)
+    if n < 2:
         return 0
     streak = 0
-    for h in reversed(full):
-        # Solo cuenta como racha DGI un INCREMENTO real (>0). Un dividendo
-        # congelado (growth == 0) o recortado rompe la racha (p.ej. Telefónica).
-        if h["growth"] > 0:
+    for i in range(n - 1, 0, -1):
+        cur, prev = full[i]["dps"], full[i - 1]["dps"]
+        prev2 = full[i - 2]["dps"] if i >= 2 else None
+        increased = cur > prev * 1.001
+        timing_ok = prev2 is not None and cur >= prev2 and prev > prev2 * 1.001
+        if increased or timing_ok:
             streak += 1
         else:
             break

@@ -18,11 +18,24 @@ const WRITE = process.argv.includes('--write')
 const TICKER = (() => { const i = process.argv.indexOf('--ticker'); return i >= 0 ? process.argv[i + 1] : null })()
 const CUR_YEAR = new Date().getFullYear()
 
+// Racha robusta a los artefactos de agrupar dividendos por año natural (pico+caída
+// de timing). Tolera una caída puntual si sigue por encima del nivel de hace 2
+// años y el año previo fue un pico; un congelamiento/recorte sostenido sí rompe.
 function computeStreak(divHistory) {
-  const full = (divHistory || []).filter(h => h && h.year < CUR_YEAR && h.growth != null)
-                                 .sort((a, b) => a.year - b.year)
+  const full = (divHistory || [])
+    .filter(h => h && !h.isPartial && h.year < CUR_YEAR && (Number(h.dps) || 0) > 0)
+    .sort((a, b) => a.year - b.year)
+  const n = full.length
+  if (n < 2) return 0
   let s = 0
-  for (let i = full.length - 1; i >= 0; i--) { if (Number(full[i].growth) > 0) s++; else break }
+  for (let i = n - 1; i >= 1; i--) {
+    const cur = Number(full[i].dps), prev = Number(full[i - 1].dps)
+    const prev2 = i >= 2 ? Number(full[i - 2].dps) : null
+    const increased = cur > prev * 1.001
+    const timingOk = prev2 != null && cur >= prev2 && prev > prev2 * 1.001
+    if (increased || timingOk) s++
+    else break
+  }
   return s
 }
 
