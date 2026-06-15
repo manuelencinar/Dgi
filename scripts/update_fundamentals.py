@@ -1083,6 +1083,21 @@ def fetch_ticker(sym):
         pays_dividend = recent_div or dividend_rate > 0
         if not pays_dividend:
             dps = None
+
+        # Anti-artefacto de yield: un yield >40% casi siempre es un special
+        # dividend, un dato erróneo (p.ej. Grieg Seafood 2026=35,64) o un precio
+        # en céntimos. Se intenta el dps del último año COMPLETO; si sigue siendo
+        # absurdo, se descarta el dividendo (no mostrar un yield falso).
+        if dps is not None and price and price > 0 and (dps / price * 100) > 40:
+            complete = [h["dps"] for h in (div_history or [])
+                        if not h.get("isPartial") and (h.get("dps") or 0) > 0]
+            alt = complete[-1] if complete else None
+            if alt is not None and (alt / price * 100) <= 40:
+                dps = alt
+            else:
+                dps = None
+                pays_dividend = False
+
         no_dividend_confirmed_at = None if pays_dividend else datetime.now().isoformat()
 
         # ── FCF per share ─────────────────────────────────────────────────

@@ -56,7 +56,7 @@ async function buildTierCompanies() {
     seen.add(ticker)
     const f = fundMap[ticker]
     if (!f) continue
-    if (f.current_price == null || Number(f.current_price) <= 0) continue   // sin precio válido → ocultar
+    if (f.current_price == null || Number(f.current_price) < 0.01) continue   // sin precio o penny (<0,01) → ocultar
     const tier = dividendTier(f.div_streak)
     if (!tier) continue
     const t = type || 'general'

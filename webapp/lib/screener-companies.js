@@ -35,8 +35,9 @@ export async function buildScreenerCompanies(destWHT, baseDict) {
 
   return dict.map(([name, ticker, country, currency, sector, , type]) => {
     const f = fundMap[ticker] || null
-    // Empresas sin precio válido (0,00 o sin dato) no se muestran al usuario.
-    if (!f || f.current_price == null || Number(f.current_price) <= 0) return null
+    // Empresas sin precio válido (sin dato) o penny stocks (<0,01 → se ven
+    // "0,00" e inflan el yield, p.ej. Urbas 0,0021) no se muestran al usuario.
+    if (!f || f.current_price == null || Number(f.current_price) < 0.01) return null
     const t = type || 'general'
     const rawCagr = f.div_cagr5 != null ? Number(f.div_cagr5) : null
     const roicVal = ROIC_NA_TYPES.has(t) ? null : resolveRoic(f)

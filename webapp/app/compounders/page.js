@@ -54,7 +54,7 @@ async function buildCompounders() {
     if (EXCLUDED.has(ticker) || seen.has(ticker) || isSecondary(ticker)) continue
     seen.add(ticker)
     const f = fundMap[ticker]
-    if (!f || f.current_price == null || Number(f.current_price) <= 0) continue
+    if (!f || f.current_price == null || Number(f.current_price) < 0.01) continue   // sin precio o penny (<0,01) → ocultar
     const t = type || 'general'
     if (ROIC_NA_TYPES.has(t)) continue                         // banca/seguros/REIT: ROIC no comparable
     const capex = f.capex_cfo_pct != null ? Number(f.capex_cfo_pct) : null

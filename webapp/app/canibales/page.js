@@ -54,7 +54,7 @@ async function buildCannibals() {
     if (EXCLUDED.has(ticker) || seen.has(ticker) || isSecondary(ticker)) continue
     seen.add(ticker)
     const f = fundMap[ticker]
-    if (!f || f.current_price == null || Number(f.current_price) <= 0) continue
+    if (!f || f.current_price == null || Number(f.current_price) < 0.01) continue   // sin precio o penny (<0,01) → ocultar
     const reduced = f.shares_reduced_pct != null ? Number(f.shares_reduced_pct) : null
     if (reduced == null || reduced <= 0) continue   // solo las que han reducido acciones
     const t = type || 'general'

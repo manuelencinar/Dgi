@@ -55,7 +55,7 @@ export async function GET(req) {
     if (candidates.length) {
       const { data: pxRows } = await sb.from('company_fundamentals')
         .select('ticker, current_price').in('ticker', candidates.map(c => c.ticker))
-      validTickers = new Set((pxRows || []).filter(r => r.current_price != null && Number(r.current_price) > 0).map(r => r.ticker))
+      validTickers = new Set((pxRows || []).filter(r => r.current_price != null && Number(r.current_price) >= 0.01).map(r => r.ticker))
     }
 
     const companies = candidates
