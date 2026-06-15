@@ -1084,6 +1084,23 @@ def fetch_ticker(sym):
         if not pays_dividend:
             dps = None
 
+        # Reconciliación por TENDENCIA: si dividendRate rompe la trayectoria
+        # reciente del dividendo, suele ser un special o un artefacto de timing
+        # (p.ej. Ageas: dividendRate 4,5 vs 3,5 real → yield 6,7% en vez de 5,2%).
+        # Se usa el dividendo del último año COMPLETO. Preserva los crecientes
+        # legítimos (dividendRate acorde a su CAGR reciente no se toca).
+        if dps is not None and div_history:
+            comp = [h["dps"] for h in div_history
+                    if not h.get("isPartial") and (h.get("dps") or 0) > 0]
+            if len(comp) >= 2 and dps > comp[-1]:
+                last = comp[-1]
+                win = comp[-4:]
+                first, yrs = win[0], len(win) - 1
+                cagr = (last / first) ** (1 / yrs) - 1 if first > 0 and yrs > 0 else 0
+                cagr = max(min(cagr, 1.0), 0.05)            # tolerancia 5%–100%
+                if dps > last * (1 + cagr) * 1.20:
+                    dps = last
+
         # Anti-artefacto de yield: un yield >40% casi siempre es un special
         # dividend, un dato erróneo (p.ej. Grieg Seafood 2026=35,64) o un precio
         # en céntimos. Se intenta el dps del último año COMPLETO; si sigue siendo
