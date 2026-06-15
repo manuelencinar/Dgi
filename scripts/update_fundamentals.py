@@ -1104,6 +1104,9 @@ def fetch_ticker(sym):
                     if not pd.isna(v) and float(v) > 0:
                         payout_fcf = safe2(dps * shares / float(v) * 100)
                     break
+        # FCF base ínfimo → payout absurdo (p.ej. Infosys 5422%): se descarta.
+        if payout_fcf is not None and (payout_fcf < 0 or payout_fcf > 300):
+            payout_fcf = None
 
         # ── Deuda ─────────────────────────────────────────────────────────
         net_debt = debt_ebitda = net_debt_eb = int_cov = None

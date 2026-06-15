@@ -490,13 +490,26 @@ function dcfAFFO(data, moatWidth, currency) {
 export function computeValuation(data, moatWidth, type, currency) {
   if (!data) return null
   const sector = detectSector(type, data.sector, data.industry)
+  let res
   switch (sector) {
     case 'bank':
-    case 'insurer':   return dcfDDM(data, sector, currency)
-    case 'reit':      return dcfAFFO(data, moatWidth, currency)
-    case 'utilities': return dcfCFO(data, moatWidth, currency)
-    case 'pharma':    return dcfPharma(data, moatWidth, currency)
-    case 'energy':    return dcfNormalized(data, moatWidth, currency)
-    default:          return dcfFCF(data, moatWidth, currency)
+    case 'insurer':   res = dcfDDM(data, sector, currency); break
+    case 'reit':      res = dcfAFFO(data, moatWidth, currency); break
+    case 'utilities': res = dcfCFO(data, moatWidth, currency); break
+    case 'pharma':    res = dcfPharma(data, moatWidth, currency); break
+    case 'energy':    res = dcfNormalized(data, moatWidth, currency); break
+    default:          res = dcfFCF(data, moatWidth, currency)
   }
+  // Guard de fiabilidad: si el valor intrínseco sale como una fracción ínfima
+  // (MoS < −85%) o un múltiplo absurdo (MoS > 500%) del precio, casi siempre es
+  // un artefacto de datos/divisa (p.ej. Infosys, iv en escala errónea) → no se
+  // muestra como fiable en vez de un "−99%" que destruye la confianza.
+  if (res && res.available && res.mos != null && (res.mos < -0.85 || res.mos > 5)) {
+    return {
+      ...res, available: false,
+      unavailableReason: 'Valor intrínseco no fiable para este activo — posible problema de datos o de divisa.',
+      intrinsicValue: null, mos: null, projection: null,
+    }
+  }
+  return res
 }
