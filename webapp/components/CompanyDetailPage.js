@@ -53,10 +53,26 @@ const DEFAULT_DEST_WHT = 19   // fallback si el usuario no tiene residencia fisc
 
 // ── premium gate ──────────────────────────────────────────────────────────
 
-function PremiumGate({ label = 'Contenido Premium', hint, children }) {
+// Gate premium. IMPORTANTE: NO renderiza datos reales — solo un esqueleto
+// ficticio difuminado. Así, aunque el usuario quite el filter:blur por DevTools
+// o lea el HTML, no hay contenido premium en el DOM ni en el payload del cliente.
+function PremiumGate({ label = 'Contenido Premium', hint }) {
   return (
-    <div style={{ position: 'relative' }}>
-      <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none' }}>{children}</div>
+    <div style={{ position: 'relative', minHeight: 150 }}>
+      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }} aria-hidden="true">
+        <Card>
+          <div style={{ height: 12, width: '42%', background: 'rgba(255,255,255,0.12)', borderRadius: 5, marginBottom: 16 }} />
+          <div style={{ display: 'grid', gap: 10, marginBottom: 16 }}>
+            {[82, 64, 90, 55].map((w, i) => (
+              <div key={i} style={{ height: 10, width: `${w}%`, background: 'rgba(255,255,255,0.07)', borderRadius: 5 }} />
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ height: 46, background: 'rgba(255,255,255,0.05)', borderRadius: 8 }} />
+            <div style={{ height: 46, background: 'rgba(255,255,255,0.05)', borderRadius: 8 }} />
+          </div>
+        </Card>
+      </div>
       <div style={{
         position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(8,11,20,0.55)',
@@ -141,6 +157,7 @@ function MiniMetric({ label, value, sub, color }) {
 // ── moat section (full) ────────────────────────────────────────────────────
 
 function MoatSection({ moat, isPremium }) {
+  if (!isPremium) return <PremiumGate label="Foso económico" hint="Señales de ventaja competitiva basadas en ROE, márgenes y racha de dividendos." />
   if (!moat) return null
   const widthColor = { wide: '#34d399', narrow: '#fbbf24', none: '#4a5270' }[moat.width] || '#4a5270'
   const content = (
@@ -184,11 +201,7 @@ function MoatSection({ moat, isPremium }) {
       )}
     </Card>
   )
-  return isPremium ? content : (
-    <PremiumGate label="Foso económico" hint="Señales de ventaja competitiva basadas en ROE, márgenes y racha de dividendos.">
-      {content}
-    </PremiumGate>
-  )
+  return content
 }
 
 // ── dividend history section ───────────────────────────────────────────────
@@ -586,6 +599,9 @@ function DCFSection({ dcf, ticker, isPremium, ma200 }) {
   }
   const changeParam = (key, val) => setCustom(p => ({ ...(p || dcf.params), [key]: val }))
 
+  // El usuario free no recibe el cálculo (solo el MoS como teaser en el resumen).
+  if (!isPremium) return <PremiumGate label="Valoración (Premium)" hint="Valor intrínseco, margen de seguridad y cálculo detallado adaptado al sector." />
+
   const content = (
     <Card>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
@@ -756,16 +772,13 @@ function DCFSection({ dcf, ticker, isPremium, ma200 }) {
     </Card>
   )
 
-  return isPremium ? content : (
-    <PremiumGate label="Valoración (Premium)" hint="Valor intrínseco, margen de seguridad y cálculo detallado adaptado al sector.">
-      {content}
-    </PremiumGate>
-  )
+  return content
 }
 
 // ── valuation multiples grid ───────────────────────────────────────────────
 
 function MultiplesGrid({ valuationMetrics, isPremium }) {
+  if (!isPremium) return <PremiumGate label="Múltiplos (Premium)" hint="PER, EV/EBITDA y precio/valor contable con puntuación por sector." />
   if (!valuationMetrics?.length) return null
   // Reutiliza las métricas de valoración del Score DGI (pe, pef, eveb, pb) con su color
   const wanted = ['pe', 'pef', 'eveb', 'pb']
@@ -794,16 +807,13 @@ function MultiplesGrid({ valuationMetrics, isPremium }) {
       <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10 }}>Puntuación 0–10 según los umbrales del sector.</p>
     </Card>
   )
-  return isPremium ? content : (
-    <PremiumGate label="Múltiplos (Premium)" hint="PER, EV/EBITDA y precio/valor contable con puntuación por sector.">
-      {content}
-    </PremiumGate>
-  )
+  return content
 }
 
 // ── PER history chart ──────────────────────────────────────────────────────
 
 function PerHistoryChart({ peHistory, peTrailing, isPremium }) {
+  if (!isPremium) return <PremiumGate label="Historial de valoración (Premium)" hint="Evolución del PER por ejercicio frente al PER actual." />
   const data = (peHistory || []).filter(d => d.pe != null)
   const hasChart = data.length >= 2
   const mean = data.length ? data.reduce((s, d) => s + d.pe, 0) / data.length : null
@@ -857,14 +867,13 @@ function PerHistoryChart({ peHistory, peTrailing, isPremium }) {
       )}
     </Card>
   )
-  return isPremium ? content : (
-    <PremiumGate label="Historial de valoración (Premium)" hint="Evolución del PER por ejercicio frente al PER actual.">{content}</PremiumGate>
-  )
+  return content
 }
 
 // ── insights section ───────────────────────────────────────────────────────
 
 function InsightsSection({ insights, isPremium, limit, onlyStrong, title = 'Análisis automático' }) {
+  if (!isPremium) return <PremiumGate label="Análisis automático (Premium)" hint="Insights sobre dividendo, valoración y calidad del negocio." />
   if (!insights?.length) return null
   const typeIcon  = { positive: '↑', neutral: '·', negative: '↓', green: '↑', yellow: '·', red: '↓' }
   const typeColor = { positive: '#34d399', neutral: '#fbbf24', negative: '#f87171', green: '#34d399', yellow: '#fbbf24', red: '#f87171' }
@@ -906,9 +915,7 @@ function InsightsSection({ insights, isPremium, limit, onlyStrong, title = 'Aná
   )
 
   const content = <Card><SectionTitle>{title}</SectionTitle>{body}</Card>
-  return isPremium ? content : (
-    <PremiumGate label="Análisis automático (Premium)" hint="Insights sobre dividendo, valoración y calidad del negocio.">{content}</PremiumGate>
-  )
+  return content
 }
 
 // ── DGI score card ─────────────────────────────────────────────────────────
@@ -953,6 +960,7 @@ function CategoryBars({ categories }) {
 }
 
 function DGIScoreCard({ dgiScore, isPremium, compact, scoreHistory }) {
+  if (!isPremium) return <PremiumGate label="Score DGI (Premium)" hint="Nota 0–10 con desglose completo por categoría y métrica." />
   if (!dgiScore) return null
 
   if (compact) {
@@ -1047,14 +1055,13 @@ function DGIScoreCard({ dgiScore, isPremium, compact, scoreHistory }) {
       {dgiScore.methodology && <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 12 }}>{dgiScore.methodology}</p>}
     </Card>
   )
-  return isPremium ? content : (
-    <PremiumGate label="Score DGI (Premium)" hint="Nota 0–10 con desglose completo por categoría y métrica.">{content}</PremiumGate>
-  )
+  return content
 }
 
 // ── ROIC card ──────────────────────────────────────────────────────────────
 
 function RoicCard({ roicData, isPremium }) {
+  if (!isPremium) return <PremiumGate label="ROIC (Premium)" hint="Rentabilidad sobre el capital invertido, reportado y tangible." />
   if (!roicData) return null
   if (roicData.roic_not_applicable) {
     const content = (
@@ -1067,7 +1074,7 @@ function RoicCard({ roicData, isPremium }) {
         </div>
       </Card>
     )
-    return isPremium ? content : <PremiumGate label="ROIC (Premium)">{content}</PremiumGate>
+    return content
   }
   const { roic_reported, roic_tangible, roic_warning, roic_method } = roicData
   if (roic_reported == null && roic_tangible == null) {
@@ -1123,7 +1130,7 @@ function RoicCard({ roicData, isPremium }) {
       {roic_method && !roic_warning && roic_method !== 'Precalculado' && <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10 }}>{roic_method}</p>}
     </Card>
   )
-  return isPremium ? content : <PremiumGate label="ROIC (Premium)" hint="Rentabilidad sobre el capital invertido, reportado y tangible.">{content}</PremiumGate>
+  return content
 }
 
 // ── buyback section ────────────────────────────────────────────────────────

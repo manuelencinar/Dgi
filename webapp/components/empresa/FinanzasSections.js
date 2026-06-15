@@ -195,10 +195,19 @@ export function FinanzasKpis({ income, cashflow, balance, divHistory, scalars = 
 // ════════════════════════════════════════════════════════════════════════════
 //  Bloque profundo (premium): márgenes, deuda, rentabilidad, capital, por acción
 // ════════════════════════════════════════════════════════════════════════════
-function PremiumGate({ children }) {
+// NO renderiza los children reales — solo un esqueleto ficticio difuminado, para
+// que quitar el filter:blur o leer el HTML no revele el análisis premium.
+function PremiumGate() {
   return (
-    <div style={{ position: 'relative' }}>
-      <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none' }}>{children}</div>
+    <div style={{ position: 'relative', minHeight: 160 }}>
+      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }} aria-hidden="true">
+        <div style={{ display: 'grid', gap: 12 }}>
+          <div style={{ height: 11, width: '38%', background: 'rgba(255,255,255,0.10)', borderRadius: 5 }} />
+          {[88, 72, 94, 60, 80].map((w, i) => (
+            <div key={i} style={{ height: 9, width: `${w}%`, background: 'rgba(255,255,255,0.06)', borderRadius: 4 }} />
+          ))}
+        </div>
+      </div>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(8,11,20,0.55)' }}>
         <p style={{ fontSize: 13, fontWeight: 700, color: '#818cf8' }}>Análisis financiero avanzado (Premium)</p>
         <p style={{ fontSize: 12, color: '#4a5270', textAlign: 'center', maxWidth: 280 }}>Márgenes, deuda, rentabilidad histórica, capital allocation y por acción.</p>
@@ -464,7 +473,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
     </div>
   )
 
-  return isPremium ? inner : <PremiumGate>{inner}</PremiumGate>
+  return isPremium ? inner : <PremiumGate />
 }
 
 // ── auxiliares de presentación ──────────────────────────────────────────────

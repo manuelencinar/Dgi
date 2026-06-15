@@ -328,6 +328,28 @@ export default async function EmpresaPage({ params, searchParams }) {
     market_cap_m: detail.market_cap_m ?? null,
   } : null
 
+  // ── Gating de seguridad: el usuario free NO recibe los datos premium en el
+  // payload del cliente (antes solo se difuminaban con CSS y se podían leer en
+  // el DOM/fuente). Se mantienen únicamente los campos del "teaser" del resumen.
+  const STRONG_INS = ['positive', 'negative', 'green', 'red']
+  const moatPub   = isPremium ? moat : (moat ? { width: moat.width, label: moat.label, signals: (moat.signals || []).slice(0, 3) } : null)
+  const dcfPub    = isPremium ? dcf : { mos: dcf?.mos ?? null }
+  const insightsPub = isPremium ? insights : (insights || []).filter(i => STRONG_INS.includes(i.type)).slice(0, 3)
+  const dgiScorePub = isPremium ? dgiScore : null
+  const roicPub   = isPremium ? roicData : null
+  const peHistPub = isPremium ? peHistory : []
+  const scoreHistPub = isPremium ? scoreHistory : []
+  const healthPub = isPremium ? healthPanel
+    : (healthPanel ? { ...healthPanel, cards: (healthPanel.cards || []).map(() => ({})) } : null)
+  const financialsPub = {
+    income_statement_annual:    detail?.income_statement_annual    ?? null,
+    balance_sheet_annual:       detail?.balance_sheet_annual       ?? null,
+    cashflow_annual:            detail?.cashflow_annual            ?? null,
+    income_statement_quarterly: isPremium ? (detail?.income_statement_quarterly ?? null) : null,
+    balance_sheet_quarterly:    isPremium ? (detail?.balance_sheet_quarterly    ?? null) : null,
+    cashflow_quarterly:         isPremium ? (detail?.cashflow_quarterly         ?? null) : null,
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>
       <PublicNav />
@@ -373,34 +395,27 @@ export default async function EmpresaPage({ params, searchParams }) {
         originWHT={originWHT}
         paysDividend={paysDividend}
         noDividendAt={noDividendAt}
-        peHistory={peHistory}
+        peHistory={peHistPub}
         manualImport={manualImport}
         finScalars={finScalars}
-        healthPanel={healthPanel}
+        healthPanel={healthPub}
         initialTab={initialTab}
-        roicData={roicData}
-        moat={moat}
-        dcf={dcf}
+        roicData={roicPub}
+        moat={moatPub}
+        dcf={dcfPub}
         projection={projection}
-        dgiScore={dgiScore}
-        scoreHistory={scoreHistory}
+        dgiScore={dgiScorePub}
+        scoreHistory={scoreHistPub}
         ma200={detail?.ma200 ?? null}
         crossListings={crossListings}
-        insights={insights}
+        insights={insightsPub}
         badges={badges}
         buybacks={buybacks}
         revenueHistory={detail?.revenue_history    ?? null}
         netIncomeHistory={detail?.net_income_history ?? null}
         fcfHistory={detail?.fcf_history            ?? null}
         epsHistory={detail?.eps_history            ?? null}
-        financials={{
-          income_statement_annual:    detail?.income_statement_annual    ?? null,
-          balance_sheet_annual:       detail?.balance_sheet_annual       ?? null,
-          cashflow_annual:            detail?.cashflow_annual            ?? null,
-          income_statement_quarterly: detail?.income_statement_quarterly ?? null,
-          balance_sheet_quarterly:    detail?.balance_sheet_quarterly    ?? null,
-          cashflow_quarterly:         detail?.cashflow_quarterly         ?? null,
-        }}
+        financials={financialsPub}
       />
     </div>
   )

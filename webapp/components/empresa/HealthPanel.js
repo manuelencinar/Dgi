@@ -102,9 +102,24 @@ export function HealthCards({ cards, isPremium }) {
 
   if (isPremium) return grid
 
+  // Free: NO se renderizan los datos reales — solo un esqueleto ficticio. Así
+  // quitar el filter:blur o leer el HTML no revela las métricas premium.
+  const decoy = (
+    <div className="health-cards-grid" aria-hidden="true">
+      {Array.from({ length: Math.min(Math.max(cards.length, 3), 6) }).map((_, i) => (
+        <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: 14 }}>
+          <div style={{ height: 9, width: '55%', background: 'rgba(255,255,255,0.10)', borderRadius: 4, marginBottom: 12 }} />
+          <div style={{ height: 18, width: '40%', background: 'rgba(255,255,255,0.07)', borderRadius: 4, marginBottom: 10 }} />
+          <div style={{ height: 6, width: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: 4 }} />
+        </div>
+      ))}
+    </div>
+  )
+
   return (
     <div style={{ position: 'relative' }}>
-      <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none' }}>{grid}</div>
+      <style>{`.health-cards-grid { display: grid; grid-template-columns: 1fr; gap: 12px; } @media (min-width: 560px) { .health-cards-grid { grid-template-columns: 1fr 1fr; } } @media (min-width: 900px) { .health-cards-grid { grid-template-columns: 1fr 1fr 1fr; } }`}</style>
+      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }}>{decoy}</div>
       <div style={{
         position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(8,11,20,0.55)',
