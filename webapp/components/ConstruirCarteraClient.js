@@ -1,8 +1,7 @@
 'use client'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getCountry } from '@/lib/helpers'
-import { buildPortfolioPlan } from '@/lib/build-plan'
 
 const STORE_KEY = 'construir-cartera:v1'
 
@@ -25,7 +24,7 @@ const HORIZONS = [
 
 const TOTAL_STEPS = 4
 
-export default function ConstruirCarteraClient({ companies = [], sectors = [], destWHT = 19, isPremium = false, isAuthed = false }) {
+export default function ConstruirCarteraClient({ sectors = [], destWHT = 19, isPremium = false, isAuthed = false }) {
   const [step, setStep]       = useState(1)         // 1..4 preguntas, luego 'result'
   const [monthly, setMonthly] = useState(300)
   const [customMonthly, setCustomMonthly] = useState('')
@@ -56,13 +55,32 @@ export default function ConstruirCarteraClient({ companies = [], sectors = [], d
     try { localStorage.setItem(STORE_KEY, JSON.stringify({ monthly, customMonthly, targetYield, horizon, exclude, generated: step === 'result' })) } catch {}
   }, [loaded, monthly, customMonthly, targetYield, horizon, exclude, step])
 
-  const result = useMemo(() => {
-    if (step !== 'result') return null
-    return buildPortfolioPlan(companies, { monthly: effMonthly, targetYield, horizon, excludeSectors: exclude, destWHT, size: 12 })
-  }, [step, companies, effMonthly, targetYield, horizon, exclude, destWHT])
+  // El plan se calcula en el SERVER (POST /api/construir-cartera): el universo de
+  // empresas nunca llega al cliente; al free solo le llegan 5 del plan.
+  const [result, setResult] = useState(null)
+  const [genStatus, setGenStatus] = useState('idle')   // idle | loading | done | error
+
+  useEffect(() => {
+    if (!loaded || step !== 'result') return
+    let cancelled = false
+    setGenStatus('loading'); setResult(null)
+    fetch('/api/construir-cartera', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ monthly: effMonthly, targetYield, horizon, exclude }),
+    })
+      .then(async r => ({ ok: r.ok, data: await r.json().catch(() => null) }))
+      .then(({ ok, data }) => {
+        if (cancelled) return
+        if (!ok || !data) { setGenStatus('error'); return }
+        setResult(data); setGenStatus('done')
+      })
+      .catch(() => { if (!cancelled) setGenStatus('error') })
+    return () => { cancelled = true }
+    // Solo al entrar en 'result' (las respuestas no cambian estando en result).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, step])
 
   const toggleSector = (s) => setExclude(x => x.includes(s) ? x.filter(v => v !== s) : [...x, s])
-  const FREE_VISIBLE = 5
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '24px 16px 100px' }}>
@@ -148,8 +166,17 @@ export default function ConstruirCarteraClient({ companies = [], sectors = [], d
             )}
           </div>
         </>
+      ) : genStatus === 'loading' ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <p style={{ fontSize: 14, color: '#8090a8' }}>Generando tu plan…</p>
+        </div>
+      ) : genStatus === 'error' ? (
+        <div style={{ textAlign: 'center', padding: '50px 20px' }}>
+          <p style={{ fontSize: 14, color: '#f87171', marginBottom: 16 }}>No se pudo generar el plan. Inténtalo de nuevo.</p>
+          <button onClick={() => setStep(1)} style={primaryBtn}>← Ajustar respuestas</button>
+        </div>
       ) : (
-        <Result result={result} isPremium={isPremium} isAuthed={isAuthed} freeVisible={FREE_VISIBLE}
+        <Result result={result} isPremium={isPremium} isAuthed={isAuthed}
           onRestart={() => setStep(1)} />
       )}
     </div>
@@ -157,7 +184,7 @@ export default function ConstruirCarteraClient({ companies = [], sectors = [], d
 }
 
 // ── Resultado ────────────────────────────────────────────────────────────────
-function Result({ result, isPremium, isAuthed, freeVisible, onRestart }) {
+function Result({ result, isPremium, isAuthed, onRestart }) {
   if (!result || !result.plan?.length) {
     return (
       <div style={{ textAlign: 'center', padding: '50px 20px' }}>
@@ -166,18 +193,17 @@ function Result({ result, isPremium, isAuthed, freeVisible, onRestart }) {
       </div>
     )
   }
-  const { plan, meta } = result
-  const visible = isPremium ? plan : plan.slice(0, freeVisible)
-  const hidden = plan.length - visible.length
+  // El server ya envía el plan recortado para free (5 empresas) + el conteo del resto.
+  const { plan: visible, meta, hidden = 0 } = result
 
   const [add, setAdd] = useState({ status: 'idle', added: 0, msg: null })
   const addToWatchlist = async () => {
     if (!isAuthed) { window.location.href = `/login?next=${encodeURIComponent('/construir-cartera')}&msg=watchlist`; return }
-    if (!plan.length || add.status === 'adding') return
+    if (!visible.length || add.status === 'adding') return
     setAdd({ status: 'adding', added: 0, msg: null })
     let added = 0
     // En orden de prioridad: si el free toca el límite (10), entran primero las mejores.
-    for (const p of plan) {
+    for (const p of visible) {
       try {
         const res = await fetch('/api/watchlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticker: p.ticker }) })
         if (res.status === 403) { setAdd({ status: 'limit', added, msg: `Añadidas ${added}. Límite del plan gratuito (10) — Premium para seguir todas.` }); return }
@@ -222,7 +248,7 @@ function Result({ result, isPremium, isAuthed, freeVisible, onRestart }) {
             width: '100%', padding: '12px', borderRadius: 10, cursor: add.status === 'adding' ? 'default' : 'pointer', fontFamily: 'inherit',
             border: '1px solid rgba(99,102,241,0.35)', background: 'rgba(99,102,241,0.12)', color: '#a5b4fc', fontSize: 13.5, fontWeight: 700,
           }}>
-            {add.status === 'adding' ? `Añadiendo… (${add.added})` : `👁 Seguir el plan en mi watchlist (${plan.length})`}
+            {add.status === 'adding' ? `Añadiendo… (${add.added})` : `👁 Seguir el plan en mi watchlist (${visible.length})`}
           </button>
         )}
       </div>
