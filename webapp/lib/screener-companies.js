@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getContinent } from '@/lib/helpers'
 import { computeScore, resolveRoic, marginSafety, yieldPct, deriveMoat, moatErosion, calcDivQuality, rule1010, sanePayout, mosUnreliable } from '@/lib/screener'
 import { isSecondary } from '@/lib/listings'
+import { getIndexConstituents } from '@/lib/index-constituents'
 
 // Lee company_fundamentals (campos escalares) paginado — PostgREST limita a 1000 filas.
 async function fetchFundamentals() {
@@ -84,4 +85,48 @@ export async function buildScreenerCompanies(destWHT, baseDict) {
       bFcf:   f.bonus_fcf_growth != null ? Number(f.bonus_fcf_growth) : 0,
     }
   }).filter(Boolean)
+}
+
+// ── Muestra freemium del screener ──────────────────────────────────────────
+// El usuario free solo recibe 50 empresas (con TODOS sus datos y filtros); el
+// resto NO se le envía. Selección DETERMINISTA (siempre las mismas 50) con
+// reparto por índice: 1 IBEX 35, 1 DAX, 1 CAC 40, 1 FTSE 100, 5 S&P 500 y el
+// resto (41) del resto del mundo. "Al azar" pero estable vía hash del ticker.
+export const FREE_SCREENER_SAMPLE = 50
+
+function hashTicker(s) {
+  let h = 2166136261
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) }
+  return h >>> 0
+}
+// Orden pseudo-aleatorio pero estable (mismo resultado en cada carga).
+function stableOrder(pool) {
+  return [...pool].sort((a, b) => (hashTicker(a.t) - hashTicker(b.t)) || (a.t < b.t ? -1 : 1))
+}
+
+export function selectFreeSample(companies, n = FREE_SCREENER_SAMPLE) {
+  const setOf = sym => new Set(getIndexConstituents(sym).map(c => c.ticker))
+  const ibex = setOf('^IBEX'), dax = setOf('^GDAXI'), cac = setOf('^FCHI'), ftse = setOf('^FTSE'), sp = setOf('^GSPC')
+  const named = new Set([...ibex, ...dax, ...cac, ...ftse, ...sp])
+
+  const chosen = new Map()
+  const take = (pool, k) => {
+    for (const co of stableOrder(pool)) {
+      if (k <= 0 || chosen.size >= n) break
+      if (!chosen.has(co.t)) { chosen.set(co.t, co); k-- }
+    }
+  }
+  const inSet = set => companies.filter(c => set.has(c.t))
+
+  take(inSet(ibex), 1)
+  take(inSet(dax), 1)
+  take(inSet(cac), 1)
+  take(inSet(ftse), 1)
+  take(inSet(sp), 5)
+  // Resto del mundo: empresas fuera de esos cinco índices.
+  take(companies.filter(c => !named.has(c.t)), n - chosen.size)
+  // Respaldo: si algún índice no tuvo candidatos, completar hasta n con cualquiera.
+  if (chosen.size < n) take(companies, n - chosen.size)
+
+  return [...chosen.values()]
 }

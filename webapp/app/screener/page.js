@@ -2,7 +2,7 @@ import { createClient as authClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/PublicNav'
 import ScreenerClient from '@/components/ScreenerClient'
 import { getEffectiveDict } from '@/lib/dict'
-import { buildScreenerCompanies } from '@/lib/screener-companies'
+import { buildScreenerCompanies, selectFreeSample } from '@/lib/screener-companies'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,8 +48,13 @@ function parseInitialFilters(sp) {
 export default async function ScreenerPage({ searchParams }) {
   const sp = (await searchParams) || {}
   const { plan, destWHT, followed, isAuthed } = await getUserContext()
+  const isPremium = plan === 'premium'
   const dict = await getEffectiveDict()
-  const companies = await buildScreenerCompanies(destWHT, dict)
+  const allCompanies = await buildScreenerCompanies(destWHT, dict)
+  const totalCompanies = allCompanies.length
+  // Free: solo se ENVÍAN al cliente 50 empresas (las mismas siempre); el resto
+  // requiere suscripción y ni siquiera se carga.
+  const companies = isPremium ? allCompanies : selectFreeSample(allCompanies)
   const sectors = [...new Set(dict.map(d => d[4]))].filter(Boolean).sort()
 
   const initial = parseInitialFilters(sp)
@@ -60,13 +65,14 @@ export default async function ScreenerPage({ searchParams }) {
       <PublicNav active="/screener" />
       <ScreenerClient
         companies={companies}
-        isPremium={plan === 'premium'}
+        isPremium={isPremium}
         sectors={sectors}
         destWHT={destWHT}
         followed={followed}
         isAuthed={isAuthed}
         initial={Object.keys(initial).length ? initial : null}
         hueco={hueco}
+        totalCompanies={totalCompanies}
       />
     </div>
   )

@@ -270,7 +270,7 @@ function Comparator({ companies, destWHT, onClose }) {
 }
 
 // ── Componente principal ───────────────────────────────────────────────────
-export default function ScreenerClient({ companies = [], isPremium = false, sectors = [], destWHT = 19, followed = [], isAuthed = false, initial = null, hueco = null }) {
+export default function ScreenerClient({ companies = [], isPremium = false, sectors = [], destWHT = 19, followed = [], isAuthed = false, initial = null, hueco = null, totalCompanies = 0 }) {
   const followedSet = useMemo(() => new Set(followed), [followed])
   const [filters, setFilters] = useState(initial ? { ...INIT, ...initial } : INIT)
   const [showHueco, setShowHueco] = useState(!!hueco)
@@ -286,7 +286,9 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
   useEffect(() => { setVisible(PAGE) }, [filters, search, sortKey])
 
   const set = useCallback((key, val) => setFilters(f => ({ ...f, [key]: val })), [])
-  const lock = !isPremium
+  // Nuevo modelo freemium: TODOS los filtros están disponibles para todos. El
+  // límite del plan gratuito es el nº de empresas (50), no los filtros.
+  const lock = false
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -295,8 +297,6 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       if (filters.score > 0 && (co.sc == null || co.sc < filters.score)) return false
       if (filters.zona !== 'all' && co.cont !== filters.zona) return false
       if (filters.sector !== 'all' && co.s !== filters.sector) return false
-      if (!isPremium) return true
-      // Premium
       // Si hay cualquier filtro de dividendo activo, excluir las empresas que no
       // reparten dividendo (aparecen en el screener, pero no en búsquedas por dividendo).
       const divFilterActive = filters.yield > 0 || filters.streak > 0 || filters.cagr > 0 || filters.rule1010 || filters.payout < 999
@@ -410,7 +410,11 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', marginBottom: 4 }}>Screener DGI</h1>
-        <p style={{ fontSize: 12, color: '#3a4260' }}>{companies.length.toLocaleString('es-ES')} empresas de 43 mercados</p>
+        <p style={{ fontSize: 12, color: '#3a4260' }}>
+          {isPremium
+            ? `${companies.length.toLocaleString('es-ES')} empresas de 43 mercados`
+            : `Muestra gratuita de ${companies.length} empresas · ${(totalCompanies || companies.length).toLocaleString('es-ES')} con Premium`}
+        </p>
         <Link href="/construir-cartera" style={{ display: 'inline-block', marginTop: 10, fontSize: 12.5, fontWeight: 700, color: '#a5b4fc', textDecoration: 'none', padding: '8px 14px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 9 }}>
           🧭 ¿No sabes por dónde empezar? Construye tu cartera desde cero →
         </Link>
@@ -530,25 +534,18 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
             <Chips label="Capitalización" opts={CAP_OPTS} value={filters.cap} onChange={v => set('cap', v)} locked={lock} />
           </div>
 
-          {lock && (
-            <div style={{ marginTop: 16, padding: '12px 16px', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              <p style={{ fontSize: 12, color: '#8090a8' }}>Desbloquea todos los filtros avanzados con Premium</p>
-              <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '8px 16px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>Ver Premium →</Link>
-            </div>
-          )}
         </div>
       )}
 
       {/* Guía de métricas */}
       {helpOpen && <HelpGuide />}
 
-      {/* Aviso freemium: qué es gratis vs. premium */}
+      {/* Aviso freemium: muestra de 50 empresas vs. universo completo */}
       {!isPremium && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.18)', borderRadius: 10, padding: '10px 14px', marginBottom: 12 }}>
           <p style={{ fontSize: 12.5, color: '#8090a8', lineHeight: 1.55, flex: 1, minWidth: 220 }}>
-            Plan gratuito: filtras por <span style={{ color: '#c8d0e0', fontWeight: 700 }}>yield, zona y sector</span>.
-            {buyZoneCount > 0 && <> Hay <span style={{ color: '#34d399', fontWeight: 800 }}>{buyZoneCount}</span> en zona de compra entre los resultados.</>}
-            {' '}Premium añade <span style={{ color: '#c8d0e0', fontWeight: 700 }}>racha, CAGR, ROIC, deuda y margen de seguridad</span> para aislarlas.
+            Plan gratuito: estás viendo una <span style={{ color: '#c8d0e0', fontWeight: 700 }}>muestra de {companies.length} empresas</span> de todo el mundo, con <span style={{ color: '#c8d0e0', fontWeight: 700 }}>todos los datos y filtros</span>.
+            {totalCompanies > companies.length && <> Premium desbloquea las <span style={{ color: '#34d399', fontWeight: 800 }}>{totalCompanies.toLocaleString('es-ES')}</span> empresas de 43 mercados.</>}
           </p>
           <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '8px 14px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>Ver Premium →</Link>
         </div>
