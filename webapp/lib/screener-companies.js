@@ -4,6 +4,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { getContinent } from '@/lib/helpers'
 import { computeScore, resolveRoic, marginSafety, yieldPct, deriveMoat, moatErosion, calcDivQuality, rule1010, sanePayout, mosUnreliable } from '@/lib/screener'
+import { isSecondary } from '@/lib/listings'
 
 // Lee company_fundamentals (campos escalares) paginado — PostgREST limita a 1000 filas.
 async function fetchFundamentals() {
@@ -29,7 +30,8 @@ export async function buildScreenerCompanies(destWHT, baseDict) {
 
   // Deduplicar y excluir tickers no invertibles (VIX, etc.)
   const seen = new Set()
-  const dict = baseDict.filter(d => { if (EXCLUDED.has(d[1]) || seen.has(d[1])) return false; seen.add(d[1]); return true })
+  // Excluye no invertibles, duplicados y cotizaciones SECUNDARIAS (solo la matriz).
+  const dict = baseDict.filter(d => { if (EXCLUDED.has(d[1]) || seen.has(d[1]) || isSecondary(d[1])) return false; seen.add(d[1]); return true })
 
   return dict.map(([name, ticker, country, currency, sector, , type]) => {
     const f = fundMap[ticker] || null

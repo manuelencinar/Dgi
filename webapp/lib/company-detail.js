@@ -234,6 +234,38 @@ export function computeMoat(data, streak) {
     return { width: w, label: lbl, signals: sig, negative: neg, sources: w !== 'none' ? ['ROE sostenido', 'Escala y marca'] : [], score: s }
   }
 
+  // ── Foso sector-aware para REITs ──────────────────────────────────────────
+  // El ROIC y el margen bruto no aplican a un REIT (negocio capital-intensivo
+  // por naturaleza). Se mide por escala/diversificación, crecimiento de rentas,
+  // margen operativo (calidad de activos) y racha del dividendo.
+  const isReit = _ind.includes('reit') || _ind.includes('real estate investment') || _sec.includes('real estate')
+  if (isReit) {
+    const mcap = n(data.market_cap_m)
+    let s = 0; const sig = [], neg = []
+    if (mcap != null) {
+      if      (mcap > 20000) { s += 30; sig.push('Gran escala — REIT diversificado de gran capitalización') }
+      else if (mcap > 5000)    s += 18
+      else if (mcap < 1000)    neg.push('REIT de pequeña capitalización — menor diversificación de activos')
+    }
+    if (revCagr != null) {
+      if      (revCagr > 6) { s += 25; sig.push(`Rentas creciendo con fuerza (CAGR ${revCagr.toFixed(1)}%)`) }
+      else if (revCagr > 3)   s += 15
+      else if (revCagr > 0)   s += 6
+      else                    neg.push(`Rentas en contracción (${revCagr.toFixed(1)}%)`)
+    }
+    if (opM != null) {
+      if      (opM > 55) { s += 20; sig.push(`Margen operativo alto (${opM.toFixed(0)}%) — activos de calidad`) }
+      else if (opM > 40)   s += 10
+    }
+    if (streak >= 15) { s += 20; sig.push(`${streak} años consecutivos aumentando el dividendo`) }
+    else if (streak >= 10) s += 12
+    else if (streak >= 5)  s += 6
+    const w = s >= 60 ? 'wide' : s >= 35 ? 'narrow' : 'none'
+    const lbl = w === 'wide' ? 'Foso ancho' : w === 'narrow' ? 'Foso estrecho'
+      : 'Foso difícil de medir con métricas estándar en REITs'
+    return { width: w, label: lbl, signals: sig, negative: neg, sources: w !== 'none' ? ['Escala y ubicación de activos', 'Rentas crecientes'] : [], score: s }
+  }
+
   let score = 0
   const signals  = []
   const negative = []

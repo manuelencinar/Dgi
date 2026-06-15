@@ -5,6 +5,7 @@ import AristocratasClient from '@/components/AristocratasClient'
 import { getEffectiveDict } from '@/lib/dict'
 import { getContinent, dividendTier } from '@/lib/helpers'
 import { computeScore, yieldPct, marginSafety, mosUnreliable } from '@/lib/screener'
+import { isSecondary } from '@/lib/listings'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,7 +52,7 @@ async function buildTierCompanies() {
   const seen = new Set()
   const rows = []
   for (const [name, ticker, country, currency, sector, , type] of dict) {
-    if (EXCLUDED.has(ticker) || seen.has(ticker)) continue
+    if (EXCLUDED.has(ticker) || seen.has(ticker) || isSecondary(ticker)) continue
     seen.add(ticker)
     const f = fundMap[ticker]
     if (!f) continue
