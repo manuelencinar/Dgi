@@ -24,12 +24,23 @@ function ScoreGauge({ value, label, size = 'sm' }) {
   )
 }
 
-function PremiumGate({ children }) {
+// Decoy: NO renderiza el contenido real (se calcula solo para premium). Quitar
+// el blur o leer el DOM no revela el Score DGI de la cartera.
+function PremiumGate() {
   return (
-    <div style={{ position: 'relative' }}>
-      <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none' }}>{children}</div>
+    <div style={{ ...CARD, marginBottom: 16, position: 'relative', minHeight: 220 }}>
+      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }} aria-hidden="true">
+        <div style={{ height: 11, width: '40%', background: 'rgba(255,255,255,0.10)', borderRadius: 5, marginBottom: 18 }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
+          <div style={{ height: 72, background: 'rgba(255,255,255,0.04)', borderRadius: 10 }} />
+          <div style={{ height: 72, background: 'rgba(255,255,255,0.04)', borderRadius: 10 }} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+          {[0, 1, 2, 3].map(i => <div key={i} style={{ height: 48, background: 'rgba(255,255,255,0.04)', borderRadius: 8 }} />)}
+        </div>
+      </div>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(8,11,20,0.55)' }}>
-        <p style={{ fontSize: 13, fontWeight: 700, color: '#818cf8' }}>Solo Premium</p>
+        <p style={{ fontSize: 13, fontWeight: 700, color: '#818cf8' }}>Score DGI de la cartera (Premium)</p>
         <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '7px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8 }}>
           Activar Premium →
         </Link>
@@ -56,12 +67,12 @@ export default function PortfolioDGIScore({ enriched, isPremium }) {
   const sb = createClient()
 
   useEffect(() => {
-    if (enriched.length) load()
-  }, [enriched])
+    if (enriched.length && isPremium) load()   // no calcular para free (gate decoy)
+  }, [enriched, isPremium])
 
   useEffect(() => {
-    loadBenchmark(selBench)
-  }, [selBench])
+    if (isPremium) loadBenchmark(selBench)
+  }, [selBench, isPremium])
 
   const load = async () => {
     setLoading(true)
@@ -214,5 +225,5 @@ export default function PortfolioDGIScore({ enriched, isPremium }) {
     </div>
   )
 
-  return isPremium ? inner : <PremiumGate>{inner}</PremiumGate>
+  return isPremium ? inner : <PremiumGate />
 }

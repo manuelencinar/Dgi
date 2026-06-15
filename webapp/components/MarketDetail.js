@@ -446,29 +446,29 @@ function YieldSimple({ avgYield, bondRate }) {
 
 // ── Premium gate ───────────────────────────────────────────────────────────
 
-function PremiumGate({ isPremium, children }) {
+// Gate premium. IMPORTANTE: para usuarios free NO renderiza los children (datos
+// reales); muestra un esqueleto ficticio difuminado. Así quitar el blur por
+// DevTools o leer el HTML no revela las empresas/valores premium. Además el
+// server no envía estos datos a usuarios free (ver computeDGIMetrics gating).
+function PremiumGate({ isPremium, children, title = 'Contenido Premium' }) {
   if (isPremium) return children
   return (
     <div style={{ position: 'relative', marginBottom: 12 }}>
-      {/* Content visible but faded at the bottom */}
-      <div style={{ maxHeight: 140, overflow: 'hidden', position: 'relative', pointerEvents: 'none', userSelect: 'none' }}>
-        {children}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, height: 80,
-          background: 'linear-gradient(to bottom, transparent, #080b14)',
-        }} />
+      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', padding: '14px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }} aria-hidden="true">
+        <div style={{ height: 11, width: '45%', background: 'rgba(255,255,255,0.10)', borderRadius: 5, marginBottom: 14 }} />
+        <div style={{ display: 'grid', gap: 9 }}>
+          {[90, 70, 95, 62, 78].map((w, i) => (
+            <div key={i} style={{ height: 9, width: `${w}%`, background: 'rgba(255,255,255,0.06)', borderRadius: 4 }} />
+          ))}
+        </div>
       </div>
-      {/* Discrete upgrade prompt */}
-      <div style={{ paddingTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(8,11,20,0.55)' }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: '#818cf8' }}>{title}</p>
         <Link href="/pricing" style={{
-          fontSize: 11, color: '#4a5270', textDecoration: 'none',
-          borderBottom: '1px solid rgba(74,82,112,0.4)', paddingBottom: 1,
-          transition: 'color 0.15s',
-        }}
-          onMouseEnter={e => e.currentTarget.style.color = '#818cf8'}
-          onMouseLeave={e => e.currentTarget.style.color = '#4a5270'}
-        >
-          Ver información completa — desde 4,99€/mes →
+          fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none',
+          padding: '7px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8,
+        }}>
+          Activar Premium — desde 4,99€/mes →
         </Link>
       </div>
     </div>
@@ -724,15 +724,15 @@ export default function MarketDetail({ market, quote, initialChartData, stats, r
               </div>
             )}
 
-            <PremiumGate isPremium={isPremium}>
+            <PremiumGate isPremium={isPremium} title="Radar de oportunidades (Premium)">
               <OpportunityRadar opportunities={dgiMetrics.opportunities} />
             </PremiumGate>
 
-            <PremiumGate isPremium={isPremium}>
+            <PremiumGate isPremium={isPremium} title="Mapa de salud financiera (Premium)">
               <HealthMapGrid healthMap={dgiMetrics.healthMap} />
             </PremiumGate>
 
-            <PremiumGate isPremium={isPremium}>
+            <PremiumGate isPremium={isPremium} title="Desglose del Score DGI (Premium)">
               <ScoreBreakdown breakdown={dgiMetrics.breakdown} />
             </PremiumGate>
 

@@ -36,10 +36,17 @@ function fmtEUR(v) {
 function gainCol(v) { return v == null ? '#4a5270' : v >= 0 ? '#34d399' : '#f87171' }
 
 // ── Premium gate ───────────────────────────────────────────────────────────
-function PremiumGate({ children }) {
+// Decoy: NO renderiza los children reales — solo un esqueleto ficticio. Quitar
+// el blur o leer el DOM no revela el análisis premium de la cartera.
+function PremiumGate() {
   return (
-    <div style={{ position: 'relative' }}>
-      <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none' }}>{children}</div>
+    <div style={{ position: 'relative', minHeight: 150 }}>
+      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }} aria-hidden="true">
+        <div style={{ height: 11, width: '42%', background: 'rgba(255,255,255,0.10)', borderRadius: 5, marginBottom: 16 }} />
+        <div style={{ display: 'grid', gap: 9 }}>
+          {[88, 70, 94, 60].map((w, i) => <div key={i} style={{ height: 9, width: `${w}%`, background: 'rgba(255,255,255,0.06)', borderRadius: 4 }} />)}
+        </div>
+      </div>
       <div style={{
         position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -225,7 +232,7 @@ function ConcentrationSection({ concentration, alerts, isPremium }) {
       )}
     </div>
   )
-  return isPremium ? inner : <PremiumGate>{inner}</PremiumGate>
+  return isPremium ? inner : <PremiumGate />
 }
 
 // ── Section 4: Diversification score ──────────────────────────────────────
@@ -246,7 +253,7 @@ function DiversificationSection({ score, isPremium }) {
       </div>
     </div>
   )
-  return isPremium ? inner : <PremiumGate>{inner}</PremiumGate>
+  return isPremium ? inner : <PremiumGate />
 }
 
 // ── Section 5: Dividend risk ───────────────────────────────────────────────
@@ -285,7 +292,7 @@ function DividendRiskSection({ risks, totalIncomeEUR, isPremium }) {
       )}
     </div>
   )
-  return isPremium ? inner : <PremiumGate>{inner}</PremiumGate>
+  return isPremium ? inner : <PremiumGate />
 }
 
 // ── Section 6: Fiscal ──────────────────────────────────────────────────────
@@ -354,7 +361,7 @@ function FiscalSection({ fiscal, country, onCountryChange, isPremium }) {
       )}
     </div>
   )
-  return isPremium ? inner : <PremiumGate>{inner}</PremiumGate>
+  return isPremium ? inner : <PremiumGate />
 }
 
 // ── Edit modal ─────────────────────────────────────────────────────────────

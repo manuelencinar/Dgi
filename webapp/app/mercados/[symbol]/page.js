@@ -94,6 +94,21 @@ export default async function MarketPage({ params }) {
     ranking.sort((a, b) => b.score - a.score)
   }
 
+  // Gating de seguridad: el usuario free NO recibe los datos premium en el
+  // payload (radar de empresas concretas, mapa de salud, desglose del score).
+  // Solo se conservan los campos del teaser (score, termómetro, yield, y el
+  // CONTEO de oportunidades — sin revelar cuáles).
+  const isPremium = plan === 'premium'
+  const dgiMetricsPub = (dgiMetrics && !isPremium) ? {
+    dgiScore:    dgiMetrics.dgiScore,
+    thermometer: dgiMetrics.thermometer,
+    avgYield:    dgiMetrics.avgYield,
+    bondRate:    dgiMetrics.bondRate,
+    opportunities: (dgiMetrics.opportunities || []).map(() => ({})),  // solo el conteo
+    healthMap:   null,
+    breakdown:   null,
+  } : dgiMetrics
+
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>
       <PublicNav />
@@ -105,9 +120,9 @@ export default async function MarketPage({ params }) {
         returns={returns}
         constituents={constituents}
         constituentQuotes={constituentQuotes}
-        dgiMetrics={dgiMetrics}
+        dgiMetrics={dgiMetricsPub}
         ranking={ranking}
-        isPremium={plan === 'premium'}
+        isPremium={isPremium}
       />
     </div>
   )

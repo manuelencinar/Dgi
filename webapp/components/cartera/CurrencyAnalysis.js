@@ -35,9 +35,9 @@ export default function CurrencyAnalysis({ enriched, isPremium }) {
   const currencies = useMemo(() => byCurrency.map(c => c.currency), [byCurrency])
 
   useEffect(() => {
-    if (!currencies.length) return
+    if (!currencies.length || !isPremium) return   // no calcular para free (gate decoy)
     loadHistory(currencies)
-  }, [currencies.join(',')])
+  }, [currencies.join(','), isPremium])
 
   const loadHistory = async (currs) => {
     const cutoff = new Date(); cutoff.setFullYear(cutoff.getFullYear() - 1)
@@ -193,9 +193,16 @@ export default function CurrencyAnalysis({ enriched, isPremium }) {
   )
 
   if (!isPremium) {
+    // Decoy: NO se renderiza el análisis real (datos de la cartera del usuario).
     return (
-      <div style={{ position: 'relative', marginBottom: 16 }}>
-        <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none' }}>{inner}</div>
+      <div style={{ ...CARD, position: 'relative', minHeight: 200 }}>
+        <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }} aria-hidden="true">
+          <div style={{ height: 11, width: '38%', background: 'rgba(255,255,255,0.10)', borderRadius: 5, marginBottom: 18 }} />
+          <div style={{ height: 120, background: 'rgba(255,255,255,0.04)', borderRadius: 10, marginBottom: 12 }} />
+          <div style={{ display: 'grid', gap: 9 }}>
+            {[85, 65, 90].map((w, i) => <div key={i} style={{ height: 9, width: `${w}%`, background: 'rgba(255,255,255,0.06)', borderRadius: 4 }} />)}
+          </div>
+        </div>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(8,11,20,0.55)' }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: '#818cf8' }}>Análisis de divisa — Premium</p>
           <a href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '7px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8 }}>Activar Premium →</a>
