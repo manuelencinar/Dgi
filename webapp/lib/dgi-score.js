@@ -2,6 +2,7 @@
 import { roicForScoring } from '@/lib/metrics'
 import { computeBonuses } from '@/lib/bonuses'
 import { dividendTrend } from '@/lib/helpers'
+import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -232,7 +233,7 @@ function marginTrendScore(delta) {
 
 // ── CATEGORY 1: Calidad del negocio ───────────────────────────────────────
 
-function buildQuality(data, sectorType, industryType) {
+function buildQuality(data, sectorType, industryType, bm = null) {
   const v = {
     roic: roicForScoring(data) ?? n(data.roic), gm: n(data.gross_margin), om: n(data.operating_margin),
     nm: n(data.net_margin), roe: n(data.roe), roa: n(data.roa),
@@ -261,16 +262,14 @@ function buildQuality(data, sectorType, industryType) {
   }
 
   if (sectorType === 'bank') {
-    // Efficiency ratio: lower is better — 0 si >70%, 3 si 65-70%, 6 si 55-65%, 8 si 45-55%, 10 si <45%
-    const eff = v.om != null ? 100 - v.om : null
+    // Banca: NO se usan EBITDA/FCF/ROIC. Rentabilidad por ROTE + NIM, crecimiento
+    // por BPA diluido. (Eficiencia y NPL van en la categoría financiera.)
+    const b = bm || {}
     return [
-      mk('roe','ROE',fmtPct(v.roe),bs(v.roe,[[5,3],[8,6],[12,8],[16,10]]),0.25,'El ROE es la métrica más importante para un banco. Por encima del 12% es bueno, por encima del 15% excelente.'),
-      mk('roa','ROA',fmtPct(v.roa),bs(v.roa,[[0.3,4],[0.6,6],[1,8],[1.5,10]]),0.20,'En bancos por encima del 1% es bueno. ROA bajo con ROE alto indica apalancamiento excesivo.'),
-      mk('efficiency','Ratio de eficiencia',fmtPct(eff),bsRev(eff,[[45,10],[55,8],[65,6],[70,3]]),0.20,'Por debajo del 50% excelente — cada 100€ de ingreso solo 50€ en costes.'),
-      mk('revCagr','Crecimiento ingresos CAGR 5a',fmtPct(v.revCagr),bs(v.revCagr,REV_G),0.15,'Crecimiento del margen de intereses y comisiones. Refleja capacidad de crecer el negocio.'),
-      mk('nm','Margen neto',fmtPct(v.nm),bs(v.nm,[[10,4],[18,7],[26,10]]),0.10,'Por encima del 20% es bueno para un banco.'),
-      mk('fcfConv','Conversión FCF',fmtPct(v.fcfConv),bs(v.fcfConv,FCF_C),0.05,'En bancos la conversión FCF tiene menos relevancia que en otros sectores.'),
-      mk('roeTrend','Tendencia ROE',fmtTrend(v.marginTrend),marginTrendScore(v.marginTrend),0.05,'Evalúa si la rentabilidad del banco mejora o se deteriora en el tiempo.'),
+      mk('rote','ROTE',fmtPct(b.rote),bs(b.rote,[[5,3],[8,6],[12,8],[16,10]]),0.35,'Retorno sobre capital tangible (Beneficio neto / patrimonio tangible) — la métrica de rentabilidad clave en banca. >12% bueno, >16% excelente.'),
+      mk('nim','NIM (aprox.)',fmtPct(b.nim),bs(b.nim,[[0.8,3],[1.5,6],[2.5,8],[3.5,10]]),0.25,'Margen neto de intereses (proxy: ingresos netos por intereses / activos totales). Comparable entre bancos y útil su evolución.'),
+      mk('epsCagr','CAGR BPA diluido 5a',fmtPct(b.epsCagr5),bs(b.epsCagr5,NI_G),0.25,'Crecimiento del beneficio por acción diluido — refleja la creación de valor por acción del banco.'),
+      mk('roe','ROE',fmtPct(v.roe),bs(v.roe,[[5,3],[8,6],[12,8],[16,10]]),0.15,'Rentabilidad sobre fondos propios. Complementa al ROTE.'),
     ]
   }
 
@@ -404,7 +403,7 @@ function buildDividend(data, streak, cagr, sectorType, divHistory) {
 
 // ── CATEGORY 3: Solidez financiera ───────────────────────────────────────
 
-function buildFinancial(data, sectorType) {
+function buildFinancial(data, sectorType, bm = null) {
   const v = {
     nd:       n(data.net_debt_ebitda) ?? n(data.debt_ebitda),
     ic:       n(data.interest_coverage),
@@ -432,14 +431,14 @@ function buildFinancial(data, sectorType) {
   }
 
   if (sectorType === 'bank') {
-    const eff = n(data.operating_margin)
-    const effScore = eff != null ? (() => { const e = 100 - eff; return e > 70 ? 0 : e > 65 ? 3 : e > 55 ? 6 : e > 45 ? 8 : 10 })() : null
+    // Solidez bancaria: eficiencia + morosidad (NPL, manual) + crecimiento + ROA.
+    // Sin FCF/EBITDA. El NPL solo puntúa cuando está relleno (si no, se excluye).
+    const b = bm || {}
     return [
-      mk('efficiency','Ratio de eficiencia',eff != null ? fmtPct(100 - eff) : '—',effScore,0.30,'En bancos es tanto métrica de calidad como de solidez — un banco ineficiente tiene menos margen para absorber pérdidas.'),
-      mk('revCagr','Crecimiento ingresos CAGR 5a',fmtPct(n(data.revenue_cagr5)),bs(n(data.revenue_cagr5),REV_G),0.25,'Un banco que crece sus ingresos tiene más capacidad de absorber pérdidas por morosidad.'),
-      mk('ic','Cobertura intereses',fmtX(v.ic),bs(v.ic,IC_G),0.20,'Capacidad de pagar el coste de los depósitos con los ingresos por intereses.'),
-      mk('fcfCagr','FCF CAGR 5a',fmtPct(v.fcfCagr),bs(v.fcfCagr,FCF_CAG),0.15,'Tendencia del flujo de caja en los últimos 5 años.'),
-      mk('roa','ROA',fmtPct(n(data.roa)),bs(n(data.roa),[[0.3,4],[0.6,6],[1,8],[1.5,10]]),0.10,'Un ROA alto indica que los activos del banco generan rentabilidad suficiente.'),
+      mk('efficiency','Ratio de eficiencia',b.efficiency != null ? fmtPct(b.efficiency) : '—',bsRev(b.efficiency,[[45,10],[55,8],[65,6],[70,3]]),0.35,'Costes operativos / ingresos netos bancarios. Por debajo del 50% es excelente — un banco eficiente absorbe mejor las pérdidas.'),
+      mk('npl','Morosidad (NPL)',b.npl != null ? fmtPct(b.npl) : '—',bsRev(b.npl,[[3,10],[5,8],[8,5],[12,2]]),0.25,'% de préstamos dudosos. Se introduce manualmente por trimestre; si no está, no puntúa. Por debajo del 3% es sólido.'),
+      mk('revCagr','Crecimiento ingresos CAGR 5a',fmtPct(n(data.revenue_cagr5)),bs(n(data.revenue_cagr5),REV_G),0.20,'Crecimiento del margen de intereses y comisiones — más capacidad de absorber morosidad.'),
+      mk('roa','ROA',fmtPct(n(data.roa)),bs(n(data.roa),[[0.3,4],[0.6,6],[1,8],[1.5,10]]),0.20,'Rentabilidad sobre activos. Un ROA alto indica que los activos del banco generan rentabilidad suficiente.'),
     ]
   }
 
@@ -567,11 +566,17 @@ function buildPenalties(data, sectorType) {
 
 // ── Main export ────────────────────────────────────────────────────────────
 
-export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend) {
+export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend, bankOverride = null) {
   if (!data) return null
 
   const noDividend = paysDividend === false
   const sectorType = detectSectorType(type, data.sector, data.industry)
+
+  // Métricas bancarias para el scoring: las pasa la ficha (con NPL/overrides
+  // manuales) o se calculan desde los estados (snapshot, que trae select('*')).
+  const bm = sectorType === 'bank'
+    ? (bankOverride || effectiveBankMetrics(computeBankMetrics(data), []))
+    : null
 
   const WEIGHTS = {
     general:  { quality: 0.35, dividend: 0.30, financial: 0.20, valuation: 0.15 },
@@ -608,9 +613,9 @@ export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend) {
 
   const ind = detectIndustryType(data.sector, data.industry)
 
-  const qualityM   = buildQuality(data, sectorType, ind)
+  const qualityM   = buildQuality(data, sectorType, ind, bm)
   const dividendM  = buildDividend(data, streak, cagr, sectorType, data.divHistory || [])
-  const financialM = buildFinancial(data, sectorType)
+  const financialM = buildFinancial(data, sectorType, bm)
   const valuationM = buildValuation(data, dcf, sectorType)
 
   const qS = catScore(qualityM,  Math.min(3, qualityM.length))
