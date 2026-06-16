@@ -6,7 +6,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import {
   enrichPositions, calcSummary, calcConcentration, calcAlerts,
-  calcDiversificationScore, calcDividendRisks, calcFiscal, calcSectorBreakdown, calcProfileFit,
+  calcDiversificationScore, calcDividendRisks, calcFiscal, calcSectorBreakdown, calcGeoBreakdown, calcProfileFit,
 } from '@/lib/portfolio'
 import { DEFAULT_PROFILE, INVESTOR_PROFILES } from '@/lib/supersectors'
 import SectorBreakdown, { DonutBreakdown } from '@/components/cartera/SectorBreakdown'
@@ -214,7 +214,7 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
 }
 
 // ── Section 3: Concentration ───────────────────────────────────────────────
-function ConcentrationSection({ concentration, sectorBreakdown, alerts, isPremium }) {
+function ConcentrationSection({ concentration, sectorBreakdown, geoBreakdown, alerts, isPremium }) {
   const inner = (
     <div style={{ ...CARD, marginBottom: 16 }}>
       <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>Análisis de concentración</p>
@@ -224,9 +224,9 @@ function ConcentrationSection({ concentration, sectorBreakdown, alerts, isPremiu
         <SectorBreakdown breakdown={sectorBreakdown} />
       </div>
 
-      {/* Zona geográfica y divisa — mismo estilo (donut + barras) que sectores */}
+      {/* Zona geográfica (continente → país, dos anillos) y divisa (un nivel) */}
       <div style={{ display: 'grid', gap: 20, marginBottom: 16 }}>
-        <DonutBreakdown title="Por zona geográfica" data={concentration.byZone} />
+        <SectorBreakdown breakdown={geoBreakdown} title="Diversificación por zona geográfica" hint="Continentes y el peso de cada país dentro" />
         <DonutBreakdown title="Por divisa" data={concentration.byCurrency} />
       </div>
       {alerts.length > 0 && (
@@ -595,6 +595,7 @@ export default function PortfolioPage({ isPremium }) {
   const summary       = useMemo(() => calcSummary(enriched), [enriched])
   const concentration = useMemo(() => calcConcentration(enriched), [enriched])
   const sectorBreakdown = useMemo(() => calcSectorBreakdown(enriched), [enriched])
+  const geoBreakdown    = useMemo(() => calcGeoBreakdown(enriched), [enriched])
   const profileFit    = useMemo(() => calcProfileFit(enriched, profile), [enriched, profile])
   const alerts        = useMemo(() => calcAlerts(enriched, concentration), [enriched, concentration])
   const divScore      = useMemo(() => calcDiversificationScore(enriched, profile), [enriched, profile])
@@ -658,7 +659,7 @@ export default function PortfolioPage({ isPremium }) {
       {enriched.length > 0 && (
         <>
           {/* Section 3: Concentration */}
-          <ConcentrationSection concentration={concentration} sectorBreakdown={sectorBreakdown} alerts={alerts} isPremium={isPremium} />
+          <ConcentrationSection concentration={concentration} sectorBreakdown={sectorBreakdown} geoBreakdown={geoBreakdown} alerts={alerts} isPremium={isPremium} />
 
           {/* Perfil de inversor: reparto por supersectores vs objetivo */}
           <InvestorProfileSection fit={profileFit} profileKey={profile} onChange={changeProfile} isPremium={isPremium} />

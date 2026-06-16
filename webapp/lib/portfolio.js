@@ -29,6 +29,33 @@ const ZONE = {
 }
 export function codeToZone(code) { return ZONE[(code || '').toUpperCase()] || 'Otros' }
 
+// Nombre de país en español (cobertura de los códigos de ZONE).
+const COUNTRY_ES = {
+  ES:'España', DE:'Alemania', FR:'Francia', IT:'Italia', NL:'Países Bajos',
+  GB:'Reino Unido', CH:'Suiza', BE:'Bélgica', SE:'Suecia', DK:'Dinamarca',
+  NO:'Noruega', FI:'Finlandia', AT:'Austria', PT:'Portugal', IE:'Irlanda',
+  LU:'Luxemburgo', PL:'Polonia', GR:'Grecia', HU:'Hungría', CZ:'Chequia',
+  RO:'Rumanía', SK:'Eslovaquia', SI:'Eslovenia', EE:'Estonia', LV:'Letonia',
+  LT:'Lituania', HR:'Croacia', BG:'Bulgaria', CY:'Chipre', MT:'Malta',
+  US:'EE.UU.', CA:'Canadá',
+  MX:'México', BR:'Brasil', CL:'Chile', CO:'Colombia', PE:'Perú', AR:'Argentina',
+  JP:'Japón', CN:'China', HK:'Hong Kong', SG:'Singapur', KR:'Corea del Sur',
+  TW:'Taiwán', IN:'India', TH:'Tailandia', MY:'Malasia', ID:'Indonesia', PH:'Filipinas',
+  AU:'Australia', NZ:'Nueva Zelanda',
+  ZA:'Sudáfrica', NG:'Nigeria', KE:'Kenia',
+}
+export function countryName(code) { return COUNTRY_ES[(code || '').toUpperCase()] || 'Otros' }
+
+const CONTINENT_COLOR = {
+  'Europa': '#60a5fa', 'Norteamérica': '#818cf8', 'Latinoamérica': '#fbbf24',
+  'Asia': '#34d399', 'Oceanía': '#f472b6', 'África': '#fb923c', 'Otros': '#8090a8',
+}
+
+// Umbral de alerta por país (% de la cartera). EE.UU. tiene excepción (mercado
+// dominante natural en DGI): se permite más antes de avisar.
+export const COUNTRY_ALERT_LIMIT = 30
+export const COUNTRY_ALERT_LIMIT_US = 50
+
 // ── Fiscal ────────────────────────────────────────────────────────────────
 
 const WITHHOLDING = {
@@ -191,6 +218,36 @@ export function calcSectorBreakdown(enriched) {
     .sort((a, b) => b.value - a.value)
 }
 
+// ── Diversificación geográfica jerárquica (Continente → País) ───────────────
+// Mismo formato que calcSectorBreakdown (key/label/color/value/sectors) para
+// reutilizar el gráfico de dos anillos. `sectors` = países del continente.
+export function calcGeoBreakdown(enriched) {
+  const total = enriched.reduce((s, p) => s + (p.valueEUR ?? 0), 0)
+  if (!total) return []
+
+  const groups = {}   // continente -> { value, countries: { nombre -> value } }
+  enriched.forEach(p => {
+    const cont = codeToZone(p.countryCode)
+    const g = groups[cont] || (groups[cont] = { value: 0, countries: {} })
+    const v = p.valueEUR ?? 0
+    g.value += v
+    const cn = countryName(p.countryCode)
+    g.countries[cn] = (g.countries[cn] || 0) + v
+  })
+
+  return Object.entries(groups)
+    .map(([cont, g]) => ({
+      key:   cont,
+      label: cont,
+      color: CONTINENT_COLOR[cont] || '#8090a8',
+      value: g.value / total * 100,
+      sectors: Object.entries(g.countries)
+        .map(([name, v]) => ({ name, value: v / total * 100 }))
+        .sort((a, b) => b.value - a.value),
+    }))
+    .sort((a, b) => b.value - a.value)
+}
+
 // ── Alerts ────────────────────────────────────────────────────────────────
 
 export function calcAlerts(enriched, concentration) {
@@ -212,6 +269,16 @@ export function calcAlerts(enriched, concentration) {
   concentration.byCurrency.forEach(c => {
     if (c.value > 60) alerts.push(`Exposición elevada a ${c.name} — representa el ${c.value.toFixed(0)}% de la cartera`)
   })
+  // Concentración por país (EE.UU. con umbral más alto, mercado dominante en DGI)
+  if (total > 0) {
+    const byCountry = {}
+    enriched.forEach(p => { const c = (p.countryCode || '').toUpperCase() || 'OTHER'; byCountry[c] = (byCountry[c] || 0) + (p.valueEUR ?? 0) })
+    Object.entries(byCountry).forEach(([c, v]) => {
+      const pct = v / total * 100
+      const limit = c === 'US' ? COUNTRY_ALERT_LIMIT_US : COUNTRY_ALERT_LIMIT
+      if (pct > limit) alerts.push(`Exposición elevada a ${countryName(c)} — ${pct.toFixed(0)}% de la cartera (umbral ${limit}%)`)
+    })
+  }
   // ETFs y fondos > 40% del total
   if (total > 0) {
     const fundsValue = enriched.filter(p => p.isFund).reduce((s, p) => s + (p.valueEUR ?? 0), 0)

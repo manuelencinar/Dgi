@@ -45,7 +45,7 @@ export function DonutBreakdown({ title, hint, data }) {
   )
 }
 
-export default function SectorBreakdown({ breakdown }) {
+export default function SectorBreakdown({ breakdown, title = 'Diversificación por sector', hint = '3 supersectores de Morningstar y el peso de cada sector dentro' }) {
   if (!breakdown?.length) return null
 
   // Anillo interior: supersectores.
@@ -62,9 +62,9 @@ export default function SectorBreakdown({ breakdown }) {
   return (
     <div>
       <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
-        Diversificación por sector
+        {title}
       </p>
-      <p style={{ fontSize: 11, color: '#3a4260', marginBottom: 10 }}>3 supersectores de Morningstar y el peso de cada sector dentro</p>
+      {hint && <p style={{ fontSize: 11, color: '#3a4260', marginBottom: 10 }}>{hint}</p>}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
         <style>{`@media(min-width:680px){.sb-grid{grid-template-columns:220px 1fr!important}}`}</style>
