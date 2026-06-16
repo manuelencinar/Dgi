@@ -56,7 +56,9 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 
 ### Diversificación por supersectores (Morningstar) + perfil de inversor
 - **Taxonomía de 3 niveles** (`lib/supersectors.js` + `lib/taxonomy.js`): Supersector (Cíclico/Sensible/Defensivo + Otros para ETFs/sin dato) → Sector (los 11 de Yahoo) → Industria (lista detallada, inglés Yahoo + español). El **sector** (de `company_fundamentals.sector`) determina el supersector; la **industria** se almacena pero NO entra en el gráfico. `sectorInfo(sector)` mapea sector→{sup, es}.
-- **Gráfico de cartera** (`components/cartera/SectorBreakdown.js`): donut de dos anillos (supersector interior + sector exterior en tono del mismo color) + leyenda de barras agrupadas. Reemplaza el antiguo donut "Por sector". `calcSectorBreakdown(enriched)` en `lib/portfolio.js`. Zona/divisa siguen como donuts.
+- **Gráficos de cartera** (`components/cartera/SectorBreakdown.js`): donut de dos anillos (nivel super interior + nivel detalle exterior en tono del mismo color) + leyenda de barras agrupadas. **Sectores**: `SectorBreakdown` con `calcSectorBreakdown(enriched)` (supersector→sector). **Zona geográfica**: el MISMO componente `SectorBreakdown` (título/hint parametrizables) con `calcGeoBreakdown(enriched)` (continente→país, con bandera+nombre). **Divisa**: `DonutBreakdown` (export de SectorBreakdown.js, gráfico de UN nivel con el mismo estilo). Todo en `lib/portfolio.js`.
+- **Alerta por país** (`calcAlerts`): si un país supera el umbral del valor de la cartera → aviso. `COUNTRY_ALERT_LIMIT=30`, EE.UU. excepción `COUNTRY_ALERT_LIMIT_US=50` (mercado dominante natural en DGI).
+- **Ficha de empresa** (`app/empresa/[ticker]/page.js` → prop `classification`): la cabecera muestra los 3 niveles en español — **Supersector → Sector → Industria** (chips), desde `detail.sector`+`detail.industry` vía `sectorInfo`/`industryEs`. Fallback al sector del DICT si no hay fundamentales. El **buscador** (`app/api/search`) muestra solo el **sector en castellano** (`sectorLabelEs`).
 - **Perfil de inversor** (`components/cartera/InvestorProfile.js`): el usuario elige Defensivo (60/20/20), Equilibrado (~33 c/u) o Crecimiento (20/50/30) — pesos OBJETIVO por supersector en `INVESTOR_PROFILES`. `calcProfileFit(enriched, profileKey)` compara el reparto real (excluye ETFs/fondos y renormaliza los 3) con el objetivo (score de encaje por distancia de variación total). El encaje entra como criterio en `calcDiversificationScore(enriched, profileKey)`. El perfil se guarda en **`user_settings.investor_profile`** vía `/api/ajustes` (asociado a la cuenta, no localStorage).
 - **Editor de taxonomía** (Dashboard → Datos → pestaña "Sectores", `components/dashboard/SectorAssignClient.js`): buscador + tabla con 3 desplegables encadenados (supersector → sector → industria). API `/api/admin/company-taxonomy` (GET lista, POST asigna, admin-guarded): escribe `sector`/`industry` en `company_fundamentals` y marca **`taxonomy_locked=true`**. `update_fundamentals.py` (`apply_manual_protection`) preserva sector/industria de las filas bloqueadas (Yahoo no las pisa). El gráfico de cartera usa el sector corregido automáticamente. NOTA: el screener usa la taxonomía propia del DICT (pestaña "Empresas"), independiente de esta.
 
@@ -332,13 +334,16 @@ updated_at
 - Tipografía: Figtree
 - Colores principales: índigo (#818cf8), verde (#34d399), rojo (#f87171), amarillo (#fbbf24)
 - Diseño responsive — mobile first
+- **Gráficos recharts**: `app/layout.js` lleva un `<style>` global que quita el contorno blanco de foco (`outline:none` en `.recharts-*`) que el navegador dibujaba al hacer hover/click sobre los SVG.
+- **Banderas + nombres de país**: fuente única `COUNTRY_INFO` (código ISO-2 → {flag, name ES}) en `lib/helpers.js`; `getCountry` la usa (cubre los ~40 países del universo; antes solo 15 → el resto salía 🌍 "Otro"). `getContinent` ampliado para que ningún país conocido caiga en "Otros". La ficha genera la bandera desde el código ISO con `countryFlag` (Unicode).
 
 ## Reglas importantes para Claude Code
 - Hacer git commit antes de cualquier cambio grande
 - No tocar componentes que funcionan sin pedirlo explícitamente
 - Preguntar antes de crear ficheros nuevos fuera de la estructura existente
 - Si un componente ya existe reutilizarlo en lugar de crear uno nuevo
-- El contenido premium aparece difuminado con botón de upgrade — nunca pantalla de bloqueo agresiva
+- El contenido premium NO basta con difuminarlo: el server no debe enviar los datos premium al cliente free (ver "Gating premium SIN CSS-blur"). El gate muestra un esqueleto ficticio + botón de upgrade — nunca pantalla de bloqueo agresiva.
+- **DICT** (`data/dict.js`): formato `[nombre, ticker_real, paisISO2, divisa, superSector, sectorName, type]`. NO meter entradas con el nombre como número ni el ticker como nombre de empresa (hubo basura de Dow Jones Global Titans: 53 filas DICT + 52 stubs en company_fundamentals + 1 override, ya eliminadas). Los tickers reales no llevan espacios.
 - Mostrar guión en lugar de número cuando no hay dato disponible — nunca romper la página por datos ausentes
 - No tocar ninguna otra página ni componente que no se haya pedido explícitamente
 - Email admin: vayaebookk@gmail.com
