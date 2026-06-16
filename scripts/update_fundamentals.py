@@ -1069,37 +1069,29 @@ def fetch_ticker(sym):
         recent_div = last_div_year is not None and last_div_year >= cur_year - 1
 
         dividend_rate = float(info.get("dividendRate") or 0)
-        # DPS: NUNCA lastDividendValue (puede ser de hace una década, p.ej.
-        # Prisa 2011 → yield falso). Tasa forward si la hay; si no, el dps del
-        # último año del histórico, pero solo si el reparto es reciente.
-        dps = safe(info.get("dividendRate"))
-        if dps is None and recent_div:
-            recent = [h for h in div_history if (h.get("dps") or 0) > 0]
-            if recent:
-                dps = recent[-1]["dps"]
+        # DPS = dividendo del ÚLTIMO AÑO COMPLETO del histórico. Es la fuente
+        # fiable: está en la MISMA unidad que el precio (p.ej. peniques en las
+        # .L), mientras que info.dividendRate puede venir en otra unidad (libras
+        # → ×100) o incluir specials/artefactos de timing (p.ej. Ageas 4,5 vs 3,5
+        # real). NUNCA lastDividendValue (puede ser de hace una década).
+        # Respaldo (solo si no hay año completo en el histórico): dividendRate.
+        complete = [h["dps"] for h in div_history
+                    if not h.get("isPartial") and (h.get("dps") or 0) > 0]
+        dps = None
+        if recent_div and complete:
+            dps = complete[-1]
+        if dps is None:
+            dps = safe(info.get("dividendRate"))
+            if dps is None and recent_div:
+                anyhist = [h["dps"] for h in div_history if (h.get("dps") or 0) > 0]
+                if anyhist:
+                    dps = anyhist[-1]
 
         # Empresas que dejaron de pagar (sin reparto el año anterior ni en el
         # año en curso) quedan como que NO reparten y sin dps → sin yield falso.
         pays_dividend = recent_div or dividend_rate > 0
         if not pays_dividend:
             dps = None
-
-        # Reconciliación por TENDENCIA: si dividendRate rompe la trayectoria
-        # reciente del dividendo, suele ser un special o un artefacto de timing
-        # (p.ej. Ageas: dividendRate 4,5 vs 3,5 real → yield 6,7% en vez de 5,2%).
-        # Se usa el dividendo del último año COMPLETO. Preserva los crecientes
-        # legítimos (dividendRate acorde a su CAGR reciente no se toca).
-        if dps is not None and div_history:
-            comp = [h["dps"] for h in div_history
-                    if not h.get("isPartial") and (h.get("dps") or 0) > 0]
-            if len(comp) >= 2 and dps > comp[-1]:
-                last = comp[-1]
-                win = comp[-4:]
-                first, yrs = win[0], len(win) - 1
-                cagr = (last / first) ** (1 / yrs) - 1 if first > 0 and yrs > 0 else 0
-                cagr = max(min(cagr, 1.0), 0.05)            # tolerancia 5%–100%
-                if dps > last * (1 + cagr) * 1.20:
-                    dps = last
 
         # Anti-artefacto de yield: un yield >40% casi siempre es un special
         # dividend, un dato erróneo (p.ej. Grieg Seafood 2026=35,64) o un precio
