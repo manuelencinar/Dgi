@@ -2,6 +2,7 @@
 
 import { DICT } from '@/data/dict'
 import { SUPERSECTORS, SUPERSECTOR_ORDER, sectorInfo, INVESTOR_PROFILES, DEFAULT_PROFILE } from '@/lib/supersectors'
+import { COUNTRY_INFO } from '@/lib/helpers'
 
 // ── FX ────────────────────────────────────────────────────────────────────
 
@@ -18,33 +19,23 @@ const ZONE = {
   NO:'Europa', FI:'Europa', AT:'Europa', PT:'Europa', IE:'Europa',
   LU:'Europa', PL:'Europa', GR:'Europa', HU:'Europa', CZ:'Europa',
   RO:'Europa', SK:'Europa', SI:'Europa', EE:'Europa', LV:'Europa',
-  LT:'Europa', HR:'Europa', BG:'Europa', CY:'Europa', MT:'Europa',
+  LT:'Europa', HR:'Europa', BG:'Europa', CY:'Europa', MT:'Europa', TR:'Europa',
   US:'Norteamérica', CA:'Norteamérica',
   MX:'Latinoamérica', BR:'Latinoamérica', CL:'Latinoamérica',
   CO:'Latinoamérica', PE:'Latinoamérica', AR:'Latinoamérica',
   JP:'Asia', CN:'Asia', HK:'Asia', SG:'Asia', KR:'Asia',
   TW:'Asia', IN:'Asia', TH:'Asia', MY:'Asia', ID:'Asia', PH:'Asia',
   AU:'Oceanía', NZ:'Oceanía',
-  ZA:'África', NG:'África', KE:'África',
+  ZA:'África', NG:'África', KE:'África', EG:'África',
 }
 export function codeToZone(code) { return ZONE[(code || '').toUpperCase()] || 'Otros' }
 
-// Nombre de país en español (cobertura de los códigos de ZONE).
-const COUNTRY_ES = {
-  ES:'España', DE:'Alemania', FR:'Francia', IT:'Italia', NL:'Países Bajos',
-  GB:'Reino Unido', CH:'Suiza', BE:'Bélgica', SE:'Suecia', DK:'Dinamarca',
-  NO:'Noruega', FI:'Finlandia', AT:'Austria', PT:'Portugal', IE:'Irlanda',
-  LU:'Luxemburgo', PL:'Polonia', GR:'Grecia', HU:'Hungría', CZ:'Chequia',
-  RO:'Rumanía', SK:'Eslovaquia', SI:'Eslovenia', EE:'Estonia', LV:'Letonia',
-  LT:'Lituania', HR:'Croacia', BG:'Bulgaria', CY:'Chipre', MT:'Malta',
-  US:'EE.UU.', CA:'Canadá',
-  MX:'México', BR:'Brasil', CL:'Chile', CO:'Colombia', PE:'Perú', AR:'Argentina',
-  JP:'Japón', CN:'China', HK:'Hong Kong', SG:'Singapur', KR:'Corea del Sur',
-  TW:'Taiwán', IN:'India', TH:'Tailandia', MY:'Malasia', ID:'Indonesia', PH:'Filipinas',
-  AU:'Australia', NZ:'Nueva Zelanda',
-  ZA:'Sudáfrica', NG:'Nigeria', KE:'Kenia',
+// Nombre de país en español + bandera (fuente única: COUNTRY_INFO en helpers).
+export function countryName(code) { return COUNTRY_INFO[(code || '').toUpperCase()]?.name || 'Otros' }
+export function countryLabel(code) {
+  const info = COUNTRY_INFO[(code || '').toUpperCase()]
+  return info ? `${info.flag} ${info.name}` : '🌍 Otros'
 }
-export function countryName(code) { return COUNTRY_ES[(code || '').toUpperCase()] || 'Otros' }
 
 const CONTINENT_COLOR = {
   'Europa': '#60a5fa', 'Norteamérica': '#818cf8', 'Latinoamérica': '#fbbf24',
@@ -231,7 +222,7 @@ export function calcGeoBreakdown(enriched) {
     const g = groups[cont] || (groups[cont] = { value: 0, countries: {} })
     const v = p.valueEUR ?? 0
     g.value += v
-    const cn = countryName(p.countryCode)
+    const cn = countryLabel(p.countryCode)
     g.countries[cn] = (g.countries[cn] || 0) + v
   })
 

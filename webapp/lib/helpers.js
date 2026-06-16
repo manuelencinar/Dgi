@@ -1,6 +1,32 @@
 import { SECTORS, COUNTRIES, WHT_DEFAULTS } from './sectors'
 
+// Fuente única bandera + nombre (español) por código de país ISO-2.
+export const COUNTRY_INFO = {
+  US:{flag:"🇺🇸",name:"EE.UU."}, CA:{flag:"🇨🇦",name:"Canadá"},
+  MX:{flag:"🇲🇽",name:"México"}, BR:{flag:"🇧🇷",name:"Brasil"}, CL:{flag:"🇨🇱",name:"Chile"},
+  AR:{flag:"🇦🇷",name:"Argentina"}, CO:{flag:"🇨🇴",name:"Colombia"}, PE:{flag:"🇵🇪",name:"Perú"},
+  GB:{flag:"🇬🇧",name:"Reino Unido"}, IE:{flag:"🇮🇪",name:"Irlanda"}, FR:{flag:"🇫🇷",name:"Francia"},
+  DE:{flag:"🇩🇪",name:"Alemania"}, ES:{flag:"🇪🇸",name:"España"}, IT:{flag:"🇮🇹",name:"Italia"},
+  PT:{flag:"🇵🇹",name:"Portugal"}, NL:{flag:"🇳🇱",name:"Países Bajos"}, BE:{flag:"🇧🇪",name:"Bélgica"},
+  CH:{flag:"🇨🇭",name:"Suiza"}, AT:{flag:"🇦🇹",name:"Austria"}, LU:{flag:"🇱🇺",name:"Luxemburgo"},
+  SE:{flag:"🇸🇪",name:"Suecia"}, NO:{flag:"🇳🇴",name:"Noruega"}, DK:{flag:"🇩🇰",name:"Dinamarca"},
+  FI:{flag:"🇫🇮",name:"Finlandia"}, PL:{flag:"🇵🇱",name:"Polonia"}, CZ:{flag:"🇨🇿",name:"Chequia"},
+  HU:{flag:"🇭🇺",name:"Hungría"}, GR:{flag:"🇬🇷",name:"Grecia"}, RO:{flag:"🇷🇴",name:"Rumanía"},
+  TR:{flag:"🇹🇷",name:"Turquía"},
+  SK:{flag:"🇸🇰",name:"Eslovaquia"}, SI:{flag:"🇸🇮",name:"Eslovenia"}, EE:{flag:"🇪🇪",name:"Estonia"},
+  LV:{flag:"🇱🇻",name:"Letonia"}, LT:{flag:"🇱🇹",name:"Lituania"}, HR:{flag:"🇭🇷",name:"Croacia"},
+  BG:{flag:"🇧🇬",name:"Bulgaria"}, CY:{flag:"🇨🇾",name:"Chipre"}, MT:{flag:"🇲🇹",name:"Malta"},
+  JP:{flag:"🇯🇵",name:"Japón"}, CN:{flag:"🇨🇳",name:"China"}, HK:{flag:"🇭🇰",name:"Hong Kong"},
+  SG:{flag:"🇸🇬",name:"Singapur"}, KR:{flag:"🇰🇷",name:"Corea del Sur"}, TW:{flag:"🇹🇼",name:"Taiwán"},
+  IN:{flag:"🇮🇳",name:"India"}, TH:{flag:"🇹🇭",name:"Tailandia"}, MY:{flag:"🇲🇾",name:"Malasia"},
+  ID:{flag:"🇮🇩",name:"Indonesia"}, PH:{flag:"🇵🇭",name:"Filipinas"},
+  AU:{flag:"🇦🇺",name:"Australia"}, NZ:{flag:"🇳🇿",name:"Nueva Zelanda"},
+  ZA:{flag:"🇿🇦",name:"Sudáfrica"}, EG:{flag:"🇪🇬",name:"Egipto"}, NG:{flag:"🇳🇬",name:"Nigeria"}, KE:{flag:"🇰🇪",name:"Kenia"},
+}
+
 export function getCountry(c) {
+  const k = (c || '').toUpperCase()
+  if (COUNTRY_INFO[k]) return { code: k, ...COUNTRY_INFO[k] }
   return COUNTRIES.find(x => x.code === c) || {code:"OTHER",flag:"🌍",name:"Otro"}
 }
 
@@ -70,15 +96,18 @@ export function mosColor(mos) {
 
 export function getContinent(country) {
   const map = {
-    US:"América",CA:"América",BR:"América",MX:"América",CL:"América",
+    US:"América",CA:"América",BR:"América",MX:"América",CL:"América",AR:"América",CO:"América",PE:"América",
     GB:"Europa",DE:"Europa",FR:"Europa",ES:"Europa",NL:"Europa",IT:"Europa",
     CH:"Europa",SE:"Europa",DK:"Europa",NO:"Europa",FI:"Europa",IE:"Europa",
-    BE:"Europa",AT:"Europa",PT:"Europa",
+    BE:"Europa",AT:"Europa",PT:"Europa",LU:"Europa",PL:"Europa",CZ:"Europa",HU:"Europa",
+    GR:"Europa",RO:"Europa",TR:"Europa",SK:"Europa",SI:"Europa",EE:"Europa",LV:"Europa",
+    LT:"Europa",HR:"Europa",BG:"Europa",CY:"Europa",MT:"Europa",
     JP:"Asia",CN:"Asia",HK:"Asia",SG:"Asia",KR:"Asia",IN:"Asia",TW:"Asia",
+    TH:"Asia",MY:"Asia",ID:"Asia",PH:"Asia",
     AU:"Oceanía",NZ:"Oceanía",
-    ZA:"África",EG:"África",NG:"África",
+    ZA:"África",EG:"África",NG:"África",KE:"África",
   }
-  return map[country] || "Otros"
+  return map[(country || '').toUpperCase()] || "Otros"
 }
 
 export function getCapSize(co) {
