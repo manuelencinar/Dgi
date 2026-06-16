@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS bank_metrics_manual (
 );
 
 ALTER TABLE bank_metrics_manual ENABLE ROW LEVEL SECURITY;
--- Lectura pública (datos de referencia, no sensibles); escritura solo service_role.
+
+-- Lectura publica (dato de referencia, no sensible). Escritura solo service_role.
 DROP POLICY IF EXISTS bank_metrics_read ON bank_metrics_manual;
+
 CREATE POLICY bank_metrics_read ON bank_metrics_manual FOR SELECT USING (true);
