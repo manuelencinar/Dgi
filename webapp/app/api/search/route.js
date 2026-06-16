@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getEffectiveDict } from '@/lib/dict'
 import { getEffectiveMarkets } from '@/lib/markets-overrides'
+import { sectorLabelEs } from '@/lib/supersectors'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,18 +51,25 @@ export async function GET(req) {
       .sort((a, b) => a._s - b._s || a.name.localeCompare(b.name))
       .slice(0, 40)
 
-    // Ocultar las empresas sin precio válido (0,00 o sin dato).
+    // Ocultar las empresas sin precio válido (0,00 o sin dato). De paso traemos
+    // el sector real (company_fundamentals) para mostrarlo en castellano.
     let validTickers = new Set()
+    const secByTicker = {}
     if (candidates.length) {
       const { data: pxRows } = await sb.from('company_fundamentals')
-        .select('ticker, current_price').in('ticker', candidates.map(c => c.ticker))
+        .select('ticker, current_price, sector').in('ticker', candidates.map(c => c.ticker))
       validTickers = new Set((pxRows || []).filter(r => r.current_price != null && Number(r.current_price) >= 0.01).map(r => r.ticker))
+      ;(pxRows || []).forEach(r => { if (r.sector) secByTicker[r.ticker] = r.sector })
     }
 
     const companies = candidates
       .filter(c => validTickers.has(c.ticker))
       .slice(0, 8)
-      .map(c => ({ type: 'company', name: c.name, ticker: c.ticker, sub: c.sector || c.country || '', href: `/empresa/${encodeURIComponent(c.ticker)}` }))
+      .map(c => ({
+        type: 'company', name: c.name, ticker: c.ticker,
+        sub: secByTicker[c.ticker] ? sectorLabelEs(secByTicker[c.ticker]) : (c.country || ''),
+        href: `/empresa/${encodeURIComponent(c.ticker)}`,
+      }))
 
     // ETFs y fondos
     const funds = (fundsRes?.data || [])
