@@ -60,11 +60,18 @@ export function computeBankMetrics(data) {
   const nim = yNim != null && ta[yNim] ? nii[yNim] / ta[yNim] * 100 : null
 
   // ROTE = Beneficio neto / Patrimonio tangible (TBV de Yahoo, o equity - goodwill - intangibles)
-  let rote = null, rh = {}
+  let rote = null
+  const roteS = {}
   for (const y of Object.keys(ni).map(Number).sort((a, b) => b - a)) {
     let te = tbv[y] != null ? tbv[y] : (eq[y] != null ? eq[y] - (gw[y] || 0) - (intang[y] || 0) : null)
-    if (te != null && te > 0) { const v = ni[y] / te * 100; if (rote == null) rote = v; rh[y] = v }
+    if (te != null && te > 0) { const v = ni[y] / te * 100; if (rote == null) rote = v; roteS[y] = v }
   }
+
+  // Series por año (para mostrar el cambio a 1 y 3 años).
+  const nimS = {}
+  for (const y of Object.keys(nii)) if (ta[y]) nimS[y] = nii[y] / ta[y] * 100
+  const effS = {}
+  for (const y of Object.keys(opex)) if (rev[y] > 0) effS[y] = Math.abs(opex[y]) / rev[y] * 100
 
   // Ratio de eficiencia = Costes operativos / Ingresos netos bancarios (Total Revenue)
   const yEff = lastCommonYear(opex, rev)
@@ -74,7 +81,36 @@ export function computeBankMetrics(data) {
     epsDiluted: lastVal(eps),
     epsCagr5:   cagr5(eps),
     nim, rote, efficiency,
+    series: { nim: nimS, rote: roteS, efficiency: effS, eps: { ...eps } },
   }
+}
+
+// Cambio en PUNTOS porcentuales entre el último año y `back` años antes.
+function ppDelta(series, back) {
+  if (!series) return null
+  const ys = Object.keys(series).map(Number).sort((a, b) => b - a)
+  if (!ys.length) return null
+  const last = ys[0], target = last - back
+  return (series[last] != null && series[target] != null) ? series[last] - series[target] : null
+}
+// Cambio porcentual (para magnitudes como el BPA).
+function pctDelta(series, back) {
+  if (!series) return null
+  const ys = Object.keys(series).map(Number).sort((a, b) => b - a)
+  if (!ys.length) return null
+  const last = ys[0], target = last - back
+  return (series[last] != null && series[target] != null && series[target] !== 0)
+    ? (series[last] - series[target]) / Math.abs(series[target]) * 100 : null
+}
+// Cambio del NPL desde el histórico manual trimestral (mismo trimestre N años antes).
+function nplDelta(history, back) {
+  if (!history?.length) return null
+  const last = history[history.length - 1]
+  const m = /^(\d{4})Q([1-4])$/.exec(last.period || '')
+  if (!m) return null
+  const target = `${Number(m[1]) - back}Q${m[2]}`
+  const prev = history.find(h => h.period === target)
+  return prev ? last.value - prev.value : null
 }
 
 // Ordena periodos 'YYYYQn' descendente (orden lexicográfico = cronológico).
@@ -88,6 +124,8 @@ export function effectiveBankMetrics(computed, manualRows = []) {
   const latest = rows[0] || {}
   const nplRows = rows.filter(r => r.npl != null).sort((a, b) => (a.period || '').localeCompare(b.period || ''))
   const lastNpl = nplRows.length ? nplRows[nplRows.length - 1] : null
+  const nplHistory = nplRows.map(r => ({ period: r.period, value: Number(r.npl) }))
+  const s = computed?.series || {}
   return {
     epsDiluted: computed?.epsDiluted ?? null,
     epsCagr5:   computed?.epsCagr5 ?? null,
@@ -97,6 +135,14 @@ export function effectiveBankMetrics(computed, manualRows = []) {
     // NPL: SOLO manual. Si no hay, null → la UI muestra "-" (nunca 0).
     npl:        lastNpl ? Number(lastNpl.npl) : null,
     nplPeriod:  lastNpl ? lastNpl.period : null,
-    nplHistory: nplRows.map(r => ({ period: r.period, value: Number(r.npl) })),
+    nplHistory,
+    // Cambio en el último año y en los 3 últimos (puntos porcentuales; BPA en %).
+    changes: {
+      rote:       { d1: ppDelta(s.rote, 1), d3: ppDelta(s.rote, 3) },
+      nim:        { d1: ppDelta(s.nim, 1), d3: ppDelta(s.nim, 3) },
+      efficiency: { d1: ppDelta(s.efficiency, 1), d3: ppDelta(s.efficiency, 3) },
+      eps:        { d1: pctDelta(s.eps, 1), d3: pctDelta(s.eps, 3), pct: true },
+      npl:        { d1: nplDelta(nplHistory, 1), d3: nplDelta(nplHistory, 3) },
+    },
   }
 }

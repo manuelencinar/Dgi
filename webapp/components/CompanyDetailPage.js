@@ -1134,17 +1134,32 @@ function RoicCard({ roicData, isPremium }) {
 }
 
 // ── bank metrics card ──────────────────────────────────────────────────────
+// Línea de cambio a 1 y 3 años. lowerBetter → mejora (verde) cuando baja.
+function BankDelta({ chg, lowerBetter }) {
+  if (!chg || (chg.d1 == null && chg.d3 == null)) return null
+  const unit = chg.pct ? '%' : ' pp'
+  const fmt = d => d == null ? '–' : (d >= 0 ? '+' : '') + d.toFixed(chg.pct ? 0 : 2) + unit
+  const col = d => d == null ? '#4a5270' : d === 0 ? '#8090a8' : ((lowerBetter ? d < 0 : d > 0) ? '#34d399' : '#f87171')
+  return (
+    <p style={{ fontSize: 9.5, color: '#4a5270', marginTop: 3, display: 'flex', gap: 8 }}>
+      <span>1a <b style={{ color: col(chg.d1) }}>{fmt(chg.d1)}</b></span>
+      <span>3a <b style={{ color: col(chg.d3) }}>{fmt(chg.d3)}</b></span>
+    </p>
+  )
+}
+
 function BankMetricsCard({ m }) {
   if (!m) return null
-  const fp = v => (v == null || isNaN(v)) ? '–' : (v >= 0 ? '' : '') + v.toFixed(2) + '%'
+  const c = m.changes || {}
+  const fp = v => (v == null || isNaN(v)) ? '–' : v.toFixed(2) + '%'
   const effColor = m.efficiency == null ? '#c8d0e0' : m.efficiency < 50 ? '#34d399' : m.efficiency < 60 ? '#fbbf24' : '#f87171'
   const items = [
-    { label: 'BPA diluido', value: m.epsDiluted != null ? m.epsDiluted.toLocaleString('es-ES', { maximumFractionDigits: 2 }) : '–' },
+    { label: 'BPA diluido', value: m.epsDiluted != null ? m.epsDiluted.toLocaleString('es-ES', { maximumFractionDigits: 2 }) : '–', chg: c.eps },
     { label: 'CAGR BPA 5a', value: fp(m.epsCagr5), color: m.epsCagr5 != null ? (m.epsCagr5 >= 0 ? '#34d399' : '#f87171') : null },
-    { label: 'NIM (aprox.)', value: fp(m.nim), hint: 'Margen neto de intereses ≈ Ingresos netos por intereses / Activos totales (proxy comparable entre bancos).' },
-    { label: 'ROTE', value: fp(m.rote), hint: 'Retorno sobre capital tangible = Beneficio neto / (Patrimonio − fondo de comercio − intangibles).' },
-    { label: 'Eficiencia', value: fp(m.efficiency), color: effColor, hint: 'Costes operativos / ingresos netos bancarios. Menor es mejor (por debajo del 50% es excelente).' },
-    { label: 'NPL (morosidad)', value: m.npl != null ? fp(m.npl) : '–', sub: m.npl != null ? m.nplPeriod : 'manual — pendiente', color: m.npl != null ? (m.npl < 3 ? '#34d399' : m.npl < 6 ? '#fbbf24' : '#f87171') : '#4a5270' },
+    { label: 'NIM (aprox.)', value: fp(m.nim), hint: 'Margen neto de intereses ≈ Ingresos netos por intereses / Activos totales (proxy comparable entre bancos, sobre activos totales).', chg: c.nim },
+    { label: 'ROTE', value: fp(m.rote), hint: 'Retorno sobre capital tangible = Beneficio neto / (Patrimonio − fondo de comercio − intangibles).', chg: c.rote },
+    { label: 'Eficiencia', value: fp(m.efficiency), color: effColor, hint: 'Costes operativos / ingresos netos bancarios. Menor es mejor (por debajo del 50% es excelente).', chg: c.efficiency, lowerBetter: true },
+    { label: 'NPL (morosidad)', value: m.npl != null ? fp(m.npl) : '–', sub: m.npl != null ? m.nplPeriod : 'manual — pendiente', color: m.npl != null ? (m.npl < 3 ? '#34d399' : m.npl < 6 ? '#fbbf24' : '#f87171') : '#4a5270', chg: m.npl != null ? c.npl : null, lowerBetter: true },
   ]
   return (
     <Card>
@@ -1156,12 +1171,10 @@ function BankMetricsCard({ m }) {
             <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>{it.label}{it.hint ? ' ⓘ' : ''}</p>
             <p style={{ fontSize: 18, fontWeight: 800, color: it.color || '#c8d0e0' }}>{it.value}</p>
             {it.sub && <p style={{ fontSize: 9.5, color: '#4a5270', marginTop: 1 }}>{it.sub}</p>}
+            <BankDelta chg={it.chg} lowerBetter={it.lowerBetter} />
           </div>
         ))}
       </div>
-      <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10, lineHeight: 1.5 }}>
-        En banca no se usan EBITDA, FCF ni ROIC. NIM y eficiencia son aproximaciones desde los estados de Yahoo (comparables entre bancos); el NPL se introduce manualmente por trimestre.
-      </p>
     </Card>
   )
 }
