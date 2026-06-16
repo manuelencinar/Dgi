@@ -1133,6 +1133,40 @@ function RoicCard({ roicData, isPremium }) {
   return content
 }
 
+// ── bank metrics card ──────────────────────────────────────────────────────
+function BankMetricsCard({ m, isPremium }) {
+  if (!isPremium) return <PremiumGate label="Métricas bancarias (Premium)" hint="NPL, NIM, ROTE, ratio de eficiencia y BPA diluido." />
+  if (!m) return null
+  const fp = v => (v == null || isNaN(v)) ? '–' : (v >= 0 ? '' : '') + v.toFixed(2) + '%'
+  const effColor = m.efficiency == null ? '#c8d0e0' : m.efficiency < 50 ? '#34d399' : m.efficiency < 60 ? '#fbbf24' : '#f87171'
+  const items = [
+    { label: 'BPA diluido', value: m.epsDiluted != null ? m.epsDiluted.toLocaleString('es-ES', { maximumFractionDigits: 2 }) : '–' },
+    { label: 'CAGR BPA 5a', value: fp(m.epsCagr5), color: m.epsCagr5 != null ? (m.epsCagr5 >= 0 ? '#34d399' : '#f87171') : null },
+    { label: 'NIM (aprox.)', value: fp(m.nim), hint: 'Margen neto de intereses ≈ Ingresos netos por intereses / Activos totales (proxy comparable entre bancos).' },
+    { label: 'ROTE', value: fp(m.rote), hint: 'Retorno sobre capital tangible = Beneficio neto / (Patrimonio − fondo de comercio − intangibles).' },
+    { label: 'Eficiencia', value: fp(m.efficiency), color: effColor, hint: 'Costes operativos / ingresos netos bancarios. Menor es mejor (por debajo del 50% es excelente).' },
+    { label: 'NPL (morosidad)', value: m.npl != null ? fp(m.npl) : '–', sub: m.npl != null ? m.nplPeriod : 'manual — pendiente', color: m.npl != null ? (m.npl < 3 ? '#34d399' : m.npl < 6 ? '#fbbf24' : '#f87171') : '#4a5270' },
+  ]
+  return (
+    <Card>
+      <SectionTitle>Métricas bancarias</SectionTitle>
+      <style>{`.bank-m{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}@media(min-width:560px){.bank-m{grid-template-columns:repeat(3,1fr)}}`}</style>
+      <div className="bank-m">
+        {items.map(it => (
+          <div key={it.label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }} title={it.hint || ''}>
+            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>{it.label}{it.hint ? ' ⓘ' : ''}</p>
+            <p style={{ fontSize: 18, fontWeight: 800, color: it.color || '#c8d0e0' }}>{it.value}</p>
+            {it.sub && <p style={{ fontSize: 9.5, color: '#4a5270', marginTop: 1 }}>{it.sub}</p>}
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10, lineHeight: 1.5 }}>
+        En banca no se usan EBITDA, FCF ni ROIC. NIM y eficiencia son aproximaciones desde los estados de Yahoo (comparables entre bancos); el NPL se introduce manualmente por trimestre.
+      </p>
+    </Card>
+  )
+}
+
 // ── buyback section ────────────────────────────────────────────────────────
 
 function BuybackSection({ buybacks }) {
@@ -1212,7 +1246,7 @@ const TAB_IDS = TABS.map(t => t.id)
 
 export default function CompanyDetailPage(props) {
   const {
-    ticker, name, country, currency, sector, subsector, type, classification, crossListings,
+    ticker, name, country, currency, sector, subsector, type, classification, isBank, bankMetrics, crossListings,
     isPremium, hasData, isAuthed, watchEntry,
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
@@ -1542,7 +1576,7 @@ export default function CompanyDetailPage(props) {
             <MoatSection moat={moat} isPremium={isPremium} />
             <InsightsSection insights={insights} isPremium={isPremium} />
             <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} scoreHistory={scoreHistory} />
-            <RoicCard roicData={roicData} isPremium={isPremium} />
+            {isBank ? <BankMetricsCard m={bankMetrics} isPremium={isPremium} /> : <RoicCard roicData={roicData} isPremium={isPremium} />}
           </div>
         )}
       </div>

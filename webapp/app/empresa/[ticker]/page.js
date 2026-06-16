@@ -12,6 +12,7 @@ import { netYield, getWHT, resolveRoic } from '@/lib/screener'
 import { payLagDays } from '@/lib/sectors'
 import { sectorInfo, SUPERSECTORS } from '@/lib/supersectors'
 import { industryEs } from '@/lib/taxonomy'
+import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import {
   getCompanyDetail,
   computeMoat,
@@ -306,6 +307,15 @@ export default async function EmpresaPage({ params, searchParams }) {
     industryEs: detail?.industry ? industryEs(_cfSector, detail.industry) : null,
   } : null
 
+  // Métricas bancarias (solo banca): calculadas desde los estados + manuales
+  // (NPL por trimestre + overrides). Premium (no enviar al cliente free).
+  const isBank = type === 'banco'
+  let bankMetrics = null
+  if (isBank && detail && isPremium) {
+    const { data: bmRows } = await supabase.from('bank_metrics_manual').select('*').eq('ticker', t)
+    bankMetrics = effectiveBankMetrics(computeBankMetrics(detail), bmRows || [])
+  }
+
   const roicData   = detail ? calculateROIC({ ...detail, type }, currency) : null
   const moat       = computeMoat(detail, streak)
   const dcf        = computeValuation(detail, moat?.width ?? 'none', type, currency)
@@ -374,6 +384,8 @@ export default async function EmpresaPage({ params, searchParams }) {
         sector={sector}
         subsector={subsector}
         classification={classification}
+        isBank={isBank}
+        bankMetrics={bankMetrics}
         type={type}
         isPremium={isPremium}
         isAuthed={!!user}

@@ -7,9 +7,10 @@ import MarketsAdminClient from './MarketsAdminClient'
 import ImportExcelClient from './ImportExcelClient'
 import DictManagerClient from './DictManagerClient'
 import SectorAssignClient from './SectorAssignClient'
+import BankMetricsClient from './BankMetricsClient'
 
 const TABS = [
-  ['empresas', 'Empresas'], ['sectores', 'Sectores'], ['funds', 'ETFs y Fondos'], ['indices', 'Índices'],
+  ['empresas', 'Empresas'], ['sectores', 'Sectores'], ['banca', 'Banca'], ['funds', 'ETFs y Fondos'], ['indices', 'Índices'],
   ['importar', 'Importar Excel'], ['logs', 'Logs'],
 ]
 
@@ -58,6 +59,7 @@ export default function DatosTabs({ companies, sectors, countries, funds, market
         </div>
       )}
       {tab === 'sectores' && <SectorAssignClient />}
+      {tab === 'banca' && <BankMetricsClient />}
       {tab === 'funds' && <EtfsAdminClient funds={funds} />}
       {tab === 'indices' && <MarketsAdminClient markets={markets} />}
       {tab === 'importar' && <ImportExcelClient />}
