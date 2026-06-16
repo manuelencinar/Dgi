@@ -1134,8 +1134,7 @@ function RoicCard({ roicData, isPremium }) {
 }
 
 // ── bank metrics card ──────────────────────────────────────────────────────
-function BankMetricsCard({ m, isPremium }) {
-  if (!isPremium) return <PremiumGate label="Métricas bancarias (Premium)" hint="NPL, NIM, ROTE, ratio de eficiencia y BPA diluido." />
+function BankMetricsCard({ m }) {
   if (!m) return null
   const fp = v => (v == null || isNaN(v)) ? '–' : (v >= 0 ? '' : '') + v.toFixed(2) + '%'
   const effColor = m.efficiency == null ? '#c8d0e0' : m.efficiency < 50 ? '#34d399' : m.efficiency < 60 ? '#fbbf24' : '#f87171'
@@ -1514,16 +1513,20 @@ export default function CompanyDetailPage(props) {
                 type={type}
               />
             </Card>
-            <Card>
-              <SectionTitle>KPIs financieros clave</SectionTitle>
-              <FinanzasKpis
-                income={financials?.income_statement_annual}
-                cashflow={financials?.cashflow_annual}
-                balance={financials?.balance_sheet_annual}
-                divHistory={divHistory}
-                scalars={finScalars}
-              />
-            </Card>
+            {isBank ? (
+              <BankMetricsCard m={bankMetrics} />
+            ) : (
+              <Card>
+                <SectionTitle>KPIs financieros clave</SectionTitle>
+                <FinanzasKpis
+                  income={financials?.income_statement_annual}
+                  cashflow={financials?.cashflow_annual}
+                  balance={financials?.balance_sheet_annual}
+                  divHistory={divHistory}
+                  scalars={finScalars}
+                />
+              </Card>
+            )}
             <Card>
               <FinancialTables
                 isPremium={isPremium}
@@ -1576,7 +1579,7 @@ export default function CompanyDetailPage(props) {
             <MoatSection moat={moat} isPremium={isPremium} />
             <InsightsSection insights={insights} isPremium={isPremium} />
             <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} scoreHistory={scoreHistory} />
-            {isBank ? <BankMetricsCard m={bankMetrics} isPremium={isPremium} /> : <RoicCard roicData={roicData} isPremium={isPremium} />}
+            {isBank ? <BankMetricsCard m={bankMetrics} /> : <RoicCard roicData={roicData} isPremium={isPremium} />}
           </div>
         )}
       </div>

@@ -311,7 +311,7 @@ export default async function EmpresaPage({ params, searchParams }) {
   // (NPL por trimestre + overrides). Premium (no enviar al cliente free).
   const isBank = type === 'banco'
   let bankMetrics = null
-  if (isBank && detail && isPremium) {
+  if (isBank && detail) {
     const { data: bmRows } = await supabase.from('bank_metrics_manual').select('*').eq('ticker', t)
     bankMetrics = effectiveBankMetrics(computeBankMetrics(detail), bmRows || [])
   }
