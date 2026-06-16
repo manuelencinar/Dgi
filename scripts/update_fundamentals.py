@@ -1423,13 +1423,20 @@ def apply_manual_protection(sb, ticker, data):
     Devuelve la lista de campos saltados por protección manual."""
     skipped = []
     try:
-        cols = "manual_fields," + ",".join(HISTORY_JSONB)
+        cols = "manual_fields,taxonomy_locked," + ",".join(HISTORY_JSONB)
         res = sb.table("company_fundamentals").select(cols).eq("ticker", ticker).limit(1).execute()
         existing = (res.data or [{}])[0] if res.data else {}
     except Exception:
         existing = {}
 
     manual = _as_dict(existing.get("manual_fields"))
+
+    # Taxonomía asignada a mano: no sobreescribir sector/industria con Yahoo.
+    if existing.get("taxonomy_locked") is True:
+        for f in ("sector", "industry"):
+            if f in data:
+                data.pop(f, None)
+                skipped.append(f)
 
     for field in list(data.keys()):
         if field in ("ticker", "updated_at"):

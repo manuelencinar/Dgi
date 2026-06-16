@@ -242,7 +242,7 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 ## SQL pendiente de ejecutar en Supabase (todos los ficheros en webapp/sql/)
 Estado: el usuario ya ejecutó admin.sql, valuation_columns.sql, roic_columns.sql, cartera_parte3.sql, funds.sql, recurring.sql, fx_and_settings.sql y daily_prices.sql.
 Ficheros que el usuario PUEDE tener aún pendientes de ejecutar (confirmar en entorno nuevo):
-`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), `yield_avg.sql` (columnas yield_avg + yield_avg_years), `ma200.sql` (columna MM200), `score_history.sql` (tabla de histórico del Score DGI), `canibales.sql` (columnas shares_reduced_pct + shares_base_year), `compounders.sql` (columna capex_cfo_pct), `investor_profile.sql` (columna investor_profile en user_settings — perfil de inversor de la cartera), y el ALTER de `premium_until` en user_settings.
+`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), `yield_avg.sql` (columnas yield_avg + yield_avg_years), `ma200.sql` (columna MM200), `score_history.sql` (tabla de histórico del Score DGI), `canibales.sql` (columnas shares_reduced_pct + shares_base_year), `compounders.sql` (columna capex_cfo_pct), `investor_profile.sql` (columna investor_profile en user_settings — perfil de inversor de la cartera), `taxonomy_locked.sql` (columna taxonomy_locked en company_fundamentals — bloqueo de sector/industria asignados a mano), y el ALTER de `premium_until` en user_settings.
 Si se monta un entorno nuevo, ejecutar en orden todos los ficheros de webapp/sql/.
 
 ## Planes y precios
