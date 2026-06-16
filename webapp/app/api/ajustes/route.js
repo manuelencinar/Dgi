@@ -11,6 +11,7 @@ const ALLOWED = new Set([
   'fx_commission_pct', 'fx_alert_threshold',
   'benchmark_index', 'show_returns_original',
   'monthly_summary_active', 'alerts_email_active', 'recurring_email_active',
+  'investor_profile',
   // compatibilidad con la página de ajustes de cartera
   'monthly_summary', 'alert_config', 'alert_dismissed',
 ])
@@ -30,6 +31,7 @@ const READABLE = [
   'fx_commission_pct', 'fx_alert_threshold',
   'benchmark_index', 'show_returns_original',
   'monthly_summary_active', 'alerts_email_active', 'recurring_email_active',
+  'investor_profile',
   'plan', 'premium_until', 'subscription_paused', 'pause_end_date', 'retention_discount_used',
 ]
 

@@ -572,12 +572,25 @@ export default function PortfolioPage({ isPremium }) {
     load()
   }
 
-  // Perfil de inversor elegido (persistido por navegador).
+  // Perfil de inversor elegido — guardado en los ajustes del usuario (user_settings
+  // vía /api/ajustes), para que quede asociado a la cuenta desde cualquier dispositivo.
   const [profile, setProfile] = useState(DEFAULT_PROFILE)
   useEffect(() => {
-    try { const s = localStorage.getItem('cartera:profile'); if (s && INVESTOR_PROFILES[s]) setProfile(s) } catch {}
+    let cancel = false
+    fetch('/api/ajustes').then(r => r.ok ? r.json() : null).then(d => {
+      const p = d?.settings?.investor_profile
+      if (!cancel && p && INVESTOR_PROFILES[p]) setProfile(p)
+    }).catch(() => {})
+    return () => { cancel = true }
   }, [])
-  const changeProfile = (k) => { setProfile(k); try { localStorage.setItem('cartera:profile', k) } catch {} }
+  const changeProfile = (k) => {
+    if (!INVESTOR_PROFILES[k]) return
+    setProfile(k)   // optimista
+    fetch('/api/ajustes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ investor_profile: k }),
+    }).catch(() => {})
+  }
 
   const summary       = useMemo(() => calcSummary(enriched), [enriched])
   const concentration = useMemo(() => calcConcentration(enriched), [enriched])
