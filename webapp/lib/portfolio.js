@@ -1,6 +1,7 @@
 // Portfolio utilities — pure functions, no React
 
 import { DICT } from '@/data/dict'
+import { SUPERSECTORS, SUPERSECTOR_ORDER, sectorInfo } from '@/lib/supersectors'
 
 // ── FX ────────────────────────────────────────────────────────────────────
 
@@ -154,6 +155,40 @@ export function calcConcentration(enriched) {
     byZone:     group('zone'),
     byCurrency: group('currency'),
   }
+}
+
+// ── Diversificación por supersectores de Morningstar ────────────────────────
+// Devuelve los 3 grandes supersectores (Cíclico/Sensible/Defensivo, + Otros) con
+// su peso %, y dentro de cada uno el peso de cada sector particular.
+export function calcSectorBreakdown(enriched) {
+  const total = enriched.reduce((s, p) => s + (p.valueEUR ?? 0), 0)
+  if (!total) return []
+
+  const groups = {}   // supKey -> { value, sectors: { es -> value } }
+  enriched.forEach(p => {
+    const info = sectorInfo(p.sector)
+    const g = groups[info.sup] || (groups[info.sup] = { value: 0, sectors: {} })
+    const v = p.valueEUR ?? 0
+    g.value += v
+    g.sectors[info.es] = (g.sectors[info.es] || 0) + v
+  })
+
+  return SUPERSECTOR_ORDER
+    .filter(k => groups[k])
+    .map(k => {
+      const g = groups[k]
+      return {
+        key:   k,
+        label: SUPERSECTORS[k].label,
+        color: SUPERSECTORS[k].color,
+        desc:  SUPERSECTORS[k].desc,
+        value: g.value / total * 100,
+        sectors: Object.entries(g.sectors)
+          .map(([name, v]) => ({ name, value: v / total * 100 }))
+          .sort((a, b) => b.value - a.value),
+      }
+    })
+    .sort((a, b) => b.value - a.value)
 }
 
 // ── Alerts ────────────────────────────────────────────────────────────────

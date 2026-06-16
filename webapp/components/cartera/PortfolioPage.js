@@ -6,8 +6,9 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import {
   enrichPositions, calcSummary, calcConcentration, calcAlerts,
-  calcDiversificationScore, calcDividendRisks, calcFiscal,
+  calcDiversificationScore, calcDividendRisks, calcFiscal, calcSectorBreakdown,
 } from '@/lib/portfolio'
+import SectorBreakdown from '@/components/cartera/SectorBreakdown'
 import PortfolioDGIScore from '@/components/cartera/PortfolioDGIScore'
 import PortfolioEvolution from '@/components/cartera/PortfolioEvolution'
 import CompanyDetector from '@/components/cartera/CompanyDetector'
@@ -211,12 +212,18 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
 }
 
 // ── Section 3: Concentration ───────────────────────────────────────────────
-function ConcentrationSection({ concentration, alerts, isPremium }) {
+function ConcentrationSection({ concentration, sectorBreakdown, alerts, isPremium }) {
   const inner = (
     <div style={{ ...CARD, marginBottom: 16 }}>
       <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>Análisis de concentración</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 16 }}>
-        <DonutChart data={concentration.bySector}   title="Por sector" />
+
+      {/* Diversificación por supersectores de Morningstar (sector + detalle) */}
+      <div style={{ marginBottom: 20 }}>
+        <SectorBreakdown breakdown={sectorBreakdown} />
+      </div>
+
+      {/* Zona geográfica y divisa */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16, marginBottom: 16 }}>
         <DonutChart data={concentration.byZone}     title="Por zona geográfica" />
         <DonutChart data={concentration.byCurrency} title="Por divisa" />
       </div>
@@ -555,6 +562,7 @@ export default function PortfolioPage({ isPremium }) {
 
   const summary       = useMemo(() => calcSummary(enriched), [enriched])
   const concentration = useMemo(() => calcConcentration(enriched), [enriched])
+  const sectorBreakdown = useMemo(() => calcSectorBreakdown(enriched), [enriched])
   const alerts        = useMemo(() => calcAlerts(enriched, concentration), [enriched, concentration])
   const divScore      = useMemo(() => calcDiversificationScore(enriched), [enriched])
   const divRisks      = useMemo(() => calcDividendRisks(enriched, summary.totalIncomeEUR), [enriched, summary])
@@ -617,7 +625,7 @@ export default function PortfolioPage({ isPremium }) {
       {enriched.length > 0 && (
         <>
           {/* Section 3: Concentration */}
-          <ConcentrationSection concentration={concentration} alerts={alerts} isPremium={isPremium} />
+          <ConcentrationSection concentration={concentration} sectorBreakdown={sectorBreakdown} alerts={alerts} isPremium={isPremium} />
 
           {/* Section 4: Diversification score */}
           <DiversificationSection score={divScore} isPremium={isPremium} />
