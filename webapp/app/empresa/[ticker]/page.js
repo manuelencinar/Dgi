@@ -10,6 +10,8 @@ import { calculateROIC } from '@/lib/metrics'
 import { buildHealthPanel } from '@/lib/health'
 import { netYield, getWHT, resolveRoic } from '@/lib/screener'
 import { payLagDays } from '@/lib/sectors'
+import { sectorInfo, SUPERSECTORS } from '@/lib/supersectors'
+import { industryEs } from '@/lib/taxonomy'
 import {
   getCompanyDetail,
   computeMoat,
@@ -293,6 +295,17 @@ export default async function EmpresaPage({ params, searchParams }) {
     if (equity != null && equity > 0) detail.price_to_book = mktCap / equity
   }
 
+  // Clasificación nueva (Morningstar, en español) desde company_fundamentals:
+  // Supersector → Sector → Industria. Fuente: detail.sector (11 de Yahoo) + detail.industry.
+  const _cfSector = detail?.sector ?? null
+  const _sinfo = sectorInfo(_cfSector)
+  const classification = _cfSector ? {
+    superLabel: SUPERSECTORS[_sinfo.sup]?.label ?? null,
+    superColor: SUPERSECTORS[_sinfo.sup]?.color ?? '#818cf8',
+    sectorEs:   _sinfo.es,
+    industryEs: detail?.industry ? industryEs(_cfSector, detail.industry) : null,
+  } : null
+
   const roicData   = detail ? calculateROIC({ ...detail, type }, currency) : null
   const moat       = computeMoat(detail, streak)
   const dcf        = computeValuation(detail, moat?.width ?? 'none', type, currency)
@@ -360,6 +373,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         currency={currency}
         sector={sector}
         subsector={subsector}
+        classification={classification}
         type={type}
         isPremium={isPremium}
         isAuthed={!!user}

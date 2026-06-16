@@ -1212,7 +1212,7 @@ const TAB_IDS = TABS.map(t => t.id)
 
 export default function CompanyDetailPage(props) {
   const {
-    ticker, name, country, currency, sector, subsector, type, crossListings,
+    ticker, name, country, currency, sector, subsector, type, classification, crossListings,
     isPremium, hasData, isAuthed, watchEntry,
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
@@ -1285,7 +1285,21 @@ export default function CompanyDetailPage(props) {
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
               {flag && <span style={{ fontSize: 16 }}>{flag}</span>}
-              {sector && <span style={{ fontSize: 11, color: '#818cf8', background: 'rgba(99,102,241,0.1)', padding: '2px 8px', borderRadius: 5 }}>{sector}</span>}
+              {classification ? (
+                <>
+                  {classification.superLabel && (
+                    <span style={{ fontSize: 11, fontWeight: 700, color: classification.superColor, background: `${classification.superColor}1f`, padding: '2px 8px', borderRadius: 5 }}>{classification.superLabel}</span>
+                  )}
+                  {classification.sectorEs && (
+                    <span style={{ fontSize: 11, color: '#818cf8', background: 'rgba(99,102,241,0.1)', padding: '2px 8px', borderRadius: 5 }}>{classification.sectorEs}</span>
+                  )}
+                  {classification.industryEs && (
+                    <span style={{ fontSize: 11, color: '#8090a8', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 5 }}>{classification.industryEs}</span>
+                  )}
+                </>
+              ) : (
+                sector && <span style={{ fontSize: 11, color: '#818cf8', background: 'rgba(99,102,241,0.1)', padding: '2px 8px', borderRadius: 5 }}>{sector}</span>
+              )}
               {paysDividend !== false && sBadge && <span style={{ fontSize: 11, fontWeight: 700, color: sBadge.color, background: `${sBadge.color}18`, padding: '2px 8px', borderRadius: 5 }}>{sBadge.emoji ? sBadge.emoji + ' ' : ''}{sBadge.label}</span>}
               {paysDividend === false && <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7693', background: 'rgba(107,118,147,0.14)', padding: '2px 8px', borderRadius: 5 }}>Sin dividendo</span>}
               {badges?.filter(b => b.id?.startsWith('moat') || b.id === '1010').map(b => (
