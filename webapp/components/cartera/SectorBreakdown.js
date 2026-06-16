@@ -6,6 +6,44 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 // (tono del mismo color de su supersector).
 
 const TT = { background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }
+const PALETTE = ['#818cf8', '#34d399', '#fbbf24', '#f87171', '#60a5fa', '#a78bfa', '#fb923c', '#4ade80', '#f472b6', '#38bdf8', '#facc15', '#22d3ee']
+
+// Diversificación de un nivel (zona, divisa…) con el MISMO estilo que el de
+// sectores: donut a la izquierda + leyenda de barras a la derecha.
+export function DonutBreakdown({ title, hint, data }) {
+  if (!data?.length) return null
+  const rows = data.map((d, i) => ({ ...d, color: PALETTE[i % PALETTE.length] }))
+  const max = Math.max(...rows.map(r => r.value), 1)
+  return (
+    <div>
+      <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{title}</p>
+      {hint && <p style={{ fontSize: 11, color: '#3a4260', marginBottom: 10 }}>{hint}</p>}
+      <style>{`@media(min-width:680px){.sb-grid{grid-template-columns:220px 1fr!important}}`}</style>
+      <div className="sb-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16, alignItems: 'center' }}>
+        <ResponsiveContainer width="100%" height={200}>
+          <PieChart>
+            <Pie data={rows} dataKey="value" cx="50%" cy="50%" innerRadius={48} outerRadius={88} paddingAngle={1} startAngle={90} endAngle={-270}>
+              {rows.map((d, i) => <Cell key={i} fill={d.color} fillOpacity={0.85} stroke="#0b1120" strokeWidth={1} />)}
+            </Pie>
+            <Tooltip contentStyle={TT} formatter={(v, n) => [`${v.toFixed(1)}%`, n]} />
+          </PieChart>
+        </ResponsiveContainer>
+        <div style={{ display: 'grid', gap: 6 }}>
+          {rows.map(r => (
+            <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 9, height: 9, borderRadius: 2, background: r.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 11.5, color: '#c8d0e0', width: 140, flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}</span>
+              <div style={{ flex: 1, height: 7, background: 'rgba(255,255,255,0.04)', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ width: `${(r.value / max) * 100}%`, height: '100%', background: r.color, opacity: 0.85, borderRadius: 4 }} />
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#a8b3c8', width: 42, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{r.value.toFixed(1)}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function SectorBreakdown({ breakdown }) {
   if (!breakdown?.length) return null

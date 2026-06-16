@@ -9,7 +9,7 @@ import {
   calcDiversificationScore, calcDividendRisks, calcFiscal, calcSectorBreakdown, calcProfileFit,
 } from '@/lib/portfolio'
 import { DEFAULT_PROFILE, INVESTOR_PROFILES } from '@/lib/supersectors'
-import SectorBreakdown from '@/components/cartera/SectorBreakdown'
+import SectorBreakdown, { DonutBreakdown } from '@/components/cartera/SectorBreakdown'
 import InvestorProfile from '@/components/cartera/InvestorProfile'
 import PortfolioDGIScore from '@/components/cartera/PortfolioDGIScore'
 import PortfolioEvolution from '@/components/cartera/PortfolioEvolution'
@@ -224,10 +224,10 @@ function ConcentrationSection({ concentration, sectorBreakdown, alerts, isPremiu
         <SectorBreakdown breakdown={sectorBreakdown} />
       </div>
 
-      {/* Zona geográfica y divisa */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16, marginBottom: 16 }}>
-        <DonutChart data={concentration.byZone}     title="Por zona geográfica" />
-        <DonutChart data={concentration.byCurrency} title="Por divisa" />
+      {/* Zona geográfica y divisa — mismo estilo (donut + barras) que sectores */}
+      <div style={{ display: 'grid', gap: 20, marginBottom: 16 }}>
+        <DonutBreakdown title="Por zona geográfica" data={concentration.byZone} />
+        <DonutBreakdown title="Por divisa" data={concentration.byCurrency} />
       </div>
       {alerts.length > 0 && (
         <div style={{ display: 'grid', gap: 8 }}>
