@@ -34,3 +34,14 @@ export function sectorInfo(sector) {
 
 export function superSectorOf(sector) { return sectorInfo(sector).sup }
 export function sectorLabelEs(sector) { return sectorInfo(sector).es }
+
+// ── Perfiles de inversor ────────────────────────────────────────────────────
+// El usuario elige el tipo de inversión; cada perfil define el peso OBJETIVO de
+// cada supersector. No todos los supersectores tienen el mismo peso admisible.
+export const INVESTOR_PROFILES = {
+  defensivo:   { label: 'Defensivo',   desc: 'Prioriza estabilidad y renta',          targets: { defensivo: 60, sensible: 20, ciclico: 20 } },
+  equilibrado: { label: 'Equilibrado', desc: 'Reparto equitativo entre supersectores', targets: { defensivo: 34, sensible: 33, ciclico: 33 } },
+  crecimiento: { label: 'Crecimiento', desc: 'Más peso a tecnología e industria',      targets: { defensivo: 20, sensible: 50, ciclico: 30 } },
+}
+export const PROFILE_ORDER = ['defensivo', 'equilibrado', 'crecimiento']
+export const DEFAULT_PROFILE = 'equilibrado'

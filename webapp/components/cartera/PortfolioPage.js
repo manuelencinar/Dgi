@@ -6,9 +6,11 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import {
   enrichPositions, calcSummary, calcConcentration, calcAlerts,
-  calcDiversificationScore, calcDividendRisks, calcFiscal, calcSectorBreakdown,
+  calcDiversificationScore, calcDividendRisks, calcFiscal, calcSectorBreakdown, calcProfileFit,
 } from '@/lib/portfolio'
+import { DEFAULT_PROFILE, INVESTOR_PROFILES } from '@/lib/supersectors'
 import SectorBreakdown from '@/components/cartera/SectorBreakdown'
+import InvestorProfile from '@/components/cartera/InvestorProfile'
 import PortfolioDGIScore from '@/components/cartera/PortfolioDGIScore'
 import PortfolioEvolution from '@/components/cartera/PortfolioEvolution'
 import CompanyDetector from '@/components/cartera/CompanyDetector'
@@ -258,6 +260,16 @@ function DiversificationSection({ score, isPremium }) {
           <p style={{ fontSize: 10, color: '#4a5270' }}>/ 10</p>
         </div>
       </div>
+    </div>
+  )
+  return isPremium ? inner : <PremiumGate />
+}
+
+// ── Perfil de inversor (supersectores) ─────────────────────────────────────
+function InvestorProfileSection({ fit, profileKey, onChange, isPremium }) {
+  const inner = (
+    <div style={{ ...CARD, marginBottom: 16 }}>
+      <InvestorProfile fit={fit} profileKey={profileKey} onChange={onChange} />
     </div>
   )
   return isPremium ? inner : <PremiumGate />
@@ -560,11 +572,19 @@ export default function PortfolioPage({ isPremium }) {
     load()
   }
 
+  // Perfil de inversor elegido (persistido por navegador).
+  const [profile, setProfile] = useState(DEFAULT_PROFILE)
+  useEffect(() => {
+    try { const s = localStorage.getItem('cartera:profile'); if (s && INVESTOR_PROFILES[s]) setProfile(s) } catch {}
+  }, [])
+  const changeProfile = (k) => { setProfile(k); try { localStorage.setItem('cartera:profile', k) } catch {} }
+
   const summary       = useMemo(() => calcSummary(enriched), [enriched])
   const concentration = useMemo(() => calcConcentration(enriched), [enriched])
   const sectorBreakdown = useMemo(() => calcSectorBreakdown(enriched), [enriched])
+  const profileFit    = useMemo(() => calcProfileFit(enriched, profile), [enriched, profile])
   const alerts        = useMemo(() => calcAlerts(enriched, concentration), [enriched, concentration])
-  const divScore      = useMemo(() => calcDiversificationScore(enriched), [enriched])
+  const divScore      = useMemo(() => calcDiversificationScore(enriched, profile), [enriched, profile])
   const divRisks      = useMemo(() => calcDividendRisks(enriched, summary.totalIncomeEUR), [enriched, summary])
   const fiscal        = useMemo(() => calcFiscal(enriched), [enriched])
 
@@ -626,6 +646,9 @@ export default function PortfolioPage({ isPremium }) {
         <>
           {/* Section 3: Concentration */}
           <ConcentrationSection concentration={concentration} sectorBreakdown={sectorBreakdown} alerts={alerts} isPremium={isPremium} />
+
+          {/* Perfil de inversor: reparto por supersectores vs objetivo */}
+          <InvestorProfileSection fit={profileFit} profileKey={profile} onChange={changeProfile} isPremium={isPremium} />
 
           {/* Section 4: Diversification score */}
           <DiversificationSection score={divScore} isPremium={isPremium} />

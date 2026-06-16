@@ -1,7 +1,7 @@
 // Portfolio utilities — pure functions, no React
 
 import { DICT } from '@/data/dict'
-import { SUPERSECTORS, SUPERSECTOR_ORDER, sectorInfo } from '@/lib/supersectors'
+import { SUPERSECTORS, SUPERSECTOR_ORDER, sectorInfo, INVESTOR_PROFILES, DEFAULT_PROFILE } from '@/lib/supersectors'
 
 // ── FX ────────────────────────────────────────────────────────────────────
 
@@ -221,9 +221,48 @@ export function calcAlerts(enriched, concentration) {
   return alerts
 }
 
+// ── Encaje con el perfil de inversor (supersectores) ────────────────────────
+// Compara el reparto real entre los 3 supersectores con el OBJETIVO del perfil
+// elegido. Los ETFs/fondos ("otros") se excluyen y los 3 supersectores se
+// renormalizan sobre la parte clasificada de la cartera.
+export function calcProfileFit(enriched, profileKey = DEFAULT_PROFILE) {
+  if (!enriched.length) return null
+  const total = enriched.reduce((s, p) => s + (p.valueEUR ?? 0), 0)
+  if (!total) return null
+  const profile = INVESTOR_PROFILES[profileKey] || INVESTOR_PROFILES[DEFAULT_PROFILE]
+
+  const w = { ciclico: 0, sensible: 0, defensivo: 0, otros: 0 }
+  enriched.forEach(p => { w[sectorInfo(p.sector).sup] += (p.valueEUR ?? 0) })
+  const otrosPct = w.otros / total * 100
+  const core = w.ciclico + w.sensible + w.defensivo
+  const actual = {
+    ciclico:   core > 0 ? w.ciclico / core * 100 : 0,
+    sensible:  core > 0 ? w.sensible / core * 100 : 0,
+    defensivo: core > 0 ? w.defensivo / core * 100 : 0,
+  }
+  const t = profile.targets
+  // Distancia de variación total (0–100): mitad de la suma de desviaciones.
+  const tvd = (Math.abs(actual.ciclico - t.ciclico) + Math.abs(actual.sensible - t.sensible) + Math.abs(actual.defensivo - t.defensivo)) / 2
+  const fitScore = core > 0 ? Math.max(0, Math.round(10 * (1 - tvd / 100) * 10) / 10) : null
+
+  const rows = ['defensivo', 'sensible', 'ciclico'].map(k => ({
+    key: k, label: SUPERSECTORS[k].label, color: SUPERSECTORS[k].color,
+    actual: actual[k], target: t[k], diff: actual[k] - t[k],
+  }))
+  const under = [...rows].sort((a, b) => a.diff - b.diff)[0]
+  const over  = [...rows].sort((a, b) => b.diff - a.diff)[0]
+  const recommendation = core === 0
+    ? 'Tu cartera son solo ETFs/fondos: el reparto por supersectores no aplica.'
+    : tvd > 10
+      ? `Para tu perfil ${profile.label}: sobra peso en ${over.label} (${over.actual.toFixed(0)}% vs ${over.target}% objetivo) y falta en ${under.label} (${under.actual.toFixed(0)}% vs ${under.target}%).`
+      : `Tu reparto por supersectores encaja bien con tu perfil ${profile.label}.`
+
+  return { profileKey, profileLabel: profile.label, actual, targets: t, rows, tvd, fitScore, otrosPct, recommendation }
+}
+
 // ── Diversification score ─────────────────────────────────────────────────
 
-export function calcDiversificationScore(enriched) {
+export function calcDiversificationScore(enriched, profileKey = DEFAULT_PROFILE) {
   if (!enriched.length) return null
   const total = enriched.reduce((s, p) => s + (p.valueEUR ?? 0), 0)
   if (!total) return null
@@ -252,7 +291,13 @@ export function calcDiversificationScore(enriched) {
   const n     = enriched.length
   const scNum = n < 5 ? 0 : n <= 10 ? 5 : n <= 20 ? 8 : 10
 
-  const score = Math.round((scComp + scSec + scZone + scCurr + scNum) / 5 * 10) / 10
+  // 6. Encaje con el perfil de inversor elegido (supersectores)
+  const fit = calcProfileFit(enriched, profileKey)
+  const scProfile = fit?.fitScore
+
+  const parts = [scComp, scSec, scZone, scCurr, scNum]
+  if (scProfile != null) parts.push(scProfile)
+  const score = Math.round(parts.reduce((s, v) => s + v, 0) / parts.length * 10) / 10
 
   const criteria = [
     { sc: scComp, rec: 'Reduce la concentración en posiciones individuales — ninguna debería superar el 10% del valor total.' },
@@ -261,6 +306,7 @@ export function calcDiversificationScore(enriched) {
     { sc: scCurr, rec: 'Diversifica por divisa — la exposición a una sola divisa no debería superar el 50%.' },
     { sc: scNum,  rec: 'Añade más posiciones — una cartera diversificada tiene al menos 15–20 empresas.' },
   ]
+  if (scProfile != null) criteria.push({ sc: scProfile, rec: fit.recommendation })
   const worst = [...criteria].sort((a, b) => a.sc - b.sc)[0]
 
   return { score, recommendation: worst.rec }
