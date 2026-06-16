@@ -201,6 +201,17 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - Reemplazó las medallas/etiquetas antiguas inconsistentes (🥇🥈🥉, "Campeón DGI") en TODA la app: screener, comparador, ficha de empresa (`streakBadge` local + `computeBadges`/insights en `lib/company-detail.js`), índices y CompanyRow.
 - Página `/aristocratas`: `app/aristocratas/page.js` (server, reutiliza patrón del screener: dict + company_fundamentals) → `components/AristocratasClient.js`. Tres niveles con contador, buscador, filtro por continente y toggle "solo zona de compra". Freemium: niveles+contadores y 5 primeras por nivel visibles, resto tras CTA. Entrada "Aristócratas" en `NavMenu` entre Screener y Watchlist.
 
+## Banca — métricas y scoring propios (`lib/bank-metrics.js`)
+- En banca NO se usan **EBITDA, FCF ni ROIC** (no aplican). Métricas propias, calculadas desde los estados ya guardados (`company_fundamentals.*_annual`, claves inglesas de Yahoo):
+  - **BPA diluido + CAGR 5a** (`Diluted EPS`).
+  - **NIM proxy** = `Net Interest Income / Total Assets` (no es el NIM real pero es comparable entre bancos).
+  - **ROTE** = Beneficio neto / patrimonio tangible (`Tangible Book Value` de Yahoo, o equity − goodwill − intangibles).
+  - **Ratio de eficiencia** = costes operativos (`Operating Expense`/SG&A) / ingresos netos bancarios (`Total Revenue`).
+- **NPL (morosidad)**: SIEMPRE manual, por trimestre. Tabla `bank_metrics_manual` (ticker, period 'YYYYQn', npl, nim, rote, efficiency). Mientras no se rellene → la ficha muestra **"–"** (nunca 0/null). NIM/ROTE/eficiencia también admiten **override** manual cuando Yahoo no tiene desglose (bancos pequeños). `effectiveBankMetrics(computed, manualRows)` combina (override del trimestre más reciente gana; NPL solo manual).
+- **Editor**: Dashboard → Datos → pestaña **"Banca"** (`components/dashboard/BankMetricsClient.js`) + API `/api/admin/bank-metrics` (GET/POST/DELETE, admin).
+- **Ficha** (`isBank` → `BankMetricsCard`): sustituye a la tarjeta ROIC; muestra las 5 métricas + NPL. Premium-gated.
+- **Score DGI** (`computeDGIScore(..., bankOverride)`): banca recalculado — Calidad = ROTE 0.35 / NIM 0.25 / CAGR BPA 0.25 / ROE 0.15; Solidez = eficiencia 0.35 / NPL 0.25 (solo puntúa si está relleno, `catScore` redistribuye su peso) / crecimiento ingresos 0.20 / ROA 0.20. La ficha pasa el NPL/overrides; el snapshot (`select('*')`) calcula desde los estados.
+
 ## Comparador de empresas (`/comparador`)
 - Páginas/componentes: `app/comparador/page.js`, `components/ComparadorClient.js`, API `app/api/comparador/route.js`. Lógica en `lib/comparador.js`.
 - `buildComparadorCompanies(tickers, destWHT)` — prioriza precio fresco de daily_prices, recalcula margen de seguridad, sub-scores, insights, usa `cleanGrossMargin`.
@@ -252,7 +263,7 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 ## SQL pendiente de ejecutar en Supabase (todos los ficheros en webapp/sql/)
 Estado: el usuario ya ejecutó admin.sql, valuation_columns.sql, roic_columns.sql, cartera_parte3.sql, funds.sql, recurring.sql, fx_and_settings.sql, daily_prices.sql, `investor_profile.sql` (columna investor_profile en user_settings) y `taxonomy_locked.sql` (columna taxonomy_locked en company_fundamentals).
 Ficheros que el usuario PUEDE tener aún pendientes de ejecutar (confirmar en entorno nuevo):
-`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), `yield_avg.sql` (columnas yield_avg + yield_avg_years), `ma200.sql` (columna MM200), `score_history.sql` (tabla de histórico del Score DGI), `canibales.sql` (columnas shares_reduced_pct + shares_base_year), `compounders.sql` (columna capex_cfo_pct), y el ALTER de `premium_until` en user_settings.
+`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), `yield_avg.sql` (columnas yield_avg + yield_avg_years), `ma200.sql` (columna MM200), `score_history.sql` (tabla de histórico del Score DGI), `canibales.sql` (columnas shares_reduced_pct + shares_base_year), `compounders.sql` (columna capex_cfo_pct), `bank_metrics.sql` (tabla bank_metrics_manual — NPL/overrides bancarios por trimestre), y el ALTER de `premium_until` en user_settings.
 Si se monta un entorno nuevo, ejecutar en orden todos los ficheros de webapp/sql/.
 
 ## Planes y precios
@@ -351,4 +362,4 @@ updated_at
 - webapp/AGENTS.md: esta versión de Next.js (16) tiene breaking changes; consultar `node_modules/next/dist/docs/` antes de escribir código de framework
 
 ## Ficheros lib clave
-`lib/metrics.js` (ROIC), `lib/valuation.js`, `lib/screener.js`, `lib/screener-companies.js` (motor + `selectFreeSample`), `lib/comparador.js`, `lib/currency.js` (FX), `lib/prices.js`, `lib/company-chart.js`, `lib/portfolio.js`, `lib/portfolio-calc.js`, `lib/dgi-score.js`, `lib/supersectors.js` (3 supersectores + perfiles), `lib/taxonomy.js` (3 niveles sector/industria), `lib/build-plan.js`, `lib/index-constituents.js`, `lib/fund-fetch.js`, `lib/recurring.js`, `lib/admin.js`, `lib/admin-stats.js`, `lib/email.js`.
+`lib/metrics.js` (ROIC), `lib/valuation.js`, `lib/screener.js`, `lib/screener-companies.js` (motor + `selectFreeSample`), `lib/comparador.js`, `lib/currency.js` (FX), `lib/prices.js`, `lib/company-chart.js`, `lib/portfolio.js`, `lib/portfolio-calc.js`, `lib/dgi-score.js`, `lib/bank-metrics.js` (métricas y scoring de banca), `lib/supersectors.js` (3 supersectores + perfiles), `lib/taxonomy.js` (3 niveles sector/industria), `lib/build-plan.js`, `lib/index-constituents.js`, `lib/fund-fetch.js`, `lib/recurring.js`, `lib/admin.js`, `lib/admin-stats.js`, `lib/email.js`.
