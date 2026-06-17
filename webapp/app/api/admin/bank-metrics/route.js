@@ -32,11 +32,13 @@ export async function POST(request) {
   if (!ticker || !/^\d{4}Q[1-4]$/.test(period))
     return NextResponse.json({ error: 'Falta ticker o periodo válido (YYYYQn)' }, { status: 400 })
 
-  const row = { ticker, period, updated_at: new Date().toISOString() }
-  for (const f of FIELDS) {
-    const v = body[f]
-    row[f] = (v === '' || v == null || isNaN(Number(v))) ? null : Number(v)
+  const num = v => {
+    if (v === '' || v == null) return null
+    const x = Number(String(v).replace(',', '.'))   // admite coma decimal
+    return isNaN(x) ? null : x
   }
+  const row = { ticker, period, updated_at: new Date().toISOString() }
+  for (const f of FIELDS) row[f] = num(body[f])
 
   const { error } = await serviceClient().from('bank_metrics_manual').upsert(row, { onConflict: 'ticker,period' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
