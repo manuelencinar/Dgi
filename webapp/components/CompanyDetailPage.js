@@ -1524,6 +1524,7 @@ export default function CompanyDetailPage(props) {
                 cashflow={financials?.cashflow_annual}
                 balance={financials?.balance_sheet_annual}
                 type={type}
+                bankNpl={isBank ? (bankMetrics?.nplHistory || []) : undefined}
               />
             </Card>
             {isBank ? (

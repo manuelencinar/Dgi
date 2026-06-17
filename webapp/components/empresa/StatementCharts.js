@@ -128,7 +128,9 @@ function ChartCard({ title, data, children }) {
 
 // ── componente principal ────────────────────────────────────────────────────
 
-export default function StatementCharts({ income, cashflow, balance, type }) {
+export default function StatementCharts({ income, cashflow, balance, type, bankNpl }) {
+  const isBank = Array.isArray(bankNpl)
+  const nplData = isBank ? bankNpl.map(h => ({ period: h.period, npl: h.value })) : []
   const [period, setPeriod] = useState(8)
   const isUtility = type === 'utilities'
 
@@ -219,20 +221,41 @@ export default function StatementCharts({ income, cashflow, balance, type }) {
           </BarChart>
         </ChartCard>
 
-        {/* 2 — FCF */}
-        <ChartCard title="Flujo de caja libre" data={fData}>
-          <BarChart data={fData} margin={{ top: 6, right: 4, left: 0, bottom: 0 }} barGap={2}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-            <XAxis dataKey="year" {...axisProps} />
-            <YAxis {...axisProps} width={42} tickFormatter={v => fmtUnit(v, fUnit)} />
-            <Tooltip content={<FcfTooltip unit={fUnit} />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-            <Legend wrapperStyle={{ fontSize: 10 }} />
-            <Bar dataKey="cfo" name="CFO" fill={COL.income} radius={[2, 2, 0, 0]} />
-            <Bar dataKey="fcf" name="FCF" radius={[2, 2, 0, 0]}>
-              {fData.map((d, i) => <Cell key={i} fill={d.fcf < 0 && !isUtility ? COL.neg : COL.profit} />)}
-            </Bar>
-          </BarChart>
-        </ChartCard>
+        {/* 2 — En banca: evolución del NPL (morosidad). Resto: FCF. */}
+        {isBank ? (
+          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '12px 12px 6px' }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: '#c8d0e0', marginBottom: 6 }}>Morosidad (NPL)</p>
+            {nplData.length === 0 ? (
+              <div className="stmt-chart" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <p style={{ fontSize: 11, color: '#4a5270', textAlign: 'center', padding: '0 12px' }}>Pendiente de introducir por trimestre (Dashboard → Datos → Banca).</p>
+              </div>
+            ) : (
+              <div className="stmt-chart"><ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={nplData} margin={{ top: 6, right: 4, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                  <XAxis dataKey="period" {...axisProps} />
+                  <YAxis {...axisProps} width={42} tickFormatter={v => v + '%'} />
+                  <Tooltip cursor={{ fill: 'rgba(255,255,255,0.04)' }} contentStyle={{ background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }} formatter={v => [v.toFixed(2) + '%', 'NPL']} />
+                  <Line dataKey="npl" name="NPL %" stroke="#f87171" strokeWidth={2} dot={{ r: 3, fill: '#f87171' }} />
+                </ComposedChart>
+              </ResponsiveContainer></div>
+            )}
+          </div>
+        ) : (
+          <ChartCard title="Flujo de caja libre" data={fData}>
+            <BarChart data={fData} margin={{ top: 6, right: 4, left: 0, bottom: 0 }} barGap={2}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+              <XAxis dataKey="year" {...axisProps} />
+              <YAxis {...axisProps} width={42} tickFormatter={v => fmtUnit(v, fUnit)} />
+              <Tooltip content={<FcfTooltip unit={fUnit} />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+              <Legend wrapperStyle={{ fontSize: 10 }} />
+              <Bar dataKey="cfo" name="CFO" fill={COL.income} radius={[2, 2, 0, 0]} />
+              <Bar dataKey="fcf" name="FCF" radius={[2, 2, 0, 0]}>
+                {fData.map((d, i) => <Cell key={i} fill={d.fcf < 0 && !isUtility ? COL.neg : COL.profit} />)}
+              </Bar>
+            </BarChart>
+          </ChartCard>
+        )}
 
         {/* 3 — BALANCE */}
         <ChartCard title="Balance" data={bData}>
