@@ -373,7 +373,9 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
             <Mini label="Loss ratio" value={insurer.loss != null ? insurer.loss.toFixed(1) + '%' : '–'} />
             <Mini label="Combined ratio" value={insurer.combined != null ? insurer.combined.toFixed(1) + '%' : '–'} />
           </div>
-          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8 }}>En aseguradoras no aplica el análisis de deuda estándar. Solvencia y loss ratio se introducen por trimestre desde el panel de administración.</p>
+          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8, lineHeight: 1.6 }}>
+            La <b style={{ color: '#4a5270' }}>solvencia</b> mide cuánto capital tiene la aseguradora frente al que le exige el regulador para responder ante siniestros extremos: por encima del 100% cumple, y un colchón amplio (≈180%+) le da margen para resistir crisis y sostener el dividendo. El <b style={{ color: '#4a5270' }}>loss ratio</b> (siniestros / primas) muestra si el negocio asegurador es rentable de por sí: cuanto más bajo, más margen queda tras pagar los siniestros, antes incluso de contar los ingresos por inversión.
+          </p>
         </Section>
       ) : (
       <Section title="Análisis de la deuda">
