@@ -1599,6 +1599,7 @@ export default function CompanyDetailPage(props) {
                 currency={currency}
                 scalars={finScalars}
                 isPremium={isPremium}
+                insurer={isInsurer ? insurerMetrics : null}
               />
             </Card>
           </div>

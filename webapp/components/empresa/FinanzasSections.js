@@ -217,7 +217,7 @@ function PremiumGate() {
   )
 }
 
-export default function FinanzasDeepDive({ income, cashflow, balance, divHistory, currency, scalars = {}, isPremium }) {
+export default function FinanzasDeepDive({ income, cashflow, balance, divHistory, currency, scalars = {}, isPremium, insurer = null }) {
   const d = useMemo(() => {
     const f = buildFin(income, cashflow, balance, divHistory)
 
@@ -334,7 +334,48 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
         </>}
       </Section>
 
-      {/* DEUDA */}
+      {/* SOLVENCIA (aseguradoras) o DEUDA (resto) */}
+      {insurer ? (
+        <Section title="Análisis de solvencia">
+          <div className="fin-2col">
+            <div>
+              <p style={{ fontSize: 11, color: '#8090a8', marginBottom: 6 }}>Solvencia (Solvency II / RBC)</p>
+              {!(insurer.solvencyHistory?.length) ? <Placeholder /> : (
+                <Chart h={180}>
+                  <ComposedChart data={insurer.solvencyHistory.map(h => ({ x: h.period, v: h.value }))} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
+                    {grid}
+                    <XAxis dataKey="x" {...axis} />
+                    <YAxis {...axis} width={42} tickFormatter={v => v + '%'} />
+                    <Tooltip content={({ active, payload }) => active && payload?.length ? tipBox(payload[0].payload.x, [{ l: 'Solvencia', v: payload[0].payload.v.toFixed(0) + '%', c: C.green }]) : null} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                    <ReferenceLine y={100} stroke="#f87171" strokeDasharray="4 4" strokeOpacity={0.6} />
+                    <Line dataKey="v" name="Solvencia" stroke={C.green} strokeWidth={2} dot={{ r: 2.5 }} />
+                  </ComposedChart>
+                </Chart>
+              )}
+            </div>
+            <div>
+              <p style={{ fontSize: 11, color: '#8090a8', marginBottom: 6 }}>Loss ratio</p>
+              {!(insurer.lossHistory?.length) ? <Placeholder /> : (
+                <Chart h={180}>
+                  <ComposedChart data={insurer.lossHistory.map(h => ({ x: h.period, v: h.value }))} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
+                    {grid}
+                    <XAxis dataKey="x" {...axis} />
+                    <YAxis {...axis} width={34} tickFormatter={v => v + '%'} />
+                    <Tooltip content={({ active, payload }) => active && payload?.length ? tipBox(payload[0].payload.x, [{ l: 'Loss ratio', v: payload[0].payload.v.toFixed(1) + '%', c: C.orange }]) : null} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                    <Line dataKey="v" name="Loss ratio" stroke={C.orange} strokeWidth={2} dot={{ r: 2.5 }} />
+                  </ComposedChart>
+                </Chart>
+              )}
+            </div>
+          </div>
+          <div className="fin-3m" style={{ marginTop: 14 }}>
+            <Mini label="Solvencia" value={insurer.solvency != null ? insurer.solvency.toFixed(0) + '%' : '–'} />
+            <Mini label="Loss ratio" value={insurer.loss != null ? insurer.loss.toFixed(1) + '%' : '–'} />
+            <Mini label="Combined ratio" value={insurer.combined != null ? insurer.combined.toFixed(1) + '%' : '–'} />
+          </div>
+          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8 }}>En aseguradoras no aplica el análisis de deuda estándar. Solvencia y loss ratio se introducen por trimestre desde el panel de administración.</p>
+        </Section>
+      ) : (
       <Section title="Análisis de la deuda">
         <div className="fin-2col">
           <div>
@@ -383,6 +424,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
           <Mini label="Años para pagarla (FCF)" value={yearsToPay != null ? yearsToPay.toFixed(1) : (ndNow != null && ndNow <= 0 ? 'Caja neta' : '—')} />
         </div>
       </Section>
+      )}
 
       {/* RENTABILIDAD */}
       <Section title="Rentabilidad histórica">

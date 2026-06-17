@@ -119,6 +119,8 @@ export function effectiveInsurerMetrics(computed, manualRows = []) {
     loss:     ll ? ll.value : null,
     expense:  le ? le.value : null,
     solvency: ls ? ls.value : null, solvencyPeriod: ls ? ls.period : null,
+    // Históricos trimestrales para los gráficos.
+    solvencyHistory: solvencyH, lossHistory: lossH, combinedHistory: combinedH,
     changes: {
       investmentYield: { d1: ppDelta(s.iy, 1), d3: ppDelta(s.iy, 3) },
       rote: { d1: ppDelta(s.rote, 1), d3: ppDelta(s.rote, 3) },
