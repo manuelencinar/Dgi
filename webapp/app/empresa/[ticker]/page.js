@@ -13,6 +13,7 @@ import { payLagDays } from '@/lib/sectors'
 import { sectorInfo, SUPERSECTORS } from '@/lib/supersectors'
 import { industryEs } from '@/lib/taxonomy'
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
+import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
 import {
   getCompanyDetail,
   computeMoat,
@@ -316,11 +317,18 @@ export default async function EmpresaPage({ params, searchParams }) {
     bankMetrics = effectiveBankMetrics(computeBankMetrics(detail), bmRows || [])
   }
 
+  const isInsurer = type === 'aseguradora'
+  let insurerMetrics = null
+  if (isInsurer && detail) {
+    const { data: imRows } = await supabase.from('insurer_metrics_manual').select('*').eq('ticker', t)
+    insurerMetrics = effectiveInsurerMetrics(computeInsurerMetrics(detail), imRows || [])
+  }
+
   const roicData   = detail ? calculateROIC({ ...detail, type }, currency) : null
   const moat       = computeMoat(detail, streak)
   const dcf        = computeValuation(detail, moat?.width ?? 'none', type, currency)
   const projection = computeProjection(divHistory, cagr)
-  const dgiScore   = computeDGIScore(detail, streak, cagr, dcf, type, paysDividend, bankMetrics)
+  const dgiScore   = computeDGIScore(detail, streak, cagr, dcf, type, paysDividend, bankMetrics, insurerMetrics)
   const insights   = buildInsights(detail, streak, cagr, dcf)
   const badges     = computeBadges(detail, streak, cagr, moat)
   const buybacks   = computeBuybacks(detail)
@@ -386,6 +394,8 @@ export default async function EmpresaPage({ params, searchParams }) {
         classification={classification}
         isBank={isBank}
         bankMetrics={bankMetrics}
+        isInsurer={isInsurer}
+        insurerMetrics={insurerMetrics}
         type={type}
         isPremium={isPremium}
         isAuthed={!!user}

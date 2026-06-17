@@ -3,6 +3,7 @@ import { roicForScoring } from '@/lib/metrics'
 import { computeBonuses } from '@/lib/bonuses'
 import { dividendTrend } from '@/lib/helpers'
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
+import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -274,17 +275,15 @@ function buildQuality(data, sectorType, industryType, bm = null) {
   }
 
   if (sectorType === 'insurer') {
-    // Combined ratio aproximado: 100 - operating_margin. Lower is better.
-    const combined = v.om != null ? 100 - v.om : null
-    const cS = combined == null ? null
-      : combined > 105 ? 0 : combined > 100 ? 3 : combined > 95 ? 6 : combined > 90 ? 8 : 10
+    // Aseguradoras: NO se usan margen sobre ingresos, EBITDA, FCF ni ROIC.
+    // Combined ratio (manual, crítico, solo puntúa si está) + ROTE + crecimiento
+    // de primas (GWP) + ROE.
+    const im = bm || {}
     return [
-      mk('roe','ROE',fmtPct(v.roe),bs(v.roe,[[6,3],[10,6],[14,8],[18,10]]),0.30,'ROE central para aseguradoras. Combina rentabilidad técnica y de inversión.'),
-      mk('combined','Combined ratio (aprox.)',fmtPct(combined),cS,0.25,'Por debajo del 100% gana dinero con el negocio técnico. Por debajo del 95% es excelente.'),
-      mk('nm','Margen neto',fmtPct(v.nm),bs(v.nm,[[5,4],[12,7],[20,10]]),0.20,'Beneficio neto sobre ingresos incluyendo primas e ingresos de inversión.'),
-      mk('revCagr','Crecimiento ingresos CAGR 5a',fmtPct(v.revCagr),bs(v.revCagr,REV_G),0.15,'Crecimiento de primas emitidas. Refleja capacidad de crecer cartera de clientes.'),
-      mk('roa','ROA',fmtPct(v.roa),bs(v.roa,[[1,5],[3,8],[5,10]]),0.05,'En aseguradoras el ROA refleja calidad de la cartera de inversiones.'),
-      mk('marginTrend','Tendencia márgenes',fmtTrend(v.marginTrend),marginTrendScore(v.marginTrend),0.05,'Evolución del combined ratio en los últimos 4 años.'),
+      mk('combined','Combined ratio',im.combined != null ? fmtPct(im.combined) : '—',bsRev(im.combined,[[90,10],[95,8],[100,6],[105,3]]),0.30,'Siniestralidad + gastos / primas. Por debajo del 100% el negocio técnico gana dinero; por debajo del 95% es excelente. Manual; si no está, no puntúa.'),
+      mk('rote','ROTE',fmtPct(im.rote),bs(im.rote,[[6,3],[10,6],[14,8],[18,10]]),0.35,'Retorno sobre capital tangible — rentabilidad clave combinando negocio técnico e inversión.'),
+      mk('gwpCagr','Crecimiento primas (GWP) CAGR 5a',fmtPct(im.gwpCagr5),bs(im.gwpCagr5,REV_G),0.20,'Crecimiento de las primas brutas emitidas. Refleja capacidad de crecer cartera.'),
+      mk('roe','ROE',fmtPct(v.roe),bs(v.roe,[[6,3],[10,6],[14,8],[18,10]]),0.15,'Rentabilidad sobre fondos propios. Complementa al ROTE.'),
     ]
   }
 
@@ -443,11 +442,16 @@ function buildFinancial(data, sectorType, bm = null) {
   }
 
   if (sectorType === 'insurer') {
+    // Solvencia + loss/expense ratio (manuales) + yield de inversión + crecimiento.
+    // Sin FCF/EBITDA/cobertura de intereses. Los manuales solo puntúan si están.
+    const im = bm || {}
     return [
-      mk('ic','Cobertura intereses',fmtX(v.ic),bs(v.ic,IC_G),0.30,'Capacidad de la aseguradora de pagar intereses de su deuda con el resultado operativo.'),
-      mk('revCagr','Crecimiento ingresos CAGR 5a',fmtPct(n(data.revenue_cagr5)),bs(n(data.revenue_cagr5),REV_G),0.25,'Una aseguradora que crece primas tiene más diversificación del riesgo.'),
-      mk('fcfCagr','FCF CAGR 5a',fmtPct(v.fcfCagr),bs(v.fcfCagr,FCF_CAG),0.25,'Tendencia del flujo de caja. Refleja generación de caja del negocio técnico y de inversión.'),
-      mk('gw','Goodwill / Activos',fmtPct(v.gw),bsRev(v.gw,[[10,10],[25,7],[40,5],[55,2]]),0.20,'El goodwill elevado puede ocultar la rentabilidad real del negocio técnico.'),
+      mk('solvency','Solvencia (II / RBC)',im.solvency != null ? fmtPct(im.solvency) : '—',bs(im.solvency,[[120,3],[150,6],[180,8],[220,10]]),0.25,'Capital disponible / requerido. Mínimo regulatorio 100%; por encima del 180% es sólido. Manual.'),
+      mk('loss','Loss ratio',im.loss != null ? fmtPct(im.loss) : '—',bsRev(im.loss,[[60,10],[70,8],[80,6],[90,3]]),0.15,'Siniestros / primas. Menor es mejor. Manual.'),
+      mk('expense','Expense ratio',im.expense != null ? fmtPct(im.expense) : '—',bsRev(im.expense,[[25,10],[30,8],[35,6],[40,3]]),0.10,'Gastos / primas. Menor es mejor. Manual.'),
+      mk('iy','Investment yield',fmtPct(im.investmentYield),bs(im.investmentYield,[[1.5,3],[2.5,6],[3.5,8],[4.5,10]]),0.20,'Ingresos por inversiones / inversiones financieras.'),
+      mk('revCagr','Crecimiento primas CAGR 5a',fmtPct(n(data.revenue_cagr5)),bs(n(data.revenue_cagr5),REV_G),0.15,'Crecimiento de primas — más diversificación del riesgo.'),
+      mk('roa','ROA',fmtPct(n(data.roa)),bs(n(data.roa),[[1,5],[3,8],[5,10]]),0.15,'En aseguradoras refleja la calidad de la cartera de inversiones.'),
     ]
   }
 
@@ -566,16 +570,18 @@ function buildPenalties(data, sectorType) {
 
 // ── Main export ────────────────────────────────────────────────────────────
 
-export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend, bankOverride = null) {
+export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend, bankOverride = null, insurerOverride = null) {
   if (!data) return null
 
   const noDividend = paysDividend === false
   const sectorType = detectSectorType(type, data.sector, data.industry)
 
-  // Métricas bancarias para el scoring: las pasa la ficha (con NPL/overrides
-  // manuales) o se calculan desde los estados (snapshot, que trae select('*')).
-  const bm = sectorType === 'bank'
+  // Métricas sectoriales (banca/seguros) para el scoring: las pasa la ficha (con
+  // manuales/overrides) o se calculan desde los estados (snapshot → select('*')).
+  const secM = sectorType === 'bank'
     ? (bankOverride || effectiveBankMetrics(computeBankMetrics(data), []))
+    : sectorType === 'insurer'
+    ? (insurerOverride || effectiveInsurerMetrics(computeInsurerMetrics(data), []))
     : null
 
   const WEIGHTS = {
@@ -613,9 +619,9 @@ export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend, ban
 
   const ind = detectIndustryType(data.sector, data.industry)
 
-  const qualityM   = buildQuality(data, sectorType, ind, bm)
+  const qualityM   = buildQuality(data, sectorType, ind, secM)
   const dividendM  = buildDividend(data, streak, cagr, sectorType, data.divHistory || [])
-  const financialM = buildFinancial(data, sectorType, bm)
+  const financialM = buildFinancial(data, sectorType, secM)
   const valuationM = buildValuation(data, dcf, sectorType)
 
   const qS = catScore(qualityM,  Math.min(3, qualityM.length))

@@ -1179,6 +1179,41 @@ function BankMetricsCard({ m }) {
   )
 }
 
+// ── insurer metrics card ───────────────────────────────────────────────────
+function InsurerMetricsCard({ m }) {
+  if (!m) return null
+  const c = m.changes || {}
+  const fp = v => (v == null || isNaN(v)) ? '–' : v.toFixed(2) + '%'
+  const fn = v => (v == null || isNaN(v)) ? '–' : v.toLocaleString('es-ES', { maximumFractionDigits: 0 })
+  // combined < 100 = beneficio técnico (verde); >100 rojo.
+  const combColor = m.combined == null ? '#c8d0e0' : m.combined < 95 ? '#34d399' : m.combined <= 100 ? '#fbbf24' : '#f87171'
+  const items = [
+    { label: 'Combined ratio', value: m.combined != null ? fp(m.combined) : '–', sub: m.combined != null ? m.combinedPeriod : 'manual — pendiente', color: combColor, chg: m.combined != null ? c.combined : null, lowerBetter: true, hint: 'Siniestralidad + gastos / primas. Por debajo de 100% el negocio técnico gana dinero. Manual.' },
+    { label: 'Loss ratio', value: m.loss != null ? fp(m.loss) : '–', chg: m.loss != null ? c.loss : null, lowerBetter: true, hint: 'Siniestros / primas. Manual.' },
+    { label: 'Expense ratio', value: m.expense != null ? fp(m.expense) : '–', chg: m.expense != null ? c.expense : null, lowerBetter: true, hint: 'Gastos / primas. Manual.' },
+    { label: 'Investment yield', value: fp(m.investmentYield), chg: c.investmentYield, hint: 'Ingresos por inversiones / inversiones financieras (aprox. desde Yahoo).' },
+    { label: 'GWP (primas)', value: fn(m.gwp), sub: m.gwpCagr5 != null ? `CAGR 5a ${m.gwpCagr5 >= 0 ? '+' : ''}${m.gwpCagr5.toFixed(1)}%` : null, chg: c.gwp, hint: 'Primas brutas emitidas (aprox. = ingresos totales).' },
+    { label: 'ROTE', value: fp(m.rote), chg: c.rote, hint: 'Retorno sobre capital tangible = Beneficio neto / (Patrimonio − fondo de comercio − intangibles).' },
+    { label: 'Solvencia', value: m.solvency != null ? fp(m.solvency) : '–', sub: m.solvency != null ? m.solvencyPeriod : 'manual — pendiente', color: m.solvency == null ? '#4a5270' : m.solvency >= 180 ? '#34d399' : m.solvency >= 130 ? '#fbbf24' : '#f87171', chg: m.solvency != null ? c.solvency : null, hint: 'Solvencia II (Europa) o RBC (EEUU). Mínimo regulatorio 100%. Manual.' },
+  ]
+  return (
+    <Card>
+      <SectionTitle>Métricas de aseguradora</SectionTitle>
+      <style>{`.ins-m{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}@media(min-width:560px){.ins-m{grid-template-columns:repeat(3,1fr)}}`}</style>
+      <div className="ins-m">
+        {items.map(it => (
+          <div key={it.label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }} title={it.hint || ''}>
+            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>{it.label}{it.hint ? ' ⓘ' : ''}</p>
+            <p style={{ fontSize: 18, fontWeight: 800, color: it.color || '#c8d0e0' }}>{it.value}</p>
+            {it.sub && <p style={{ fontSize: 9.5, color: '#4a5270', marginTop: 1 }}>{it.sub}</p>}
+            <BankDelta chg={it.chg} lowerBetter={it.lowerBetter} />
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
 // ── buyback section ────────────────────────────────────────────────────────
 
 function BuybackSection({ buybacks }) {
@@ -1258,7 +1293,7 @@ const TAB_IDS = TABS.map(t => t.id)
 
 export default function CompanyDetailPage(props) {
   const {
-    ticker, name, country, currency, sector, subsector, type, classification, isBank, bankMetrics, crossListings,
+    ticker, name, country, currency, sector, subsector, type, classification, isBank, bankMetrics, isInsurer, insurerMetrics, crossListings,
     isPremium, hasData, isAuthed, watchEntry,
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
@@ -1529,6 +1564,8 @@ export default function CompanyDetailPage(props) {
             </Card>
             {isBank ? (
               <BankMetricsCard m={bankMetrics} />
+            ) : isInsurer ? (
+              <InsurerMetricsCard m={insurerMetrics} />
             ) : (
               <Card>
                 <SectionTitle>KPIs financieros clave</SectionTitle>
@@ -1593,7 +1630,7 @@ export default function CompanyDetailPage(props) {
             <MoatSection moat={moat} isPremium={isPremium} />
             <InsightsSection insights={insights} isPremium={isPremium} />
             <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} scoreHistory={scoreHistory} />
-            {isBank ? <BankMetricsCard m={bankMetrics} /> : <RoicCard roicData={roicData} isPremium={isPremium} />}
+            {isBank ? <BankMetricsCard m={bankMetrics} /> : isInsurer ? <InsurerMetricsCard m={insurerMetrics} /> : <RoicCard roicData={roicData} isPremium={isPremium} />}
           </div>
         )}
       </div>
