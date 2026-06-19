@@ -322,8 +322,11 @@ export function computeMoat(data, streak) {
   // Ingresos en contracción
   if (rg != null && rg < -8) negative.push(`Ingresos en contracción (${rg.toFixed(1)}% interanual)`)
 
-  // Clasificación
-  const width = score >= 60 ? 'wide' : score >= 35 ? 'narrow' : 'none'
+  // Clasificación. Telecos: foso conservador por defecto — pierden pricing power
+  // con el tiempo (competencia, capex de red), así que se capa a 'estrecho'.
+  const isTelecom = /telecom/i.test(data.industry || '')
+  let width = score >= 60 ? 'wide' : score >= 35 ? 'narrow' : 'none'
+  if (isTelecom && width === 'wide') { width = 'narrow'; negative.push('Foso difícil de mantener en telecos — tienden a perder poder de fijación de precios') }
   if (width === 'none' && signals.length === 0) {
     return { width: 'none', label: 'Sin foso detectado', signals: [], negative, sources: [], score }
   }

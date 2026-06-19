@@ -94,6 +94,7 @@ export function detectSectorType(type, sector, industry) {
   if (t === 'reit' || t === 'bdc') return 'reit'
   if (t === 'aseguradora') return 'insurer'
   if (t === 'utilities' || s === 'utilities') return 'utilities'
+  if (i.includes('telecom')) return 'telecom'
   if (s === 'energy' || s === 'basic materials') return 'energy'
   if (i.includes('drug') || i.includes('biotech') || i.includes('pharma') ||
       i.includes('diagnos') || i.includes('medical device') ||
@@ -351,6 +352,17 @@ function buildQuality(data, sectorType, industryType, bm = null) {
     ]
   }
 
+  if (sectorType === 'telecom') {
+    // Telecos: capital-intensivas, crecimiento bajo. Lo clave es cuánto del
+    // beneficio llega a CAJA tras el alto capex de red (5G/fibra).
+    return [
+      mk('fcfConv','Conversión FCF',fmtPct(v.fcfConv),bs(v.fcfConv,[[25,4],[40,6],[55,8],[70,10]]),0.30,'Cuánto del beneficio se convierte en caja real tras el capex de mantenimiento de red. La métrica más importante en telecos.'),
+      mk('om','Margen operativo',fmtPct(v.om),bs(v.om,[[10,4],[16,7],[22,10]]),0.25,'Eficiencia operativa de la red.'),
+      mk('roic','ROIC',fmtPct(v.roic),bs(v.roic,[[4,4],[7,7],[10,9],[13,10]]),0.25,'En telecos el ROIC es estructuralmente bajo por la intensidad de capital. Por encima del 8% ya es bueno.'),
+      mk('revCagr','Crecimiento ingresos 5a',fmtPct(v.revCagr),bs(v.revCagr,[[-3,3],[0,5],[2,7],[4,10]]),0.20,'En telecos el crecimiento es bajo; mantener ingresos estables ya es positivo.'),
+    ]
+  }
+
   // GENERAL (industrial, consumer, tech, etc.)
   const ind = detectIndustryType(data.sector, data.industry)
   let roeScore = bs(v.roe, ROE_G)
@@ -379,10 +391,24 @@ function buildDividend(data, streak, cagr, sectorType, divHistory, secM = null) 
   const isReit = sectorType === 'reit' || sectorType === 'utilities'
   const isBank = sectorType === 'bank' || sectorType === 'insurer'
   // En banca/seguros el payout se mide sobre el beneficio NORMALIZADO a 5 años
-  // (el EPS de un año fluctúa por provisiones/catástrofes). Si no es calculable,
-  // se cae al payout sobre EPS estándar.
-  const peps   = (isBank && n(secM?.payoutNorm) != null) ? n(secM.payoutNorm) : n(data.payout_eps)
-  const payoutNormalized = isBank && n(secM?.payoutNorm) != null
+  // (el EPS de un año fluctúa por provisiones/catástrofes). En energía, sobre el
+  // beneficio normalizado a CICLO (el crudo distorsiona el EPS anual). Si no es
+  // calculable, se cae al payout sobre EPS estándar.
+  let peps = (isBank && n(secM?.payoutNorm) != null) ? n(secM.payoutNorm) : n(data.payout_eps)
+  let payoutNormalized = isBank && n(secM?.payoutNorm) != null
+  if (sectorType === 'energy') {
+    const nh = data.net_income_history
+    const base = n(data.payout_eps)
+    if (nh && base != null) {
+      const ys = Object.keys(nh).sort()
+      const cur = parseFloat(nh[ys[ys.length - 1]])
+      const win = ys.slice(-5).map(y => parseFloat(nh[y])).filter(v => !isNaN(v))
+      const avg = win.length >= 3 ? win.reduce((a, b) => a + b, 0) / win.length : null
+      if (avg > 0 && cur) { peps = base * cur / avg; payoutNormalized = true }
+    }
+  }
+  // Sectores cuyo payout se mide sobre BENEFICIO (no FCF): banca, seguros, energía.
+  const useEarnings = isBank || (sectorType === 'energy' && payoutNormalized)
 
   const cagrPct = cagr != null ? cagr * 100 : null
 
@@ -401,7 +427,7 @@ function buildDividend(data, streak, cagr, sectorType, divHistory, secM = null) 
     ? bsRev(reitAffo, [[70,10],[85,8],[95,5],[110,2]])
     : isReit
     ? bsRev(pfcf, [[70,10],[85,7],[100,4]])
-    : isBank
+    : useEarnings
     ? (peps == null ? null : peps > 150 ? 0 : peps > 120 ? 2 : peps > 100 ? 4 : peps > 70 ? 6 : peps > 40 ? 8 : 10)
     : bsRev(pfcf, [[40,10],[60,9],[80,7],[100,5],[120,2]])
 
@@ -417,20 +443,20 @@ function buildDividend(data, streak, cagr, sectorType, divHistory, secM = null) 
     : isReit
     ? 'En REITs se usa el flujo operativo. Por encima del 85% merece vigilancia.'
     : payoutNormalized
-    ? 'En bancos y aseguradoras se mide sobre el beneficio NORMALIZADO a 5 años — el beneficio de un solo año fluctúa por provisiones o catástrofes.'
+    ? 'Se mide sobre el beneficio NORMALIZADO de 5 años (ciclo) — el beneficio de un solo año fluctúa por provisiones, catástrofes o el precio del crudo.'
     : isBank
     ? 'En bancos y aseguradoras se usa el payout sobre beneficio neto.'
     : 'Por encima del 90% el dividendo es vulnerable. Por debajo del 60% hay margen para seguir creciendo.'
 
-  const payoutLabel = reitAffo != null ? 'Payout AFFO' : isBank ? (payoutNormalized ? 'Payout (norm. 5a)' : 'Payout BPA') : isReit ? 'Payout OCF' : 'Payout FCF'
+  const payoutLabel = reitAffo != null ? 'Payout AFFO' : useEarnings ? (payoutNormalized ? 'Payout (norm.)' : 'Payout BPA') : isReit ? 'Payout OCF' : 'Payout FCF'
   const payout2Score = reitAffo != null ? (payoutFfoVal == null ? null : bsRev(payoutFfoVal, [[70,10],[80,8],[90,6],[100,4]])) : payoutEpsScore
 
   return [
     mk('yield','Yield actual',yld != null ? fmtPct(yld) : '—',yldScore,0.20,'Rentabilidad por dividendo al precio actual. Se calcula sobre el dividendo del año anterior — no incluye el año en curso.'),
     mk('streak','Racha consecutiva',streak > 0 ? `${streak} años` : '—',streakScore,0.25,'Una racha larga es la mejor evidencia de compromiso con el dividendo y estabilidad del negocio.'),
     mk('divCagr','CAGR dividendo 5a',cagrPct != null ? fmtPct(cagrPct) : '—',bs(cagrPct,[[0,2],[2,4],[5,6],[8,8],[12,10]]),0.25,'Un CAGR alto compensa un yield inicial bajo. Una empresa con yield 2% y CAGR 12% puede superar en renta a otra con yield 5% y CAGR 2%.'),
-    mk('payoutFcf',payoutLabel,fmtPct(reitAffo != null ? reitAffo : (isBank ? peps : pfcf)),pfcfFinal,0.15,payoutTooltip),
-    mk('payoutEps',reitAffo != null ? 'Payout FFO' : (isBank && payoutNormalized ? 'Payout (norm. 5a)' : 'Payout BPA'),fmtPct(reitAffo != null ? payoutFfoVal : peps),payout2Score,0.10,reitAffo != null ? 'Payout sobre FFO — complementa al AFFO.' : payoutNormalized ? 'Payout sobre el beneficio medio de 5 años.' : 'Complementa al payout FCF. Si ambos son altos el dividendo es claramente exigente.'),
+    mk('payoutFcf',payoutLabel,fmtPct(reitAffo != null ? reitAffo : (useEarnings ? peps : pfcf)),pfcfFinal,0.15,payoutTooltip),
+    mk('payoutEps',reitAffo != null ? 'Payout FFO' : (useEarnings && payoutNormalized ? 'Payout (norm.)' : 'Payout BPA'),fmtPct(reitAffo != null ? payoutFfoVal : peps),payout2Score,0.10,reitAffo != null ? 'Payout sobre FFO — complementa al AFFO.' : payoutNormalized ? 'Payout sobre el beneficio medio de 5 años (ciclo).' : 'Complementa al payout FCF. Si ambos son altos el dividendo es claramente exigente.'),
     mk('consistency','Consistencia histórica','—',divCutScore,0.05,'Penaliza si la empresa ha recortado el dividendo en los últimos 10 años. Un recorte en 2020 se trata con más benevolencia.'),
   ]
 }
@@ -491,11 +517,22 @@ function buildFinancial(data, sectorType, bm = null) {
     ]
   }
 
+  if (sectorType === 'telecom') {
+    // Telecos: deuda hasta ~3× es normal y sostenible (ingresos recurrentes).
+    // Lo relevante es el FCF tras el alto capex de red.
+    return [
+      mk('nd','Deuda neta / EBITDA',fmtX(v.nd),bsRev(v.nd,[[2,10],[2.5,8],[3,6],[3.5,4],[4.5,2]]),0.30,'En telecos hasta 3× es normal y sostenible por la estabilidad de los ingresos; por encima de 4× hay riesgo.'),
+      mk('ic','Cobertura intereses',fmtX(v.ic),bs(v.ic,IC_G),0.25,'Capacidad de pagar los intereses de la deuda de red con el resultado operativo.'),
+      mk('fcfCagr','FCF CAGR 5a',fmtPct(v.fcfCagr),bs(v.fcfCagr,FCF_CAG),0.25,'Evolución del FCF tras el capex de red — lo que de verdad sostiene el dividendo.'),
+      mk('cod','Caja / deuda total',fmtPct(v.cod),bs(v.cod,COD_G),0.20,'Colchón de liquidez frente a la deuda de red.'),
+    ]
+  }
+
   if (sectorType === 'utilities') {
     const cfoDivCov = exCfoDivCoverage(data)
     return [
-      mk('nd','Deuda neta / EBITDA',fmtX(v.nd),bsRev(v.nd,[[2.5,10],[3.5,7],[4.5,5],[5.5,3],[6.5,1]]),0.30,'En utilities hasta 5.5× es aceptable con ingresos regulados y predecibles.'),
-      mk('ic','Cobertura intereses',fmtX(v.ic),bs(v.ic,[[1.5,3],[2,5],[2.8,7],[4,9],[6,10]]),0.25,'En utilities una cobertura de 2× es aceptable dado que los ingresos son muy predecibles.'),
+      mk('nd','Deuda neta / EBITDA',fmtX(v.nd),bsRev(v.nd,[[4,10],[5,8],[6,6],[7,4],[8,2]]),0.30,'En utilities hasta 6-7× es normal y sostenible: ingresos regulados a 20-30 años. Penalizar deuda alta aquí sería un error.'),
+      mk('ic','Cobertura intereses',fmtX(v.ic),bs(v.ic,[[1.5,3],[2,5],[2.8,7],[4,9],[6,10]]),0.25,'En utilities una cobertura de 2.5× es aceptable dado que los ingresos son muy predecibles. Es la métrica clave de solidez, no el nivel de deuda.'),
       mk('cfoDivCov','CFO / dividendo pagado',cfoDivCov != null ? fmtX(cfoDivCov) : '—',
         cfoDivCov == null ? null : cfoDivCov < 1 ? 0 : cfoDivCov < 1.2 ? 3 : cfoDivCov < 1.6 ? 6 : cfoDivCov < 2 ? 8 : 10,
         0.25,'En utilities el FCF puede ser negativo por el capex. La cobertura del dividendo con el flujo operativo es la métrica correcta.'),
@@ -587,7 +624,7 @@ function buildPenalties(data, sectorType) {
     else if (tr.noRaise >= 2) penalties.push({ reason: `Dividendo congelado ${tr.noRaise} años — sin crecimiento`, amount: 0.4 })
   }
 
-  const debtLimits = { reit: 7, utilities: 6.5, energy: 2.8, bank: null, insurer: null, general: 4.5 }
+  const debtLimits = { reit: 7, utilities: 7.5, energy: 2.8, telecom: 4, bank: null, insurer: null, general: 4.5 }
   const lim = debtLimits[sectorType] ?? debtLimits.general
   if (nd != null && lim != null && nd > lim) penalties.push({ reason: 'Endeudamiento por encima del umbral del sector', amount: 0.5 })
 
@@ -631,6 +668,7 @@ export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend, ban
     pharma:   { quality: 0.35, dividend: 0.25, financial: 0.25, valuation: 0.15 },
     energy:   { quality: 0.30, dividend: 0.25, financial: 0.30, valuation: 0.15 },
     luxury:   { quality: 0.40, dividend: 0.25, financial: 0.20, valuation: 0.15 },
+    telecom:  { quality: 0.25, dividend: 0.30, financial: 0.30, valuation: 0.15 },
   }
   const w = WEIGHTS[sectorType] || WEIGHTS.general
 
@@ -643,6 +681,7 @@ export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend, ban
     pharma:   'Farmacéutica / Salud',
     energy:   'Energía / Materias primas',
     luxury:   'Lujo / Consumo premium',
+    telecom:  'Telecomunicaciones',
   }
   const cat1Labels = {
     general:  'Calidad del negocio',
@@ -653,6 +692,7 @@ export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend, ban
     pharma:   'Calidad del negocio',
     energy:   'Calidad del negocio',
     luxury:   'Calidad del negocio',
+    telecom:  'Calidad del negocio',
   }
 
   const ind = detectIndustryType(data.sector, data.industry)
