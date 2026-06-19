@@ -5,14 +5,14 @@ import { Card, SectionTitle } from '@/components/dashboard/ui'
 const inp = { background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(99,102,241,0.35)', borderRadius: 5, padding: '6px 8px', color: '#e0e8f0', fontSize: 12, outline: 'none', fontFamily: 'inherit' }
 const th = { textAlign: 'left', padding: '6px 8px', fontSize: 10, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }
 const td = { padding: '6px 8px', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: 12, color: '#c8d0e0' }
-const FIELDS = [['npl', 'NPL %'], ['nim', 'NIM %'], ['rote', 'ROTE %'], ['efficiency', 'Eficiencia %']]
+const FIELDS = [['npl', 'NPL %'], ['cet1', 'CET1 %'], ['nim', 'NIM %'], ['rote', 'ROTE %'], ['efficiency', 'Eficiencia %']]
 
 export default function BankMetricsClient() {
   const [banks, setBanks] = useState(null)
   const [rows, setRows] = useState([])
   const [q, setQ] = useState('')
   const [sel, setSel] = useState(null)            // ticker seleccionado
-  const [form, setForm] = useState({ period: '', npl: '', nim: '', rote: '', efficiency: '' })
+  const [form, setForm] = useState({ period: '', npl: '', cet1: '', nim: '', rote: '', efficiency: '' })
   const [msg, setMsg] = useState(null)
 
   const load = () => fetch('/api/admin/bank-metrics').then(r => r.ok ? r.json() : { banks: [], rows: [] })
@@ -34,10 +34,10 @@ export default function BankMetricsClient() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ticker: sel, ...form, period: form.period.trim().toUpperCase() }),
     })
-    if (res.ok) { setForm({ period: '', npl: '', nim: '', rote: '', efficiency: '' }); setMsg({ t: 'ok', m: '✓ Guardado' }); load() }
+    if (res.ok) { setForm({ period: '', npl: '', cet1: '', nim: '', rote: '', efficiency: '' }); setMsg({ t: 'ok', m: '✓ Guardado' }); load() }
     else { const d = await res.json().catch(() => ({})); setMsg({ t: 'err', m: d.error || 'Error' }) }
   }
-  const edit = (r) => setForm({ period: r.period, npl: r.npl ?? '', nim: r.nim ?? '', rote: r.rote ?? '', efficiency: r.efficiency ?? '' })
+  const edit = (r) => setForm({ period: r.period, npl: r.npl ?? '', cet1: r.cet1 ?? '', nim: r.nim ?? '', rote: r.rote ?? '', efficiency: r.efficiency ?? '' })
   const del = async (r) => {
     if (!confirm(`Eliminar ${r.ticker} ${r.period}?`)) return
     const res = await fetch('/api/admin/bank-metrics', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticker: r.ticker, period: r.period }) })
@@ -63,7 +63,7 @@ export default function BankMetricsClient() {
               {filtered.slice(0, 60).map(b => {
                 const has = rows.some(r => r.ticker === b.ticker)
                 return (
-                  <button key={b.ticker} onClick={() => { setSel(b.ticker); setForm({ period: '', npl: '', nim: '', rote: '', efficiency: '' }); setMsg(null) }} style={{
+                  <button key={b.ticker} onClick={() => { setSel(b.ticker); setForm({ period: '', npl: '', cet1: '', nim: '', rote: '', efficiency: '' }); setMsg(null) }} style={{
                     textAlign: 'left', padding: '7px 9px', borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12,
                     border: '1px solid ' + (sel === b.ticker ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.06)'),
                     background: sel === b.ticker ? 'rgba(99,102,241,0.12)' : 'transparent', color: sel === b.ticker ? '#a5b4fc' : '#c8d0e0',

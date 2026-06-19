@@ -68,12 +68,28 @@ function catScore(metrics, minRequired = 3) {
 
 // ── Sector / Industry detection ────────────────────────────────────────────
 
+// ¿Tiene riesgo de crédito en balance (presta dinero propio / garantiza deuda)?
+// → se le aplica la lógica bancaria (CET1, ROE/ROA, NPL, NIM…) en vez de DCF/FCF.
+// Curado como 'banco' o industria financiera de crédito (banca, crédito,
+// hipotecas, financiación al consumo). Excluye gestión de activos, brokers,
+// mercados de capitales, bolsas, etc. (sin riesgo de crédito → DCF estándar).
+export function isCreditRiskFinancial(type, sector, industry) {
+  if ((type || '').toLowerCase() === 'banco') return true
+  const s = (sector || '').toLowerCase()
+  if (s !== 'financial services' && s !== 'servicios financieros') return false
+  const i = (industry || '').toLowerCase()
+  // Solo prestamistas claros por industria: banca e hipotecas. "Credit Services"
+  // se EXCLUYE a propósito (mezcla prestamistas como Amex con redes de pago sin
+  // riesgo de crédito como Visa/Mastercard) → esos se marcan a mano como 'banco'.
+  return /bank|banca|mortgage|hipotec/.test(i)
+}
+
 export function detectSectorType(type, sector, industry) {
   const t = (type || '').toLowerCase()
   const s = (sector || '').toLowerCase()
   const i = (industry || '').toLowerCase()
 
-  if (t === 'banco') return 'bank'
+  if (isCreditRiskFinancial(type, sector, industry)) return 'bank'
   if (t === 'reit' || t === 'bdc') return 'reit'
   if (t === 'aseguradora') return 'insurer'
   if (t === 'utilities' || s === 'utilities') return 'utilities'
@@ -434,10 +450,11 @@ function buildFinancial(data, sectorType, bm = null) {
     // Sin FCF/EBITDA. El NPL solo puntúa cuando está relleno (si no, se excluye).
     const b = bm || {}
     return [
-      mk('efficiency','Ratio de eficiencia',b.efficiency != null ? fmtPct(b.efficiency) : '—',bsRev(b.efficiency,[[45,10],[55,8],[65,6],[70,3]]),0.35,'Costes operativos / ingresos netos bancarios. Por debajo del 50% es excelente — un banco eficiente absorbe mejor las pérdidas.'),
-      mk('npl','Morosidad (NPL)',b.npl != null ? fmtPct(b.npl) : '—',bsRev(b.npl,[[3,10],[5,8],[8,5],[12,2]]),0.25,'% de préstamos dudosos. Se introduce manualmente por trimestre; si no está, no puntúa. Por debajo del 3% es sólido.'),
-      mk('revCagr','Crecimiento ingresos CAGR 5a',fmtPct(n(data.revenue_cagr5)),bs(n(data.revenue_cagr5),REV_G),0.20,'Crecimiento del margen de intereses y comisiones — más capacidad de absorber morosidad.'),
-      mk('roa','ROA',fmtPct(n(data.roa)),bs(n(data.roa),[[0.3,4],[0.6,6],[1,8],[1.5,10]]),0.20,'Rentabilidad sobre activos. Un ROA alto indica que los activos del banco generan rentabilidad suficiente.'),
+      mk('cet1','CET1 (capital)',b.cet1 != null ? fmtPct(b.cet1) : '—',bs(b.cet1,[[8,2],[10,4],[12,7],[14,9],[16,10]]),0.25,'Capital de máxima calidad / activos ponderados por riesgo. Mínimo saludable >12%. Manual; si no está, no puntúa.'),
+      mk('efficiency','Ratio de eficiencia',b.efficiency != null ? fmtPct(b.efficiency) : '—',bsRev(b.efficiency,[[45,10],[55,8],[65,6],[70,3]]),0.25,'Costes operativos / ingresos netos bancarios. Por debajo del 50% es excelente — un banco eficiente absorbe mejor las pérdidas.'),
+      mk('npl','Morosidad (NPL)',b.npl != null ? fmtPct(b.npl) : '—',bsRev(b.npl,[[3,10],[5,8],[8,5],[12,2]]),0.20,'% de préstamos dudosos. Manual por trimestre; si no está, no puntúa. Por debajo del 3% es sólido.'),
+      mk('revCagr','Crecimiento ingresos CAGR 5a',fmtPct(n(data.revenue_cagr5)),bs(n(data.revenue_cagr5),REV_G),0.15,'Crecimiento del margen de intereses y comisiones — más capacidad de absorber morosidad.'),
+      mk('roa','ROA',fmtPct(n(data.roa)),bs(n(data.roa),[[0.3,4],[0.6,6],[1,8],[1.5,10]]),0.15,'Rentabilidad sobre activos. Un ROA alto indica que los activos del banco generan rentabilidad suficiente.'),
     ]
   }
 

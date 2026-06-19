@@ -1160,6 +1160,7 @@ function BankMetricsCard({ m }) {
     { label: 'ROTE', value: fp(m.rote), hint: 'Retorno sobre capital tangible = Beneficio neto / (Patrimonio − fondo de comercio − intangibles).', chg: c.rote },
     { label: 'Eficiencia', value: fp(m.efficiency), color: effColor, hint: 'Costes operativos / ingresos netos bancarios. Menor es mejor (por debajo del 50% es excelente).', chg: c.efficiency, lowerBetter: true },
     { label: 'NPL (morosidad)', value: m.npl != null ? fp(m.npl) : '–', sub: m.npl != null ? m.nplPeriod : 'manual — pendiente', color: m.npl != null ? (m.npl < 3 ? '#34d399' : m.npl < 6 ? '#fbbf24' : '#f87171') : '#4a5270', chg: m.npl != null ? c.npl : null, lowerBetter: true },
+    { label: 'CET1', value: m.cet1 != null ? fp(m.cet1) : '–', sub: m.cet1 != null ? m.cet1Period : 'manual — pendiente', color: m.cet1 == null ? '#4a5270' : m.cet1 >= 14 ? '#34d399' : m.cet1 >= 12 ? '#86efac' : m.cet1 >= 10 ? '#fbbf24' : '#f87171', chg: m.cet1 != null ? c.cet1 : null, hint: 'Capital de máxima calidad / activos ponderados por riesgo. Mínimo saludable >12%. Manual.' },
   ]
   return (
     <Card>

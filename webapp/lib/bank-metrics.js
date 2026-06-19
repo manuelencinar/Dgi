@@ -122,9 +122,12 @@ const numOr = (a, b) => (a != null && !isNaN(a)) ? Number(a) : (b != null ? b : 
 export function effectiveBankMetrics(computed, manualRows = []) {
   const rows = (manualRows || []).slice().sort(byPeriodDesc)
   const latest = rows[0] || {}
-  const nplRows = rows.filter(r => r.npl != null).sort((a, b) => (a.period || '').localeCompare(b.period || ''))
-  const lastNpl = nplRows.length ? nplRows[nplRows.length - 1] : null
-  const nplHistory = nplRows.map(r => ({ period: r.period, value: Number(r.npl) }))
+  const histOf = (k) => rows.filter(r => r[k] != null).map(r => ({ period: r.period, value: Number(r[k]) }))
+    .sort((a, b) => (a.period || '').localeCompare(b.period || ''))
+  const nplHistory = histOf('npl')
+  const cet1History = histOf('cet1')
+  const lastNpl = nplHistory.length ? nplHistory[nplHistory.length - 1] : null
+  const lastCet1 = cet1History.length ? cet1History[cet1History.length - 1] : null
   const s = computed?.series || {}
   return {
     epsDiluted: computed?.epsDiluted ?? null,
@@ -132,10 +135,13 @@ export function effectiveBankMetrics(computed, manualRows = []) {
     nim:        numOr(latest.nim, computed?.nim),
     rote:       numOr(latest.rote, computed?.rote),
     efficiency: numOr(latest.efficiency, computed?.efficiency),
-    // NPL: SOLO manual. Si no hay, null → la UI muestra "-" (nunca 0).
-    npl:        lastNpl ? Number(lastNpl.npl) : null,
+    // NPL y CET1: SOLO manuales. Si no hay, null → la UI muestra "–" (nunca 0).
+    npl:        lastNpl ? lastNpl.value : null,
     nplPeriod:  lastNpl ? lastNpl.period : null,
     nplHistory,
+    cet1:       lastCet1 ? lastCet1.value : null,
+    cet1Period: lastCet1 ? lastCet1.period : null,
+    cet1History,
     // Cambio en el último año y en los 3 últimos (puntos porcentuales; BPA en %).
     changes: {
       rote:       { d1: ppDelta(s.rote, 1), d3: ppDelta(s.rote, 3) },
@@ -143,6 +149,7 @@ export function effectiveBankMetrics(computed, manualRows = []) {
       efficiency: { d1: ppDelta(s.efficiency, 1), d3: ppDelta(s.efficiency, 3) },
       eps:        { d1: pctDelta(s.eps, 1), d3: pctDelta(s.eps, 3), pct: true },
       npl:        { d1: nplDelta(nplHistory, 1), d3: nplDelta(nplHistory, 3) },
+      cet1:       { d1: nplDelta(cet1History, 1), d3: nplDelta(cet1History, 3) },
     },
   }
 }

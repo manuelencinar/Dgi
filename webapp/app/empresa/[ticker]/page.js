@@ -14,6 +14,7 @@ import { sectorInfo, SUPERSECTORS } from '@/lib/supersectors'
 import { industryEs } from '@/lib/taxonomy'
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
+import { isCreditRiskFinancial } from '@/lib/dgi-score'
 import {
   getCompanyDetail,
   computeMoat,
@@ -310,7 +311,7 @@ export default async function EmpresaPage({ params, searchParams }) {
 
   // Métricas bancarias (solo banca): calculadas desde los estados + manuales
   // (NPL por trimestre + overrides). Premium (no enviar al cliente free).
-  const isBank = type === 'banco'
+  const isBank = isCreditRiskFinancial(type, detail?.sector, detail?.industry)
   let bankMetrics = null
   if (isBank && detail) {
     const { data: bmRows } = await supabase.from('bank_metrics_manual').select('*').eq('ticker', t)

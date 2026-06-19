@@ -7,12 +7,16 @@ CREATE TABLE IF NOT EXISTS bank_metrics_manual (
   ticker      text NOT NULL,
   period      text NOT NULL,            -- '2025Q1'
   npl         numeric,                  -- % morosidad
+  cet1        numeric,                  -- % CET1 (capital tier 1)
   nim         numeric,                  -- % (override del proxy)
   rote        numeric,                  -- %
   efficiency  numeric,                  -- %
   updated_at  timestamptz DEFAULT now(),
   PRIMARY KEY (ticker, period)
 );
+
+-- Si la tabla ya existe sin la columna:
+ALTER TABLE bank_metrics_manual ADD COLUMN IF NOT EXISTS cet1 numeric;
 
 ALTER TABLE bank_metrics_manual ENABLE ROW LEVEL SECURITY;
 

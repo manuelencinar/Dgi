@@ -1,19 +1,30 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin, serviceClient } from '@/lib/admin'
 import { getEffectiveDict } from '@/lib/dict'
+import { isCreditRiskFinancial } from '@/lib/dgi-score'
 
 export const dynamic = 'force-dynamic'
 
-const FIELDS = ['npl', 'nim', 'rote', 'efficiency']
+const FIELDS = ['npl', 'cet1', 'nim', 'rote', 'efficiency']
 
-// GET: lista de bancos (DICT type 'banco') + todas las filas manuales guardadas.
+// GET: lista de entidades con lógica bancaria (banca + financieras con riesgo de
+// crédito, por industria de Yahoo) + todas las filas manuales guardadas.
 export async function GET() {
   const admin = await requireAdmin()
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
 
   const sc = serviceClient()
   const dict = await getEffectiveDict()
-  const banks = dict.filter(d => d[6] === 'banco').map(d => ({ ticker: d[1], name: d[0], country: d[2] }))
+  const fmap = {}
+  for (let from = 0; ; from += 1000) {
+    const { data } = await sc.from('company_fundamentals').select('ticker, sector, industry').range(from, from + 999)
+    if (!data?.length) break
+    data.forEach(r => { fmap[r.ticker] = { sector: r.sector, industry: r.industry } })
+    if (data.length < 1000) break
+  }
+  const banks = dict
+    .filter(d => isCreditRiskFinancial(d[6], fmap[d[1]]?.sector, fmap[d[1]]?.industry))
+    .map(d => ({ ticker: d[1], name: d[0], country: d[2] }))
     .sort((a, b) => a.name.localeCompare(b.name))
 
   const { data: rows } = await sc.from('bank_metrics_manual').select('*')
