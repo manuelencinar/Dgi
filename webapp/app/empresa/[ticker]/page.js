@@ -15,6 +15,7 @@ import { industryEs } from '@/lib/taxonomy'
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
 import { isCreditRiskFinancial } from '@/lib/dgi-score'
+import { buildReitMetrics } from '@/lib/reit-metrics'
 import {
   getCompanyDetail,
   computeMoat,
@@ -325,11 +326,19 @@ export default async function EmpresaPage({ params, searchParams }) {
     insurerMetrics = effectiveInsurerMetrics(computeInsurerMetrics(detail), imRows || [])
   }
 
+  // REITs: FFO/AFFO (sub-tipo manual fija el % de mantenimiento).
+  let reitMetrics = null
+  if (detail && (type === 'reit' || detail.sector === 'Real Estate')) {
+    const { data: reitRow } = await supabase.from('reit_manual').select('*').eq('ticker', t).maybeSingle()
+    reitMetrics = buildReitMetrics(detail, reitRow || null)
+  }
+  const isReit = !!reitMetrics
+
   const roicData   = detail ? calculateROIC({ ...detail, type }, currency) : null
   const moat       = computeMoat(detail, streak)
   const dcf        = computeValuation(detail, moat?.width ?? 'none', type, currency)
   const projection = computeProjection(divHistory, cagr)
-  const dgiScore   = computeDGIScore(detail, streak, cagr, dcf, type, paysDividend, bankMetrics, insurerMetrics)
+  const dgiScore   = computeDGIScore(detail, streak, cagr, dcf, type, paysDividend, bankMetrics, insurerMetrics, reitMetrics)
   const insights   = buildInsights(detail, streak, cagr, dcf)
   const badges     = computeBadges(detail, streak, cagr, moat)
   const buybacks   = computeBuybacks(detail)
@@ -397,6 +406,8 @@ export default async function EmpresaPage({ params, searchParams }) {
         bankMetrics={bankMetrics}
         isInsurer={isInsurer}
         insurerMetrics={insurerMetrics}
+        isReit={isReit}
+        reitMetrics={reitMetrics}
         type={type}
         isPremium={isPremium}
         isAuthed={!!user}

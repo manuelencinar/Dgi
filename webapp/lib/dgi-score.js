@@ -4,6 +4,7 @@ import { computeBonuses } from '@/lib/bonuses'
 import { dividendTrend } from '@/lib/helpers'
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
+import { buildReitMetrics } from '@/lib/reit-metrics'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -391,8 +392,14 @@ function buildDividend(data, streak, cagr, sectorType, divHistory, secM = null) 
 
   const streakScore = streak >= 35 ? 10 : streak >= 25 ? 9 : streak >= 10 ? 7 : streak >= 5 ? 5 : streak >= 2 ? 3 : 0
 
+  // En REITs el payout sobre EPS engaña (la amortización hunde el beneficio) →
+  // se usa el payout sobre AFFO (saludable <85%). Si no es calculable, OCF/FCF.
+  const reitAffo = sectorType === 'reit' && n(secM?.payoutAffo) != null ? n(secM.payoutAffo) : null
+
   // Payout FCF: lower is better
-  const pfcfFinal = isReit
+  const pfcfFinal = reitAffo != null
+    ? bsRev(reitAffo, [[70,10],[85,8],[95,5],[110,2]])
+    : isReit
     ? bsRev(pfcf, [[70,10],[85,7],[100,4]])
     : isBank
     ? (peps == null ? null : peps > 150 ? 0 : peps > 120 ? 2 : peps > 100 ? 4 : peps > 70 ? 6 : peps > 40 ? 8 : 10)
@@ -404,7 +411,10 @@ function buildDividend(data, streak, cagr, sectorType, divHistory, secM = null) 
 
   const divCutScore = exDivCut(divHistory)
 
-  const payoutTooltip = isReit
+  const payoutFfoVal = sectorType === 'reit' ? n(secM?.payoutFfo) : null
+  const payoutTooltip = reitAffo != null
+    ? 'En REITs el payout sobre EPS engaña: la amortización de inmuebles hunde el beneficio contable. Se mide sobre el AFFO — por debajo del 85% es saludable.'
+    : isReit
     ? 'En REITs se usa el flujo operativo. Por encima del 85% merece vigilancia.'
     : payoutNormalized
     ? 'En bancos y aseguradoras se mide sobre el beneficio NORMALIZADO a 5 años — el beneficio de un solo año fluctúa por provisiones o catástrofes.'
@@ -412,14 +422,15 @@ function buildDividend(data, streak, cagr, sectorType, divHistory, secM = null) 
     ? 'En bancos y aseguradoras se usa el payout sobre beneficio neto.'
     : 'Por encima del 90% el dividendo es vulnerable. Por debajo del 60% hay margen para seguir creciendo.'
 
-  const payoutLabel = isBank ? (payoutNormalized ? 'Payout (norm. 5a)' : 'Payout BPA') : isReit ? 'Payout OCF' : 'Payout FCF'
+  const payoutLabel = reitAffo != null ? 'Payout AFFO' : isBank ? (payoutNormalized ? 'Payout (norm. 5a)' : 'Payout BPA') : isReit ? 'Payout OCF' : 'Payout FCF'
+  const payout2Score = reitAffo != null ? (payoutFfoVal == null ? null : bsRev(payoutFfoVal, [[70,10],[80,8],[90,6],[100,4]])) : payoutEpsScore
 
   return [
     mk('yield','Yield actual',yld != null ? fmtPct(yld) : '—',yldScore,0.20,'Rentabilidad por dividendo al precio actual. Se calcula sobre el dividendo del año anterior — no incluye el año en curso.'),
     mk('streak','Racha consecutiva',streak > 0 ? `${streak} años` : '—',streakScore,0.25,'Una racha larga es la mejor evidencia de compromiso con el dividendo y estabilidad del negocio.'),
     mk('divCagr','CAGR dividendo 5a',cagrPct != null ? fmtPct(cagrPct) : '—',bs(cagrPct,[[0,2],[2,4],[5,6],[8,8],[12,10]]),0.25,'Un CAGR alto compensa un yield inicial bajo. Una empresa con yield 2% y CAGR 12% puede superar en renta a otra con yield 5% y CAGR 2%.'),
-    mk('payoutFcf',payoutLabel,fmtPct(isBank ? peps : pfcf),pfcfFinal,0.15,payoutTooltip),
-    mk('payoutEps',isBank && payoutNormalized ? 'Payout (norm. 5a)' : 'Payout BPA',fmtPct(peps),payoutEpsScore,0.10,payoutNormalized ? 'Payout sobre el beneficio medio de 5 años.' : 'Complementa al payout FCF. Si ambos son altos el dividendo es claramente exigente.'),
+    mk('payoutFcf',payoutLabel,fmtPct(reitAffo != null ? reitAffo : (isBank ? peps : pfcf)),pfcfFinal,0.15,payoutTooltip),
+    mk('payoutEps',reitAffo != null ? 'Payout FFO' : (isBank && payoutNormalized ? 'Payout (norm. 5a)' : 'Payout BPA'),fmtPct(reitAffo != null ? payoutFfoVal : peps),payout2Score,0.10,reitAffo != null ? 'Payout sobre FFO — complementa al AFFO.' : payoutNormalized ? 'Payout sobre el beneficio medio de 5 años.' : 'Complementa al payout FCF. Si ambos son altos el dividendo es claramente exigente.'),
     mk('consistency','Consistencia histórica','—',divCutScore,0.05,'Penaliza si la empresa ha recortado el dividendo en los últimos 10 años. Un recorte en 2020 se trata con más benevolencia.'),
   ]
 }
@@ -595,18 +606,20 @@ function buildPenalties(data, sectorType) {
 
 // ── Main export ────────────────────────────────────────────────────────────
 
-export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend, bankOverride = null, insurerOverride = null) {
+export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend, bankOverride = null, insurerOverride = null, reitOverride = null) {
   if (!data) return null
 
   const noDividend = paysDividend === false
   const sectorType = detectSectorType(type, data.sector, data.industry)
 
-  // Métricas sectoriales (banca/seguros) para el scoring: las pasa la ficha (con
-  // manuales/overrides) o se calculan desde los estados (snapshot → select('*')).
+  // Métricas sectoriales (banca/seguros/REIT) para el scoring: las pasa la ficha
+  // (con manuales/overrides) o se calculan desde los estados (snapshot → select('*')).
   const secM = sectorType === 'bank'
     ? (bankOverride || effectiveBankMetrics(computeBankMetrics(data), []))
     : sectorType === 'insurer'
     ? (insurerOverride || effectiveInsurerMetrics(computeInsurerMetrics(data), []))
+    : sectorType === 'reit'
+    ? (reitOverride || buildReitMetrics(data, null))
     : null
 
   const WEIGHTS = {

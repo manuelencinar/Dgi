@@ -1215,6 +1215,43 @@ function InsurerMetricsCard({ m }) {
   )
 }
 
+// ── REIT metrics card ──────────────────────────────────────────────────────
+function ReitMetricsCard({ m, currency }) {
+  if (!m) return null
+  const fp = v => (v == null || isNaN(v)) ? '–' : v.toFixed(2) + '%'
+  const fx = v => (v == null || isNaN(v)) ? '–' : v.toFixed(1) + '×'
+  const fps = v => (v == null || isNaN(v)) ? '–' : v.toLocaleString('es-ES', { maximumFractionDigits: 2 }) + (currency ? ' ' + currency : '')
+  const payColor = m.payoutAffo == null ? '#c8d0e0' : m.payoutAffo < 85 ? '#34d399' : m.payoutAffo < 100 ? '#fbbf24' : '#f87171'
+  const items = [
+    { label: 'Payout AFFO', value: m.payoutAffo != null ? fp(m.payoutAffo) : '–', color: payColor, hint: 'Dividendo / AFFO. Por debajo del 85% es saludable. La métrica correcta de sostenibilidad en REITs (no el payout sobre EPS).' },
+    { label: 'AFFO / acción', value: fps(m.affoPerShare), hint: 'FFO − capex de mantenimiento estimado (según sub-tipo).' },
+    { label: 'FFO / acción', value: fps(m.ffoPerShare), hint: 'Beneficio neto + amortización, por acción.' },
+    { label: 'CAGR FFO 5a', value: fp(m.ffoCagr5), color: m.ffoCagr5 != null ? (m.ffoCagr5 >= 0 ? '#34d399' : '#f87171') : null },
+    { label: 'P / AFFO', value: fx(m.pAffo), hint: 'Equivalente al PER pero sobre AFFO.' },
+    { label: 'P / FFO', value: fx(m.pFfo) },
+  ]
+  return (
+    <Card>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap', gap: 6 }}>
+        <SectionTitle>Métricas REIT (FFO / AFFO)</SectionTitle>
+        {m.subtypeLabel && <span style={{ fontSize: 10, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.12)', padding: '2px 8px', borderRadius: 5 }}>{m.subtypeLabel} · mant. {m.maintPct}%</span>}
+      </div>
+      <style>{`.reit-m{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}@media(min-width:560px){.reit-m{grid-template-columns:repeat(3,1fr)}}`}</style>
+      <div className="reit-m">
+        {items.map(it => (
+          <div key={it.label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }} title={it.hint || ''}>
+            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>{it.label}{it.hint ? ' ⓘ' : ''}</p>
+            <p style={{ fontSize: 18, fontWeight: 800, color: it.color || '#c8d0e0' }}>{it.value}</p>
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10, lineHeight: 1.5 }}>
+        En REITs la amortización de inmuebles hunde el beneficio contable, por eso se usa el FFO (beneficio + amortización) y el AFFO (FFO − capex de mantenimiento). El AFFO es la base correcta del payout y de la valoración (P/AFFO).
+      </p>
+    </Card>
+  )
+}
+
 // ── buyback section ────────────────────────────────────────────────────────
 
 function BuybackSection({ buybacks }) {
@@ -1294,7 +1331,7 @@ const TAB_IDS = TABS.map(t => t.id)
 
 export default function CompanyDetailPage(props) {
   const {
-    ticker, name, country, currency, sector, subsector, type, classification, isBank, bankMetrics, isInsurer, insurerMetrics, crossListings,
+    ticker, name, country, currency, sector, subsector, type, classification, isBank, bankMetrics, isInsurer, insurerMetrics, isReit, reitMetrics, crossListings,
     isPremium, hasData, isAuthed, watchEntry,
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
@@ -1567,6 +1604,8 @@ export default function CompanyDetailPage(props) {
               <BankMetricsCard m={bankMetrics} />
             ) : isInsurer ? (
               <InsurerMetricsCard m={insurerMetrics} />
+            ) : isReit ? (
+              <ReitMetricsCard m={reitMetrics} currency={currency} />
             ) : (
               <Card>
                 <SectionTitle>KPIs financieros clave</SectionTitle>
@@ -1632,7 +1671,7 @@ export default function CompanyDetailPage(props) {
             <MoatSection moat={moat} isPremium={isPremium} />
             <InsightsSection insights={insights} isPremium={isPremium} />
             <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} scoreHistory={scoreHistory} />
-            {isBank ? <BankMetricsCard m={bankMetrics} /> : isInsurer ? <InsurerMetricsCard m={insurerMetrics} /> : <RoicCard roicData={roicData} isPremium={isPremium} />}
+            {isBank ? <BankMetricsCard m={bankMetrics} /> : isInsurer ? <InsurerMetricsCard m={insurerMetrics} /> : isReit ? <ReitMetricsCard m={reitMetrics} currency={currency} /> : <RoicCard roicData={roicData} isPremium={isPremium} />}
           </div>
         )}
       </div>
