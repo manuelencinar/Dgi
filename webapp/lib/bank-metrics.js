@@ -77,10 +77,18 @@ export function computeBankMetrics(data) {
   const yEff = lastCommonYear(opex, rev)
   const efficiency = yEff != null && rev[yEff] > 0 ? Math.abs(opex[yEff]) / rev[yEff] * 100 : null
 
+  // Payout sobre beneficio NORMALIZADO a 5 años (suaviza provisiones puntuales).
+  const niYears = Object.keys(ni).map(Number).filter(y => !isNaN(y)).sort((a, b) => b - a).slice(0, 5)
+  const avgNI5 = niYears.length >= 3 ? niYears.reduce((s, y) => s + ni[y], 0) / niYears.length : null
+  let shares = lastVal(readRow(is, 'Diluted Average Shares', 'Basic Average Shares'))
+  if (!(shares > 0)) shares = lastVal(readRow(bs, 'Ordinary Shares Number', 'Share Issued'))
+  const dps = data?.dps != null ? Number(data.dps) : null
+  const payoutNorm = (avgNI5 > 0 && shares > 0 && dps != null) ? (dps * shares) / avgNI5 * 100 : null
+
   return {
     epsDiluted: lastVal(eps),
     epsCagr5:   cagr5(eps),
-    nim, rote, efficiency,
+    nim, rote, efficiency, payoutNorm,
     series: { nim: nimS, rote: roteS, efficiency: effS, eps: { ...eps } },
   }
 }
@@ -135,6 +143,7 @@ export function effectiveBankMetrics(computed, manualRows = []) {
     nim:        numOr(latest.nim, computed?.nim),
     rote:       numOr(latest.rote, computed?.rote),
     efficiency: numOr(latest.efficiency, computed?.efficiency),
+    payoutNorm: computed?.payoutNorm ?? null,
     // NPL y CET1: SOLO manuales. Si no hay, null → la UI muestra "–" (nunca 0).
     npl:        lastNpl ? lastNpl.value : null,
     nplPeriod:  lastNpl ? lastNpl.period : null,

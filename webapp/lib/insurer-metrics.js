@@ -86,11 +86,21 @@ export function computeInsurerMetrics(data) {
     if (te != null && te > 0) { const v = ni[y] / te * 100; if (rote == null) rote = v; roteS[y] = v }
   }
 
+  // Payout sobre beneficio NORMALIZADO a 5 años (suaviza catástrofes/reservas):
+  // dividendos (dps × acciones) / beneficio neto medio de 5 años.
+  const niYears = Object.keys(ni).map(Number).filter(y => !isNaN(y)).sort((a, b) => b - a).slice(0, 5)
+  const avgNI5 = niYears.length >= 3 ? niYears.reduce((s, y) => s + ni[y], 0) / niYears.length : null
+  let shares = lastVal(readRow(is, 'Diluted Average Shares', 'Basic Average Shares'))
+  if (!(shares > 0)) shares = lastVal(readRow(bs, 'Ordinary Shares Number', 'Share Issued'))
+  const dps = data?.dps != null ? Number(data.dps) : null
+  const payoutNorm = (avgNI5 > 0 && shares > 0 && dps != null) ? (dps * shares) / avgNI5 * 100 : null
+
   return {
     investmentYield,
     gwp: lastVal(gwpMap),
     gwpCagr5: cagr5(gwpMap),
     rote,
+    payoutNorm,
     series: { iy: iyS, gwp: { ...gwpMap }, rote: roteS },
   }
 }
@@ -114,6 +124,7 @@ export function effectiveInsurerMetrics(computed, manualRows = []) {
     gwp:      computed?.gwp ?? null,
     gwpCagr5: computed?.gwpCagr5 ?? null,
     rote:     numOr(latest.rote, computed?.rote),
+    payoutNorm: computed?.payoutNorm ?? null,
     // Manuales (null → la UI muestra "–"):
     combined: lc ? lc.value : null, combinedPeriod: lc ? lc.period : null,
     loss:     ll ? ll.value : null,
