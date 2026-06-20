@@ -43,6 +43,7 @@ function getShares(data) {
 const FCF_NAMES = ['Flujo de Caja Libre', 'Free Cash Flow']
 const OCF_NAMES = ['Cash Flow Operativo', 'Operating Cash Flow', 'Cash Flow From Continuing Operating Activities', 'Total Cash From Operating Activities']
 const REV_NAMES = ['Ingresos Totales', 'Total Revenue', 'Total Revenues']
+const EQUITY_NAMES = ['Patrimonio Neto', 'Stockholders Equity', 'Common Stock Equity', 'Total Equity Gross Minority Interest', 'Total Equity']
 
 // Detecta 3+ años consecutivos de caída de ingresos (idx 0 = más reciente)
 function revenueDeclining3y(data) {
@@ -157,6 +158,12 @@ export function recomputeValuation(engine, params, price) {
     const iv = params.shares > 0 ? (params.ocf / params.shares) * params.mult : null
     return { intrinsicValue: iv, mos: mosFn(iv, price), projection: null }
   }
+  if (engine === 'epb') {
+    // Exceso de retorno: Valor = BVPS × (ROE − g) / (Ke − g)
+    const { bvps, roe, g, ke } = params
+    const iv = (ke > g && roe > g && bvps > 0) ? bvps * (roe - g) / (ke - g) : null
+    return { intrinsicValue: iv, mos: mosFn(iv, price), projection: null }
+  }
   // dcf
   const proj = dcfProjection(params)
   const iv = params.shares > 0 ? proj.totalPV / params.shares : null
@@ -176,6 +183,12 @@ function editableFor(engine, currency) {
     { key: 'ocf',    label: 'OCF base',          type: 'number', unit: 'M', scale: 1e6 },
     { key: 'mult',   label: 'Múltiplo objetivo', type: 'slider', unit: '×', min: 8, max: 30, step: 0.5 },
     { key: 'shares', label: 'Acciones',          type: 'number', unit: 'M', scale: 1e6 },
+  ]
+  if (engine === 'epb') return [
+    { key: 'bvps', label: 'Valor contable / acción', type: 'number', unit: currency },
+    { key: 'roe',  label: 'ROE',                    type: 'slider', unit: '%', min: 0, max: 30, step: 0.5, pct: true },
+    { key: 'g',    label: 'Crecimiento sostenible', type: 'slider', unit: '%', min: 0, max: 8,  step: 0.5, pct: true },
+    { key: 'ke',   label: 'Coste de equity',        type: 'slider', unit: '%', min: 6, max: 15, step: 0.5, pct: true },
   ]
   return [
     { key: 'base',   label: 'FCF/CFO base',         type: 'number', unit: 'M', scale: 1e6 },
@@ -307,11 +320,12 @@ function buildDCF(data, opts) {
 function dcfFCF(data, moatWidth, currency) {
   return buildDCF(data, {
     method: 'dcf_fcf', label: 'DCF · FCF', currency,
-    tooltip: 'Valor calculado mediante descuento de flujos de caja libre proyectados a 10 años. La tasa de descuento se ajusta según el foso económico detectado. Un margen de seguridad positivo indica que la empresa cotiza por debajo de su valor estimado.',
-    baseSource: 'fcf', baseLabel: 'FCF base',
+    tooltip: 'Valor calculado mediante descuento de flujos de caja libre proyectados a 10 años. Se parte del FCF NORMALIZADO (media de los últimos años) para que un ejercicio puntual de capex alto o bajo no distorsione la valoración. La tasa de descuento se ajusta según el foso económico detectado. Un margen de seguridad positivo indica que la empresa cotiza por debajo de su valor estimado.',
+    baseSource: 'fcf_normalized', baseLabel: 'FCF normalizado (media)',
     discountBase: moatWidth === 'wide' ? 0.08 : moatWidth === 'narrow' ? 0.10 : 0.12,
     terminalBase: currency === 'EUR' ? 0.025 : 0.030,
     capHigh: 0.20,
+    extraNotes: ['Se usa el FCF medio de los últimos años (no el del último ejercicio) para neutralizar picos puntuales de capex o circulante.'],
   })
 }
 
@@ -449,6 +463,119 @@ function dcfDDM(data, sectorType, currency) {
   }
 }
 
+// Prima de riesgo de equity por divisa (mercados emergentes / alta inflación).
+// Se suma al coste de equity. Las divisas no listadas se asumen desarrolladas (0).
+const EQUITY_RISK_PREMIUM = {
+  MXN: 0.05, BRL: 0.05, ZAR: 0.05, INR: 0.04, IDR: 0.05, TRY: 0.08, PHP: 0.04,
+  THB: 0.03, MYR: 0.03, CLP: 0.04, COP: 0.05, PEN: 0.04, PLN: 0.03, HUF: 0.04,
+  CZK: 0.02, CNY: 0.02, HKD: 0.01,
+}
+function equityRiskPremium(currency) { return EQUITY_RISK_PREMIUM[(currency || '').toUpperCase()] || 0 }
+
+// ── Method 2b: Exceso de retorno / P/B justificado — Bancos y Aseguradoras ─
+// El DCF de FCF no aplica a financieras (su balance es apalancamiento por diseño
+// y el FCF no representa caja del accionista) — era la fuente de los MoS absurdos
+// (Banorte +120%). El estándar de la industria es el modelo de exceso de retorno:
+//   Valor = Valor contable por acción × (ROE − g) / (Coste de equity − g)
+// Equivale a comparar el P/B que MERECE la entidad por su ROE con el P/B al que
+// cotiza. Es mucho más robusto que un DCF forzado y se computa con datos de Yahoo
+// (ROE, valor contable / P/B, crecimiento). En aseguradoras, sin combined ratio
+// fiable, no se puede saber si el ROE viene de buena suscripción o de un mercado
+// alcista de inversiones → se marca con un disclaimer y menos confianza.
+function excessReturnPB(data, sectorType, currency) {
+  const M = 'epb', L = 'Exceso de retorno (P/B justificado)'
+  const TT = 'En bancos y aseguradoras el FCF no es una métrica válida (el balance es apalancamiento por diseño). El valor intrínseco se estima por el modelo de exceso de retorno: el P/B que justifica la rentabilidad sobre el capital (ROE) frente al coste de equity. Valor = Valor contable × (ROE − g) / (Coste de equity − g).'
+  const price = n(data.current_price)
+
+  const roePct = n(data.roe)
+  if (roePct == null) return na(M, L, price, 'No disponible — ROE no disponible', TT)
+  // ROE usado: en ASEGURADORAS se amortigua (tope 14%) porque un ROE alto suele
+  // venir del resultado de inversión —no sostenible— y no del negocio técnico; sin
+  // combined ratio no se puede distinguir, así que se es conservador. En bancos se
+  // usa el ROE real (un banco de ROE alto sostenido sí merece más múltiplo).
+  const roe = sectorType === 'insurer' ? Math.min(roePct / 100, 0.14) : roePct / 100
+  const eur = currency === 'EUR'
+  // Coste de equity: bancos algo mayor que aseguradoras; EUR algo menor que USD,
+  // MÁS una prima de riesgo país/divisa. Sin esta prima un banco emergente de ROE
+  // alto (Banorte, ROE 23%) parece infravaloradísimo: su Ke real es ~15%, no 10%.
+  const ke = (sectorType === 'bank' ? (eur ? 0.10 : 0.105) : (eur ? 0.09 : 0.095)) + equityRiskPremium(currency)
+
+  // Crecimiento sostenible: CAGR del dividendo si lo hay; si no, ROE × retención.
+  // Acotado a < ROE y, sobre todo, a Ke − 4% para que el spread (Ke − g) no se
+  // estreche y dispare el P/B justificado (el modelo de Gordon explota cuando g→Ke).
+  const dc = n(data.div_cagr5)
+  const payout = n(data.payout_eps)
+  const retention = payout != null && payout > 0 && payout < 100 ? (1 - payout / 100) : 0.5
+  let g = dc != null ? dc / 100 : roe * retention
+  g = clamp(g, 0, Math.min(roe - 0.005, ke - 0.04, 0.05))
+
+  // Valor contable por acción: desde P/B (preferido) o patrimonio / acciones.
+  let pb = n(data.price_to_book), bvps = null
+  if (pb != null && pb > 0 && price) bvps = price / pb
+  if (bvps == null) {
+    const eq = fromStmt(data, 'balance_sheet_annual', EQUITY_NAMES)
+    const sh = getShares(data)
+    if (eq && sh) { bvps = eq / sh; if (price && bvps > 0) pb = price / bvps }
+  }
+  if (bvps == null || bvps <= 0) return na(M, L, price, 'No disponible — valor contable no disponible', TT)
+
+  // Si el ROE no supera al crecimiento, la entidad no crea valor sobre su capital
+  // → el modelo no aplica (P/B justificado ≤ 1, sin sentido proyectar).
+  if (roe <= g) return na(M, L, price, 'No disponible — el ROE no supera el crecimiento sostenible (no crea valor sobre el coste de capital)', TT)
+
+  // P/B justificado, acotado a un rango realista (0,3×–3×). El modelo de Gordon es
+  // muy sensible cerca de g→Ke; sin tope, una entidad de ROE alto con P/B de
+  // mercado bajo daría múltiplos de 4-5× irreales.
+  const justifiedPB = clamp((roe - g) / (ke - g), 0.3, 3)
+  const iv = bvps * justifiedPB
+
+  const warnings = []
+  if (sectorType === 'insurer') {
+    warnings.push('Estimación basada solo en ROE y valor contable, sin ajustar por la calidad de la suscripción (combined ratio). Un ROE alto puede venir del resultado de inversión —no sostenible— y no del negocio técnico: interpretar con cautela.')
+  }
+
+  const params = { bvps, roe, g, ke }
+  return {
+    method: M, methodLabel: L, available: true, unavailableReason: null,
+    intrinsicValue: iv, price, mos: mosFn(iv, price), discount: ke, growth: g, terminal: g,
+    inputs: [
+      { label: 'Valor contable por acción (BVPS)', value: fmtBig(bvps) },
+      { label: 'ROE', value: fmtRaw(roePct) },
+      { label: 'Crecimiento sostenible (g)', value: fmtPct(g) },
+      { label: 'Coste de equity (Ke)', value: fmtPct(ke) },
+      { label: 'P/B justificado por ROE', value: justifiedPB.toFixed(2) + '×' },
+      { label: 'P/B de mercado actual', value: pb != null ? pb.toFixed(2) + '×' : '—', danger: pb != null && pb > justifiedPB },
+    ],
+    notes: ['Compara el P/B que merece la entidad según su ROE con el P/B al que cotiza. Más robusto que un DCF forzado: no depende de proyectar un FCF que en una financiera no representa caja del accionista.'],
+    warnings, fcfYears: null, tooltip: TT,
+    engine: 'epb', params, editable: editableFor('epb', currency), projection: null,
+    growthInputUsed: dc != null ? 'div_cagr5' : 'roe_retencion', revCagr: null, fcfCagr: null, declinePenalty: 0, terminalZero: false,
+  }
+}
+
+// ── Estructuras complejas (holdings, trusts, partnerships) ─────────────────
+// Su valor es la suma de partes de activos subyacentes que no están en la cuenta
+// de resultados consolidada → ningún DCF/EPS automático sirve (Brookfield Infra
+// +401% era esto). Se valoran por descuento/prima sobre NAV, dato no disponible
+// en Yahoo. Mejor un guion honesto que un número inventado que socava la confianza.
+function detectComplexStructure(data) {
+  const i = (data.industry || '').toLowerCase()
+  const s = (data.sector || '').toLowerCase()
+  const nm = (data.name || '').toLowerCase()
+  const tk = (data.ticker || '').toUpperCase()
+  // Holdings de inversión / capital privado / trusts cotizados / fondos cerrados.
+  if (i.includes('holding') && (s.includes('financ') || i.includes('invers') || i.includes('investment'))) return true
+  if (i.includes('investment trust') || i.includes('closed-end') || i.includes('asset management') && i.includes('holding')) return true
+  if (i.includes('capital privado') || i.includes('private equity')) return true
+  // Partnerships / LPs cotizadas (Brookfield Infrastructure/Renewable Partners…).
+  if (/\bpartners?\b/.test(nm) && (nm.includes('l.p') || nm.includes(' lp'))) return true
+  // Unidades (sufijo -UN): trusts/LPs cotizados por unidades, no acciones. Los
+  // REITs ya se han enrutado por su sector antes de llegar aquí (p.ej. BIP-UN.TO).
+  if (tk.includes('-UN')) return true
+  if (nm.includes('investment trust') || (nm.includes(' trust') && !i.includes('reit') && s.includes('financ'))) return true
+  return false
+}
+
 // ── Method 3: Múltiplo AFFO — REITs (sin cambios de corrección) ───────────
 
 function dcfAFFO(data, moatWidth, currency) {
@@ -493,10 +620,18 @@ function dcfAFFO(data, moatWidth, currency) {
 export function computeValuation(data, moatWidth, type, currency) {
   if (!data) return null
   const sector = detectSector(type, data.sector, data.industry)
+  // Estructuras complejas (holdings/trusts/partnerships): NO se valoran por DCF —
+  // su valor es suma de partes / NAV (dato no disponible). Mejor un guion honesto.
+  // Se comprueba ANTES del DCF de FCF (los REITs ya se han enrutado por su sector).
+  if (sector !== 'reit' && sector !== 'bank' && sector !== 'insurer' && detectComplexStructure(data)) {
+    return na('nav', 'Estructura compleja', n(data.current_price),
+      'Valoración no disponible — estructura compleja (holding, trust o partnership). Su valor depende de la suma de sus activos subyacentes (NAV), no de un DCF sobre la cuenta consolidada.',
+      'En holdings de inversión, trusts cotizados y partnerships el valor es la suma de las partes de los activos subyacentes (NAV), que no aparece en la cuenta de resultados consolidada. Un DCF automático produce resultados sin sentido, por eso no se calcula.')
+  }
   let res
   switch (sector) {
     case 'bank':
-    case 'insurer':   res = dcfDDM(data, sector, currency); break
+    case 'insurer':   res = excessReturnPB(data, sector, currency); break
     case 'reit':      res = dcfAFFO(data, moatWidth, currency); break
     case 'utilities': res = dcfCFO(data, moatWidth, currency); break
     case 'pharma':    res = dcfPharma(data, moatWidth, currency); break

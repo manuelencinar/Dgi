@@ -92,12 +92,20 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - Usado en alta de operación, posiciones, historial, ajustes (widget FX + alerta de comisión + análisis de divisa).
 - El script de precios también puebla exchange_rates.
 
-## Sistema de valoración (lib/valuation.js)
-- Valor intrínseco sector-aware. `computeValuation(data, moatWidth, type, currency)` y `recomputeValuation(engine, params, price)` (modo personalizado en cliente).
-- 6 métodos: DCF·FCF (general), DDM (bancos/aseguradoras), Múltiplo AFFO (REITs), DCF·CFO (utilities), DCF·Prima riesgo (farmacéuticas), DCF·Normalizado (energía).
-- Correcciones clave: el DCF **nunca** usa div_cagr5 para el crecimiento (usa media fcf_cagr5+revenue_cagr5); penalización al descuento por ingresos en declive; terminal 0 si 3+ años de caída; FCF base normalizado si el año reciente es negativo pero la media es positiva.
-- Inputs editables por el usuario en la ficha (modo automático/personalizado, persistencia en localStorage).
-- El script Python precalcula `intrinsic_value`, `valuation_warning`, `growth_input_used` en company_fundamentals.
+## Sistema de valoración (lib/valuation.js) — sector-aware
+- Valor intrínseco sector-aware. `computeValuation(data, moatWidth, type, currency)` y `recomputeValuation(engine, params, price)` (modo personalizado en cliente). Motores (`engine`): `dcf`, `epb`, `affo`, `ddm` (legacy, conservado para params guardados).
+- **Por sector** (un DCF de FCF clásico NO sirve fuera de industrials/consumer/health):
+  - **General** (consumo, salud, industrial, tech, comms): DCF·FCF con **FCF NORMALIZADO** (media de los últimos años, no el último ejercicio → evita picos puntuales de capex). Descuento por foso, terminal 2,5-3%, crecimiento = media(fcf_cagr5, revenue_cagr5), nunca div_cagr5.
+  - **Bancos y aseguradoras**: NO DCF. **Modelo de exceso de retorno / P/B justificado** (`excessReturnPB`, engine `epb`): `Valor = BVPS × (ROE − g) / (Ke − g)`. Compara el P/B que merece la entidad por su ROE con el de mercado. Robusto: BVPS desde P/B o patrimonio/acciones; **Ke con prima de riesgo país/divisa** (`EQUITY_RISK_PREMIUM`: MXN/BRL +5%… → sin ella Banorte salía +120%); g acotado a Ke−4% (evita que el Gordon explote al acercarse g→Ke); **P/B justificado capeado a 0,3–3×**. En **aseguradoras** el ROE se amortigua a tope 14% (un ROE alto suele venir del resultado de inversión, no del negocio técnico) + warning de "sin combined ratio". Resultados de referencia: Banorte −15%, BNP +17%, JPM −17%, Munich Re +36%, Allianz +2%.
+  - **REITs**: Múltiplo AFFO (no DCF de FCF; la amortización inmobiliaria rompe el FCF contable).
+  - **Utilities**: DCF·CFO (CFO en vez de FCF por el capex regulado; horizonte largo, WACC baja).
+  - **Farmacéuticas**: DCF·Prima riesgo (descuento mayor por pipeline, −1pp si I+D>20%).
+  - **Energía / materiales (cíclicos)**: DCF·Normalizado (FCF medio del ciclo, no el último año → evita Freeport).
+  - **Holdings / trusts / partnerships** (Brookfield Infra `-UN`, Wendel, investment trusts): `detectComplexStructure` → valoración **NO disponible "estructura compleja"** (su valor es suma de partes / NAV, no un DCF; evita el +401% de BIP). Detección por industria (holding+financiero), sufijo de ticker `-UN`, nombre (partners L.P.).
+- **Cap de cordura** (en `computeValuation`): si tras el modelo el `mos > 80%` o `< −85%`, se marca `available:false` "valoración no fiable para este sector/modelo" (red de seguridad ante cualquier outlier nuevo). Espejo en el screener: `mosUnreliable` (`MOS_UNRELIABLE=80` en `lib/screener.js`) + payout >150% en insights se marca "base no representativa".
+- Otras correcciones: penalización al descuento por ingresos en declive; terminal 0 si 3+ años de caída.
+- Inputs editables por el usuario en la ficha (modo automático/personalizado, persistencia en localStorage). `editableFor`/`recomputeValuation` soportan los 4 engines.
+- El script Python precalcula `intrinsic_value`, `valuation_warning`, `growth_input_used`. **PENDIENTE**: `update_fundamentals.py` aún usa el DCF antiguo para `intrinsic_value` (lo lee el SCREENER) → bancos/holdings en el screener se apoyan en el cap del 80% hasta replicar allí los modelos nuevos (banca/holdings). La FICHA ya usa los modelos nuevos (JS).
 
 ## ROIC corregido (lib/metrics.js) — FUENTE ÚNICA
 - Fórmula final (tras varias iteraciones con el usuario): **ROIC = NOPAT / (Patrimonio Neto + Deuda Total)**.
