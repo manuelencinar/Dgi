@@ -45,10 +45,13 @@ const FADE_YEARS    = 10   // años hasta converger a la terminal
 // Umbrales de "dato no fiable" usados en el scoring:
 //  - CAGR de dividendo por encima del 50% suele venir de una base de comparación
 //    ínfima o de un dato atípico → no puntúa como excelente, se neutraliza.
-//  - Margen de seguridad |>500%| implica un valor intrínseco disparado (típico de
-//    investment trusts que no encajan en los métodos DCF) → se excluye del Score.
+//  - Margen de seguridad >80% NO es "una ganga brutal": casi siempre es el DCF
+//    aplicado a un sector donde no debería sin ajustes (financieras, REITs con
+//    FFO en vez de FCF, utilities muy apalancadas) → valor intrínseco disparado.
+//    Por encima del cap se marca "valoración no fiable", no señal verde.
+//    (Banorte +120%, Brookfield Infrastructure +401%… eran artefactos del modelo.)
 export const CAGR_UNRELIABLE = 50
-export const MOS_UNRELIABLE   = 500
+export const MOS_UNRELIABLE   = 80
 
 // Yield mínimo para tratar a una empresa como candidata DGI evaluable. Por
 // debajo (p.ej. NVDA ~0,02%) el dividendo es testimonial: no es DGI y no debe
@@ -151,7 +154,8 @@ export function computeScore(f, type) {
     // sí sabe derivar (presentes como clave, aunque su valor sea null).
     if (!(m.id in vals)) continue
     const v = vals[m.id]
-    // Valoración con MoS extremo (|MoS|>500%): valor intrínseco no fiable → fuera del Score.
+    // Valoración con MoS extremo (cap de cordura, |MoS|>80%): valor intrínseco
+    // disparado, no fiable → fuera del Score (no infla la nota como falsa ganga).
     if (m.id === 'margin_safety' && v != null && Math.abs(v) > MOS_UNRELIABLE) continue
     let s = m.score(v)
     // CAGR del dividendo capeado/atípico (>50%): dato no fiable → puntuación neutra.
@@ -235,12 +239,13 @@ export function rule1010(f) {
   return (y + c) >= 10
 }
 
-// MoS no fiable: valor intrínseco disparado (|MoS| > 500%) o DCF roto cuando el
-// valor intrínseco es una fracción ínfima del precio (MoS < −90%, p.ej. Infosys
-// con iv en unidades/divisa erróneas).
+// MoS no fiable: valor intrínseco disparado (MoS > 80%, cap de cordura — casi
+// siempre el DCF aplicado a un sector que no encaja) o DCF roto cuando el valor
+// intrínseco es una fracción ínfima del precio (MoS < −85%, p.ej. Infosys con iv
+// en unidades/divisa erróneas). Por encima del cap NO es señal de compra.
 export function mosUnreliable(f) {
   const m = marginSafety(f)
-  return m != null && (Math.abs(m) > MOS_UNRELIABLE || m < -90)
+  return m != null && (m > MOS_UNRELIABLE || m < -85)
 }
 
 // Payout "saneado": evita artefactos cuando la base de FCF es ínfima y el payout

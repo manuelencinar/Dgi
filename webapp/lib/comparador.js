@@ -4,6 +4,7 @@ import { getContinent } from '@/lib/helpers'
 import {
   resolveRoic, yieldPct, marginSafety, computeScore, calcDivQuality,
   rule1010, scoreRadar, RADAR_METRICS, netYield, getWHT, cleanGrossMargin,
+  mosUnreliable,
 } from '@/lib/screener'
 
 function num(v) { return v != null && !isNaN(v) ? parseFloat(v) : null }
@@ -36,7 +37,7 @@ function buildInsights(f) {
   else if (streak != null && streak >= 10) out.push({ v: `Aspirante: ${streak} años consecutivos de subidas`, pos: true })
   if (cagr != null && cagr > 8) out.push({ v: `Dividendo crece al ${cagr.toFixed(1)}%/año`, pos: true })
   if (gm != null && gm > 45) out.push({ v: `Márgenes brutos sólidos (${gm.toFixed(0)}%)`, pos: true })
-  if (mos != null && mos > 15) out.push({ v: `Cotiza un ${mos.toFixed(0)}% por debajo de su valor`, pos: true })
+  if (mos != null && mos > 15 && !mosUnreliable(f)) out.push({ v: `Cotiza un ${mos.toFixed(0)}% por debajo de su valor`, pos: true })
   if (debt != null && debt > 4) out.push({ v: `Deuda elevada (${debt.toFixed(1)}x EBITDA)`, pos: false })
   if (rev != null && rev < 0) out.push({ v: `Ingresos en declive (${rev.toFixed(1)}%)`, pos: false })
   return out.slice(0, 3)

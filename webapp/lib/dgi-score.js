@@ -571,7 +571,7 @@ function buildFinancial(data, sectorType, bm = null) {
 
 // ── CATEGORY 4: Valoración ────────────────────────────────────────────────
 
-function buildValuation(data, dcf, sectorType) {
+function buildValuation(data, dcf, sectorType, secM = null) {
   const mos  = dcf?.mos != null ? dcf.mos * 100 : null
   const pe   = n(data.pe_trailing)
   const pef  = n(data.pe_forward)
@@ -587,6 +587,23 @@ function buildValuation(data, dcf, sectorType) {
   const evScore = sectorType === 'utilities'
     ? bsRev(eveb, [[11,10],[15,7],[20,4]])
     : bsRev(eveb, [[6,10],[10,9],[15,7],[22,5],[30,3]])
+
+  // REIT: el PER engaña — la amortización inmobiliaria hunde el beneficio GAAP y
+  // dispara el PER (Realty Income ~50× beneficio pero ~14× FFO). Se valora con
+  // P/FFO y P/AFFO, el equivalente correcto del PER para el sector.
+  if (sectorType === 'reit') {
+    const pFfo  = n(secM?.pFfo)
+    const pAffo = n(secM?.pAffo)
+    const pFfoScore  = pFfo  == null ? null : pFfo  <= 0 ? null : bsRev(pFfo,  [[12,10],[15,8],[18,6],[22,4],[28,2]])
+    const pAffoScore = pAffo == null ? null : pAffo <= 0 ? null : bsRev(pAffo, [[14,10],[17,8],[20,6],[24,4],[30,2]])
+    return [
+      mk('mos','Margen seguridad DCF',mos != null ? (mos > 0 ? '+' : '') + fmtPct(mos) : '—',bs(mos,[[-25,2],[-10,4],[0,6],[10,8],[25,10]]),0.30,'Diferencia entre precio actual y valor intrínseco (DCF sobre AFFO). Por encima del 20% existe margen de seguridad significativo.'),
+      mk('pffo','P/FFO',pFfo != null ? fmtN(pFfo,1) + '×' : '—',pFfoScore,0.25,'Precio sobre Funds From Operations — el equivalente al PER en REITs (suma la amortización inmobiliaria al beneficio). Más bajo es más barato; el sector suele cotizar 13-18×.'),
+      mk('paffo','P/AFFO',pAffo != null ? fmtN(pAffo,1) + '×' : '—',pAffoScore,0.20,'Precio sobre AFFO (FFO menos capex de mantenimiento) — la medida de caja realmente repartible. Es el múltiplo de valoración más exigente para un REIT.'),
+      mk('eveb','EV/EBITDA',eveb != null ? fmtN(eveb,1) + '×' : '—',evScore,0.15,'Valor de empresa dividido entre EBITDA. Independiente de la estructura de capital.'),
+      mk('pb','Precio / Valor contable',pb != null ? fmtN(pb,1) + '×' : '—',pbScore,0.10,'En REITs aproxima el precio sobre el valor neto de los activos (NAV). Por debajo de 1× puede indicar infravaloración.'),
+    ]
+  }
 
   // PER: lower is better, but negative = 0
   const peScore  = pe  == null ? null : pe  <= 0 || pe  > 55 ? 0 : bsRev(pe,  [[10,10],[18,8],[28,6],[40,4],[56,2]])
@@ -726,7 +743,7 @@ export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend, ban
   const qualityM   = buildQuality(data, sectorType, ind, secM)
   const dividendM  = buildDividend(data, streak, cagr, sectorType, data.divHistory || [], secM)
   const financialM = buildFinancial(data, sectorType, secM)
-  const valuationM = buildValuation(data, dcf, sectorType)
+  const valuationM = buildValuation(data, dcf, sectorType, secM)
 
   const qS = catScore(qualityM,  Math.min(3, qualityM.length))
   // Si la empresa NO reparte dividendo, la categoría Dividendo puntúa 0 (no se

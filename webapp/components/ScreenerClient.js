@@ -344,7 +344,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       const val = co => { const p = projectCompany(co, destWHT); return p ? p.cum10 : -Infinity }
       arr.sort((a, b) => val(b) - val(a))
     } else if (sortKey === 'cheap') {
-      // Las valoraciones no fiables (|MoS|>500%) se hunden al fondo del ranking.
+      // Las valoraciones no fiables (cap de cordura, MoS>80%) se hunden al fondo.
       const val = co => co.mosUnreliable ? -Infinity : (co.mos ?? -Infinity)
       arr.sort((a, b) => val(b) - val(a))
     } else if (sortKey === 'dividend') {

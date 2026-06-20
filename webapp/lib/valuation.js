@@ -503,14 +503,18 @@ export function computeValuation(data, moatWidth, type, currency) {
     case 'energy':    res = dcfNormalized(data, moatWidth, currency); break
     default:          res = dcfFCF(data, moatWidth, currency)
   }
-  // Guard de fiabilidad: si el valor intrínseco sale como una fracción ínfima
-  // (MoS < −85%) o un múltiplo absurdo (MoS > 500%) del precio, casi siempre es
-  // un artefacto de datos/divisa (p.ej. Infosys, iv en escala errónea) → no se
-  // muestra como fiable en vez de un "−99%" que destruye la confianza.
-  if (res && res.available && res.mos != null && (res.mos < -0.85 || res.mos > 5)) {
+  // Guard de fiabilidad (cap de cordura): si el valor intrínseco sale como una
+  // fracción ínfima (MoS < −85%) o un múltiplo absurdo del precio (MoS > 80%),
+  // casi nunca es una oportunidad real: es el modelo DCF disparado en un sector
+  // donde no encaja sin ajustes (financieras, REITs con FFO en vez de FCF,
+  // utilities muy apalancadas) o un artefacto de datos/divisa (p.ej. Infosys con
+  // iv en escala errónea). Se marca "no fiable" en vez de mostrarlo como señal
+  // verde de compra. Umbral en la decena alta del rango 60-80% para no descartar
+  // descuentos genuinamente amplios.
+  if (res && res.available && res.mos != null && (res.mos < -0.85 || res.mos > 0.8)) {
     return {
       ...res, available: false,
-      unavailableReason: 'Valor intrínseco no fiable para este activo — posible problema de datos o de divisa.',
+      unavailableReason: 'Valoración no fiable para este sector/modelo — el valor intrínseco se dispara fuera de un rango razonable (modelo DCF no apto para este activo o problema de datos/divisa).',
       intrinsicValue: null, mos: null, projection: null,
     }
   }
