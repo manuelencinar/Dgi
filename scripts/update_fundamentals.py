@@ -604,7 +604,7 @@ def _first(df, names):
     return vals[0] if vals else None
 
 def _revenue_declining_3y(income):
-    rev = _series(income, ["Total Revenue", "Total Revenues"], 5)
+    rev = _series(income, ["Total Revenue", "Total Revenues", "Ingresos Totales"], 5)
     if len([v for v in rev if v is not None]) < 4:
         return False
     declines = 0
@@ -646,8 +646,54 @@ def _reit_multiple(industry):
     if "healthcare" in i or "medical" in i: return 16
     return 15
 
+# Prima de riesgo de equity por divisa (mercados emergentes). Espejo de lib/valuation.js.
+_EQUITY_RISK_PREMIUM = {
+    "MXN": 0.05, "BRL": 0.05, "ZAR": 0.05, "INR": 0.04, "IDR": 0.05, "TRY": 0.08,
+    "PHP": 0.04, "THB": 0.03, "MYR": 0.03, "CLP": 0.04, "COP": 0.05, "PEN": 0.04,
+    "PLN": 0.03, "HUF": 0.04, "CZK": 0.02, "CNY": 0.02, "HKD": 0.01,
+}
+def _equity_risk_premium(currency):
+    return _EQUITY_RISK_PREMIUM.get((currency or "").upper(), 0.0)
+
+def _detect_complex(sector, industry, ticker):
+    """Holdings / trusts / partnerships → valor por NAV, no por DCF (espejo JS)."""
+    i = (industry or "").lower(); s = (sector or "").lower(); tk = (ticker or "").upper()
+    if "holding" in i and ("financ" in s or "invers" in i or "investment" in i):
+        return True
+    if "investment trust" in i or "closed-end" in i:
+        return True
+    if "capital privado" in i or "private equity" in i:
+        return True
+    if "-UN" in tk:   # unidades de trust/LP cotizadas (p.ej. BIP-UN.TO)
+        return True
+    return False
+
+def _excess_return_pb(balance, shares, price, roe, pb, div_cagr5, payout_eps, st, currency):
+    """Exceso de retorno / P/B justificado (bancos y aseguradoras). Espejo JS."""
+    if roe is None:
+        return None
+    # En aseguradoras el ROE se amortigua a 14% (volátil, ligado a inversión).
+    roe_d = min(roe / 100, 0.14) if st == "insurer" else roe / 100
+    eur = currency == "EUR"
+    ke = ((0.10 if eur else 0.105) if st == "bank" else (0.09 if eur else 0.095)) + _equity_risk_premium(currency)
+    retention = (1 - payout_eps / 100) if (payout_eps is not None and 0 < payout_eps < 100) else 0.5
+    g = (div_cagr5 / 100) if div_cagr5 is not None else roe_d * retention
+    g = max(0.0, min(g, roe_d - 0.005, ke - 0.04, 0.05))
+    bvps = None
+    if pb is not None and pb > 0 and price:
+        bvps = price / pb
+    if bvps is None:
+        eq = _first(balance, ["Stockholders Equity", "Common Stock Equity", "Total Equity Gross Minority Interest", "Patrimonio Neto"])
+        if eq and shares:
+            bvps = eq / shares
+    if bvps is None or bvps <= 0 or roe_d <= g:
+        return None
+    jpb = max(0.3, min((roe_d - g) / (ke - g), 3.0))
+    return safe2(bvps * jpb)
+
 def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_cagr5,
-                      div_cagr5, dps, sector, industry, roic, streak, currency):
+                      div_cagr5, dps, sector, industry, roic, streak, currency,
+                      roe=None, pb=None, payout_eps=None, ticker=None):
     """Devuelve (intrinsic_value, valuation_warning, growth_input_used)."""
     s = (sector or "").lower()
     i = (industry or "").lower()
@@ -675,25 +721,24 @@ def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_c
         if rev_cagr5 < 0:
             warning += " Empresa con ingresos en declive — valoración conservadora aplicada."
 
-    # ── DDM (bancos, aseguradoras) ────────────────────────────────────────
+    # ── Exceso de retorno / P/B justificado (bancos, aseguradoras) ────────
+    # Antes DDM; el FCF/DDM forzado daba MoS absurdos (Banorte +120%). Modelo
+    # robusto: Valor = BVPS × (ROE − g) / (Ke − g). Espejo de lib/valuation.js.
     if st in ("bank", "insurer"):
-        if not dps or dps <= 0:
-            return None, warning, "div_cagr5"
-        g  = max(0.0, min((div_cagr5 / 100 if div_cagr5 is not None else 0.03), 0.15))
-        ke = (0.09 if eur else 0.10) if st == "bank" else (0.08 if eur else 0.09)
-        gT = 0.02 if eur else 0.025
-        if ke <= gT:
-            return None, warning, "div_cagr5"
-        value, div = 0.0, dps
-        for k in range(1, 6):
-            div *= (1 + g); value += div / ((1 + ke) ** k)
-        value += div * (1 + gT) / (ke - gT) / ((1 + ke) ** 5)
-        return safe2(value), warning, "div_cagr5"
+        iv = _excess_return_pb(balance, shares, price, roe, pb, div_cagr5, payout_eps, st, currency)
+        return iv, warning, ("div_cagr5" if div_cagr5 is not None else "roe_retencion")
+
+    # ── Estructuras complejas (holdings/trusts/partnerships) ──────────────
+    # Su valor es NAV / suma de partes, no un DCF (Brookfield Infra +401%).
+    # Los REITs se enrutan por su propio método (no se tratan como complejos,
+    # aunque coticen por unidades -UN).
+    if st != "reit" and _detect_complex(sector, industry, ticker):
+        return None, "Estructura compleja (holding/trust/partnership) — valoración por NAV, no por DCF.", None
 
     # ── AFFO (REITs) ──────────────────────────────────────────────────────
     if st == "reit":
         ocf = _first(cashflow, ["Operating Cash Flow", "Total Cash From Operating Activities",
-                                "Cash Flow From Continuing Operating Activities"])
+                                "Cash Flow From Continuing Operating Activities", "Cash Flow Operativo"])
         if not ocf or ocf <= 0 or not shares:
             return None, warning, None
         mult = _reit_multiple(industry)
@@ -707,13 +752,13 @@ def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_c
 
     if st == "utilities":
         base = _first(cashflow, ["Operating Cash Flow", "Total Cash From Operating Activities",
-                                 "Cash Flow From Continuing Operating Activities"])
+                                 "Cash Flow From Continuing Operating Activities", "Cash Flow Operativo"])
         if not base or base <= 0:
             return None, warning, None
         cap, gT = 0.08, 0.02
         disc = 0.06 if moat == "wide" else 0.075 if moat == "narrow" else 0.09
     elif st == "energy":
-        vals = [v for v in _series(cashflow, ["Free Cash Flow"], 4) if v is not None]
+        vals = [v for v in _series(cashflow, ["Free Cash Flow", "Flujo de Caja Libre"], 4) if v is not None]
         if len(vals) < 2:
             return None, warning, None
         base = sum(vals) / len(vals)
@@ -721,9 +766,9 @@ def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_c
             return None, warning, None
         cap, gT = 0.10, 0.02
         disc = 0.10 if moat == "wide" else 0.12 if moat == "narrow" else 0.14
-    else:
-        # general / pharma — FCF base con fallback a media 4 años (Corrección 4)
-        vals   = _series(cashflow, ["Free Cash Flow"], 4)
+    elif st == "pharma":
+        # farma — FCF base con fallback a media 4 años (Corrección 4)
+        vals   = _series(cashflow, ["Free Cash Flow", "Flujo de Caja Libre"], 4)
         nonnan = [v for v in vals if v is not None]
         recent = vals[0] if vals else None
         if recent is not None and recent > 0:
@@ -733,18 +778,26 @@ def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_c
         else:
             return None, warning, None
         gT = 0.025 if eur else 0.030
-        if st == "pharma":
-            cap  = 0.15
-            disc = 0.10 if moat == "wide" else 0.12 if moat == "narrow" else 0.14
-            gw = _first(balance, ["Goodwill"]); at = _first(balance, ["Total Assets"])
-            if gw and at and at > 0 and gw / at > 0.50:
-                base *= 0.90
-            rd = _first(income, ["Research And Development"]); rv = _first(income, ["Total Revenue"])
-            if rd and rv and rv > 0 and abs(rd) / rv > 0.20:
-                disc -= 0.01
-        else:
-            cap  = 0.20
-            disc = 0.08 if moat == "wide" else 0.10 if moat == "narrow" else 0.12
+        cap  = 0.15
+        disc = 0.10 if moat == "wide" else 0.12 if moat == "narrow" else 0.14
+        gw = _first(balance, ["Goodwill", "Fondo de Comercio"]); at = _first(balance, ["Total Assets", "Activos Totales"])
+        if gw and at and at > 0 and gw / at > 0.50:
+            base *= 0.90
+        rd = _first(income, ["Research And Development", "I+D"]); rv = _first(income, ["Total Revenue", "Ingresos Totales"])
+        if rd and rv and rv > 0 and abs(rd) / rv > 0.20:
+            disc -= 0.01
+    else:
+        # general — FCF NORMALIZADO (media de los últimos años, no el último
+        # ejercicio) para no distorsionar por un capex puntual (espejo JS).
+        vals = [v for v in _series(cashflow, ["Free Cash Flow", "Flujo de Caja Libre"], 4) if v is not None]
+        if len(vals) < 2:
+            return None, warning, None
+        base = sum(vals) / len(vals)
+        if base <= 0:
+            return None, warning, None
+        gT = 0.025 if eur else 0.030
+        cap  = 0.20
+        disc = 0.08 if moat == "wide" else 0.10 if moat == "narrow" else 0.12
 
     if not shares:
         return None, warning, None
@@ -1201,7 +1254,8 @@ def fetch_ticker(sym):
             intrinsic_value, valuation_warning, growth_input_used = compute_valuation(
                 income, balance, cashflow, shares, price, rev_cagr5, fcf_cagr5,
                 div_cagr5, dps, info.get("sector"), info.get("industry"),
-                roic, div_streak, info.get("currency"))
+                roic, div_streak, info.get("currency"),
+                roe=roe, pb=pb, payout_eps=payout_eps, ticker=sym)
         except Exception:
             pass
 
