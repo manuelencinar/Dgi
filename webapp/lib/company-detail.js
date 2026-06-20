@@ -383,13 +383,17 @@ export { computeDGIScore } from '@/lib/dgi-score'
 
 // ── 6. INSIGHTS — 25+ señales green/yellow/red ────────────────────────────
 
-export function buildInsights(data, streak, cagr, dcf) {
+export function buildInsights(data, streak, cagr, dcf, livePrice = null) {
   if (!data) return []
 
+  // Precio efectivo: el precio en vivo de la cabecera si se pasa (daily_prices /
+  // cotización), si no el de fundamentales. Garantiza que el yield del insight
+  // coincida con el del header (no dos cifras distintas en la misma ficha).
+  const cp = livePrice != null ? livePrice : n(data.current_price)
   // En REITs el ROIC no es representativo (amortización inmobiliaria) → no se
   // muestran insights de ROIC; su rentabilidad se mide por caja sobre activos.
   const isReitCo = ['real estate', 'inmobiliario'].includes((data.sector || '').toLowerCase()) || (data.type || '') === 'reit'
-  const yld     = data.current_price > 0 ? (n(data.dps) ?? 0) / data.current_price : null
+  const yld     = cp > 0 ? (n(data.dps) ?? 0) / cp : null
   const payout  = data.payout_fcf != null ? n(data.payout_fcf)
                 : data.payout_eps != null ? n(data.payout_eps) : null
   const roe     = n(data.roe)
@@ -405,7 +409,7 @@ export function buildInsights(data, streak, cagr, dcf) {
   const nde     = n(data.net_debt_ebitda)
   const intCov  = n(data.interest_coverage)
   const beta    = n(data.beta)
-  const price   = n(data.current_price)
+  const price   = cp
   const high52  = n(data.week52_high)
   const low52   = n(data.week52_low)
 
@@ -578,7 +582,7 @@ export function buildInsights(data, streak, cagr, dcf) {
 // ── 7. BADGES ─────────────────────────────────────────────────────────────
 // Devuelve array de { id, label, color, bg, title } para mostrar en cabecera
 
-export function computeBadges(data, streak, cagr, moat) {
+export function computeBadges(data, streak, cagr, moat, livePrice = null) {
   const badges = []
 
   // Streak
@@ -593,7 +597,7 @@ export function computeBadges(data, streak, cagr, moat) {
 
   // Regla 10/10: yield + CAGR dividendo ≥ 10%
   if (data && cagr != null) {
-    const price = n(data.current_price)
+    const price = livePrice != null ? livePrice : n(data.current_price)
     const dpsV  = n(data.dps)
     const yld   = price > 0 && dpsV != null ? (dpsV / price) * 100 : 0
     const cagrP = cagr * 100

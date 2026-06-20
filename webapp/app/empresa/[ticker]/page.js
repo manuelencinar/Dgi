@@ -343,8 +343,8 @@ export default async function EmpresaPage({ params, searchParams }) {
   const dcf        = computeValuation(detail, moat?.width ?? 'none', type, currency)
   const projection = computeProjection(divHistory, cagr)
   const dgiScore   = computeDGIScore(detail, streak, cagr, dcf, type, paysDividend, bankMetrics, insurerMetrics, reitMetrics)
-  const insights   = buildInsights(detail, streak, cagr, dcf)
-  const badges     = computeBadges(detail, streak, cagr, moat)
+  const insights   = buildInsights(detail, streak, cagr, dcf, price)
+  const badges     = computeBadges(detail, streak, cagr, moat, price)
   const buybacks   = computeBuybacks(detail)
   const healthPanel = buildHealthPanel(detail, type, paysDividend)
 
