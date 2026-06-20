@@ -1,7 +1,7 @@
 // DGI Scoring System v2 — lógica completa sector-aware
 import { roicForScoring } from '@/lib/metrics'
 import { computeBonuses } from '@/lib/bonuses'
-import { dividendTrend } from '@/lib/helpers'
+import { dividendTrend, fmtDebtEbitda } from '@/lib/helpers'
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
 import { buildReitMetrics } from '@/lib/reit-metrics'
@@ -483,7 +483,7 @@ function buildFinancial(data, sectorType, bm = null) {
 
   if (sectorType === 'reit') {
     return [
-      mk('nd','Deuda neta / EBITDA',fmtX(v.nd),bsRev(v.nd,[[3,10],[4,8],[5,6],[6,4],[7,1]]),0.30,'En REITs la deuda es estructuralmente más alta. Hasta 6× es aceptable si los activos son de calidad.'),
+      mk('nd','Deuda neta / EBITDA',fmtDebtEbitda(v.nd),bsRev(v.nd,[[3,10],[4,8],[5,6],[6,4],[7,1]]),0.30,'En REITs la deuda es estructuralmente más alta. Hasta 6× es aceptable si los activos son de calidad.'),
       mk('ic','Cobertura intereses',fmtX(v.ic),bs(v.ic,[[1.5,3],[2,6],[3,8],[4,10]]),0.25,'En REITs la cobertura puede ser más baja. Por encima de 2× es aceptable si los ingresos son predecibles.'),
       mk('debtTrend','Tendencia deuda neta','—',v.debtTrend,0.20,'En REITs el crecimiento de deuda acompañado de crecimiento de activos puede ser positivo.'),
       mk('fcfCagr','FCF CAGR 5a (OCF)',fmtPct(v.fcfCagr),bs(v.fcfCagr,FCF_CAG),0.15,'En REITs es más relevante que el FCF por el alto capex.'),
@@ -522,7 +522,7 @@ function buildFinancial(data, sectorType, bm = null) {
     // Telecos: deuda hasta ~3× es normal y sostenible (ingresos recurrentes).
     // Lo relevante es el FCF tras el alto capex de red.
     return [
-      mk('nd','Deuda neta / EBITDA',fmtX(v.nd),bsRev(v.nd,[[2,10],[2.5,8],[3,6],[3.5,4],[4.5,2]]),0.30,'En telecos hasta 3× es normal y sostenible por la estabilidad de los ingresos; por encima de 4× hay riesgo.'),
+      mk('nd','Deuda neta / EBITDA',fmtDebtEbitda(v.nd),bsRev(v.nd,[[2,10],[2.5,8],[3,6],[3.5,4],[4.5,2]]),0.30,'En telecos hasta 3× es normal y sostenible por la estabilidad de los ingresos; por encima de 4× hay riesgo.'),
       mk('ic','Cobertura intereses',fmtX(v.ic),bs(v.ic,IC_G),0.25,'Capacidad de pagar los intereses de la deuda de red con el resultado operativo.'),
       mk('fcfCagr','FCF CAGR 5a',fmtPct(v.fcfCagr),bs(v.fcfCagr,FCF_CAG),0.25,'Evolución del FCF tras el capex de red — lo que de verdad sostiene el dividendo.'),
       mk('cod','Caja / deuda total',fmtPct(v.cod),bs(v.cod,COD_G),0.20,'Colchón de liquidez frente a la deuda de red.'),
@@ -532,7 +532,7 @@ function buildFinancial(data, sectorType, bm = null) {
   if (sectorType === 'utilities') {
     const cfoDivCov = exCfoDivCoverage(data)
     return [
-      mk('nd','Deuda neta / EBITDA',fmtX(v.nd),bsRev(v.nd,[[4,10],[5,8],[6,6],[7,4],[8,2]]),0.30,'En utilities hasta 6-7× es normal y sostenible: ingresos regulados a 20-30 años. Penalizar deuda alta aquí sería un error.'),
+      mk('nd','Deuda neta / EBITDA',fmtDebtEbitda(v.nd),bsRev(v.nd,[[4,10],[5,8],[6,6],[7,4],[8,2]]),0.30,'En utilities hasta 6-7× es normal y sostenible: ingresos regulados a 20-30 años. Penalizar deuda alta aquí sería un error.'),
       mk('ic','Cobertura intereses',fmtX(v.ic),bs(v.ic,[[1.5,3],[2,5],[2.8,7],[4,9],[6,10]]),0.25,'En utilities una cobertura de 2.5× es aceptable dado que los ingresos son muy predecibles. Es la métrica clave de solidez, no el nivel de deuda.'),
       mk('cfoDivCov','CFO / dividendo pagado',cfoDivCov != null ? fmtX(cfoDivCov) : '—',
         cfoDivCov == null ? null : cfoDivCov < 1 ? 0 : cfoDivCov < 1.2 ? 3 : cfoDivCov < 1.6 ? 6 : cfoDivCov < 2 ? 8 : 10,
@@ -544,7 +544,7 @@ function buildFinancial(data, sectorType, bm = null) {
 
   if (sectorType === 'energy') {
     return [
-      mk('nd','Deuda neta / EBITDA (ciclo)',fmtX(v.nd),bsRev(v.nd,[[0.8,10],[1.3,7],[2,5],[2.8,2]]),0.30,'En energía la ciclicidad exige un balance conservador. Por encima de 2.5× hay riesgo en el punto bajo del ciclo.'),
+      mk('nd','Deuda neta / EBITDA (ciclo)',fmtDebtEbitda(v.nd),bsRev(v.nd,[[0.8,10],[1.3,7],[2,5],[2.8,2]]),0.30,'En energía la ciclicidad exige un balance conservador. Por encima de 2.5× hay riesgo en el punto bajo del ciclo.'),
       mk('ic','Cobertura intereses (ciclo)',fmtX(v.ic),bs(v.ic,[[3,3],[5,6],[8,8],[12,10]]),0.25,'En energía debe ser alta en el promedio del ciclo para garantizar el dividendo en años de precios bajos.'),
       mk('cr','Ratio corriente',fmtX(v.cr),bs(v.cr,CR_G),0.20,'En energía es importante mantener liquidez suficiente para sobrevivir períodos de precios bajos.'),
       mk('cod','Caja / deuda total',fmtPct(v.cod),bs(v.cod,COD_G),0.15,'En energía una posición de caja sólida permite mantener dividendo e inversión durante el ciclo bajo.'),
@@ -559,7 +559,7 @@ function buildFinancial(data, sectorType, bm = null) {
     : [[10,10],[25,7],[40,5],[55,2]]
 
   return [
-    mk('nd','Deuda neta / EBITDA',fmtX(v.nd),bsRev(v.nd,[[0.5,10],[1.5,8],[2.5,6],[3.5,4],[4.5,1]]),0.25,'Por debajo de 1.5× muy conservadora. Por encima de 4× la deuda es un riesgo relevante para el dividendo.'),
+    mk('nd','Deuda neta / EBITDA',fmtDebtEbitda(v.nd),bsRev(v.nd,[[0.5,10],[1.5,8],[2.5,6],[3.5,4],[4.5,1]]),0.25,'Por debajo de 1.5× muy conservadora. Por encima de 4× la deuda es un riesgo relevante para el dividendo.'),
     mk('ic','Cobertura intereses',fmtX(v.ic),bs(v.ic,IC_G),0.20,'Por debajo de 3× poco margen ante una caída del negocio. Por encima de 10× no es un riesgo relevante.'),
     mk('cr','Ratio corriente',fmtX(v.cr),bs(v.cr,CR_G),0.15,'Capacidad de pagar obligaciones a corto plazo. Por encima de 1.5× es cómoda.'),
     mk('debtTrend','Tendencia deuda neta','—',v.debtTrend,0.15,'Una empresa que reduce deuda consistentemente está en mejor posición financiera.'),

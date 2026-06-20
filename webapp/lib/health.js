@@ -4,6 +4,7 @@
 import { detectSectorType } from '@/lib/dgi-score'
 import { resolveRoic } from '@/lib/screener'
 import { computeCDR } from '@/lib/capital-discipline'
+import { debtEbitdaIsArtifact } from '@/lib/helpers'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -138,6 +139,11 @@ export function buildSemaforo(detail, sectorKey, paysDividend) {
   if (isBankish) {
     const c = classify(roa, 0.5, 1, true)
     rows.push(row('deuda', 'Solidez (ROA)', c, 'solidez', fmtVal(roa, '%')))
+  } else if (debtEbitdaIsArtifact(nde)) {
+    // Múltiplo disparado (>30x) = EBITDA cercano a cero, no apalancamiento real:
+    // se marca como riesgo elevado con nota, sin mostrar el número crudo.
+    rows.push(row('deuda', 'Deuda', 'red', 'deuda', 'EBITDA≈0',
+      'El múltiplo deuda/EBITDA se dispara porque el EBITDA es casi nulo (no es apalancamiento de 200×). Ratio no representativo; vigilar la capacidad de cubrir la deuda.'))
   } else {
     const [t1, t2] = DEBT_T[sectorKey] || DEBT_T.general
     const c = classify(nde, t1, t2, false)
@@ -376,17 +382,20 @@ export function buildHealthCards(detail, sectorKey) {
     const value = cardValue(id, detail)
     const color = classify(value, spec.t1, spec.t2, spec.higher)
     const beats = value == null ? null : (spec.higher ? value >= spec.median : value <= spec.median)
+    // Deuda/EBITDA disparada (>30x) = EBITDA cercano a cero, no apalancamiento real:
+    // se muestra "EBITDA≈0" en rojo (no el número crudo tipo 214×) con nota.
+    const artifact = id === 'net_debt_ebitda' && debtEbitdaIsArtifact(value)
     return {
       id,
       label: spec.label,
       unit: spec.unit,
       hasData: value != null,
-      valueStr: fmtVal(value, spec.unit),
-      color: COL[color],
+      valueStr: artifact ? 'EBITDA≈0' : fmtVal(value, spec.unit),
+      color: artifact ? COL.red : COL[color],
       bar: buildBar(spec, value),
       medianStr: fmtVal(spec.median, spec.unit),
-      beats,
-      tooltip: spec.tooltip,
+      beats: artifact ? false : beats,
+      tooltip: artifact ? 'El múltiplo deuda/EBITDA se dispara porque el EBITDA es casi nulo — no es apalancamiento real de 200×, sino un ratio no representativo. Vigilar la capacidad de cubrir la deuda.' : spec.tooltip,
     }
   }).filter(Boolean)
 }

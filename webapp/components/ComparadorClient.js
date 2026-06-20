@@ -3,7 +3,7 @@ import { useState, useMemo, useRef, useEffect, Fragment } from 'react'
 import Link from 'next/link'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts'
 import { project10y, paybackYear, getWHT, RADAR_METRICS } from '@/lib/screener'
-import { getCountry, streakBadge } from '@/lib/helpers'
+import { getCountry, streakBadge, debtEbitdaIsArtifact } from '@/lib/helpers'
 
 const CC = ['#34d399', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6']
 
@@ -133,7 +133,7 @@ const TABLE_GROUPS = [
     ['FCF CAGR 5a', co => co.fcfCagr, 'high', co => pct(co.fcfCagr)],
   ]},
   { group: 'Solidez financiera', rows: [
-    ['Deuda neta/EBITDA', co => co.debt, 'low', co => x(co.debt)],
+    ['Deuda neta/EBITDA', co => co.debt, 'low', co => debtEbitdaIsArtifact(co.debt) ? 'EBITDA≈0' : x(co.debt)],
     ['Cobertura intereses', co => co.icov, 'high', co => x(co.icov)],
     ['Ratio corriente', co => co.currentRatio, 'high', co => x(co.currentRatio)],
   ]},

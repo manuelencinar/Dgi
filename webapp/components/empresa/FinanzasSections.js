@@ -6,6 +6,7 @@ import {
   XAxis, YAxis, Tooltip, Legend, Cell, CartesianGrid, ReferenceLine,
 } from 'recharts'
 import { computeCDR } from '@/lib/capital-discipline'
+import { fmtDebtEbitda, debtEbitdaIsArtifact } from '@/lib/helpers'
 
 const C = {
   blue: '#60a5fa', green: '#34d399', indigo: '#818cf8', red: '#f87171',
@@ -172,7 +173,7 @@ export function FinanzasKpis({ income, cashflow, balance, divHistory, scalars = 
       { label: 'Beneficio neto', value: fmtMoney(ni), change: ni != null && niP != null ? { v: pctChange(ni, niP) } : null, good: ni >= niP, secondary: rev && ni != null ? `Margen ${(ni / rev * 100).toFixed(1)}%` : '—' },
       { label: 'EBITDA', value: fmtMoney(eb), change: eb != null && ebP != null ? { v: pctChange(eb, ebP) } : null, good: eb >= ebP, secondary: rev && eb != null ? `Margen ${(eb / rev * 100).toFixed(1)}%` : '—' },
       { label: 'FCF', value: fmtMoney(fcf), change: fcf != null && fcfP != null ? { v: pctChange(fcf, fcfP) } : null, good: fcf >= fcfP, secondary: fcf != null && ni ? `Conv. ${(fcf / ni * 100).toFixed(0)}%` : '—' },
-      { label: 'Deuda neta', value: fmtMoney(nd), change: nd != null && ndP != null ? { v: pctChange(nd, ndP) } : null, good: nd <= ndP, secondary: scalars.net_debt_ebitda != null ? `${Number(scalars.net_debt_ebitda).toFixed(1)}× EBITDA` : (nd != null && eb ? `${(nd / eb).toFixed(1)}× EBITDA` : '—') },
+      { label: 'Deuda neta', value: fmtMoney(nd), change: nd != null && ndP != null ? { v: pctChange(nd, ndP) } : null, good: nd <= ndP, secondary: (() => { const x = scalars.net_debt_ebitda != null ? Number(scalars.net_debt_ebitda) : (nd != null && eb ? nd / eb : null); return x == null ? '—' : debtEbitdaIsArtifact(x) ? 'EBITDA≈0' : `${x.toFixed(1)}× EBITDA` })() },
       { label: 'ROE', value: roe != null ? roe.toFixed(1) + '%' : '—', change: roe != null && roeP != null ? { v: roe - roeP, pp: true } : null, good: roe >= roeP, secondary: lastN(roeMap, 3) != null ? `Media 3a ${lastN(roeMap, 3).toFixed(1)}%` : '—' },
       { label: 'ROIC', value: roic != null ? roic.toFixed(1) + '%' : '—', change: null, good: true, secondary: 'roic_display' },
       { label: 'EPS diluido', value: eps != null ? fmtNum(eps) : '—', change: eps != null && epsP != null ? { v: pctChange(eps, epsP) } : null, good: eps >= epsP, secondary: `CAGR 5a ${fmtPct(cagr(f.epsDiluted))}` },
@@ -422,7 +423,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
         </div>
         <div className="fin-3m" style={{ marginTop: 14 }}>
           <Mini label="Deuda neta" value={fmtMoney(ndNow)} />
-          <Mini label="Deuda neta / EBITDA" value={scalars.net_debt_ebitda != null ? Number(scalars.net_debt_ebitda).toFixed(1) + '×' : '—'} />
+          <Mini label="Deuda neta / EBITDA" value={fmtDebtEbitda(scalars.net_debt_ebitda)} />
           <Mini label="Años para pagarla (FCF)" value={yearsToPay != null ? yearsToPay.toFixed(1) : (ndNow != null && ndNow <= 0 ? 'Caja neta' : '—')} />
         </div>
       </Section>

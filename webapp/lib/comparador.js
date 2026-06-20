@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { DICT } from '@/data/dict'
-import { getContinent } from '@/lib/helpers'
+import { getContinent, debtEbitdaIsArtifact } from '@/lib/helpers'
 import {
   resolveRoic, yieldPct, marginSafety, computeScore, calcDivQuality,
   rule1010, scoreRadar, RADAR_METRICS, netYield, getWHT, cleanGrossMargin,
@@ -38,7 +38,8 @@ function buildInsights(f) {
   if (cagr != null && cagr > 8) out.push({ v: `Dividendo crece al ${cagr.toFixed(1)}%/año`, pos: true })
   if (gm != null && gm > 45) out.push({ v: `Márgenes brutos sólidos (${gm.toFixed(0)}%)`, pos: true })
   if (mos != null && mos > 15 && !mosUnreliable(f)) out.push({ v: `Cotiza un ${mos.toFixed(0)}% por debajo de su valor`, pos: true })
-  if (debt != null && debt > 4) out.push({ v: `Deuda elevada (${debt.toFixed(1)}x EBITDA)`, pos: false })
+  if (debtEbitdaIsArtifact(debt)) out.push({ v: `EBITDA cercano a cero — ratio deuda/EBITDA no representativo`, pos: false })
+  else if (debt != null && debt > 4) out.push({ v: `Deuda elevada (${debt.toFixed(1)}x EBITDA)`, pos: false })
   if (rev != null && rev < 0) out.push({ v: `Ingresos en declive (${rev.toFixed(1)}%)`, pos: false })
   return out.slice(0, 3)
 }

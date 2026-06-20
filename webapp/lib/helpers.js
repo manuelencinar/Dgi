@@ -1,5 +1,26 @@
 import { SECTORS, COUNTRIES, WHT_DEFAULTS } from './sectors'
 
+// Deuda/EBITDA: por encima de ~30x el múltiplo NO refleja apalancamiento real
+// sino un EBITDA cercano a cero (artefacto). P.ej. Lendlease 214x, Allied 63x:
+// no están endeudados 200 veces, su EBITDA es casi nulo. No mostrar el número crudo.
+export const DEBT_EBITDA_ARTIFACT = 30
+export function debtEbitdaIsArtifact(v) {
+  const x = v != null && !isNaN(v) ? parseFloat(v) : null
+  return x != null && Math.abs(x) > DEBT_EBITDA_ARTIFACT
+}
+// Valor saneado para SCORING/cálculos: null si es artefacto (no puntúa con basura).
+export function saneDebtEbitda(v) {
+  const x = v != null && !isNaN(v) ? parseFloat(v) : null
+  return (x != null && Math.abs(x) <= DEBT_EBITDA_ARTIFACT) ? x : null
+}
+// Etiqueta para MOSTRAR: ">30× (EBITDA≈0)" si es artefacto, si no "1.5×".
+export function fmtDebtEbitda(v) {
+  const x = v != null && !isNaN(v) ? parseFloat(v) : null
+  if (x == null) return '—'
+  if (Math.abs(x) > DEBT_EBITDA_ARTIFACT) return (x < 0 ? '<−' : '>') + DEBT_EBITDA_ARTIFACT + '× (EBITDA≈0)'
+  return x.toFixed(1) + '×'
+}
+
 // Fuente única bandera + nombre (español) por código de país ISO-2.
 export const COUNTRY_INFO = {
   US:{flag:"🇺🇸",name:"EE.UU."}, CA:{flag:"🇨🇦",name:"Canadá"},

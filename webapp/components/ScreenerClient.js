@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
-import { getCountry, streakBadge, dividendTierInfo } from '@/lib/helpers'
+import { getCountry, streakBadge, dividendTierInfo, debtEbitdaIsArtifact } from '@/lib/helpers'
 import { project10y, paybackYear, getWHT, rentaScore, netYieldOf, buyZoneReason } from '@/lib/screener'
 import WatchlistEyeButton from '@/components/watchlist/WatchlistEyeButton'
 import PriceAlertButton from '@/components/watchlist/PriceAlertButton'
@@ -187,7 +187,7 @@ function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect
         <DM label="CAGR" val={co.cagr == null ? '—' : co.cagrWarn ? 'atíp.' : co.cagr.toFixed(0) + '%'} color={co.cagrWarn ? '#fb923c' : undefined} title={co.cagrWarn ? 'CAGR no fiable (>50%) — neutralizado en el Score' : undefined} />
         <DM label="ROIC" val={co.roicNA ? 'N/A' : co.roic == null ? '—' : (co.roicWarn ? '⚠' : '') + co.roic.toFixed(0) + '%'} color={co.roicWarn ? '#fb923c' : undefined} title={co.roicNA ? 'No aplica en banca/seguros/REITs — se usa ROE' : co.roicWarn ? 'ROIC muy elevado — comparar con peers' : undefined} />
         <DM label="Payout" val={co.payout == null ? '—' : co.payout.toFixed(0) + '%'} />
-        <DM label="Deuda" val={co.debt == null ? '—' : co.debt.toFixed(1) + 'x'} title="Deuda neta / EBITDA" />
+        <DM label="Deuda" val={co.debt == null ? '—' : debtEbitdaIsArtifact(co.debt) ? 'EBITDA≈0' : co.debt.toFixed(1) + 'x'} title={debtEbitdaIsArtifact(co.debt) ? 'EBITDA cercano a cero — el ratio deuda/EBITDA no es representativo' : 'Deuda neta / EBITDA'} />
         <DM label="MoS" val={co.mosUnreliable ? 'n/f' : co.mos == null ? '—' : (co.mos >= 0 ? '+' : '') + co.mos.toFixed(0) + '%'} color={!co.mosUnreliable && co.mos != null ? (co.mos >= 0 ? '#34d399' : '#f87171') : undefined} title={co.mosUnreliable ? 'Valor intrínseco no fiable para este tipo de activo' : 'Margen de seguridad sobre el valor intrínseco'} />
 
         <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
@@ -229,7 +229,7 @@ function Comparator({ companies, destWHT, onClose }) {
     ['ROIC', co => co.roic != null ? co.roic.toFixed(1) + '%' : '—'],
     ['Margen op.', co => co.opm != null ? co.opm.toFixed(1) + '%' : '—'],
     ['Payout', co => co.payout != null ? co.payout.toFixed(0) + '%' : '—'],
-    ['Deuda/EBITDA', co => co.debt != null ? co.debt.toFixed(1) + 'x' : '—'],
+    ['Deuda/EBITDA', co => co.debt == null ? '—' : debtEbitdaIsArtifact(co.debt) ? 'EBITDA≈0' : co.debt.toFixed(1) + 'x'],
     ['PER', co => co.pe != null ? co.pe.toFixed(1) + 'x' : '—'],
     ['EV/EBITDA', co => co.ev != null ? co.ev.toFixed(1) + 'x' : '—'],
     ['Margen seguridad', co => co.mosUnreliable ? 'no fiable' : co.mos != null ? (co.mos >= 0 ? '+' : '') + co.mos.toFixed(0) + '%' : '—'],

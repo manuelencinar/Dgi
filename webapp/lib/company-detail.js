@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { roicForScoring } from '@/lib/metrics'
 import { computeCDR } from '@/lib/capital-discipline'
-import { dividendTrend, dividendTrendBadges } from '@/lib/helpers'
+import { dividendTrend, dividendTrendBadges, debtEbitdaIsArtifact } from '@/lib/helpers'
 
 function sb() {
   return createClient(
@@ -480,7 +480,8 @@ export function buildInsights(data, streak, cagr, dcf, livePrice = null) {
   if (nd != null && nd < 0)     add('valoracion', 'positive', `Tiene más efectivo que deuda neta — posición financiera de fortaleza.`)
 
   if (nde != null) {
-    if      (nde < 0)    add('valoracion', 'positive', `Caja neta positiva (deuda neta ${nde.toFixed(1)}× EBITDA) — balance muy sólido.`)
+    if      (debtEbitdaIsArtifact(nde)) add('valoracion', 'negative', `EBITDA cercano a cero — el ratio deuda/EBITDA se dispara (no es apalancamiento real, pero el negocio apenas genera beneficio operativo para cubrir su deuda).`)
+    else if (nde < 0)    add('valoracion', 'positive', `Caja neta positiva (deuda neta ${nde.toFixed(1)}× EBITDA) — balance muy sólido.`)
     else if (nde < 1)    add('valoracion', 'positive', `Deuda neta muy controlada (${nde.toFixed(1)}× EBITDA).`)
     else if (nde < 2.5)  add('valoracion', 'neutral',  `Deuda moderada (${nde.toFixed(1)}× EBITDA).`)
     else if (nde > 4)    add('valoracion', 'negative', `Deuda elevada (${nde.toFixed(1)}× EBITDA) — riesgo financiero relevante.`)
