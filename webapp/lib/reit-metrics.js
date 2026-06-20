@@ -1,9 +1,14 @@
 // Métricas de REITs desde los estados de Yahoo. En REITs la amortización de
 // inmuebles destruye el beneficio contable → el payout sobre EPS engaña
-// (Realty Income ~280% EPS pero ~75% AFFO). Se usa FFO/AFFO.
-//   FFO  = Beneficio neto + Amortización
+// (Realty Income ~280% EPS pero ~75% AFFO). Se usa FFO/AFFO (definición NAREIT):
+//   FFO  = Beneficio neto + Amortización inmobiliaria + deterioros (impairments)
 //   NOI  ≈ Resultado operativo + Amortización (proxy, ≈EBITDA)
 //   AFFO = FFO − capex de mantenimiento (= NOI × % según sub-tipo, manual)
+// Los deterioros de activos (impairments) son cargos NO monetarios que hunden el
+// beneficio GAAP pero deben sumarse de vuelta al FFO. Omitirlos lo infravalora:
+// Realty Income 2025 sin ajustar = $3,93/acc; con los $471M de impairment = $4,45.
+// Las acciones son la media DILUIDA PONDERADA (no las de fin de año), que es la
+// que exige la norma contable y la que la empresa usa en su FFO reportado.
 
 // % de capex de mantenimiento sobre NOI por sub-tipo (punto medio de los rangos).
 export const REIT_SUBTYPES = {
@@ -65,9 +70,12 @@ export function buildReitMetrics(data, manualRow = null) {
   if (!Object.keys(da).length) da = readRow(is, 'Depreciation And Amortization In Income Statement', 'Reconciled Depreciation', 'Depreciation Amortization Depletion Income Statement')
   if (!Object.keys(da).length) return null   // sin amortización → no es un REIT clásico
   const oi = readRow(is, 'Operating Income', 'EBIT', 'Total Operating Income As Reported')
+  // Deterioros de activos (cargo no monetario) → se suman de vuelta al FFO (NAREIT).
+  let imp = readRow(cf, 'Asset Impairment Charge', 'Impairment Of Capital Assets')
+  if (!Object.keys(imp).length) imp = readRow(is, 'Impairment Of Capital Assets')
 
   const ffoS = {}, noiS = {}
-  for (const y of Object.keys(ni)) if (da[y] != null) ffoS[y] = ni[y] + da[y]
+  for (const y of Object.keys(ni)) if (da[y] != null) ffoS[y] = ni[y] + da[y] + Math.abs(imp[y] || 0)
   for (const y of Object.keys(oi)) if (da[y] != null) noiS[y] = oi[y] + da[y]
 
   const subtype = manualRow?.subtype && REIT_SUBTYPES[manualRow.subtype] ? manualRow.subtype : defaultReitSubtype(data?.industry)
