@@ -1256,30 +1256,27 @@ function ReitMetricsCard({ m, currency }) {
 function EnergyBreakevenCard({ be }) {
   if (!be) return null
   const fx = v => v == null ? '–' : '$' + v.toFixed(0)
+  const cb = be.cashflow, pb = be.production
+  const beColor = v => v > 80 ? '#f87171' : v > 65 ? '#fbbf24' : '#34d399'
   return (
     <Card>
       <SectionTitle>Sensibilidad al crudo</SectionTitle>
-      {be.reliable ? (
+      {(cb?.reliable || pb?.reliable) ? (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
-              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Breakeven (WTI)</p>
-              <p style={{ fontSize: 18, fontWeight: 800, color: be.breakeven > 80 ? '#f87171' : be.breakeven > 65 ? '#fbbf24' : '#34d399' }}>{fx(be.breakeven)}</p>
-              <p style={{ fontSize: 9.5, color: '#4a5270', marginTop: 1 }}>gana dinero por encima</p>
+              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Breakeven capex + dividendo</p>
+              <p style={{ fontSize: 19, fontWeight: 800, color: cb?.reliable ? beColor(cb.breakeven) : '#4a5270' }}>{cb?.reliable ? fx(cb.breakeven) : '–'}</p>
+              <p style={{ fontSize: 9.5, color: '#4a5270', marginTop: 1 }}>WTI · cubre inversión y dividendo</p>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
-              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Sensibilidad</p>
-              <p style={{ fontSize: 18, fontWeight: 800, color: '#c8d0e0' }}>{be.slope >= 0 ? '+' : ''}{be.slope.toFixed(2)}</p>
-              <p style={{ fontSize: 9.5, color: '#4a5270', marginTop: 1 }}>pp de margen por $/barril</p>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
-              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Fiabilidad (R²)</p>
-              <p style={{ fontSize: 18, fontWeight: 800, color: be.r2 >= 0.85 ? '#34d399' : '#86efac' }}>{(be.r2 * 100).toFixed(0)}%</p>
-              <p style={{ fontSize: 9.5, color: '#4a5270', marginTop: 1 }}>{be.points} años</p>
+              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Breakeven de producción</p>
+              <p style={{ fontSize: 19, fontWeight: 800, color: pb?.reliable ? beColor(pb.breakeven) : '#4a5270' }}>{pb?.reliable ? fx(pb.breakeven) : '–'}</p>
+              <p style={{ fontSize: 9.5, color: '#4a5270', marginTop: 1 }}>WTI · deja de ganar dinero</p>
             </div>
           </div>
-          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10, lineHeight: 1.5 }}>
-            Estimado por regresión del margen neto frente al precio medio anual del WTI. La empresa es rentable con el crudo por encima de ~{fx(be.breakeven)}; por debajo, el margen se vuelve muy bajo o negativo y el dividendo queda en riesgo.
+          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10, lineHeight: 1.55 }}>
+            Estimado por regresión del margen y del flujo de caja frente al precio medio anual del WTI (fiabilidad R² {cb?.reliable ? (cb.r2 * 100).toFixed(0) : pb ? (pb.r2 * 100).toFixed(0) : '—'}%, {(cb || pb).points} años; Brent ≈ WTI + 4-5$). El breakeven de <b style={{ color: '#4a5270' }}>capex + dividendo</b> es el que importa para la sostenibilidad del dividendo: por debajo de ese crudo, la empresa no cubre su inversión y el dividendo con la caja y tiene que endeudarse. Usa el capex total (incluye crecimiento), por eso es más conservador que el breakeven oficial de la compañía.
           </p>
         </>
       ) : (

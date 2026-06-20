@@ -636,9 +636,10 @@ function buildPenalties(data, sectorType) {
   // cual gana dinero. Si no, se cae al payout sobre beneficio de ciclo medio.
   if (sectorType === 'energy') {
     const be = computeOilBreakeven(data)
-    if (be?.reliable) {
-      if (be.breakeven > 90) penalties.push({ reason: `Rentable solo con el crudo muy alto (~$${be.breakeven.toFixed(0)}/barril) — dividendo en riesgo en el ciclo bajo`, amount: 1.0 })
-      else if (be.breakeven > 72) penalties.push({ reason: `Necesita un crudo elevado (~$${be.breakeven.toFixed(0)}/barril) para ser rentable`, amount: 0.5 })
+    const cb = be?.cashflow
+    if (cb?.reliable) {
+      if (cb.breakeven > 85) penalties.push({ reason: `No cubre capex + dividendo salvo con el crudo muy alto (~$${cb.breakeven.toFixed(0)}/barril WTI) — dividendo en riesgo en el ciclo bajo`, amount: 1.0 })
+      else if (cb.breakeven > 70) penalties.push({ reason: `Cubrir capex + dividendo exige un crudo elevado (~$${cb.breakeven.toFixed(0)}/barril WTI)`, amount: 0.5 })
     } else {
       const nh = data.net_income_history
       const base = n(data.payout_eps)
