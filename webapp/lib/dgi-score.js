@@ -634,7 +634,7 @@ function buildValuation(data, dcf, sectorType, secM = null) {
 
 // ── Penalties ─────────────────────────────────────────────────────────────
 
-function buildPenalties(data, sectorType) {
+function buildPenalties(data, sectorType, paysDividend = true) {
   const penalties = []
   const pfcf = n(data.payout_fcf)
   const nd   = n(data.net_debt_ebitda) ?? n(data.debt_ebitda)
@@ -642,15 +642,21 @@ function buildPenalties(data, sectorType) {
 
   if (data._acqDetected) penalties.push({ reason: 'Crecimiento basado principalmente en adquisiciones', amount: 0.5 })
 
-  if (pfcf != null && pfcf > 110) penalties.push({ reason: 'Payout insostenible sobre el flujo de caja libre', amount: 1.0 })
+  // Las penalizaciones del dividendo (payout insostenible, recorte/congelación) solo
+  // aplican si la empresa REPARTE dividendo. Un no-pagador (p.ej. Adobe) ya puntúa 0
+  // en la categoría Dividendo; penalizarlo además por un recorte de hace 20 años sería
+  // doble castigo y, sobre todo, falso (su div_history tiene repartos antiguos).
+  if (paysDividend) {
+    if (pfcf != null && pfcf > 110) penalties.push({ reason: 'Payout insostenible sobre el flujo de caja libre', amount: 1.0 })
 
-  // Fiabilidad del dividendo para DGI: caída/congelación reciente o historial de
-  // recortes. Escalado y con tope (no acumula): recortar/caer pesa más que congelar.
-  const tr = dividendTrend(data.divHistory)
-  if (tr) {
-    if (tr.down > 0)         penalties.push({ reason: `Dividendo en caída — ${tr.down} ${tr.down === 1 ? 'año' : 'años'} consecutivos recortándolo`, amount: 1.0 })
-    else if (tr.cuts10 >= 3) penalties.push({ reason: `Historial de recortes — ${tr.cuts10} recortes del dividendo en 10 años`, amount: 1.0 })
-    else if (tr.noRaise >= 2) penalties.push({ reason: `Dividendo congelado ${tr.noRaise} años — sin crecimiento`, amount: 0.4 })
+    // Fiabilidad del dividendo para DGI: caída/congelación reciente o historial de
+    // recortes. Escalado y con tope (no acumula): recortar/caer pesa más que congelar.
+    const tr = dividendTrend(data.divHistory)
+    if (tr) {
+      if (tr.down > 0)         penalties.push({ reason: `Dividendo en caída — ${tr.down} ${tr.down === 1 ? 'año' : 'años'} consecutivos recortándolo`, amount: 1.0 })
+      else if (tr.cuts10 >= 3) penalties.push({ reason: `Historial de recortes — ${tr.cuts10} recortes del dividendo en 10 años`, amount: 1.0 })
+      else if (tr.noRaise >= 2) penalties.push({ reason: `Dividendo congelado ${tr.noRaise} años — sin crecimiento`, amount: 0.4 })
+    }
   }
 
   const debtLimits = { reit: 7, utilities: 7.5, energy: 2.8, telecom: 4, bank: null, insurer: null, general: 4.5 }
@@ -778,7 +784,7 @@ export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend, ban
   if (vS != null) { totalS += vS * w.valuation; totalW += w.valuation }
   const prepenalty = totalW > 0 ? Math.round(totalS / totalW * 10) / 10 : null
 
-  const penalties    = buildPenalties({ ...data, divHistory: data.divHistory || [] }, sectorType)
+  const penalties    = buildPenalties({ ...data, divHistory: data.divHistory || [] }, sectorType, !noDividend)
   const penaltyTotal = penalties.reduce((s, p) => s + p.amount, 0)
   // Bonificaciones por tendencia positiva (adicionales, cap +1.0). No tocan los
   // umbrales ni las penalizaciones: se suman a la nota final tras penalizaciones.

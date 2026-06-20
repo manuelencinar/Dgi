@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { roicForScoring } from '@/lib/metrics'
 import { computeCDR } from '@/lib/capital-discipline'
 import { dividendTrend, dividendTrendBadges, debtEbitdaIsArtifact } from '@/lib/helpers'
+import { resolveRoic } from '@/lib/screener'
 
 function sb() {
   return createClient(
@@ -393,6 +394,10 @@ export function buildInsights(data, streak, cagr, dcf, livePrice = null) {
   // En REITs el ROIC no es representativo (amortización inmobiliaria) → no se
   // muestran insights de ROIC; su rentabilidad se mide por caja sobre activos.
   const isReitCo = ['real estate', 'inmobiliario'].includes((data.sector || '').toLowerCase()) || (data.type || '') === 'reit'
+  // Empresa que NO reparte dividendo: no se muestran insights de yield ni de
+  // recorte/congelación (su div_history puede tener repartos antiguos —Adobe pagó
+  // en los 90— que no reflejan la situación actual).
+  const noDiv   = data.pays_dividend === false || !(n(data.dps) > 0)
   const yld     = cp > 0 ? (n(data.dps) ?? 0) / cp : null
   const payout  = data.payout_fcf != null ? n(data.payout_fcf)
                 : data.payout_eps != null ? n(data.payout_eps) : null
@@ -400,7 +405,7 @@ export function buildInsights(data, streak, cagr, dcf, livePrice = null) {
   const opM     = n(data.operating_margin)
   const grM     = n(data.gross_margin)
   const netM    = n(data.net_margin)
-  const roic    = n(data.roic)
+  const roic    = resolveRoic(data)   // roic_display ?? min(reported,tangible) — mismo valor que el gauge (no el legacy data.roic, inflado)
   const rg      = data.revenue_growth_yoy  != null ? n(data.revenue_growth_yoy)  : null
   const eg      = data.earnings_growth_yoy != null ? n(data.earnings_growth_yoy) : null
   const fcfPos  = data.fcf_per_share != null ? data.fcf_per_share > 0 : null
@@ -467,7 +472,8 @@ export function buildInsights(data, streak, cagr, dcf, livePrice = null) {
   else if (streak >= 5)  add('dividendo', 'neutral',  `${streak} años subiendo el dividendo — historial en construcción.`)
 
   // Tendencia negativa: caída / congelación reciente y recortes en 10 años.
-  if (streak === 0) {
+  // Solo si reparte dividendo (un no-pagador no "recorta": ya se dijo que no paga).
+  if (streak === 0 && !noDiv) {
     const tr = dividendTrend(data.divHistory)
     if (tr) {
       if (tr.down > 0)        add('dividendo', 'negative', `Lleva ${tr.down} ${tr.down === 1 ? 'año' : 'años'} consecutivos recortando el dividendo — tendencia contraria al DGI.`)
@@ -591,9 +597,14 @@ export function computeBadges(data, streak, cagr, moat, livePrice = null) {
   else if (streak >= 25) badges.push({ id: 'streak25', label: '🏆 Aristócrata', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)', title: `${streak} años consecutivos subiendo el dividendo` })
   else if (streak >= 10) badges.push({ id: 'streak10', label: '⭐ Aspirante',   color: '#60a5fa', bg: 'rgba(96,165,250,0.12)',  title: `${streak} años consecutivos subiendo el dividendo` })
 
-  // Tendencia negativa del dividendo (caída / congelación / historial de recortes)
-  for (const b of dividendTrendBadges(dividendTrend(data?.divHistory))) {
-    badges.push({ id: `trend-${b.kind}`, label: `${b.emoji} ${b.label}`, color: b.color, bg: `${b.color}1a`, title: b.title })
+  // Tendencia negativa del dividendo (caída / congelación / historial de recortes).
+  // Solo si la empresa reparte dividendo (un no-pagador no tiene "recorte" vigente —
+  // su div_history puede tener repartos antiguos, p.ej. Adobe en los 90).
+  const paysDiv = data?.pays_dividend !== false && n(data?.dps) > 0
+  if (paysDiv) {
+    for (const b of dividendTrendBadges(dividendTrend(data?.divHistory))) {
+      badges.push({ id: `trend-${b.kind}`, label: `${b.emoji} ${b.label}`, color: b.color, bg: `${b.color}1a`, title: b.title })
+    }
   }
 
   // Regla 10/10: yield + CAGR dividendo ≥ 10%
