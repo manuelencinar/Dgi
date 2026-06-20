@@ -204,8 +204,16 @@ function exDebtTrendScore(data) {
   if (!td || !cash) return null
   const nd  = td.map((v,i) => (v != null && cash[i] != null) ? v - cash[i] : null)
   const cur = nd[0], old = nd[Math.min(3, nd.length-1)]
-  if (cur == null || old == null || old === 0) return null
-  const pct = (cur - old) / Math.abs(old) * 100
+  if (cur == null) return null
+  // Caja neta o deuda neta insignificante → no hay apalancamiento del que preocuparse:
+  // la "tendencia" no aplica y debe puntuar alto (p.ej. Adobe, deuda neta ~0, 0,01×EBITDA).
+  // Además el % de cambio sobre una base negativa/casi cero no tiene sentido.
+  const nde = n(data.net_debt_ebitda)
+  if (cur <= 0 || (nde != null && nde <= 1)) return 10
+  // Pasó de caja neta a deuda neta real (>1×) → deterioro; el nivel ya lo mide la
+  // métrica de deuda/EBITDA, aquí marcamos la dirección.
+  if (old == null || old <= 0) return 4
+  const pct = (cur - old) / old * 100
   if (pct < -20) return 10
   if (pct < 0)   return 7
   if (pct <= 10) return 5
