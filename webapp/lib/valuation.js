@@ -130,13 +130,14 @@ function growthAndPenalties(data, { discountBase, terminalBase, capHigh, revenue
 
 // ── DCF core / projection ──────────────────────────────────────────────────
 
-function dcfProjection({ base, g1, g2, gT, r }) {
+function dcfProjection({ base, g1, g2, gT, r, stage2 = 5 }) {
   const years = []
   let cf = base, totalPV = 0
   for (let i = 1; i <= 5; i++) { cf *= (1 + g1); const pv = cf / Math.pow(1 + r, i);     totalPV += pv; years.push({ year: i, cf, pv }) }
-  for (let i = 1; i <= 5; i++) { cf *= (1 + g2); const pv = cf / Math.pow(1 + r, 5 + i); totalPV += pv; years.push({ year: 5 + i, cf, pv }) }
+  for (let i = 1; i <= stage2; i++) { cf *= (1 + g2); const pv = cf / Math.pow(1 + r, 5 + i); totalPV += pv; years.push({ year: 5 + i, cf, pv }) }
+  const N = 5 + stage2   // horizonte explícito antes del valor terminal
   let terminalPV = 0
-  if (r > gT) terminalPV = cf * (1 + gT) / (r - gT) / Math.pow(1 + r, 10)
+  if (r > gT) terminalPV = cf * (1 + gT) / (r - gT) / Math.pow(1 + r, N)
   totalPV += terminalPV
   return { years, totalPV, terminalPV }
 }
@@ -268,14 +269,15 @@ function buildDCF(data, opts) {
   // Crecimiento + penalizaciones
   const gp = growthAndPenalties(data, { discountBase, terminalBase, capHigh, revenueOnly })
 
-  const params = { base, g1: gp.g1, g2: gp.g2, gT: gp.gT, r: gp.r, shares }
+  const stage2 = opts.stage2 || 5
+  const params = { base, g1: gp.g1, g2: gp.g2, gT: gp.gT, r: gp.r, shares, stage2 }
   const proj = dcfProjection(params)
   const iv = proj.totalPV / shares
 
   const inputs = [
     { label: baseLabel || 'FCF base', value: fmtBig(base) },
     { label: 'Crecimiento fase 1 (años 1–5)', value: fmtPct(gp.g1) },
-    { label: 'Crecimiento fase 2 (años 6–10)', value: fmtPct(gp.g2) },
+    { label: `Crecimiento fase 2 (años 6–${5 + stage2})`, value: fmtPct(gp.g2) },
     { label: 'Crecimiento terminal', value: fmtPct(gp.gT) },
     { label: 'Tasa de descuento', value: fmtPct(gp.r) },
     { label: 'Métrica de crecimiento usada', value: SOURCE_LABEL[gp.source] || gp.source },
@@ -318,6 +320,7 @@ function dcfFCF(data, moatWidth, currency) {
 function dcfCFO(data, moatWidth, currency) {
   const res = buildDCF(data, {
     method: 'dcf_cfo', label: 'DCF · CFO', currency,
+    stage2: 10,   // horizonte largo: activos regulados de muy larga vida (20-30 años)
     tooltip: 'En utilities los flujos regulados son muy predecibles, lo que justifica una tasa de descuento más baja. El CFO se usa como base porque el FCF suele ser negativo por las inversiones en la red regulada.',
     baseSource: 'cfo', baseLabel: 'CFO base',
     discountBase: moatWidth === 'wide' ? 0.06 : moatWidth === 'narrow' ? 0.075 : 0.09,
