@@ -48,8 +48,10 @@ def stmt_df(j):
         return pd.DataFrame()
     return pd.DataFrame({lbl: pd.Series(vals) for lbl, vals in j["data"].items()}).T
 
+compute_moat_width = ns["compute_moat_width"]
 SELECT = ("ticker,current_price,market_cap_m,revenue_cagr5,fcf_cagr5,div_cagr5,dps,"
-          "sector,industry,roic,div_streak,roe,price_to_book,payout_eps,intrinsic_value,"
+          "sector,industry,roic,roic_reported,roic_tangible,gross_margin,operating_margin,"
+          "div_streak,roe,price_to_book,payout_eps,intrinsic_value,"
           "income_statement_annual,balance_sheet_annual,cashflow_annual")
 
 def fetch_page(offset, limit):
@@ -77,10 +79,15 @@ for f in rows:
     inc = stmt_df(f.get("income_statement_annual")); bal = stmt_df(f.get("balance_sheet_annual")); cf = stmt_df(f.get("cashflow_annual"))
     shares = (f["market_cap_m"] * 1e6 / f["current_price"]) if f.get("market_cap_m") and f.get("current_price") else None
     try:
+        mw = compute_moat_width(f.get("roic_reported"), f.get("roic"), f.get("roic_tangible"),
+                                f.get("gross_margin"), f.get("operating_margin"), f.get("fcf_cagr5"),
+                                f.get("revenue_cagr5"), f.get("roe"), f.get("market_cap_m"),
+                                f.get("div_streak"), f.get("sector"), f.get("industry"))
         iv, warn, used = compute_valuation(inc, bal, cf, shares, f.get("current_price"),
             f.get("revenue_cagr5"), f.get("fcf_cagr5"), f.get("div_cagr5"), f.get("dps"),
             f.get("sector"), f.get("industry"), f.get("roic"), f.get("div_streak"), cur,
-            roe=f.get("roe"), pb=f.get("price_to_book"), payout_eps=f.get("payout_eps"), ticker=f["ticker"])
+            roe=f.get("roe"), pb=f.get("price_to_book"), payout_eps=f.get("payout_eps"),
+            ticker=f["ticker"], moat_width=mw)
     except Exception as e:
         continue
     old = f.get("intrinsic_value")

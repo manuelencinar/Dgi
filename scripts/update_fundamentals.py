@@ -691,9 +691,76 @@ def _excess_return_pb(balance, shares, price, roe, pb, div_cagr5, payout_eps, st
     jpb = max(0.3, min((roe_d - g) / (ke - g), 3.0))
     return safe2(bvps * jpb)
 
+def compute_moat_width(roic_reported, roic_legacy, roic_tangible, gm, om,
+                       fcf_cagr5, rev_cagr5, roe, mcap_m, streak, sector, industry):
+    """Ancho del foso ('wide'/'narrow'/'none') — espejo de computeMoat (lib/company-detail.js).
+    Solo la lógica que determina el width (las señales/negativos no alteran la nota)."""
+    roic = roic_reported if roic_reported is not None else roic_legacy
+    s_ = (sector or "").lower(); i_ = (industry or "").lower(); streak = streak or 0
+    # Banca / seguros / mercados de capital / gestión de activos → ROE + escala + racha
+    if "financ" in s_ or "bank" in i_ or "insur" in i_ or "capital market" in i_ or "asset manage" in i_:
+        s = 0
+        if roe is not None:
+            if roe > 18:   s += 40
+            elif roe > 13: s += 28
+            elif roe > 10: s += 15
+        if streak >= 20:   s += 20
+        elif streak >= 10: s += 10
+        if mcap_m is not None:
+            if mcap_m > 50000:   s += 20
+            elif mcap_m > 10000: s += 10
+        return "wide" if s >= 60 else "narrow" if s >= 35 else "none"
+    # REITs → escala + crecimiento de rentas + margen operativo + racha
+    if "reit" in i_ or "real estate investment" in i_ or "real estate" in s_:
+        s = 0
+        if mcap_m is not None:
+            if mcap_m > 20000:  s += 30
+            elif mcap_m > 5000: s += 18
+        if rev_cagr5 is not None:
+            if rev_cagr5 > 6:   s += 25
+            elif rev_cagr5 > 3: s += 15
+            elif rev_cagr5 > 0: s += 6
+        if om is not None:
+            if om > 55:   s += 20
+            elif om > 40: s += 10
+        if streak >= 15:   s += 20
+        elif streak >= 10: s += 12
+        elif streak >= 5:  s += 6
+        return "wide" if s >= 60 else "narrow" if s >= 35 else "none"
+    # General → ROIC + margen bruto + margen operativo + crecimiento FCF
+    score = 0
+    if roic is not None and roic >= 60:
+        if roic_tangible is not None and roic_tangible < 60:
+            roic = roic_tangible
+        else:
+            score += 20; roic = None
+    if roic is not None:
+        if roic > 25:   score += 35
+        elif roic > 20: score += 28
+        elif roic > 15: score += 20
+        elif roic > 10: score += 10
+    if gm is not None:
+        if gm > 60:   score += 25
+        elif gm > 45: score += 18
+        elif gm > 30: score += 10
+        elif gm > 20: score += 5
+    if om is not None:
+        if om > 30:   score += 20
+        elif om > 20: score += 14
+        elif om > 12: score += 8
+        elif om > 5:  score += 3
+    if fcf_cagr5 is not None:
+        if fcf_cagr5 > 12:  score += 20
+        elif fcf_cagr5 > 6: score += 12
+        elif fcf_cagr5 > 0: score += 6
+    width = "wide" if score >= 60 else "narrow" if score >= 35 else "none"
+    if "telecom" in i_ and width == "wide":   # telecos: foso capado a estrecho
+        width = "narrow"
+    return width
+
 def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_cagr5,
                       div_cagr5, dps, sector, industry, roic, streak, currency,
-                      roe=None, pb=None, payout_eps=None, ticker=None):
+                      roe=None, pb=None, payout_eps=None, ticker=None, moat_width=None):
     """Devuelve (intrinsic_value, valuation_warning, growth_input_used)."""
     s = (sector or "").lower()
     i = (industry or "").lower()
@@ -706,10 +773,15 @@ def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_c
         st = "pharma"
     else:                                                  st = "general"
 
-    moat = "none"
-    if roic is not None and streak is not None:
-        if roic > 25 and streak >= 20:   moat = "wide"
-        elif roic > 15 and streak >= 10: moat = "narrow"
+    # Foso: lo pasa el llamador con la MISMA lógica que la ficha (compute_moat_width);
+    # si no, fallback heurístico simple para no romper.
+    if moat_width is not None:
+        moat = moat_width
+    else:
+        moat = "none"
+        if roic is not None and streak is not None:
+            if roic > 25 and streak >= 20:   moat = "wide"
+            elif roic > 15 and streak >= 10: moat = "narrow"
 
     eur = currency == "EUR"
 
@@ -1251,11 +1323,14 @@ def fetch_ticker(sym):
         # ── Valoración (intrinsic value precalculado) ─────────────────────
         intrinsic_value = valuation_warning = growth_input_used = None
         try:
+            mw = compute_moat_width(roic_full["roic_reported"], roic, roic_full["roic_tangible"],
+                                    gm, om, fcf_cagr5, rev_cagr5, roe, mkt_cap_m, div_streak,
+                                    info.get("sector"), info.get("industry"))
             intrinsic_value, valuation_warning, growth_input_used = compute_valuation(
                 income, balance, cashflow, shares, price, rev_cagr5, fcf_cagr5,
                 div_cagr5, dps, info.get("sector"), info.get("industry"),
                 roic, div_streak, info.get("currency"),
-                roe=roe, pb=pb, payout_eps=payout_eps, ticker=sym)
+                roe=roe, pb=pb, payout_eps=payout_eps, ticker=sym, moat_width=mw)
         except Exception:
             pass
 
