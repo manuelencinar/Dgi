@@ -386,6 +386,9 @@ export { computeDGIScore } from '@/lib/dgi-score'
 export function buildInsights(data, streak, cagr, dcf) {
   if (!data) return []
 
+  // En REITs el ROIC no es representativo (amortización inmobiliaria) → no se
+  // muestran insights de ROIC; su rentabilidad se mide por caja sobre activos.
+  const isReitCo = ['real estate', 'inmobiliario'].includes((data.sector || '').toLowerCase()) || (data.type || '') === 'reit'
   const yld     = data.current_price > 0 ? (n(data.dps) ?? 0) / data.current_price : null
   const payout  = data.payout_fcf != null ? n(data.payout_fcf)
                 : data.payout_eps != null ? n(data.payout_eps) : null
@@ -501,7 +504,7 @@ export function buildInsights(data, streak, cagr, dcf) {
   }
 
   // ── MERCADO / CALIDAD ─────────────────────────────────────────────────
-  if (roic != null) {
+  if (roic != null && !isReitCo) {
     if      (roic > 40)   add('mercado', 'neutral',  `ROIC del ${roic.toFixed(1)}% — muy elevado, puede reflejar intangibles no capitalizados.`)
     else if (roic > 25)   add('mercado', 'positive', `ROIC del ${roic.toFixed(1)}% — genera valor excepcional por cada euro de capital invertido.`)
     else if (roic > 15)   add('mercado', 'positive', `ROIC del ${roic.toFixed(1)}% — negocio rentable con ventajas competitivas visibles.`)

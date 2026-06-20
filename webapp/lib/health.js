@@ -11,6 +11,22 @@ const COL = { green: '#34d399', yellow: '#fbbf24', red: '#f87171', gray: '#4a527
 
 function num(v) { return v != null && !isNaN(v) ? parseFloat(v) : null }
 
+// Rentabilidad real de los activos de un REIT = caja operativa / activos totales.
+// Es la rentabilidad que el REIT le saca a TODOS sus inmuebles combinados, en caja
+// real (no beneficio contable, hundido por la amortización). La referencia es su
+// propio yield: si esta rentabilidad supera al dividendo, lo financia con su caja;
+// si no, depende de deuda/ampliaciones externas.
+function realAssetReturn(detail) {
+  const ocf = firstVal(detail.cashflow_annual, 'Cash Flow Operativo', 'Operating Cash Flow', 'Cash Flow From Continuing Operating Activities')
+  const at  = firstVal(detail.balance_sheet_annual, 'Activos Totales', 'Total Assets')
+  return (ocf != null && at && at > 0) ? ocf / at * 100 : null
+}
+// Yield del dividendo (referencia para la rentabilidad real de activos).
+function divYield(detail) {
+  const dps = num(detail.dps), px = num(detail.current_price)
+  return (dps != null && px && px > 0) ? dps / px * 100 : null
+}
+
 // Fila de un estado financiero (arrays más reciente primero)
 function sRow(stmt, ...keys) {
   const d = stmt?.data
@@ -100,6 +116,18 @@ export function buildSemaforo(detail, sectorKey, paysDividend) {
   if (isBankish) {
     const c = classify(roe, 8, 15, true)
     rows.push(row('rentabilidad', 'Rentabilidad (ROE)', c, 'rentabilidad', fmtVal(roe, '%')))
+  } else if (sectorKey === 'reit') {
+    // En REITs el ROIC no es representativo (la amortización inmobiliaria lo
+    // distorsiona): se usa la rentabilidad real de los activos (caja operativa /
+    // activos) comparada con el propio yield del dividendo.
+    const rar = realAssetReturn(detail), y = divYield(detail)
+    const ref = (y != null && y > 0) ? y : 5
+    const c = classify(rar, ref * 0.85, ref, true)
+    const note = (rar != null && y != null)
+      ? (rar >= y ? `Su caja por activos (${rar.toFixed(1)}%) cubre el dividendo (${y.toFixed(1)}%) — se autofinancia`
+                  : `Su caja por activos (${rar.toFixed(1)}%) no llega al dividendo (${y.toFixed(1)}%) — depende de deuda o ampliaciones`)
+      : null
+    rows.push(row('rentabilidad', 'Rentabilidad real de activos', c, 'rentabilidad', fmtVal(rar, '%'), note))
   } else {
     const [t1, t2] = ROIC_T[sectorKey] || ROIC_T.general
     const c = classify(roic, t1, t2, true)
@@ -169,14 +197,24 @@ const CARDS_BY_SECTOR = {
   energy:    ['roic', 'op_margin', 'net_debt_ebitda', 'interest_cov', 'payout_fcf', 'revenue_cagr5', 'cash_debt'],
   bank:      ['roe', 'roa', 'efficiency', 'net_margin', 'payout_eps', 'revenue_cagr5', 'fcf_cagr5'],
   insurer:   ['roe', 'combined_ratio', 'net_margin', 'payout_eps', 'revenue_cagr5', 'roa'],
-  reit:      ['roic', 'op_margin', 'net_debt_ebitda', 'interest_cov', 'payout_fcf', 'revenue_cagr5', 'roe'],
+  reit:      ['real_asset_return', 'op_margin', 'net_debt_ebitda', 'interest_cov', 'payout_fcf', 'revenue_cagr5', 'roe'],
   utilities: ['op_margin', 'net_debt_ebitda', 'interest_cov', 'payout_fcf', 'revenue_cagr5', 'roe', 'fcf_cagr5'],
 }
 
 // Descriptor base de cada métrica, ajustado por sector cuando procede.
 // { label, unit, higher, min, max, t1, t2, median, tooltip }
-function cardSpec(id, sectorKey) {
+function cardSpec(id, sectorKey, detail) {
   switch (id) {
+    case 'real_asset_return': {
+      // Umbrales relativos al propio yield del REIT: verde si la caja por activos
+      // cubre el dividendo, ámbar si se acerca, rojo si depende de financiación externa.
+      const y = detail ? divYield(detail) : null
+      const ref = (y != null && y > 0) ? y : 5     // sin yield → 5% típico del sector
+      const max = Math.max(ref * 1.8, 10)
+      return { label: 'Rentabilidad real de activos', unit: '%', higher: true, min: 0, max,
+        t1: +(ref * 0.85).toFixed(1), t2: +ref.toFixed(1), median: +ref.toFixed(1),
+        tooltip: `Caja operativa generada por cada euro de activos (Operating Cash Flow / Activos Totales). Es la rentabilidad real que el REIT le saca a todos sus inmuebles. Referencia: su yield del dividendo (${ref.toFixed(1)}%). Si la supera, genera caja suficiente para pagar el dividendo por sí mismo; si es menor, depende de deuda o ampliaciones de capital.` }
+    }
     case 'roic': {
       const T = ROIC_T[sectorKey] || ROIC_T.general
       const med = { reit: 8, utilities: 6, luxury: 20, energy: 12 }[sectorKey] ?? 15
@@ -272,6 +310,7 @@ function cardSpec(id, sectorKey) {
 // Valor crudo de cada métrica a partir del detail.
 function cardValue(id, detail) {
   switch (id) {
+    case 'real_asset_return': return realAssetReturn(detail)
     case 'roic': return resolveRoic(detail)
     case 'gross_margin': return num(detail.gross_margin)
     case 'op_margin': return num(detail.operating_margin)
@@ -332,7 +371,7 @@ function buildBar(spec, value) {
 export function buildHealthCards(detail, sectorKey) {
   const ids = CARDS_BY_SECTOR[sectorKey] || CARDS_BY_SECTOR.general
   return ids.map(id => {
-    const spec = cardSpec(id, sectorKey)
+    const spec = cardSpec(id, sectorKey, detail)
     if (!spec) return null
     const value = cardValue(id, detail)
     const color = classify(value, spec.t1, spec.t2, spec.higher)
