@@ -415,8 +415,11 @@ export function buildInsights(data, streak, cagr, dcf, livePrice = null) {
   const intCov  = n(data.interest_coverage)
   const beta    = n(data.beta)
   const price   = cp
-  const high52  = n(data.week52_high)
-  const low52   = n(data.week52_low)
+  // Rango 52 sem reconciliado con el precio en vivo (el almacenado es del scrape
+  // semanal y puede ir por detrás de una ruptura reciente).
+  const h52r    = n(data.week52_high), l52r = n(data.week52_low)
+  const high52  = (h52r != null && cp != null) ? Math.max(h52r, cp) : h52r
+  const low52   = (l52r != null && cp != null) ? Math.min(l52r, cp) : l52r
 
   const insights = []
   const add = (cat, type, text) => insights.push({ cat, type, text })

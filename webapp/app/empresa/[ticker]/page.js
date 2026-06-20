@@ -276,8 +276,12 @@ export default async function EmpresaPage({ params, searchParams }) {
   const changePct  = liveQuote?.pct         ?? null
   const yld        = price > 0 && detail?.dps != null ? detail.dps / price : null
   const divRate    = detail?.dps            ?? null
-  const low52      = detail?.week52_low     ?? null
-  const high52     = detail?.week52_high    ?? null
+  // El rango de 52 semanas viene del scrape semanal; el precio en vivo (daily_prices)
+  // es más fresco. Si el precio ha roto el máximo/mínimo almacenado, se reconcilia
+  // para que el rango contenga siempre el precio actual (si no, el header mostraría
+  // un precio por encima de su "máximo de 52 semanas").
+  const low52      = detail?.week52_low  != null ? (price != null ? Math.min(detail.week52_low,  price) : detail.week52_low)  : null
+  const high52     = detail?.week52_high != null ? (price != null ? Math.max(detail.week52_high, price) : detail.week52_high) : null
   const peTrailing = detail?.pe_trailing    ?? null
   const peForward  = detail?.pe_forward     ?? null
   const evEbitda   = detail?.ev_ebitda      ?? null

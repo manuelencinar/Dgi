@@ -68,8 +68,10 @@ export async function buildScreenerCompanies(destWHT, baseDict) {
       peFwd:  f.pe_forward != null ? Number(f.pe_forward) : null,
       ev:     f.ev_ebitda != null ? Number(f.ev_ebitda) : null,
       mcap:   f.market_cap_m != null ? Number(f.market_cap_m) : null,
-      hi52:   f.week52_high != null ? Number(f.week52_high) : null,
-      lo52:   f.week52_low != null ? Number(f.week52_low) : null,
+      // Rango 52 sem reconciliado con el precio actual (el almacenado es del scrape
+      // semanal; si el precio ha roto el máximo/mínimo, se ajusta para no quedar stale).
+      hi52:   f.week52_high != null ? Math.max(Number(f.week52_high), Number(f.current_price)) : null,
+      lo52:   f.week52_low  != null ? Math.min(Number(f.week52_low),  Number(f.current_price)) : null,
       yieldAvg:      f.yield_avg != null ? Number(f.yield_avg) : null,
       yieldAvgYears: f.yield_avg_years != null ? Number(f.yield_avg_years) : null,
       ma200:  f.ma200 != null ? Number(f.ma200) : null,
