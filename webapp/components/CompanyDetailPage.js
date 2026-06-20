@@ -1252,6 +1252,45 @@ function ReitMetricsCard({ m, currency }) {
   )
 }
 
+// ── energy oil-breakeven card ──────────────────────────────────────────────
+function EnergyBreakevenCard({ be }) {
+  if (!be) return null
+  const fx = v => v == null ? '–' : '$' + v.toFixed(0)
+  return (
+    <Card>
+      <SectionTitle>Sensibilidad al crudo</SectionTitle>
+      {be.reliable ? (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Breakeven (WTI)</p>
+              <p style={{ fontSize: 18, fontWeight: 800, color: be.breakeven > 80 ? '#f87171' : be.breakeven > 65 ? '#fbbf24' : '#34d399' }}>{fx(be.breakeven)}</p>
+              <p style={{ fontSize: 9.5, color: '#4a5270', marginTop: 1 }}>gana dinero por encima</p>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Sensibilidad</p>
+              <p style={{ fontSize: 18, fontWeight: 800, color: '#c8d0e0' }}>{be.slope >= 0 ? '+' : ''}{be.slope.toFixed(2)}</p>
+              <p style={{ fontSize: 9.5, color: '#4a5270', marginTop: 1 }}>pp de margen por $/barril</p>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 3 }}>Fiabilidad (R²)</p>
+              <p style={{ fontSize: 18, fontWeight: 800, color: be.r2 >= 0.85 ? '#34d399' : '#86efac' }}>{(be.r2 * 100).toFixed(0)}%</p>
+              <p style={{ fontSize: 9.5, color: '#4a5270', marginTop: 1 }}>{be.points} años</p>
+            </div>
+          </div>
+          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10, lineHeight: 1.5 }}>
+            Estimado por regresión del margen neto frente al precio medio anual del WTI. La empresa es rentable con el crudo por encima de ~{fx(be.breakeven)}; por debajo, el margen se vuelve muy bajo o negativo y el dividendo queda en riesgo.
+          </p>
+        </>
+      ) : (
+        <p style={{ fontSize: 12, color: '#4a5270', lineHeight: 1.5 }}>
+          No se puede estimar un breakeven fiable del crudo para esta empresa (negocio diversificado —refino, gas, química— o pocos años de histórico). Su rentabilidad no sigue de forma limpia el precio del petróleo.
+        </p>
+      )}
+    </Card>
+  )
+}
+
 // ── buyback section ────────────────────────────────────────────────────────
 
 function BuybackSection({ buybacks }) {
@@ -1331,7 +1370,7 @@ const TAB_IDS = TABS.map(t => t.id)
 
 export default function CompanyDetailPage(props) {
   const {
-    ticker, name, country, currency, sector, subsector, type, classification, isBank, bankMetrics, isInsurer, insurerMetrics, isReit, reitMetrics, crossListings,
+    ticker, name, country, currency, sector, subsector, type, classification, isBank, bankMetrics, isInsurer, insurerMetrics, isReit, reitMetrics, oilBreakeven, crossListings,
     isPremium, hasData, isAuthed, watchEntry,
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
@@ -1672,6 +1711,7 @@ export default function CompanyDetailPage(props) {
             <InsightsSection insights={insights} isPremium={isPremium} />
             <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} scoreHistory={scoreHistory} />
             {isBank ? <BankMetricsCard m={bankMetrics} /> : isInsurer ? <InsurerMetricsCard m={insurerMetrics} /> : isReit ? <ReitMetricsCard m={reitMetrics} currency={currency} /> : <RoicCard roicData={roicData} isPremium={isPremium} />}
+            {oilBreakeven && <EnergyBreakevenCard be={oilBreakeven} />}
           </div>
         )}
       </div>

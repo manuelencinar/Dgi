@@ -16,6 +16,7 @@ import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
 import { isCreditRiskFinancial } from '@/lib/dgi-score'
 import { buildReitMetrics } from '@/lib/reit-metrics'
+import { computeOilBreakeven } from '@/lib/energy-breakeven'
 import {
   getCompanyDetail,
   computeMoat,
@@ -334,6 +335,9 @@ export default async function EmpresaPage({ params, searchParams }) {
   }
   const isReit = !!reitMetrics
 
+  // Energía (petróleo): breakeven del crudo por regresión (margen vs WTI).
+  const oilBreakeven = detail ? computeOilBreakeven(detail) : null
+
   const roicData   = detail ? calculateROIC({ ...detail, type }, currency) : null
   const moat       = computeMoat(detail, streak)
   const dcf        = computeValuation(detail, moat?.width ?? 'none', type, currency)
@@ -408,6 +412,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         insurerMetrics={insurerMetrics}
         isReit={isReit}
         reitMetrics={reitMetrics}
+        oilBreakeven={oilBreakeven}
         type={type}
         isPremium={isPremium}
         isAuthed={!!user}

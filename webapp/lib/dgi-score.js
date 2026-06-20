@@ -5,6 +5,7 @@ import { dividendTrend } from '@/lib/helpers'
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
 import { buildReitMetrics } from '@/lib/reit-metrics'
+import { computeOilBreakeven } from '@/lib/energy-breakeven'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -630,20 +631,26 @@ function buildPenalties(data, sectorType) {
 
   if (gw != null && gw > 60 && sectorType === 'general') penalties.push({ reason: 'Goodwill muy elevado — riesgo de deterioro', amount: 0.5 })
 
-  // Energía: dividendo solo sostenible con el crudo alto → si el payout sobre el
-  // beneficio de CICLO MEDIO (media 5a) supera el 100%, el dividendo no está
-  // cubierto en un año de petróleo normal.
+  // Energía: rentabilidad atada al precio del crudo. Si el modelo de breakeven
+  // (regresión margen vs WTI) es FIABLE, se usa el precio de crudo a partir del
+  // cual gana dinero. Si no, se cae al payout sobre beneficio de ciclo medio.
   if (sectorType === 'energy') {
-    const nh = data.net_income_history
-    const base = n(data.payout_eps)
-    if (nh && base != null) {
-      const ys = Object.keys(nh).sort()
-      const cur = parseFloat(nh[ys[ys.length - 1]])
-      const win = ys.slice(-5).map(y => parseFloat(nh[y])).filter(v => !isNaN(v))
-      const avg = win.length >= 3 ? win.reduce((a, b) => a + b, 0) / win.length : null
-      if (avg > 0 && cur) {
-        const pnorm = base * cur / avg
-        if (pnorm > 100) penalties.push({ reason: 'Dividendo no cubierto por el beneficio de ciclo medio — solo sostenible con el crudo alto', amount: pnorm > 130 ? 1.0 : 0.5 })
+    const be = computeOilBreakeven(data)
+    if (be?.reliable) {
+      if (be.breakeven > 90) penalties.push({ reason: `Rentable solo con el crudo muy alto (~$${be.breakeven.toFixed(0)}/barril) — dividendo en riesgo en el ciclo bajo`, amount: 1.0 })
+      else if (be.breakeven > 72) penalties.push({ reason: `Necesita un crudo elevado (~$${be.breakeven.toFixed(0)}/barril) para ser rentable`, amount: 0.5 })
+    } else {
+      const nh = data.net_income_history
+      const base = n(data.payout_eps)
+      if (nh && base != null) {
+        const ys = Object.keys(nh).sort()
+        const cur = parseFloat(nh[ys[ys.length - 1]])
+        const win = ys.slice(-5).map(y => parseFloat(nh[y])).filter(v => !isNaN(v))
+        const avg = win.length >= 3 ? win.reduce((a, b) => a + b, 0) / win.length : null
+        if (avg > 0 && cur) {
+          const pnorm = base * cur / avg
+          if (pnorm > 100) penalties.push({ reason: 'Dividendo no cubierto por el beneficio de ciclo medio — solo sostenible con el crudo alto', amount: pnorm > 130 ? 1.0 : 0.5 })
+        }
       }
     }
   }
