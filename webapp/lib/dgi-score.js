@@ -126,28 +126,31 @@ function detectIndustryType(sector, industry) {
   return 'consumer'
 }
 
+// Umbrales de margen POR SECTOR, en orden ASCENDENTE (los exige así `bs`, que
+// devuelve el último tramo alcanzado). [[min_aceptable,4],[bueno,7],[excelente,10]].
+// Un supermercado con 4% de margen neto es excelente; una software necesita ~22%.
 function gmBreaks(ind) {
-  const M = { software: [[75,10],[65,7],[50,4]], hardware: [[55,10],[40,7],[25,4]],
-    pharma: [[72,10],[60,7],[45,4]], luxury: [[68,10],[55,7],[40,4]],
-    grocery: [[26,10],[18,7],[8,4]], energy: [[40,10],[25,7],[12,4]],
-    industrial: [[45,10],[30,7],[15,4]], services: [[55,10],[38,7],[20,4]],
-    consumer: [[50,10],[35,7],[20,4]] }
+  const M = { software: [[50,4],[65,7],[75,10]], hardware: [[25,4],[40,7],[55,10]],
+    pharma: [[45,4],[60,7],[72,10]], luxury: [[40,4],[55,7],[68,10]],
+    grocery: [[8,4],[18,7],[26,10]], energy: [[12,4],[25,7],[40,10]],
+    industrial: [[15,4],[30,7],[45,10]], services: [[20,4],[38,7],[55,10]],
+    consumer: [[20,4],[35,7],[50,10]] }
   return M[ind] || M.consumer
 }
 function omBreaks(ind) {
-  const M = { software: [[28,10],[18,7],[8,4]], hardware: [[22,10],[13,7],[6,4]],
-    pharma: [[28,10],[18,7],[8,4]], luxury: [[32,10],[22,7],[12,4]],
-    grocery: [[6,10],[3.5,7],[1.5,4]], energy: [[28,10],[18,7],[8,4]],
-    industrial: [[18,10],[10,7],[4,4]], services: [[22,10],[13,7],[6,4]],
-    consumer: [[20,10],[12,7],[6,4]] }
+  const M = { software: [[8,4],[18,7],[28,10]], hardware: [[6,4],[13,7],[22,10]],
+    pharma: [[8,4],[18,7],[28,10]], luxury: [[12,4],[22,7],[32,10]],
+    grocery: [[1.5,4],[3.5,7],[6,10]], energy: [[8,4],[18,7],[28,10]],
+    industrial: [[4,4],[10,7],[18,10]], services: [[6,4],[13,7],[22,10]],
+    consumer: [[6,4],[12,7],[20,10]] }
   return M[ind] || M.consumer
 }
 function nmBreaks(ind) {
-  const M = { software: [[22,10],[12,7],[4,4]], hardware: [[18,10],[10,7],[4,4]],
-    pharma: [[26,10],[16,7],[6,4]], luxury: [[28,10],[18,7],[8,4]],
-    grocery: [[4.5,10],[2.5,7],[0.8,4]], energy: [[18,10],[10,7],[4,4]],
-    industrial: [[13,10],[7,7],[2,4]], services: [[18,10],[10,7],[4,4]],
-    consumer: [[15,10],[8,7],[3,4]] }
+  const M = { software: [[4,4],[12,7],[22,10]], hardware: [[4,4],[10,7],[18,10]],
+    pharma: [[6,4],[16,7],[26,10]], luxury: [[8,4],[18,7],[28,10]],
+    grocery: [[0.8,4],[2.5,7],[4.5,10]], energy: [[4,4],[10,7],[18,10]],
+    industrial: [[2,4],[7,7],[13,10]], services: [[4,4],[10,7],[18,10]],
+    consumer: [[3,4],[8,7],[15,10]] }
   return M[ind] || M.consumer
 }
 
