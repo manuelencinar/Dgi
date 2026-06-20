@@ -428,7 +428,21 @@ export function buildInsights(data, streak, cagr, dcf) {
   }
 
   if (cagr != null) {
-    if      (cagr >= 0.12)  add('dividendo', 'positive', `CAGR del dividendo del ${(cagr*100).toFixed(1)}% — crecimiento excepcional a doble dígito.`)
+    // Si el dividendo lleva >=2 años sin subir, un CAGR a 5 años alto está
+    // distorsionado por la recuperación tras un recorte (p.ej. Freeport: +64%
+    // pero congelado 3 años). No se presenta como fortaleza aislada: se cualifica
+    // y se añade el CAGR a 3 años (más representativo del momento actual).
+    const trC = dividendTrend(data.divHistory)
+    const frozen = (trC?.noRaise ?? 0) >= 2
+    const compY = (data.divHistory || []).filter(h => !h.isPartial && (h.dps || 0) > 0)
+    let cagr3 = null
+    if (compY.length >= 4) { const a = compY[compY.length - 4].dps, b = compY[compY.length - 1].dps; if (a > 0 && b > 0) cagr3 = Math.pow(b / a, 1 / 3) - 1 }
+
+    if (frozen && cagr >= 0.07) {
+      const c3 = cagr3 != null ? ` A 3 años el crecimiento real es del ${(cagr3 * 100).toFixed(1)}%.` : ''
+      add('dividendo', 'neutral', `CAGR del dividendo a 5 años del ${(cagr*100).toFixed(1)}%, pero estancado recientemente (${trC.noRaise} años sin subir): el dato está inflado por la recuperación tras un recorte.${c3}`)
+    }
+    else if (cagr >= 0.12)  add('dividendo', 'positive', `CAGR del dividendo del ${(cagr*100).toFixed(1)}% — crecimiento excepcional a doble dígito.`)
     else if (cagr >= 0.07)  add('dividendo', 'positive', `CAGR del dividendo del ${(cagr*100).toFixed(1)}% — crecimiento sólido y consistente.`)
     else if (cagr >= 0.03)  add('dividendo', 'neutral',  `CAGR del dividendo del ${(cagr*100).toFixed(1)}% — crecimiento moderado.`)
     else if (cagr > 0)      add('dividendo', 'neutral',  `CAGR del dividendo del ${(cagr*100).toFixed(1)}% — crecimiento muy lento.`)
