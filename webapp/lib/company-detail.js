@@ -431,7 +431,7 @@ export function buildInsights(data, streak, cagr, dcf, livePrice = null) {
     else                    add('dividendo', 'negative', 'No paga dividendo actualmente.')
   }
 
-  if (payout != null && payout > 0) {
+  if (payout != null && payout > 0 && !noDiv) {
     // Cap de cordura: un payout >150% casi nunca es real, es la base de cálculo
     // equivocada (en REITs/LPs/financieras hay que usar AFFO/FFO o el beneficio
     // normalizado, no FCF/BPA). No se afirma "riesgo inminente" (falso aviso): se
@@ -444,7 +444,7 @@ export function buildInsights(data, streak, cagr, dcf, livePrice = null) {
     else if (payout < 55)   add('dividendo', 'positive', `Payout del ${payout.toFixed(0)}% — razonable y con margen de crecimiento.`)
   }
 
-  if (cagr != null) {
+  if (cagr != null && !noDiv) {
     // Si el dividendo lleva >=2 años sin subir, un CAGR a 5 años alto está
     // distorsionado por la recuperación tras un recorte (p.ej. Freeport: +64%
     // pero congelado 3 años). No se presenta como fortaleza aislada: se cualifica
@@ -466,7 +466,8 @@ export function buildInsights(data, streak, cagr, dcf, livePrice = null) {
     else                    add('dividendo', 'negative', 'El dividendo no ha crecido en los últimos 5 años.')
   }
 
-  if      (streak >= 50) add('dividendo', 'positive', `${streak} años consecutivos subiendo el dividendo — Rey del dividendo.`)
+  if      (noDiv)        { /* no reparte: ya se dijo en el bloque de yield */ }
+  else if (streak >= 50) add('dividendo', 'positive', `${streak} años consecutivos subiendo el dividendo — Rey del dividendo.`)
   else if (streak >= 25) add('dividendo', 'positive', `${streak} años consecutivos subiendo el dividendo — Aristócrata del dividendo.`)
   else if (streak >= 10) add('dividendo', 'positive', `${streak} años seguidos aumentando el dividendo — Aspirante a aristócrata.`)
   else if (streak >= 5)  add('dividendo', 'neutral',  `${streak} años subiendo el dividendo — historial en construcción.`)

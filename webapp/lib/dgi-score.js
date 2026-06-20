@@ -784,7 +784,10 @@ export function computeDGIScore(data, streak, cagr, dcf, type, paysDividend, ban
   if (vS != null) { totalS += vS * w.valuation; totalW += w.valuation }
   const prepenalty = totalW > 0 ? Math.round(totalS / totalW * 10) / 10 : null
 
-  const penalties    = buildPenalties({ ...data, divHistory: data.divHistory || [] }, sectorType, !noDividend)
+  // "Reparte de verdad": no marcado como no-pagador Y con DPS vigente. Cubre los
+  // casos pays_dividend=null + dps=null (Amazon, Berkshire) además de los false.
+  const reallyPays   = paysDividend !== false && n(data.dps) > 0
+  const penalties    = buildPenalties({ ...data, divHistory: data.divHistory || [] }, sectorType, reallyPays)
   const penaltyTotal = penalties.reduce((s, p) => s + p.amount, 0)
   // Bonificaciones por tendencia positiva (adicionales, cap +1.0). No tocan los
   // umbrales ni las penalizaciones: se suman a la nota final tras penalizaciones.
