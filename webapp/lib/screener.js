@@ -149,14 +149,18 @@ export function computeScore(f, type) {
   const vals = mapValues(f)
   let tot = 0, cnt = 0
   for (const m of metrics) {
+    // La VALORACIÓN (margen de seguridad / MoS) NO entra en la nota de Calidad:
+    // "barata ahora" es un eje distinto de "negocio de calidad" y, mezclado al
+    // mismo peso, distorsionaba el ranking (MarketAxess, con MoS alto, superaba a
+    // aristócratas de mayor calidad; y nombres excelentes pero caros como JNJ
+    // quedaban hundidos por un MoS negativo). La valoración vive en su propio
+    // orden "🎯 Baratas", en la columna MoS y en la señal de zona de compra.
+    if (m.id === 'margin_safety') continue
     // Métricas especializadas que el screener no calcula (cet1, npl, p_affo…) no
     // cuentan: si no, hundirían a bancos/REITs. Solo cuentan las que mapValues
     // sí sabe derivar (presentes como clave, aunque su valor sea null).
     if (!(m.id in vals)) continue
     const v = vals[m.id]
-    // Valoración con MoS extremo (cap de cordura, |MoS|>80%): valor intrínseco
-    // disparado, no fiable → fuera del Score (no infla la nota como falsa ganga).
-    if (m.id === 'margin_safety' && v != null && Math.abs(v) > MOS_UNRELIABLE) continue
     let s = m.score(v)
     // CAGR del dividendo capeado/atípico (>50%): dato no fiable → puntuación neutra.
     if (m.id === 'div_cagr5' && v != null && v > CAGR_UNRELIABLE && s != null) s = 5

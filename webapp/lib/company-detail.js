@@ -423,7 +423,12 @@ export function buildInsights(data, streak, cagr, dcf) {
   }
 
   if (payout != null && payout > 0) {
-    if      (payout > 100)  add('dividendo', 'negative', `Payout del ${payout.toFixed(0)}% — supera los beneficios. Dividendo en riesgo inminente.`)
+    // Cap de cordura: un payout >150% casi nunca es real, es la base de cálculo
+    // equivocada (en REITs/LPs/financieras hay que usar AFFO/FFO o el beneficio
+    // normalizado, no FCF/BPA). No se afirma "riesgo inminente" (falso aviso): se
+    // marca como dato no representativo. Mismo criterio que el cap del MoS (>80%).
+    if      (payout > 150)  add('dividendo', 'neutral',  `Payout del ${payout.toFixed(0)}% sobre FCF/beneficio — base poco representativa para este tipo de empresa (conviene mirar el payout sobre AFFO/FFO o beneficio normalizado).`)
+    else if (payout > 100)  add('dividendo', 'negative', `Payout del ${payout.toFixed(0)}% — supera los beneficios. Dividendo en riesgo inminente.`)
     else if (payout > 85)   add('dividendo', 'negative', `Payout del ${payout.toFixed(0)}% — muy elevado. Poco margen antes de un recorte.`)
     else if (payout > 70)   add('dividendo', 'neutral',  `Payout del ${payout.toFixed(0)}% — alto, pero sostenible si el negocio es estable.`)
     else if (payout < 35)   add('dividendo', 'positive', `Payout del ${payout.toFixed(0)}% — amplio margen de seguridad para el dividendo.`)
