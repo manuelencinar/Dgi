@@ -25,6 +25,26 @@ async function getCompanyCount() {
   }
 }
 
+// Datos reales de ADP para el mockup de la ficha (que no contradiga la ficha real).
+async function getShowcase() {
+  const fb = { streak: 42, price: 305.40, yld: 2.1, score: 8.7 }
+  try {
+    const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+    const [{ data: f }, { data: sh }] = await Promise.all([
+      sb.from('company_fundamentals').select('current_price, dps, div_streak').eq('ticker', 'ADP').maybeSingle(),
+      sb.from('score_history').select('score').eq('ticker', 'ADP').order('date', { ascending: false }).limit(1).maybeSingle(),
+    ])
+    const price = f?.current_price != null ? Number(f.current_price) : fb.price
+    const dps = f?.dps != null ? Number(f.dps) : null
+    return {
+      streak: f?.div_streak ?? fb.streak,
+      price,
+      yld: (price > 0 && dps != null) ? dps / price * 100 : fb.yld,
+      score: sh?.score != null ? Number(sh.score) : fb.score,
+    }
+  } catch { return fb }
+}
+
 // ── Datos para el mockup del hero ─────────────────────────────────────────
 const MOCKUP_MARKETS = [
   { flag: '🇺🇸', name: 'S&P 500',   score: 8.2, yield: 2.1, opps: 12, col: '#34d399' },
@@ -608,7 +628,12 @@ function Pricing() {
   )
 }
 
-function CompanyShowcase() {
+function CompanyShowcase({ data = {} }) {
+  const streak = data.streak ?? 42
+  const tier = streak >= 50 ? '👑 Rey' : streak >= 25 ? '🏆 Aristócrata' : streak >= 10 ? '⭐ Aspirante' : 'Dividendo'
+  const price = (data.price ?? 305.40).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const yld = (data.yld ?? 2.1).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  const score = (data.score ?? 8.7).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
   const cats = [
     { l: 'Calidad del negocio', v: 9.1, w: 35 },
     { l: 'Dividendo', v: 8.6, w: 30 },
@@ -636,17 +661,17 @@ function CompanyShowcase() {
           <div style={{ padding: '13px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <div>
               <p style={{ fontSize: 14, fontWeight: 900, color: '#e0e8f0' }}>🇺🇸 Automatic Data Processing <span style={{ fontSize: 10, color: '#3a4260' }}>ADP</span></p>
-              <p style={{ fontSize: 10, color: '#34d399', marginTop: 2 }}>🏆 Aristócrata · 49 años subiendo el dividendo</p>
+              <p style={{ fontSize: 10, color: '#34d399', marginTop: 2 }}>{tier} · {streak} años subiendo el dividendo</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: 18, fontWeight: 900, color: '#e0e8f0', lineHeight: 1 }}>305,40 <span style={{ fontSize: 10, color: '#4a5270' }}>$</span></p>
-              <p style={{ fontSize: 10, color: '#34d399' }}>Yield 2,1%</p>
+              <p style={{ fontSize: 18, fontWeight: 900, color: '#e0e8f0', lineHeight: 1 }}>{price} <span style={{ fontSize: 10, color: '#4a5270' }}>$</span></p>
+              <p style={{ fontSize: 10, color: '#34d399' }}>Yield {yld}%</p>
             </div>
           </div>
           <div style={{ padding: '14px 16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Score DGI</span>
-              <span style={{ fontSize: 30, fontWeight: 900, color: '#34d399', lineHeight: 1 }}>8,7</span>
+              <span style={{ fontSize: 30, fontWeight: 900, color: '#34d399', lineHeight: 1 }}>{score}</span>
             </div>
             {cats.map(c => (
               <div key={c.l} style={{ marginBottom: 8 }}>
@@ -746,6 +771,7 @@ function Footer() {
 
 export default async function LandingPage() {
   const companyCount = await getCompanyCount()
+  const showcase = await getShowcase()
   // Mercados ACTIVOS (mismos que /mercados) — evita mostrar en la landing índices
   // desactivados (p.ej. Dow Jones Global Titans) y descuadrar el recuento.
   let markets
@@ -756,7 +782,7 @@ export default async function LandingPage() {
       <PublicNav />
       <Hero />
       <ForWhom />
-      <CompanyShowcase />
+      <CompanyShowcase data={showcase} />
       <Benefits />
       <DualRanking />
       <UseCase />
