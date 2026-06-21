@@ -138,7 +138,7 @@ function Toggle({ label, value, onChange, locked }) {
 }
 
 // ── Tarjeta de empresa ───────────────────────────────────────────────────────
-function CompanyCard({ co, rank, destWHT, whtOverrides, sortKey, selected, onSelect, canSelect, following, isAuthed, isPremium }) {
+function CompanyCard({ co, rank, destWHT, whtOverrides, sortKey, following, isAuthed, isPremium }) {
   const ct = getCountry(co.c)
   const proj = projectCompany(co, destWHT, whtOverrides)
   const ny = netYieldOf(co, destWHT, whtOverrides)
@@ -148,10 +148,9 @@ function CompanyCard({ co, rank, destWHT, whtOverrides, sortKey, selected, onSel
   const buyReason = buyZoneReason(co)
 
   return (
-    <div className="scr-card" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${selected ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 12 }}>
+    <div className="scr-card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
       {/* Móvil: una sola línea */}
       <div className="scr-mobile">
-        <input type="checkbox" checked={selected} disabled={!selected && !canSelect} onChange={() => onSelect(co.t)} style={{ accentColor: '#818cf8', cursor: 'pointer', flexShrink: 0 }} />
         <span style={{ fontSize: 14, flexShrink: 0 }}>{ct?.flag || '🌐'}</span>
         <Link href={`/empresa/${encodeURIComponent(co.t)}`} className="scr-m-name" style={{ textDecoration: 'none' }}>
           {co.n} <span style={{ fontSize: 10, color: '#2e3a55', fontWeight: 600 }}>{co.t}</span>
@@ -164,7 +163,6 @@ function CompanyCard({ co, rank, destWHT, whtOverrides, sortKey, selected, onSel
 
       {/* Escritorio: UNA línea densa (tamaño de bloque como aristócratas) */}
       <div className="scr-desktop">
-        <input type="checkbox" checked={selected} disabled={!selected && !canSelect} onChange={() => onSelect(co.t)} style={{ accentColor: '#818cf8', cursor: 'pointer', flexShrink: 0 }} />
         <span className="scr-d-rank">
           {sortKey === 'profit' && proj ? <span style={{ color: '#34d399' }}>{fmtEUR0(proj.cum10)}</span>
             : sortKey === 'cheap' && co.mos != null && !co.mosUnreliable ? <span style={{ color: co.mos >= 0 ? '#34d399' : '#f87171' }}>{co.mos.toFixed(0)}%</span>
@@ -219,57 +217,6 @@ function DM({ label, val, color, title }) {
   )
 }
 
-// ── Comparador ───────────────────────────────────────────────────────────────
-function Comparator({ companies, destWHT, onClose }) {
-  const rows = [
-    ['Score DGI', co => co.sc != null ? co.sc.toFixed(1) : '—'],
-    ['Calidad div 💎', co => co.dq != null ? co.dq.toFixed(1) : '—'],
-    ['Yield', co => co.y != null ? co.y.toFixed(2) + '%' : '—'],
-    ['CAGR div 5a', co => co.cagr != null ? co.cagr.toFixed(1) + '%' : '—'],
-    ['Racha', co => co.streak != null ? co.streak + 'a' : '—'],
-    ['ROIC', co => co.roic != null ? co.roic.toFixed(1) + '%' : '—'],
-    ['Margen op.', co => co.opm != null ? co.opm.toFixed(1) + '%' : '—'],
-    ['Payout', co => co.payout != null ? co.payout.toFixed(0) + '%' : '—'],
-    ['Deuda/EBITDA', co => co.debt == null ? '—' : debtEbitdaIsArtifact(co.debt) ? 'EBITDA≈0' : co.debt.toFixed(1) + 'x'],
-    ['PER', co => co.pe != null ? co.pe.toFixed(1) + 'x' : '—'],
-    ['EV/EBITDA', co => co.ev != null ? co.ev.toFixed(1) + 'x' : '—'],
-    ['Margen seguridad', co => co.mosUnreliable ? 'no fiable' : co.mos != null ? (co.mos >= 0 ? '+' : '') + co.mos.toFixed(0) + '%' : '—'],
-    ['€1k total 10a', co => { const p = projectCompany(co, destWHT); return p ? fmtEUR0(p.cum10) : '—' }],
-  ]
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={onClose}>
-      <div style={{ background: '#0d1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 20, maxWidth: 900, width: '100%', maxHeight: '90vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <p style={{ fontSize: 16, fontWeight: 800, color: '#e0e8f0' }}>Comparar {companies.length} empresas</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#4a5270', fontSize: 22, cursor: 'pointer' }}>×</button>
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: 'left', padding: '8px', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Métrica</th>
-                {companies.map(co => (
-                  <th key={co.t} style={{ textAlign: 'right', padding: '8px', color: '#c8d0e0', borderBottom: '1px solid rgba(255,255,255,0.1)', whiteSpace: 'nowrap' }}>
-                    {getCountry(co.c)?.flag} {co.t}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(([label, fn]) => (
-                <tr key={label} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <td style={{ padding: '7px 8px', color: '#4a5270' }}>{label}</td>
-                  {companies.map(co => <td key={co.t} style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{fn(co)}</td>)}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Componente principal ───────────────────────────────────────────────────
 export default function ScreenerClient({ companies = [], isPremium = false, sectors = [], destWHT = 19, whtOverrides = null, followed = [], isAuthed = false, initial = null, hueco = null, totalCompanies = 0 }) {
   const followedSet = useMemo(() => new Set(followed), [followed])
@@ -281,8 +228,6 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
   const [visible, setVisible] = useState(PAGE)
   const [panelOpen, setPanelOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
-  const [selected, setSelected] = useState([])
-  const [showComp, setShowComp] = useState(false)
 
   useEffect(() => { setVisible(PAGE) }, [filters, search, sortKey])
 
@@ -398,9 +343,6 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
   const resetKey = (k) => set(k, INIT[k])
   const clearAll = () => { setFilters(INIT); setSearch('') }
   const hasFilters = activeChips.length > 0 || search
-
-  const toggleSelect = (t) => setSelected(s => s.includes(t) ? s.filter(x => x !== t) : (s.length < 4 ? [...s, t] : s))
-  const selectedCompanies = companies.filter(c => selected.includes(c.t))
 
   const SORTS = mode === 'renta' ? SORTS_RENTA : SORTS_CALIDAD
   const switchMode = (m) => { setMode(m); setSortKey(MODE_DEFAULT[m]) }
@@ -568,7 +510,6 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
         <>
           {pageRows.map((co, i) => (
             <CompanyCard key={`${co.t}-${i}`} co={co} rank={i + 1} destWHT={destWHT} whtOverrides={whtOverrides} sortKey={sortKey}
-              selected={selected.includes(co.t)} onSelect={toggleSelect} canSelect={selected.length < 4}
               following={followedSet.has(co.t)} isAuthed={isAuthed} isPremium={isPremium} />
           ))}
           {visible < sorted.length && (
@@ -579,21 +520,6 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
             </div>
           )}
         </>
-      )}
-
-      {/* Barra flotante comparador → navega a /comparador */}
-      {selected.length >= 2 && (
-        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 50, display: 'flex', alignItems: 'center', gap: 12, background: '#10172a', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 30, padding: '8px 8px 8px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {selectedCompanies.map((co, i) => (
-              <span key={co.t} title={co.n} style={{ width: 20, height: 20, borderRadius: '50%', background: ['#34d399', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6'][i], color: '#08111a', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
-            ))}
-          </div>
-          <span style={{ fontSize: 13, color: '#c8d0e0' }}>{selected.length} seleccionadas</span>
-          <Link href={`/comparador?tickers=${encodeURIComponent(selected.join(','))}`} style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '9px 18px', borderRadius: 22, textDecoration: 'none' }}>
-            Comparar →
-          </Link>
-        </div>
       )}
     </div>
   )
