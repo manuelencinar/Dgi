@@ -14,7 +14,7 @@ import HealthTwoLevel, { Semaforo } from '@/components/empresa/HealthPanel'
 import CompanyNews from '@/components/news/CompanyNews'
 import { recomputeValuation } from '@/lib/valuation'
 import { dividendTierInfo, dividendTrend, dividendTrendBadges } from '@/lib/helpers'
-import { project10y, paybackYear, netYield, getWHT } from '@/lib/screener'
+import { project10y, paybackYear, netYield, getWHT, effectiveDivTax } from '@/lib/screener'
 
 // ── helpers ───────────────────────────────────────────────────────────────
 
@@ -339,9 +339,10 @@ function DividendBanner({ state, date }) {
   )
 }
 
-function UpcomingPayments({ payments, currency, nextExDate, originWHT = 0, destWHT = DEFAULT_DEST_WHT }) {
+function UpcomingPayments({ payments, currency, nextExDate, originWHT = 0, destWHT = DEFAULT_DEST_WHT, isDomestic = false }) {
   const exLabel = fmtDateEs(nextExDate)
-  const effWHT = Math.max(originWHT || 0, destWHT || 0)
+  const effWHT = Math.round(effectiveDivTax(originWHT, destWHT, isDomestic) * 10) / 10
+  const capped = !isDomestic && originWHT > 15   // se topa el crédito al 15%
   return (
     <Card>
       <SectionTitle>Próximos pagos</SectionTitle>
@@ -381,7 +382,7 @@ function UpcomingPayments({ payments, currency, nextExDate, originWHT = 0, destW
             </table>
           </div>
           <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8, lineHeight: 1.5 }}>
-            <b style={{ color: '#3a4565' }}>Neto</b> tras retención efectiva del <b style={{ color: '#3a4565' }}>{effWHT}%</b> (origen {originWHT}% acreditado contra destino {destWHT}%).
+            <b style={{ color: '#3a4565' }}>Neto</b> tras retención efectiva del <b style={{ color: '#3a4565' }}>{effWHT}%</b> {isDomestic ? `(impuesto español ${destWHT}%)` : capped ? `(origen ${originWHT}%, del que solo se acredita el 15% máx. legal contra el ${destWHT}% español; el exceso no es deducible)` : `(origen ${originWHT}% acreditado contra el ${destWHT}% español)`}.
             Las fechas confirmadas las declara la empresa; el resto se estiman sumando a la fecha ex-dividendo los días de pago típicos del mercado, y los importes se proyectan según la frecuencia y el histórico.
           </p>
         </>
@@ -399,12 +400,13 @@ function RentaProjection({ yld, cagr, country, currency, dpsScenarios, destWHT =
   const yieldPct  = yld != null ? yld * 100 : null
   const growthPct = cagr != null ? cagr * 100 : 0
   const originWHT = getWHT(country)
+  const isDomestic = country === 'ES'
 
   const rows = useMemo(() => {
     if (!yieldPct) return null
-    return project10y(amount || 0, yieldPct, growthPct, originWHT, destWHT)
-  }, [amount, yieldPct, growthPct, originWHT, destWHT])
-  const payback = useMemo(() => yieldPct ? paybackYear(amount || 0, yieldPct, growthPct, originWHT, destWHT) : null, [amount, yieldPct, growthPct, originWHT, destWHT])
+    return project10y(amount || 0, yieldPct, growthPct, originWHT, destWHT, isDomestic)
+  }, [amount, yieldPct, growthPct, originWHT, destWHT, isDomestic])
+  const payback = useMemo(() => yieldPct ? paybackYear(amount || 0, yieldPct, growthPct, originWHT, destWHT, isDomestic) : null, [amount, yieldPct, growthPct, originWHT, destWHT, isDomestic])
 
   const maxGross = rows ? Math.max(...rows.map(r => r.gross)) : 0
 
@@ -443,7 +445,7 @@ function RentaProjection({ yld, cagr, country, currency, dpsScenarios, destWHT =
             ))}
           </div>
           <p style={{ fontSize: 10, color: '#2e3a55' }}>
-            Barra gris: dividendo bruto · verde: neto tras retención ({Math.max(originWHT, destWHT)}%). Crecimiento del dividendo moderado año a año.
+            Barra gris: dividendo bruto · verde: neto tras retención ({Math.round(effectiveDivTax(originWHT, destWHT, isDomestic) * 10) / 10}%{!isDomestic && originWHT > 15 ? ', crédito por doble imposición topado al 15%' : ''}). Crecimiento del dividendo moderado año a año.
           </p>
 
           {/* Escenarios DPS conservador/base/optimista (migrado) */}
@@ -1616,7 +1618,7 @@ export default function CompanyDetailPage(props) {
                   <MiniMetric label="Payout" value={payout != null ? (payout * 100).toFixed(0) + '%' : '—'} sub={props.payoutEps != null ? `EPS ${props.payoutEps.toFixed(0)}%` : 'FCF'} color={payout > 0.8 ? '#f87171' : payout > 0.6 ? '#fbbf24' : '#34d399'} />
                 </div>
                 <DividendHistorySection divHistory={divHistory} streak={streak} cagr={cagr} currency={currency} />
-                <UpcomingPayments payments={upcomingPayments} currency={currency} nextExDate={nextExDate} originWHT={originWHT} destWHT={destWHT} />
+                <UpcomingPayments payments={upcomingPayments} currency={currency} nextExDate={nextExDate} originWHT={originWHT} destWHT={destWHT} isDomestic={country === 'ES'} />
                 <RentaProjection yld={yld} cagr={cagr} country={country} currency={currency} dpsScenarios={projection} destWHT={destWHT} />
                 <BuybackSection buybacks={buybacks} />
               </>
@@ -1722,8 +1724,9 @@ function ResumenProjection({ yld, cagr, country, currency, destWHT = DEFAULT_DES
   const yieldPct  = yld != null ? yld * 100 : null
   const growthPct = cagr != null ? cagr * 100 : 0
   const originWHT = getWHT(country)
-  const rows = yieldPct ? project10y(1000, yieldPct, growthPct, originWHT, destWHT) : null
-  const payback = yieldPct ? paybackYear(1000, yieldPct, growthPct, originWHT, destWHT) : null
+  const isDomestic = country === 'ES'
+  const rows = yieldPct ? project10y(1000, yieldPct, growthPct, originWHT, destWHT, isDomestic) : null
+  const payback = yieldPct ? paybackYear(1000, yieldPct, growthPct, originWHT, destWHT, isDomestic) : null
   return (
     <Card>
       <SectionTitle>Proyección rápida · 1.000 {currency}</SectionTitle>

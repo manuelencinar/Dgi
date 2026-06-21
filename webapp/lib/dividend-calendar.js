@@ -7,7 +7,7 @@
 //   · distribution_history (fondos) → meses reales de reparto
 // Importes convertidos a EUR con tipos reales (exchange_rates) pasados en fxToEUR.
 
-import { getWHT } from '@/lib/screener'
+import { getWHT, effectiveDivTax } from '@/lib/screener'
 
 export const MONTHS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
@@ -148,7 +148,8 @@ export function buildDividendCalendar(enriched, fundamentalsMap, fxToEUR, destWH
     const grossEUR   = perLocal * shares * rate
     const priorPer   = priorAnnual != null ? (priorAnnual / freq) * shares * rate : null
     const originPct  = pos.isFund ? 0 : getWHT(code)
-    const effPct     = Math.max(originPct, destWHT || 0)
+    // Retención efectiva con tope del 15% al crédito por doble imposición (ley ES).
+    const effPct     = effectiveDivTax(originPct, destWHT || 0, code === 'ES')
 
     // Pago confirmado de la empresa
     let confirmedDate = null

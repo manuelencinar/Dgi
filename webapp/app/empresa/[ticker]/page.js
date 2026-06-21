@@ -8,7 +8,7 @@ import { findDictEntry } from '@/lib/dict'
 import { getCompanyQuote } from '@/lib/company-quote'
 import { calculateROIC } from '@/lib/metrics'
 import { buildHealthPanel } from '@/lib/health'
-import { netYield, getWHT, resolveRoic } from '@/lib/screener'
+import { netYield, getWHT, resolveRoic, effectiveDivTax } from '@/lib/screener'
 import { payLagDays } from '@/lib/sectors'
 import { sectorInfo, SUPERSECTORS } from '@/lib/supersectors'
 import { industryEs } from '@/lib/taxonomy'
@@ -73,7 +73,7 @@ function buildUpcomingPayments(events, nextPay, nextEx, dpsPrev, cagr, currency,
   const per = annual != null ? annual / freq : null
   const stepMonths = 12 / freq
   const lag  = payLagDays(country)
-  const effWHT = Math.max(originWHT || 0, destWHT || 0) / 100
+  const effWHT = effectiveDivTax(originWHT, destWHT, country === 'ES') / 100
 
   // Ancla de fecha de pago (y de ex), por orden de preferencia.
   let payAnchor = null, exAnchor = null, firstConfirmed = false

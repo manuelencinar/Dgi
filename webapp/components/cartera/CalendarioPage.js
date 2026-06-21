@@ -366,7 +366,7 @@ export default function CalendarioPage({ isPremium }) {
             </div>
           )}
           <p style={{ fontSize: 9, color: '#2e3a55', marginTop: 10 }}>
-            Importes en EUR (tipos reales). Retención efectiva = máx(origen, destino {destWHT}%). Las fechas y los importes son estimaciones salvo los marcados como confirmados.
+            Importes en EUR (tipos reales). Retención efectiva = retención en origen + impuesto español ({destWHT}%) − crédito por doble imposición (acreditable hasta el 15% del bruto; el exceso de retención en origen no es deducible). Las fechas y los importes son estimaciones salvo los marcados como confirmados.
           </p>
         </div>
       )}

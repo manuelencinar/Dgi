@@ -87,9 +87,9 @@ function moatBadge(m) { return m === 'wide' ? '🏰' : m === 'narrow' ? '🧱' :
 // Proyección €1k para una empresa (idéntica al HTML original).
 function projectCompany(co, destWHT) {
   if (co.y == null || co.y <= 0) return null
-  const rows = project10y(1000, co.y, co.cagr || 0, getWHT(co.c), destWHT)
+  const rows = project10y(1000, co.y, co.cagr || 0, getWHT(co.c), destWHT, co.c === 'ES')
   if (!rows) return null
-  return { y1: rows[0].net, cum10: rows[9].cum, payback: paybackYear(1000, co.y, co.cagr || 0, getWHT(co.c), destWHT) }
+  return { y1: rows[0].net, cum10: rows[9].cum, payback: paybackYear(1000, co.y, co.cagr || 0, getWHT(co.c), destWHT, co.c === 'ES') }
 }
 
 // ── Chips ────────────────────────────────────────────────────────────────────

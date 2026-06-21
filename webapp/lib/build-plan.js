@@ -63,7 +63,7 @@ export function buildPortfolioPlan(companies = [], opts = {}) {
   const weightPct  = n ? Math.round(1000 / n) / 10 : 0
   const monthlyEur = n && monthly ? Math.round((Number(monthly) || 0) / n) : 0
   const avgYield    = n ? picked.reduce((s, p) => s + p.co.y, 0) / n : 0
-  const avgYieldNet = n ? picked.reduce((s, p) => s + netYield(p.co.y, getWHT(p.co.c), destWHT), 0) / n : 0
+  const avgYieldNet = n ? picked.reduce((s, p) => s + netYield(p.co.y, getWHT(p.co.c), destWHT, p.co.c === 'ES'), 0) / n : 0
 
   return {
     plan: picked.map((p, i) => ({

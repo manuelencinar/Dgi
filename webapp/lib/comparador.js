@@ -105,7 +105,7 @@ export async function buildComparadorCompanies(tickers, destWHT = 19) {
       cont: getContinent(country),
       // Dividendo
       yield: y,
-      yieldNet: y != null ? netYield(y, getWHT(country), destWHT) : null,
+      yieldNet: y != null ? netYield(y, getWHT(country), destWHT, country === 'ES') : null,
       streak: num(f.div_streak),
       cagr: num(f.div_cagr5),
       payout: num(f.payout_fcf),

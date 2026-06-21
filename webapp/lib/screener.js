@@ -29,10 +29,27 @@ export function cleanGrossMargin(f) {
   return gm
 }
 
-// Dividendo neto tras doble imposición (origen acreditado contra destino)
-export function netYield(grossYield, originWHT, destWHT) {
-  const effective = Math.max(originWHT, destWHT) / 100
-  return parseFloat((grossYield * (1 - effective)).toFixed(4))
+// Retención en origen máxima ACREDITABLE en España por doble imposición (convenio).
+// La ley solo permite deducir hasta este % del bruto; el exceso de retención en
+// origen NO es deducible (habría que reclamarlo al país de origen).
+export const FOREIGN_CREDIT_CAP = 15
+
+// Tipo impositivo TOTAL efectivo sobre el dividendo (en %), tras la deducción por
+// doble imposición con el tope del 15%:
+//   total = retención_origen + impuesto_español − min(origen, 15%, español)
+// Para una acción NACIONAL (país = residencia) no hay doble imposición: el tipo es
+// solo el impuesto español (la retención en origen ES el impuesto español).
+export function effectiveDivTax(originWHT, destWHT, isDomestic = false) {
+  const d = Math.max(0, destWHT || 0)
+  if (isDomestic) return d
+  const o = Math.max(0, originWHT || 0)
+  const credit = Math.min(o, FOREIGN_CREDIT_CAP, d)
+  return Math.min(100, o + d - credit)
+}
+
+// Dividendo neto tras doble imposición (origen acreditado contra destino, máx 15%).
+export function netYield(grossYield, originWHT, destWHT, isDomestic = false) {
+  return parseFloat((grossYield * (1 - effectiveDivTax(originWHT, destWHT, isDomestic) / 100)).toFixed(4))
 }
 
 // Crecimiento del dividendo con fade lineal: el CAGR inicial se capa a CAGR_CAP
@@ -72,10 +89,10 @@ function divGrowthFactor(growthPct, i) {
 
 // Proyección a 10 años. El dividendo crece con CAGR decreciente (fade lineal).
 // Devuelve [{year, gross, net, cum}].
-export function project10y(investAmt, yieldPct, growthPct, originWHT, destWHT) {
+export function project10y(investAmt, yieldPct, growthPct, originWHT, destWHT, isDomestic = false) {
   if (!investAmt || !yieldPct) return null
   const y = yieldPct / 100
-  const effective = Math.max(originWHT, destWHT) / 100
+  const effective = effectiveDivTax(originWHT, destWHT, isDomestic) / 100
   const rows = []; let cumNet = 0
   for (let i = 0; i < 10; i++) {
     const gross = investAmt * y * divGrowthFactor(growthPct || 0, i)
@@ -87,10 +104,10 @@ export function project10y(investAmt, yieldPct, growthPct, originWHT, destWHT) {
 }
 
 // Año en que la suma de dividendos netos iguala la inversión inicial (payback).
-export function paybackYear(investAmt, yieldPct, growthPct, originWHT, destWHT) {
+export function paybackYear(investAmt, yieldPct, growthPct, originWHT, destWHT, isDomestic = false) {
   if (!investAmt || !yieldPct) return null
   const y = yieldPct / 100
-  const effective = Math.max(originWHT, destWHT) / 100
+  const effective = effectiveDivTax(originWHT, destWHT, isDomestic) / 100
   let cum = 0
   for (let i = 0; i < 100; i++) {
     cum += investAmt * y * divGrowthFactor(growthPct || 0, i) * (1 - effective)
@@ -228,7 +245,7 @@ export function calcDivQuality(f, type, country, destWHT = 19) {
   }
   const yld = yieldPct(f)
   if (yld != null && yld > 0) {
-    const ny = netYield(yld, getWHT(country), destWHT)
+    const ny = netYield(yld, getWHT(country), destWHT, country === 'ES')
     const s = ny > 5 ? 10 : ny > 3.5 ? 8 : ny > 2.5 ? 6 : ny > 1.5 ? 4 : 2
     score += s; weight += 1
   }
@@ -341,7 +358,7 @@ function pbScore(pb) {
 // Yield neto (tras doble imposición) de una empresa ya construida (shape `co`).
 export function netYieldOf(co, destWHT) {
   if (co?.y == null || co.y <= 0) return null
-  return netYield(co.y, getWHT(co.c), destWHT)
+  return netYield(co.y, getWHT(co.c), destWHT, co.c === 'ES')
 }
 
 // Nota de renta 0-10: 60% yield neto, 40% rapidez de recuperación.
