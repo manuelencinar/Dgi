@@ -221,6 +221,50 @@ function exDebtTrendScore(data) {
   return 0
 }
 
+// CAGR anual del nº de acciones (desde shares_reduced_pct, total desde el año base).
+// Devuelve %/año: POSITIVO = dilución (emite acciones), NEGATIVO = recompra neta.
+function exSharesAnnual(data) {
+  const red = n(data.shares_reduced_pct)   // % de acciones REDUCIDAS desde el año base
+  if (red == null) return null
+  const base = n(data.shares_base_year)
+  const years = (base != null && base > 2000) ? Math.max(1, new Date().getFullYear() - base) : 4
+  const factor = 1 - red / 100             // acciones actuales / base
+  if (!(factor > 0)) return null
+  return (Math.pow(factor, 1 / years) - 1) * 100
+}
+
+// Puntuación de disciplina de acciones (dilución/recompra), SECTOR-AWARE:
+//  · General/tech/industrial: recompra premia; dilución (SBC desbocada) penaliza.
+//  · REIT: emitir es el modelo del sector → se juzga por si el FFO/acción crece
+//    pese a la emisión (acretiva), no por el nº de acciones en bruto.
+//  · Banca/seguros: la emisión suele ser recapitalización forzada → alarma.
+function dilutionScore(annual, sectorType, ffoCagr5 = null) {
+  if (annual == null) return null
+  if (sectorType === 'reit') {
+    if (ffoCagr5 != null) {
+      if (ffoCagr5 >= 3)  return 10
+      if (ffoCagr5 >= 1)  return 8
+      if (ffoCagr5 >= 0)  return 6
+      if (ffoCagr5 >= -2) return 4
+      return 2
+    }
+    return annual <= 0 ? 9 : annual <= 4 ? 7 : annual <= 8 ? 4 : 2
+  }
+  if (sectorType === 'bank' || sectorType === 'insurer') {
+    if (annual <= -1)  return 10
+    if (annual <= 0.5) return 8
+    if (annual <= 1.5) return 5
+    if (annual <= 3)   return 3
+    return 1
+  }
+  if (annual <= -3)   return 10
+  if (annual <= -0.5) return 9
+  if (annual <= 1)    return 7
+  if (annual <= 2)    return 5
+  if (annual <= 4)    return 3
+  return 1
+}
+
 function exCfoDivCoverage(data) {
   const d = data.cashflow_annual?.data
   if (!d) return null
@@ -492,6 +536,17 @@ function buildFinancial(data, sectorType, bm = null) {
   const CR_G     = [[0.5,3],[0.8,5],[1.2,7],[2,9],[3,10]]
   const REV_G    = [[-5,2],[0,4],[3,6],[7,8],[12,10]]
 
+  // Disciplina de acciones (dilución vs recompra) — métrica de solidez sector-aware.
+  const sharesAnnual = exSharesAnnual(data)
+  const sharesScore  = dilutionScore(sharesAnnual, sectorType, sectorType === 'reit' ? n(bm?.ffoCagr5) : null)
+  const sharesVal    = sharesAnnual == null ? '—' : (sharesAnnual > 0 ? '+' : '') + sharesAnnual.toFixed(1) + '%/año'
+  const sharesTip    = sectorType === 'reit'
+    ? 'CAGR del nº de acciones. En REITs emitir acciones es el modelo del sector (no retienen beneficios): solo penaliza si el FFO por acción no crece pese a la emisión.'
+    : (sectorType === 'bank' || sectorType === 'insurer')
+    ? 'CAGR del nº de acciones. En banca/seguros la emisión suele ser una recapitalización forzada (alarma de solvencia); recompra o estabilidad puntúa mejor.'
+    : 'CAGR del nº de acciones diluidas. Negativo = recompras netas (premia); positivo = dilución, normalmente por stock-based compensation, que perjudica al accionista existente.'
+  const sharesMk = (w) => mk('shares', 'Disciplina de acciones', sharesVal, sharesScore, w, sharesTip)
+
   if (sectorType === 'reit') {
     return [
       mk('nd','Deuda neta / EBITDA',fmtDebtEbitda(v.nd),bsRev(v.nd,[[3,10],[4,8],[5,6],[6,4],[7,1]]),0.30,'En REITs la deuda es estructuralmente más alta. Hasta 6× es aceptable si los activos son de calidad.'),
@@ -499,6 +554,7 @@ function buildFinancial(data, sectorType, bm = null) {
       mk('debtTrend','Tendencia deuda neta','—',v.debtTrend,0.20,'En REITs el crecimiento de deuda acompañado de crecimiento de activos puede ser positivo.'),
       mk('fcfCagr','FCF CAGR 5a (OCF)',fmtPct(v.fcfCagr),bs(v.fcfCagr,FCF_CAG),0.15,'En REITs es más relevante que el FCF por el alto capex.'),
       mk('gw','Goodwill / Activos',fmtPct(v.gw),bsRev(v.gw,[[5,10],[15,7],[25,4]]),0.10,'En REITs el goodwill debería ser mínimo — los activos son inmuebles físicos.'),
+      sharesMk(0.10),
     ]
   }
 
@@ -512,6 +568,7 @@ function buildFinancial(data, sectorType, bm = null) {
       mk('npl','Morosidad (NPL)',b.npl != null ? fmtPct(b.npl) : '—',bsRev(b.npl,[[3,10],[5,8],[8,5],[12,2]]),0.20,'% de préstamos dudosos. Manual por trimestre; si no está, no puntúa. Por debajo del 3% es sólido.'),
       mk('revCagr','Crecimiento ingresos CAGR 5a',fmtPct(n(data.revenue_cagr5)),bs(n(data.revenue_cagr5),REV_G),0.15,'Crecimiento del margen de intereses y comisiones — más capacidad de absorber morosidad.'),
       mk('roa','ROA',fmtPct(n(data.roa)),bs(n(data.roa),[[0.3,4],[0.6,6],[1,8],[1.5,10]]),0.15,'Rentabilidad sobre activos. Un ROA alto indica que los activos del banco generan rentabilidad suficiente.'),
+      sharesMk(0.15),
     ]
   }
 
@@ -526,6 +583,7 @@ function buildFinancial(data, sectorType, bm = null) {
       mk('iy','Investment yield',fmtPct(im.investmentYield),bs(im.investmentYield,[[1.5,3],[2.5,6],[3.5,8],[4.5,10]]),0.20,'Ingresos por inversiones / inversiones financieras.'),
       mk('revCagr','Crecimiento primas CAGR 5a',fmtPct(n(data.revenue_cagr5)),bs(n(data.revenue_cagr5),REV_G),0.15,'Crecimiento de primas — más diversificación del riesgo.'),
       mk('roa','ROA',fmtPct(n(data.roa)),bs(n(data.roa),[[1,5],[3,8],[5,10]]),0.15,'En aseguradoras refleja la calidad de la cartera de inversiones.'),
+      sharesMk(0.15),
     ]
   }
 
@@ -537,6 +595,7 @@ function buildFinancial(data, sectorType, bm = null) {
       mk('ic','Cobertura intereses',fmtX(v.ic),bs(v.ic,IC_G),0.25,'Capacidad de pagar los intereses de la deuda de red con el resultado operativo.'),
       mk('fcfCagr','FCF CAGR 5a',fmtPct(v.fcfCagr),bs(v.fcfCagr,FCF_CAG),0.25,'Evolución del FCF tras el capex de red — lo que de verdad sostiene el dividendo.'),
       mk('cod','Caja / deuda total',fmtPct(v.cod),bs(v.cod,COD_G),0.20,'Colchón de liquidez frente a la deuda de red.'),
+      sharesMk(0.12),
     ]
   }
 
@@ -550,6 +609,7 @@ function buildFinancial(data, sectorType, bm = null) {
         0.25,'En utilities el FCF puede ser negativo por el capex. La cobertura del dividendo con el flujo operativo es la métrica correcta.'),
       mk('debtTrend','Tendencia deuda neta','—',v.debtTrend,0.10,'En utilities el crecimiento de deuda acompañado de activos regulados puede ser positivo.'),
       mk('fcfCagr','FCF CAGR 5a',fmtPct(v.fcfCagr),v.fcfCagr == null ? null : v.fcfCagr < 0 ? 5 : bs(v.fcfCagr,[[0,5],[5,7],[10,9],[15,10]]),0.10,'En utilities el FCF puede ser negativo por la inversión en activos regulados.'),
+      sharesMk(0.10),
     ]
   }
 
@@ -560,6 +620,7 @@ function buildFinancial(data, sectorType, bm = null) {
       mk('cr','Ratio corriente',fmtX(v.cr),bs(v.cr,CR_G),0.20,'En energía es importante mantener liquidez suficiente para sobrevivir períodos de precios bajos.'),
       mk('cod','Caja / deuda total',fmtPct(v.cod),bs(v.cod,COD_G),0.15,'En energía una posición de caja sólida permite mantener dividendo e inversión durante el ciclo bajo.'),
       mk('fcfCagr','FCF CAGR (ciclo)',fmtPct(v.fcfCagr),bs(v.fcfCagr,FCF_CAG),0.10,'En energía el FCF es muy volátil — la media del ciclo refleja mejor la capacidad estructural.'),
+      sharesMk(0.12),
     ]
   }
 
@@ -577,6 +638,7 @@ function buildFinancial(data, sectorType, bm = null) {
     mk('gw','Goodwill / Activos',fmtPct(v.gw),bsRev(v.gw,gwThresh),0.10,'Un goodwill muy alto indica primas pagadas por adquisiciones. Si el negocio decepciona puede eliminar beneficios de golpe.'),
     mk('fcfCagr','FCF CAGR 5a',fmtPct(v.fcfCagr),bs(v.fcfCagr,FCF_CAG),0.10,'Un FCF creciente es la mejor garantía de sostenibilidad del dividendo a largo plazo.'),
     mk('cod','Caja / deuda total',fmtPct(v.cod),bs(v.cod,COD_G),0.05,'Por encima del 50% la empresa podría pagar la mitad de su deuda inmediatamente.'),
+    sharesMk(0.12),
   ]
 }
 
