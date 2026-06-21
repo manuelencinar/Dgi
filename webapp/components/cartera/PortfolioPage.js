@@ -140,10 +140,15 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
       <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Posiciones</p>
       {enriched.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <p style={{ color: '#4a5270', fontSize: 14, marginBottom: 16 }}>Añade tu primera posición para empezar a analizar tu cartera</p>
-          <Link href="/cartera/nueva-posicion" style={{ padding: '10px 20px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-            Añadir primera posición
-          </Link>
+          <p style={{ color: '#4a5270', fontSize: 14, marginBottom: 16 }}>Añade tu primera posición o importa tus movimientos de ING para empezar</p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/cartera/nueva-posicion" style={{ padding: '10px 20px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+              Añadir primera posición
+            </Link>
+            <Link href="/cartera/importar" style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#c8d0e0', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+              ⭳ Importar de ING
+            </Link>
+          </div>
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
@@ -635,6 +640,9 @@ export default function PortfolioPage({ isPremium }) {
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0' }}>Mi cartera</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <PricesFreshnessIndicator />
+          <Link href="/cartera/importar" style={{ padding: '9px 16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#c8d0e0', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+            ⭳ Importar
+          </Link>
           {enriched.length > 0 && (
             <Link href="/cartera/nueva-posicion" style={{ padding: '9px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
               + Añadir posición

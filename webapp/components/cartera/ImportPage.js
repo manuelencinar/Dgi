@@ -1,0 +1,259 @@
+'use client'
+import { useState, useMemo, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import { DICT } from '@/data/dict'
+import { weightedAvgCost } from '@/lib/portfolio'
+import { parseIngRows, buildImportRows, computeFinancials, rowSignature, existingSignatures } from '@/lib/broker-import'
+
+// Mapa ticker → { name, currency } del DICT (validación y edición manual).
+const TICKER_MAP = Object.fromEntries(DICT.map(([name, ticker, , currency]) => [ticker, { name, currency }]))
+
+const fmt = (n, d = 2) => n == null || isNaN(n) ? '—' : Number(n).toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d })
+const TYPE_ES = { buy: 'Compra', sell: 'Venta', dividend: 'Dividendo' }
+
+// Estado de cada fila para la previsualización.
+function classify(row, sigs) {
+  if (row.type === 'dividend' && (!row.totalEur || row.totalEur <= 0)) return 'cero'
+  if (!row.ticker) return 'sin'
+  const sig = rowSignature(row.type, row.ticker, row.date, row.shares, row.totalEur)
+  if (sigs.has(sig)) return 'dup'
+  return 'nuevo'
+}
+
+const STATUS_INFO = {
+  nuevo: { label: 'Nuevo',        color: '#34d399' },
+  dup:   { label: 'Ya importado', color: '#8090a8' },
+  sin:   { label: 'Sin ticker',   color: '#fbbf24' },
+  cero:  { label: 'Importe 0',    color: '#6b7693' },
+}
+
+export default function ImportPage() {
+  const router = useRouter()
+  const sb = createClient()
+  const fileRef = useRef(null)
+  const [status, setStatus] = useState('idle')   // idle | parsing | preview | importing | done
+  const [error, setError]   = useState(null)
+  const [rows, setRows]     = useState([])
+  const [sigs, setSigs]     = useState(new Set())
+  const [result, setResult] = useState(null)
+
+  // Recalcula el estado de una fila (tras editar el ticker).
+  const reclassify = (r) => ({ ...r, _status: classify(r, sigs) })
+
+  const handleFile = async (file) => {
+    if (!file) return
+    setError(null); setStatus('parsing')
+    try {
+      const XLSX = await import('xlsx')
+      const buf = await file.arrayBuffer()
+      const wb = XLSX.read(buf, { type: 'array' })
+      const sheet = wb.Sheets[wb.SheetNames[0]]
+      const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true })
+      const { movements, error: perr } = parseIngRows(aoa)
+      if (perr) { setError(perr); setStatus('idle'); return }
+      if (!movements.length) { setError('No se encontraron movimientos en el fichero.'); setStatus('idle'); return }
+
+      // Firmas de lo ya importado (para no duplicar).
+      const { data: { user } } = await sb.auth.getUser()
+      const [{ data: txs }, { data: divs }] = await Promise.all([
+        sb.from('transactions').select('ticker, type, shares, date, total_cost, total_cost_base_currency, amount_original').eq('user_id', user.id),
+        sb.from('dividends_received').select('ticker, amount, date, shares_received').eq('user_id', user.id),
+      ])
+      const existing = existingSignatures(txs || [], divs || [])
+      setSigs(existing)
+
+      const built = buildImportRows(movements).map(r => {
+        const st = classify(r, existing)
+        return { ...r, _status: st, include: st === 'nuevo' }   // por defecto solo los nuevos
+      })
+      setRows(built)
+      setStatus('preview')
+    } catch (e) {
+      setError('No se pudo leer el fichero: ' + (e.message || e)); setStatus('idle')
+    }
+  }
+
+  const onTicker = (id, ticker) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== id) return r
+      const tk = ticker.trim().toUpperCase()
+      const info = TICKER_MAP[tk]
+      if (!info) return reclassify({ ...r, ticker: tk || null, matchedName: null, confidence: 'manual' })
+      const fin = computeFinancials(r, info.currency)
+      const next = { ...r, ticker: tk, matchedName: info.name, currency: info.currency, confidence: 'manual', ...fin }
+      const st = classify(next, sigs)
+      return { ...next, _status: st, include: st === 'nuevo' ? next.include : (st === 'dup' || st === 'cero' ? false : next.include) }
+    }))
+  }
+
+  const toggle = (id) => setRows(prev => prev.map(r => r.id === id ? { ...r, include: !r.include } : r))
+
+  const importable = useMemo(() => rows.filter(r => r.include && r.ticker && !(r.type === 'dividend' && (!r.totalEur || r.totalEur <= 0))), [rows])
+
+  const doImport = async () => {
+    setStatus('importing'); setError(null)
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user) { setError('Sesión expirada.'); setStatus('preview'); return }
+
+    // Cronológico para reconstruir bien el precio medio.
+    const batch = [...importable].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0)
+    let imported = 0, skipped = 0, errors = 0
+    const done = new Set(sigs)
+
+    for (const r of batch) {
+      const sig = rowSignature(r.type, r.ticker, r.date, r.shares, r.totalEur)
+      if (done.has(sig)) { skipped++; continue }
+      try {
+        if (r.type === 'dividend') {
+          let { error } = await sb.from('dividends_received').insert({ user_id: user.id, ticker: r.ticker, amount: r.totalEur, amount_net: r.totalEur, date: r.date })
+          if (error) { errors++; continue }
+        } else {
+          const baseTx = {
+            user_id: user.id, ticker: r.ticker, type: r.type,
+            shares: r.shares, price: r.price, date: r.date,
+            currency: r.currency, amount_original: r.amountOriginal,
+            exchange_rate: r.exchangeRate, exchange_rate_date: r.date,
+            total_cost_base_currency: r.totalEur, notes: 'Importado de ING',
+          }
+          let { error: txErr } = await sb.from('transactions').insert({
+            ...baseTx, commission: r.commission ?? 0, commission_currency: r.commissionCur, total_cost: r.totalEur,
+          })
+          if (txErr && /commission|total_cost|exchange_rate|amount_original|currency/.test(txErr.message)) {
+            ;({ error: txErr } = await sb.from('transactions').insert({ user_id: user.id, ticker: r.ticker, type: r.type, shares: r.shares, price: r.price, date: r.date, notes: 'Importado de ING' }))
+          }
+          if (txErr) { errors++; continue }
+
+          // Recalcular posición.
+          const { data: pos } = await sb.from('positions').select('*').eq('user_id', user.id).eq('ticker', r.ticker).maybeSingle()
+          if (r.type === 'buy') {
+            if (pos) {
+              await sb.from('positions').update({ shares: pos.shares + r.shares, avg_cost: weightedAvgCost(pos.shares, pos.avg_cost, r.shares, r.price), updated_at: new Date().toISOString() }).eq('id', pos.id)
+            } else {
+              let { error: pErr } = await sb.from('positions').insert({ user_id: user.id, ticker: r.ticker, shares: r.shares, avg_cost: r.price, currency: r.currency, asset_type: 'stock' })
+              if (pErr && /asset_type/.test(pErr.message)) await sb.from('positions').insert({ user_id: user.id, ticker: r.ticker, shares: r.shares, avg_cost: r.price, currency: r.currency })
+            }
+          } else if (pos) {
+            const remaining = pos.shares - r.shares
+            if (remaining <= 0.0000001) await sb.from('positions').delete().eq('id', pos.id)
+            else await sb.from('positions').update({ shares: remaining, updated_at: new Date().toISOString() }).eq('id', pos.id)
+          }
+        }
+        done.add(sig); imported++
+      } catch { errors++ }
+    }
+    setResult({ imported, skipped, errors, total: batch.length })
+    setStatus('done')
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  const counts = useMemo(() => {
+    const c = { nuevo: 0, dup: 0, sin: 0, cero: 0 }
+    rows.forEach(r => { c[r._status] = (c[r._status] || 0) + 1 })
+    return c
+  }, [rows])
+
+  return (
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px 60px' }}>
+      <Link href="/cartera" style={{ fontSize: 12, color: '#818cf8', textDecoration: 'none' }}>← Volver a la cartera</Link>
+      <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e6ebf5', margin: '10px 0 4px' }}>Importar movimientos</h1>
+      <p style={{ fontSize: 13, color: '#8090a8', marginBottom: 20, lineHeight: 1.55 }}>
+        Sube el fichero de movimientos de <b style={{ color: '#c8d0e0' }}>ING</b> (Cartera → Movimientos → Exportar a Excel). Detectamos compras, ventas y dividendos, calculamos las comisiones y no duplicamos lo que ya tengas registrado.
+      </p>
+
+      {(status === 'idle' || status === 'parsing') && (
+        <div
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => { e.preventDefault(); handleFile(e.dataTransfer.files?.[0]) }}
+          onClick={() => fileRef.current?.click()}
+          style={{ border: '1.5px dashed rgba(99,102,241,0.4)', borderRadius: 14, padding: '40px 20px', textAlign: 'center', cursor: 'pointer', background: 'rgba(99,102,241,0.04)' }}
+        >
+          <p style={{ fontSize: 14, color: '#c8d0e0', fontWeight: 700 }}>{status === 'parsing' ? 'Leyendo fichero…' : 'Arrastra aquí tu fichero .xls de ING'}</p>
+          <p style={{ fontSize: 12, color: '#4a5270', marginTop: 6 }}>o haz clic para seleccionarlo (.xls / .xlsx)</p>
+          <input ref={fileRef} type="file" accept=".xls,.xlsx" style={{ display: 'none' }} onChange={e => handleFile(e.target.files?.[0])} />
+        </div>
+      )}
+
+      {error && <p style={{ fontSize: 13, color: '#f87171', marginTop: 14 }}>{error}</p>}
+
+      {status === 'preview' && (
+        <>
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', margin: '18px 0 12px', fontSize: 12 }}>
+            <span style={{ color: '#34d399' }}>● {counts.nuevo} nuevos</span>
+            <span style={{ color: '#8090a8' }}>● {counts.dup} ya importados</span>
+            {counts.sin > 0 && <span style={{ color: '#fbbf24' }}>● {counts.sin} sin ticker (asígnalos abajo)</span>}
+            {counts.cero > 0 && <span style={{ color: '#6b7693' }}>● {counts.cero} con importe 0 (se omiten)</span>}
+          </div>
+
+          <div style={{ overflowX: 'auto', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, minWidth: 760 }}>
+              <thead>
+                <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                  {['', 'Fecha', 'Tipo', 'Valor (ING)', 'Ticker', 'Títulos', 'Precio', 'Comisión', 'Importe €', 'Estado'].map((h, i) => (
+                    <th key={i} style={{ padding: '8px', textAlign: i > 4 ? 'right' : 'left', color: '#4a5270', fontWeight: 600, whiteSpace: 'nowrap', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(r => {
+                  const si = STATUS_INFO[r._status] || STATUS_INFO.nuevo
+                  const importable = r._status === 'nuevo' || (r._status !== 'cero' && r.ticker)
+                  return (
+                    <tr key={r.id} style={{ opacity: r._status === 'cero' || r._status === 'dup' ? 0.55 : 1, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                      <td style={{ padding: '6px 8px' }}>
+                        <input type="checkbox" checked={r.include} disabled={!importable || r._status === 'cero'} onChange={() => toggle(r.id)} />
+                      </td>
+                      <td style={{ padding: '6px 8px', color: '#8090a8', whiteSpace: 'nowrap' }}>{r.date}</td>
+                      <td style={{ padding: '6px 8px', color: r.type === 'sell' ? '#f87171' : r.type === 'dividend' ? '#fbbf24' : '#34d399' }}>{TYPE_ES[r.type]}</td>
+                      <td style={{ padding: '6px 8px', color: '#c8d0e0', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${r.ingName} · ${r.market}`}>{r.ingName}</td>
+                      <td style={{ padding: '6px 8px' }}>
+                        <input
+                          value={r.ticker || ''} list="dict-tickers"
+                          onChange={e => onTicker(r.id, e.target.value)}
+                          placeholder="ticker"
+                          style={{ width: 86, background: '#0d1220', border: `1px solid ${r.ticker ? 'rgba(255,255,255,0.12)' : 'rgba(251,191,36,0.5)'}`, borderRadius: 6, color: r.ticker ? '#e2e8f5' : '#fbbf24', fontSize: 11.5, padding: '4px 6px' }}
+                        />
+                        {r.matchedName && <div style={{ fontSize: 9.5, color: '#4a5270', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.matchedName}>{r.matchedName}</div>}
+                      </td>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', color: '#c8d0e0' }}>{fmt(r.shares, 0)}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', color: '#c8d0e0', whiteSpace: 'nowrap' }}>{r.type === 'dividend' ? '—' : `${fmt(r.price, 2)} ${r.currency}`}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', color: '#8090a8' }}>{r.commission != null ? fmt(r.commission) : '—'}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', color: '#c8d0e0' }}>{fmt(r.totalEur)}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'right' }}><span style={{ color: si.color, fontSize: 10.5, fontWeight: 700 }}>{si.label}</span></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            <datalist id="dict-tickers">{DICT.slice(0, 4000).map(([, t]) => <option key={t} value={t} />)}</datalist>
+          </div>
+
+          <p style={{ fontSize: 10.5, color: '#3a4260', marginTop: 10, lineHeight: 1.5 }}>
+            En mercados en euros la comisión se deriva (compra: sumada al precio; venta: descontada) y se incluye en el precio medio. En divisa extranjera el precio queda en su divisa y se guarda el importe real en €.
+          </p>
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button onClick={doImport} disabled={!importable.length} style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: importable.length ? 'rgba(52,211,153,0.85)' : 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 9, padding: '10px 18px', cursor: importable.length ? 'pointer' : 'default' }}>
+              Importar {importable.length} movimiento{importable.length === 1 ? '' : 's'}
+            </button>
+            <button onClick={() => { setRows([]); setStatus('idle'); setError(null) }} style={{ fontSize: 13, color: '#8090a8', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 9, padding: '10px 16px', cursor: 'pointer' }}>Cancelar</button>
+          </div>
+        </>
+      )}
+
+      {status === 'importing' && <p style={{ fontSize: 14, color: '#818cf8', marginTop: 20 }}>Importando movimientos…</p>}
+
+      {status === 'done' && result && (
+        <div style={{ marginTop: 20, background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 12, padding: 20 }}>
+          <p style={{ fontSize: 15, fontWeight: 800, color: '#34d399', marginBottom: 6 }}>✓ Importación completada</p>
+          <p style={{ fontSize: 13, color: '#c8d0e0' }}>{result.imported} importados · {result.skipped} omitidos (duplicados){result.errors ? ` · ${result.errors} con error` : ''}.</p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+            <Link href="/cartera" style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: 'rgba(99,102,241,0.85)', borderRadius: 9, padding: '10px 18px', textDecoration: 'none' }}>Ver mi cartera →</Link>
+            <button onClick={() => { setRows([]); setResult(null); setStatus('idle') }} style={{ fontSize: 13, color: '#8090a8', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 9, padding: '10px 16px', cursor: 'pointer' }}>Importar otro fichero</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
