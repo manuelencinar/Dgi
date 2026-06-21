@@ -32,8 +32,8 @@ export default async function ComparadorPage({ searchParams }) {
   const limited = isPremium ? initialTickers.slice(0, 5) : initialTickers.slice(0, 2)
   const initialCompanies = limited.length ? await buildComparadorCompanies(limited, destWHT) : []
 
-  // Lista ligera para el buscador: [name, ticker, superSector, type]
-  const options = (await getEffectiveDict()).map(d => [d[0], d[1], d[4], d[6]])
+  // Lista ligera para el buscador y el explorador: [name, ticker, sector, type, subsector]
+  const options = (await getEffectiveDict()).map(d => [d[0], d[1], d[4], d[6], d[5]])
 
   return (
     <div style={{ minHeight: '100vh', background: '#080b14' }}>

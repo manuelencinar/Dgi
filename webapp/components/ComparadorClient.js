@@ -211,6 +211,9 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
   const [investAmt, setInvestAmt] = useState(1000)
   const [highlight, setHighlight] = useState(null)
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [browseOpen, setBrowseOpen] = useState(false)
+  const [browseSector, setBrowseSector] = useState('')
+  const [browseSub, setBrowseSub] = useState('')
   const captureRef = useRef(null)
 
   const maxCompanies = isPremium ? 5 : 2
@@ -260,6 +263,19 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
     if (!secs.size) return []
     return options.filter(o => o[2] && secs.has(o[2]) && !have.has(o[1])).slice(0, 12)
   }, [companies, options, sectorByTicker])
+
+  // ── Explorador por sector / subsector ──────────────────────────────────────
+  const sectorList = useMemo(() => [...new Set(options.map(o => o[2]).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [options])
+  const subList = useMemo(() => {
+    if (!browseSector) return []
+    return [...new Set(options.filter(o => o[2] === browseSector).map(o => o[4]).filter(Boolean))].sort((a, b) => a.localeCompare(b))
+  }, [options, browseSector])
+  const browseCompanies = useMemo(() => {
+    if (!browseSector) return []
+    return options
+      .filter(o => o[2] === browseSector && (!browseSub || o[4] === browseSub))
+      .sort((a, b) => a[0].localeCompare(b[0]))
+  }, [options, browseSector, browseSub])
 
   // Proyecciones (recalcular cuando cambian empresas o importe)
   const projections = useMemo(() => companies.map(co => {
@@ -356,6 +372,56 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
             </div>
           </div>
         )}
+
+        {/* Explorador por sector / subsector */}
+        <div style={{ marginTop: 14, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
+          <button type="button" onClick={() => setBrowseOpen(v => !v)} style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+            {browseOpen ? '▲ Ocultar' : '🔍 Explorar todas las empresas por sector'}
+          </button>
+          {browseOpen && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                <select value={browseSector} onChange={e => { setBrowseSector(e.target.value); setBrowseSub('') }}
+                  style={{ flex: '1 1 200px', padding: '9px 12px', background: '#0f1221', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 9, color: '#e0e8f0', fontSize: 13, fontFamily: 'inherit' }}>
+                  <option value="">Elige un sector…</option>
+                  {sectorList.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <select value={browseSub} onChange={e => setBrowseSub(e.target.value)} disabled={!browseSector}
+                  style={{ flex: '1 1 200px', padding: '9px 12px', background: '#0f1221', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 9, color: browseSector ? '#e0e8f0' : '#3a4260', fontSize: 13, fontFamily: 'inherit' }}>
+                  <option value="">{browseSector ? 'Todos los subsectores' : '—'}</option>
+                  {subList.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              {browseSector && (
+                <>
+                  <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 8 }}>
+                    {browseCompanies.length} empresas {browseSub ? `en ${browseSub}` : `en ${browseSector}`} · pulsa para añadir (máx {maxCompanies})
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 6, maxHeight: 300, overflowY: 'auto' }}>
+                    {browseCompanies.map(o => {
+                      const sel = companies.find(c => c.ticker === o[1])
+                      return (
+                        <button key={o[1]} onClick={() => addCompany(o[1])} disabled={!!sel} title={`${o[0]} · ${o[4] || o[2]}`}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 6, textAlign: 'left', padding: '7px 10px', borderRadius: 8,
+                            cursor: sel ? 'default' : 'pointer', fontFamily: 'inherit',
+                            border: `1px solid ${sel ? 'rgba(52,211,153,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                            background: sel ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.02)', opacity: sel ? 0.85 : 1,
+                          }}>
+                          <span style={{ fontSize: 13, color: sel ? '#34d399' : '#818cf8', fontWeight: 700, flexShrink: 0 }}>{sel ? '✓' : '+'}</span>
+                          <span style={{ minWidth: 0 }}>
+                            <span style={{ display: 'block', fontSize: 12, color: '#e0e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o[0]}</span>
+                            <span style={{ fontSize: 10, color: '#3a4260' }}>{o[1]}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         {showUpgrade && !isPremium && (
           <div style={{ marginTop: 12, padding: '12px 16px', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
