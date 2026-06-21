@@ -87,9 +87,11 @@ const OM_T = {
   general: [10, 20], luxury: [15, 25], pharma: [15, 25], energy: [8, 15],
   reit: [20, 35], utilities: [14, 22], bank: [20, 35], insurer: [6, 12],
 }
-// Umbrales de deuda neta/EBITDA por sector [t1(verde<), t2(amarillo<)]
+// Umbrales de deuda neta/EBITDA por sector [t1(verde<), t2(amarillo<)]. Deben
+// coincidir con los de las tarjetas (cardSpec 'net_debt_ebitda') para que el
+// semáforo y el detalle den el mismo color (energía alineada a 2,5×).
 const DEBT_T = {
-  general: [1.5, 3], luxury: [1.5, 3], pharma: [1.5, 3], energy: [1.5, 3],
+  general: [1.5, 3], luxury: [1.5, 3], pharma: [1.5, 3], energy: [1.5, 2.5],
   reit: [5, 6], utilities: [3, 5],
 }
 // Umbrales de ROIC por sector [t1(ok), t2(bueno)]
