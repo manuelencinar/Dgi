@@ -12,6 +12,7 @@ import { netYield, getWHT, resolveRoic, effectiveDivTax } from '@/lib/screener'
 import { payLagDays } from '@/lib/sectors'
 import { sectorInfo, SUPERSECTORS } from '@/lib/supersectors'
 import { industryEs } from '@/lib/taxonomy'
+import { getProfile } from '@/data/profiles'
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
 import { isCreditRiskFinancial } from '@/lib/dgi-score'
@@ -415,6 +416,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         sector={sector}
         subsector={subsector}
         classification={classification}
+        profile={getProfile(t) || detail?.business_summary || null}
         isBank={isBank}
         bankMetrics={bankMetrics}
         isInsurer={isInsurer}

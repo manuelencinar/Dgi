@@ -1369,7 +1369,7 @@ const TAB_IDS = TABS.map(t => t.id)
 
 export default function CompanyDetailPage(props) {
   const {
-    ticker, name, country, currency, sector, subsector, type, classification, isBank, bankMetrics, isInsurer, insurerMetrics, isReit, reitMetrics, oilBreakeven, crossListings,
+    ticker, name, country, currency, sector, subsector, type, classification, profile, isBank, bankMetrics, isInsurer, insurerMetrics, isReit, reitMetrics, oilBreakeven, crossListings,
     isPremium, hasData, isAuthed, watchEntry,
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
@@ -1495,6 +1495,11 @@ export default function CompanyDetailPage(props) {
             </div>
           </div>
         </div>
+
+        {/* Perfil de negocio — a qué se dedica la empresa */}
+        {profile && (
+          <p style={{ marginTop: 12, fontSize: 12.5, lineHeight: 1.55, color: '#9aa6be', maxWidth: 780 }}>{profile}</p>
+        )}
 
         {/* 52 semanas compacto */}
         <div style={{ marginTop: 12 }}>
