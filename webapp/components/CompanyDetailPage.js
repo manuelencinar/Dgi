@@ -11,6 +11,7 @@ import FollowButton from '@/components/watchlist/FollowButton'
 import ScoreHistory from '@/components/empresa/ScoreHistory'
 import LocalPrice from '@/components/LocalPrice'
 import HealthTwoLevel, { Semaforo } from '@/components/empresa/HealthPanel'
+import InsiderCard from '@/components/empresa/InsiderCard'
 import CompanyNews from '@/components/news/CompanyNews'
 import { recomputeValuation } from '@/lib/valuation'
 import { dividendTierInfo, dividendTrend, dividendTrendBadges } from '@/lib/helpers'
@@ -1747,6 +1748,7 @@ export default function CompanyDetailPage(props) {
             <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} scoreHistory={scoreHistory} />
             {isBank ? <BankMetricsCard m={bankMetrics} /> : isInsurer ? <InsurerMetricsCard m={insurerMetrics} /> : isReit ? <ReitMetricsCard m={reitMetrics} currency={currency} /> : <RoicCard roicData={roicData} isPremium={isPremium} />}
             {oilBreakeven && <EnergyBreakevenCard be={oilBreakeven} />}
+            <InsiderCard ticker={ticker} isPremium={isPremium} />
           </div>
         )}
       </div>
