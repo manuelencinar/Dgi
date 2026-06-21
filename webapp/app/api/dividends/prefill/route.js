@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { computeAutoDividends } from '@/lib/dividends'
+import { resolveDestWHT } from '@/lib/fiscal-es'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,10 +23,10 @@ export async function POST() {
       sb.from('dividends_received').select('*').eq('user_id', user.id),
       sb.from('dividend_prefill_exclusions').select('ticker, period').eq('user_id', user.id),
       sb.from('dividend_config').select('*').eq('user_id', user.id),
-      sb.from('user_settings').select('dest_wht').eq('user_id', user.id).maybeSingle(),
+      sb.from('user_settings').select('*').eq('user_id', user.id).maybeSingle(),
     ])
     const config = Object.fromEntries((cfgRows || []).map(c => [c.ticker, c]))
-    const destWHT = settings?.dest_wht != null ? Number(settings.dest_wht) : 19
+    const destWHT = resolveDestWHT(settings)
     if (!positions?.length) return NextResponse.json({ inserted: 0 })
 
     const tickers = [...new Set(positions.map(p => p.ticker))]

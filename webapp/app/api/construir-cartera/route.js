@@ -3,6 +3,7 @@ import { createClient as authClient } from '@/lib/supabase/server'
 import { getEffectiveDict } from '@/lib/dict'
 import { buildScreenerCompanies } from '@/lib/screener-companies'
 import { buildPortfolioPlan } from '@/lib/build-plan'
+import { resolveDestWHT } from '@/lib/fiscal-es'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,8 +15,8 @@ async function getUserContext() {
     const supabase = await authClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { isPremium: false, destWHT: 19 }
-    const { data } = await supabase.from('user_settings').select('plan, premium_until, dest_wht').eq('user_id', user.id).maybeSingle()
-    const destWHT = data?.dest_wht != null ? Number(data.dest_wht) : 19
+    const { data } = await supabase.from('user_settings').select('*').eq('user_id', user.id).maybeSingle()
+    const destWHT = resolveDestWHT(data)
     if (user.email === ADMIN_EMAIL) return { isPremium: true, destWHT }
     let plan = data?.plan || 'free'
     if (plan === 'premium' && data?.premium_until && new Date(data.premium_until) < new Date()) plan = 'free'

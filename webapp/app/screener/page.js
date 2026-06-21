@@ -3,6 +3,7 @@ import PublicNav from '@/components/PublicNav'
 import ScreenerClient from '@/components/ScreenerClient'
 import { getEffectiveDict } from '@/lib/dict'
 import { buildScreenerCompanies, selectFreeSample } from '@/lib/screener-companies'
+import { resolveDestWHT } from '@/lib/fiscal-es'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,11 +20,11 @@ async function getUserContext() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { plan: 'free', destWHT: 19, whtOverrides: null, followed: [], isAuthed: false }
     const [{ data }, { data: wl }] = await Promise.all([
-      supabase.from('user_settings').select('plan, premium_until, dest_wht, wht_overrides').eq('user_id', user.id).maybeSingle(),
+      supabase.from('user_settings').select('*').eq('user_id', user.id).maybeSingle(),
       supabase.from('watchlist').select('ticker').eq('user_id', user.id),
     ])
     const followed = (wl || []).map(w => w.ticker)
-    const destWHT = data?.dest_wht != null ? Number(data.dest_wht) : 19
+    const destWHT = resolveDestWHT(data)
     const whtOverrides = data?.wht_overrides && typeof data.wht_overrides === 'object' ? data.wht_overrides : null
     if (user.email === ADMIN_EMAIL) return { plan: 'premium', destWHT, whtOverrides, followed, isAuthed: true }
     let plan = data?.plan || 'free'

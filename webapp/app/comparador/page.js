@@ -3,6 +3,7 @@ import PublicNav from '@/components/PublicNav'
 import ComparadorClient from '@/components/ComparadorClient'
 import { getEffectiveDict } from '@/lib/dict'
 import { buildComparadorCompanies } from '@/lib/comparador'
+import { resolveDestWHT } from '@/lib/fiscal-es'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Comparador de empresas | Mi Índice DGI', description: 'Compara hasta 5 empresas DGI lado a lado: radar multidimensional, métricas, proyección de renta a 10 años y valoración.' }
@@ -14,8 +15,8 @@ async function getUserContext() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { plan: 'free', destWHT: 19 }
-    const { data } = await supabase.from('user_settings').select('plan, premium_until, dest_wht').eq('user_id', user.id).maybeSingle()
-    const destWHT = data?.dest_wht != null ? Number(data.dest_wht) : 19
+    const { data } = await supabase.from('user_settings').select('*').eq('user_id', user.id).maybeSingle()
+    const destWHT = resolveDestWHT(data)
     if (user.email === ADMIN_EMAIL) return { plan: 'premium', destWHT }
     let plan = data?.plan || 'free'
     if (plan === 'premium' && data?.premium_until && new Date(data.premium_until) < new Date()) plan = 'free'

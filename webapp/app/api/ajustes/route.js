@@ -14,6 +14,8 @@ const ALLOWED = new Set([
   'investor_profile',
   // Fiscalidad: retención de destino (España) y overrides de retención en origen por país
   'dest_wht', 'wht_overrides',
+  // Fiscalidad personalizada por ingresos (IRPF español)
+  'tax_mode', 'annual_income', 'children', 'children_under3',
   // compatibilidad con la página de ajustes de cartera
   'monthly_summary', 'alert_config', 'alert_dismissed',
 ])
@@ -46,6 +48,7 @@ const READABLE = [
   'benchmark_index', 'show_returns_original',
   'monthly_summary_active', 'alerts_email_active', 'recurring_email_active',
   'investor_profile', 'dest_wht', 'wht_overrides',
+  'tax_mode', 'annual_income', 'children', 'children_under3',
   'plan', 'premium_until', 'subscription_paused', 'pause_end_date', 'retention_discount_used',
 ]
 
@@ -87,6 +90,10 @@ export async function POST(request) {
   }
   if ('wht_overrides' in updates) updates.wht_overrides = sanitizeWhtOverrides(updates.wht_overrides)
   if ('dest_wht' in updates) { const n = Number(updates.dest_wht); updates.dest_wht = (!isNaN(n) && n >= 0 && n <= 60) ? n : 19 }
+  if ('tax_mode' in updates) updates.tax_mode = updates.tax_mode === 'income' ? 'income' : 'fixed'
+  if ('annual_income' in updates) { const n = Number(updates.annual_income); updates.annual_income = (!isNaN(n) && n >= 0 && n <= 100_000_000) ? n : null }
+  if ('children' in updates) { const n = Math.round(Number(updates.children)); updates.children = (!isNaN(n) && n >= 0 && n <= 20) ? n : 0 }
+  if ('children_under3' in updates) { const n = Math.round(Number(updates.children_under3)); updates.children_under3 = (!isNaN(n) && n >= 0 && n <= 20) ? n : 0 }
   if (!Object.keys(updates).length) {
     return NextResponse.json({ error: 'No hay cambios válidos para guardar' }, { status: 400 })
   }

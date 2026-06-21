@@ -13,6 +13,7 @@ import { payLagDays } from '@/lib/sectors'
 import { sectorInfo, SUPERSECTORS } from '@/lib/supersectors'
 import { industryEs } from '@/lib/taxonomy'
 import { getProfile } from '@/data/profiles'
+import { resolveDestWHT } from '@/lib/fiscal-es'
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
 import { isCreditRiskFinancial } from '@/lib/dgi-score'
@@ -241,7 +242,7 @@ export default async function EmpresaPage({ params, searchParams }) {
       .eq('user_id', user.id).eq('ticker', t).maybeSingle()
       .then(r => r.data) : null,
     // Retención fiscal de destino del usuario (para el yield neto)
-    user ? supabase.from('user_settings').select('dest_wht')
+    user ? supabase.from('user_settings').select('*')
       .eq('user_id', user.id).maybeSingle()
       .then(r => r.data).catch(() => null) : null,
     // Histórico del Score DGI (sparkline de evolución) — lectura pública (RLS)
@@ -251,7 +252,7 @@ export default async function EmpresaPage({ params, searchParams }) {
   ])
 
   const isPremium = plan === 'premium'
-  const destWHT   = settingsRow?.dest_wht != null ? Number(settingsRow.dest_wht) : 19
+  const destWHT   = resolveDestWHT(settingsRow)
 
   // Otras cotizaciones de la misma empresa (mercado · precio · ticker pequeño).
   const otherTickers = otherListings(t)

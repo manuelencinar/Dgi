@@ -3,7 +3,7 @@
 import { DICT } from '@/data/dict'
 import { SUPERSECTORS, SUPERSECTOR_ORDER, sectorInfo, INVESTOR_PROFILES, DEFAULT_PROFILE } from '@/lib/supersectors'
 import { COUNTRY_INFO } from '@/lib/helpers'
-import { FOREIGN_CREDIT_CAP, getWHT } from '@/lib/screener'
+import { FOREIGN_CREDIT_CAP, getWHT, effectiveDivTax } from '@/lib/screener'
 
 // ── FX ────────────────────────────────────────────────────────────────────
 
@@ -393,8 +393,10 @@ export function calcDividendRisks(enriched, totalIncomeEUR) {
 
 // ── Fiscal ────────────────────────────────────────────────────────────────
 
+// destWHT es el tipo del ahorro de destino YA RESUELTO (puede ser 0 si el usuario
+// está exento por ingresos, o el tipo medio progresivo según su renta del ahorro).
 export function calcFiscal(enriched, whtOverrides = null, destWHT = 19) {
-  const destRate = (Number(destWHT) || 19) / 100
+  const destPct = Math.max(0, Number(destWHT) || 0)
   return enriched
     .filter(p => (p.annualIncomeEUR ?? 0) > 0)
     .map(p => {
@@ -404,13 +406,15 @@ export function calcFiscal(enriched, whtOverrides = null, destWHT = 19) {
       const sourceRate      = getWHT(code, whtOverrides) / 100
       const gross           = p.annualIncomeEUR
       const sourceWH        = gross * sourceRate
-      // Doble imposición: la retención en origen solo es ACREDITABLE hasta el 15%
-      // del bruto (ley española); el exceso no se deduce. En acciones nacionales el
-      // crédito es la propia retención (es el impuesto español, no hay doble imp.).
-      const credit          = isDomestic ? sourceWH : Math.min(sourceWH, gross * FOREIGN_CREDIT_CAP / 100)
-      const additionalES    = Math.max(0, gross * destRate - credit)
-      const net             = gross - sourceWH - additionalES
-      const effectiveRate   = gross > 0 ? (sourceWH + additionalES) / gross * 100 : 0
+      // Tipo TOTAL efectivo (origen + España con crédito por doble imposición al 15%).
+      // Si el usuario está exento (destPct=0), en acción nacional el tipo total es 0
+      // → la retención en origen se DEVUELVE (additionalES negativo).
+      const totalRate       = effectiveDivTax(sourceRate * 100, destPct, isDomestic) / 100
+      const totalTax        = gross * totalRate
+      // Lo que falta por liquidar en España (positivo) o que se devuelve (negativo).
+      const additionalES    = totalTax - sourceWH
+      const net             = gross - totalTax
+      const effectiveRate   = gross > 0 ? totalRate * 100 : 0
       const creditCapped    = !isDomestic && sourceWH > gross * FOREIGN_CREDIT_CAP / 100
       return {
         ticker: p.ticker, name: p.name,

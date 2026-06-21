@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import AlertsSettings from '@/components/cartera/AlertsSettings'
 import { WHT_DEFAULTS } from '@/lib/sectors'
 import { COUNTRY_INFO } from '@/lib/helpers'
+import { exemptionThreshold, PERSONAL_EXEMPTION } from '@/lib/fiscal-es'
 
 // Países del universo con retención en origen relevante (orden por relevancia DGI).
 const WHT_COUNTRIES = ['US','GB','DE','FR','CH','NL','IT','ES','PT','BE','AT','IE','LU',
@@ -58,6 +59,49 @@ function Toggle({ value, onChange, label, description }) {
       }}>
         <span style={{ position:'absolute', top:3, left: value ? 23 : 3, width:18, height:18, borderRadius:9, background:'#fff', transition:'left 0.2s' }} />
       </button>
+    </div>
+  )
+}
+
+// Bloque de configuración del IRPF español por ingresos (exención + escala del ahorro).
+function IncomeTaxBlock({ annualIncome, setAnnualIncome, children, setChildren, childrenU3, setChildrenU3, LABEL, INPUT }) {
+  const nChildren = parseInt(children) || 0
+  const nU3       = Math.min(parseInt(childrenU3) || 0, nChildren)
+  const threshold = exemptionThreshold({ children: nChildren, childrenUnder3: nU3 })
+  const income    = annualIncome === '' ? null : (parseFloat(annualIncome) || 0)
+  const exempt    = income != null && income <= threshold
+  const fmt = n => n.toLocaleString('es-ES', { maximumFractionDigits: 0 })
+  const numStyle = { ...INPUT, maxWidth: 110 }
+  return (
+    <div style={{ marginBottom:14 }}>
+      <p style={{ fontSize:12, color:'#8090a8', marginBottom:12, lineHeight:1.55 }}>
+        Calculamos tu tipo del ahorro a partir de tus ingresos. Por debajo del <b style={{ color:'#c8d0e0' }}>umbral de exención</b> no pagas IRPF y la retención sobre tus dividendos españoles se devuelve en la renta. Como renta del ahorro contamos tus dividendos anuales (no tenemos datos de otros ahorros).
+      </p>
+      <div style={{ display:'flex', gap:14, flexWrap:'wrap', marginBottom:10 }}>
+        <div style={{ maxWidth:200 }}>
+          <label style={LABEL}>Ingresos anuales estimados (€)</label>
+          <input style={INPUT} type="number" step="100" min="0" placeholder="p. ej. 24000" value={annualIncome} onChange={e => setAnnualIncome(e.target.value)} />
+        </div>
+        <div>
+          <label style={LABEL}>Hijos (&lt;25 o discapacidad)</label>
+          <input style={numStyle} type="number" step="1" min="0" max="20" value={children} onChange={e => setChildren(e.target.value)} />
+        </div>
+        <div>
+          <label style={LABEL}>De ellos, menores de 3</label>
+          <input style={numStyle} type="number" step="1" min="0" max={nChildren || 20} value={childrenU3} onChange={e => setChildrenU3(e.target.value)} />
+        </div>
+      </div>
+      <div style={{ background: exempt ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.03)', border:`1px solid ${exempt ? 'rgba(52,211,153,0.25)' : 'rgba(255,255,255,0.08)'}`, borderRadius:8, padding:'10px 12px' }}>
+        <p style={{ fontSize:12, color:'#c8d0e0' }}>
+          Umbral de exención: <b style={{ color:'#fbbf24' }}>{fmt(threshold)} €</b>
+          {nChildren > 0 && <span style={{ color:'#4a5270' }}> ({fmt(PERSONAL_EXEMPTION)} € + ajustes por hijos)</span>}
+        </p>
+        {income != null && (
+          exempt
+            ? <p style={{ fontSize:12, color:'#34d399', marginTop:4 }}>✓ Con {fmt(income)} € estás <b>exento</b>: tipo efectivo 0% sobre dividendos españoles (se devuelve la retención).</p>
+            : <p style={{ fontSize:12, color:'#8090a8', marginTop:4 }}>Con {fmt(income)} € no estás exento: se aplica la escala del ahorro (19% hasta 6.000 €, 21% hasta 50.000 €…) sobre tus dividendos.</p>
+        )}
+      </div>
     </div>
   )
 }
@@ -118,6 +162,12 @@ export default function AjustesGlobalPage() {
   const [whtOverrides,   setWhtOverrides]   = useState({})
   const [showWhtTable,   setShowWhtTable]   = useState(false)
 
+  // Fiscalidad personalizada por ingresos (IRPF español)
+  const [taxMode,        setTaxMode]        = useState('fixed')   // 'fixed' | 'income'
+  const [annualIncome,   setAnnualIncome]   = useState('')
+  const [children,       setChildren]       = useState(0)
+  const [childrenU3,     setChildrenU3]     = useState(0)
+
   const [benchmark,      setBenchmark]      = useState('MSCI World')
   const [showOriginal,   setShowOriginal]   = useState(false)
 
@@ -136,7 +186,11 @@ export default function AjustesGlobalPage() {
   // Per-section save helpers
   const s1 = useSave([['base_currency',baseCurrency],['country_residence',country],['broker_name',brokerName||null]], sb)
   const s2 = useSave([['fx_commission_pct',parseFloat(fxPct)||0],['fx_alert_threshold',parseFloat(fxThreshold)||null]], sb)
-  const s5 = useSave([['dest_wht',parseFloat(destWht)||19],['wht_overrides',whtOverrides]], sb)
+  const s5 = useSave([
+    ['dest_wht',parseFloat(destWht)||19], ['wht_overrides',whtOverrides],
+    ['tax_mode',taxMode], ['annual_income', annualIncome === '' ? null : (parseFloat(annualIncome)||0)],
+    ['children', parseInt(children)||0], ['children_under3', parseInt(childrenU3)||0],
+  ], sb)
   const s3 = useSave([['benchmark_index',benchmark],['show_returns_original',showOriginal]], sb)
   const s4 = useSave([['monthly_summary_active',monthlySummary],['alerts_email_active',alertsEmail],['recurring_email_active',recurringEmail||false]], sb)
 
@@ -166,6 +220,10 @@ export default function AjustesGlobalPage() {
       setFxThreshold(data.fx_alert_threshold ?? 10)
       setDestWht(data.dest_wht ?? 19)
       setWhtOverrides(data.wht_overrides && typeof data.wht_overrides === 'object' ? data.wht_overrides : {})
+      setTaxMode(data.tax_mode === 'income' ? 'income' : 'fixed')
+      setAnnualIncome(data.annual_income != null ? String(data.annual_income) : '')
+      setChildren(data.children ?? 0)
+      setChildrenU3(data.children_under3 ?? 0)
       setBenchmark(data.benchmark_index || 'MSCI World')
       setShowOriginal(data.show_returns_original || false)
       setMonthlySummary(data.monthly_summary_active || false)
@@ -318,11 +376,33 @@ export default function AjustesGlobalPage() {
       {/* ── SECCIÓN FISCALIDAD: retenciones ──────────────────────────────── */}
       <div style={CARD}>
         <p style={SEC_TIT}>Fiscalidad — retenciones sobre dividendos</p>
-        <div style={{ marginBottom:14, maxWidth:280 }}>
-          <label style={LABEL}>Impuesto del ahorro (destino, %)</label>
-          <input style={INPUT} type="number" step="0.5" min="0" max="60" placeholder="19" value={destWht} onChange={e => setDestWht(e.target.value)} />
-          <p style={{ fontSize:11, color:'#4a5270', marginTop:4 }}>Tipo del ahorro de tu residencia fiscal (España: 19% el primer tramo).</p>
+
+        {/* Modo de cálculo del impuesto del ahorro (destino) */}
+        <div style={{ display:'flex', gap:8, marginBottom:14, flexWrap:'wrap' }}>
+          {[['fixed','Tipo fijo'],['income','Calcular según mis ingresos']].map(([k,lbl]) => (
+            <button key={k} type="button" onClick={() => setTaxMode(k)} style={{
+              fontSize:12, fontWeight:700, padding:'7px 14px', borderRadius:8, cursor:'pointer',
+              color: taxMode===k ? '#fff' : '#8090a8',
+              background: taxMode===k ? 'rgba(99,102,241,0.85)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${taxMode===k ? 'rgba(99,102,241,0.9)' : 'rgba(255,255,255,0.1)'}`,
+            }}>{lbl}</button>
+          ))}
         </div>
+
+        {taxMode === 'fixed' ? (
+          <div style={{ marginBottom:14, maxWidth:280 }}>
+            <label style={LABEL}>Impuesto del ahorro (destino, %)</label>
+            <input style={INPUT} type="number" step="0.5" min="0" max="60" placeholder="19" value={destWht} onChange={e => setDestWht(e.target.value)} />
+            <p style={{ fontSize:11, color:'#4a5270', marginTop:4 }}>Tipo del ahorro de tu residencia fiscal (España: 19% el primer tramo).</p>
+          </div>
+        ) : (
+          <IncomeTaxBlock
+            annualIncome={annualIncome} setAnnualIncome={setAnnualIncome}
+            children={children} setChildren={setChildren}
+            childrenU3={childrenU3} setChildrenU3={setChildrenU3}
+            LABEL={LABEL} INPUT={INPUT}
+          />
+        )}
         <p style={{ fontSize:12, color:'#8090a8', marginBottom:10, lineHeight:1.55 }}>
           La <b style={{ color:'#c8d0e0' }}>retención en origen</b> depende del país y de tu bróker: algunos (p.ej. Interactive Brokers) aplican el tipo reducido del convenio, otros retienen el tipo completo. Ajusta aquí el tuyo por país si difiere del estándar. Recuerda que, por doble imposición, en España solo se acredita hasta el 15% (el exceso no es deducible).
         </p>

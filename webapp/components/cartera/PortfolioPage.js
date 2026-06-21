@@ -9,6 +9,7 @@ import {
   calcDiversificationScore, calcDividendRisks, calcFiscal, calcSectorBreakdown, calcGeoBreakdown, calcProfileFit,
 } from '@/lib/portfolio'
 import { DEFAULT_PROFILE, INVESTOR_PROFILES } from '@/lib/supersectors'
+import { resolveDestWHT, isExemptUser } from '@/lib/fiscal-es'
 import SectorBreakdown, { DonutBreakdown } from '@/components/cartera/SectorBreakdown'
 import InvestorProfile from '@/components/cartera/InvestorProfile'
 import PortfolioDGIScore from '@/components/cartera/PortfolioDGIScore'
@@ -315,7 +316,7 @@ function DividendRiskSection({ risks, totalIncomeEUR, isPremium }) {
 }
 
 // ── Section 6: Fiscal ──────────────────────────────────────────────────────
-function FiscalSection({ fiscal, country, onCountryChange, isPremium }) {
+function FiscalSection({ fiscal, country, onCountryChange, isPremium, exempt = false, incomeMode = false }) {
   const totalGross = fiscal.reduce((s, f) => s + f.gross, 0)
   const totalNet   = fiscal.reduce((s, f) => s + f.net, 0)
 
@@ -334,6 +335,15 @@ function FiscalSection({ fiscal, country, onCountryChange, isPremium }) {
         </div>
       </div>
 
+      {exempt && (
+        <div style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
+          <p style={{ fontSize: 12, color: '#34d399', fontWeight: 700, marginBottom: 2 }}>Estás exento de IRPF según tus ingresos</p>
+          <p style={{ fontSize: 11, color: '#8090a8', lineHeight: 1.5 }}>Tus ingresos quedan por debajo del umbral configurado, así que la retención sobre los dividendos <b>españoles</b> se te devolvería en la declaración (tipo efectivo 0%). La retención en origen de dividendos extranjeros se reclama al país de origen.</p>
+        </div>
+      )}
+      {!exempt && incomeMode && (
+        <p style={{ fontSize: 11, color: '#8090a8', marginBottom: 12 }}>Tipo del ahorro calculado según tus ingresos y tu renta del ahorro (dividendos anuales). Configúralo en <b>Ajustes → Fiscalidad</b>.</p>
+      )}
       {fiscal.length === 0 ? (
         <p style={{ fontSize: 13, color: '#4a5270' }}>Añade posiciones con dividendo para ver el análisis fiscal.</p>
       ) : (
@@ -354,7 +364,7 @@ function FiscalSection({ fiscal, country, onCountryChange, isPremium }) {
                     <td style={{ padding: '7px 8px', color: '#8090a8', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{f.companyCountry}</td>
                     <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{fmtEUR(f.gross)}</td>
                     <td style={{ padding: '7px 8px', textAlign: 'right', color: '#f87171', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>-{fmtEUR(f.sourceWH)} ({f.sourceRate.toFixed(1)}%)</td>
-                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#f87171', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>-{fmtEUR(f.additionalES)}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: f.additionalES < -0.005 ? '#34d399' : '#f87171', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{f.additionalES < -0.005 ? `+${fmtEUR(-f.additionalES)}` : `-${fmtEUR(f.additionalES)}`}</td>
                     <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{fmtEUR(f.net)}</td>
                     <td style={{ padding: '7px 8px', textAlign: 'right', color: '#fbbf24', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{f.effectiveRate.toFixed(1)}%</td>
                   </tr>
@@ -575,7 +585,7 @@ export default function PortfolioPage({ isPremium }) {
   // Perfil de inversor elegido — guardado en los ajustes del usuario (user_settings
   // vía /api/ajustes), para que quede asociado a la cuenta desde cualquier dispositivo.
   const [profile, setProfile] = useState(DEFAULT_PROFILE)
-  const [destWHT, setDestWHT] = useState(19)
+  const [taxSettings, setTaxSettings] = useState(null)
   const [whtOverrides, setWhtOverrides] = useState(null)
   useEffect(() => {
     let cancel = false
@@ -583,7 +593,7 @@ export default function PortfolioPage({ isPremium }) {
       const p = d?.settings?.investor_profile
       if (cancel) return
       if (p && INVESTOR_PROFILES[p]) setProfile(p)
-      if (d?.settings?.dest_wht != null) setDestWHT(Number(d.settings.dest_wht))
+      if (d?.settings) setTaxSettings(d.settings)
       if (d?.settings?.wht_overrides && typeof d.settings.wht_overrides === 'object') setWhtOverrides(d.settings.wht_overrides)
     }).catch(() => {})
     return () => { cancel = true }
@@ -598,6 +608,9 @@ export default function PortfolioPage({ isPremium }) {
   }
 
   const summary       = useMemo(() => calcSummary(enriched), [enriched])
+  // Tipo efectivo del ahorro español: en modo "por ingresos" se calcula con la
+  // renta del ahorro real del usuario (= sus dividendos anuales). 0 si está exento.
+  const destWHT       = useMemo(() => resolveDestWHT(taxSettings, summary.totalIncomeEUR), [taxSettings, summary.totalIncomeEUR])
   const concentration = useMemo(() => calcConcentration(enriched), [enriched])
   const sectorBreakdown = useMemo(() => calcSectorBreakdown(enriched), [enriched])
   const geoBreakdown    = useMemo(() => calcGeoBreakdown(enriched), [enriched])
@@ -679,7 +692,7 @@ export default function PortfolioPage({ isPremium }) {
           <DividendCutSimulator enriched={enriched} summary={summary} isPremium={isPremium} />
 
           {/* Section 6: Fiscal */}
-          <FiscalSection fiscal={fiscal} country={fiscalCountry} onCountryChange={setFiscal} isPremium={isPremium} />
+          <FiscalSection fiscal={fiscal} country={fiscalCountry} onCountryChange={setFiscal} isPremium={isPremium} exempt={isExemptUser(taxSettings)} incomeMode={taxSettings?.tax_mode === 'income'} />
 
           {/* Section 7: Currency analysis with FX impact simulator */}
           <CurrencyAnalysis enriched={enriched} isPremium={isPremium} />
