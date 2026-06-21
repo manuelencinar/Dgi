@@ -235,13 +235,30 @@ export function computeFinancials(m, currency) {
   return { price, commission, commissionCur: currency, amountOriginal, exchangeRate }
 }
 
+// Cálculo fiscal de un dividendo. dps = dividendo por acción (= precio en divisa
+// origen). En dividendos en euros se deriva la retención en origen (bruto − neto);
+// en divisa extranjera solo se conoce el neto en € (la retención va mezclada con el
+// cambio), así que se deja sin desglosar.
+export function computeDividend(m, currency) {
+  const shares = m.shares || 0
+  const dps = m.priceOrig
+  if (currency === 'EUR' && dps != null && shares > 0 && m.totalEur != null) {
+    const gross = r2(dps * shares)
+    const net = r2(m.totalEur)
+    const wh = r2(Math.max(0, gross - net))
+    const whPct = gross > 0 ? r2(wh / gross * 100) : null
+    return { dps, divGross: gross, divNet: net, whAmount: wh, whPct }
+  }
+  return { dps, divGross: m.totalEur, divNet: m.totalEur, whAmount: null, whPct: null }
+}
+
 // Enriquece cada movimiento con ticker, divisa, precio para la app y comisión.
 export function buildImportRows(movements) {
   return movements.map((m, i) => {
     const match = matchSecurity(m.ingName, m.market)
     const mi = marketInfo(m.market)
     const currency = match?.currency || mi?.currency || 'EUR'
-    const fin = computeFinancials(m, currency)
+    const fin = m.type === 'dividend' ? computeDividend(m, currency) : computeFinancials(m, currency)
     return {
       id: i,
       date: m.date, type: m.type,
@@ -257,21 +274,31 @@ export function buildImportRows(movements) {
   })
 }
 
-// Firma para deduplicar contra lo ya importado.
-export function rowSignature(type, ticker, date, shares, amountEur) {
-  const t = type === 'dividend' ? 'div' : type
-  return `${date}|${t}|${ticker}|${r2(shares || 0)}|${r2(amountEur || 0)}`
+// Firma de una OPERACIÓN (compra/venta): FECHA + TIPO + TICKER + TÍTULOS. No se
+// usa el importe: el € de ING incluye la comisión y el guardado a mano no, así que
+// el importe casi nunca coincide (causaba que no se detectaran los duplicados).
+export function tradeSignature(type, ticker, date, shares) {
+  return `${date}|${type}|${ticker}|${r2(shares || 0)}`
 }
 
-// Firmas de las transacciones y dividendos ya existentes en la BD del usuario.
-export function existingSignatures(transactions = [], dividends = []) {
-  const sigs = new Set()
+// Clave de un DIVIDENDO: FECHA + TICKER + NETO €. Se usa para casar con un registro
+// existente y ACTUALIZARLO (no duplicar) — ING reparte el mismo día en varias líneas.
+export function divKey(ticker, date, netEur) {
+  return `${date}|${ticker}|${r2(netEur || 0)}`
+}
+
+// Firmas de las operaciones (compra/venta) ya registradas en la BD del usuario.
+export function existingTradeSigs(transactions = []) {
+  const s = new Set()
   for (const tx of transactions) {
-    const eur = tx.total_cost_base_currency ?? tx.total_cost ?? (tx.amount_original ?? 0)
-    sigs.add(rowSignature(tx.type, tx.ticker, tx.date, tx.shares, eur))
+    if (tx.type === 'buy' || tx.type === 'sell') s.add(tradeSignature(tx.type, tx.ticker, tx.date, tx.shares))
   }
-  for (const d of dividends) {
-    sigs.add(rowSignature('dividend', d.ticker, d.date, d.shares_received ?? 0, d.amount))
-  }
-  return sigs
+  return s
+}
+
+// Mapa clave→id de los dividendos ya registrados (para actualizar en vez de duplicar).
+export function existingDivIds(dividends = []) {
+  const m = new Map()
+  for (const d of dividends) m.set(divKey(d.ticker, d.date, d.amount_net ?? d.amount), d.id)
+  return m
 }
