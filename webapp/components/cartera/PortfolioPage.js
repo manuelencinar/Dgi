@@ -575,11 +575,16 @@ export default function PortfolioPage({ isPremium }) {
   // Perfil de inversor elegido — guardado en los ajustes del usuario (user_settings
   // vía /api/ajustes), para que quede asociado a la cuenta desde cualquier dispositivo.
   const [profile, setProfile] = useState(DEFAULT_PROFILE)
+  const [destWHT, setDestWHT] = useState(19)
+  const [whtOverrides, setWhtOverrides] = useState(null)
   useEffect(() => {
     let cancel = false
     fetch('/api/ajustes').then(r => r.ok ? r.json() : null).then(d => {
       const p = d?.settings?.investor_profile
-      if (!cancel && p && INVESTOR_PROFILES[p]) setProfile(p)
+      if (cancel) return
+      if (p && INVESTOR_PROFILES[p]) setProfile(p)
+      if (d?.settings?.dest_wht != null) setDestWHT(Number(d.settings.dest_wht))
+      if (d?.settings?.wht_overrides && typeof d.settings.wht_overrides === 'object') setWhtOverrides(d.settings.wht_overrides)
     }).catch(() => {})
     return () => { cancel = true }
   }, [])
@@ -600,7 +605,7 @@ export default function PortfolioPage({ isPremium }) {
   const alerts        = useMemo(() => calcAlerts(enriched, concentration), [enriched, concentration])
   const divScore      = useMemo(() => calcDiversificationScore(enriched, profile), [enriched, profile])
   const divRisks      = useMemo(() => calcDividendRisks(enriched, summary.totalIncomeEUR), [enriched, summary])
-  const fiscal        = useMemo(() => calcFiscal(enriched), [enriched])
+  const fiscal        = useMemo(() => calcFiscal(enriched, whtOverrides, destWHT), [enriched, whtOverrides, destWHT])
 
   if (loading) {
     return (

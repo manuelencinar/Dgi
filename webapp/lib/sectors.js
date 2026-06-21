@@ -173,10 +173,17 @@ export const COUNTRIES = [
   {code:"OTHER",flag:"🌍",name:"Otro"},
 ]
 
+// Retención en origen sobre dividendos para un inversor extranjero (tipo estándar/
+// statutory por defecto; el usuario puede sobrescribirla por país en Ajustes según
+// su bróker —p.ej. IB suele aplicar el tipo de convenio, más bajo—).
 export const WHT_DEFAULTS = {
-  "US":15,"DE":15,"FR":12.8,"GB":0,"ES":19,"CH":35,"NL":15,"BE":30,
-  "AU":30,"CA":25,"JP":20,"DK":27,"SE":30,"NO":25,"FI":30,"IE":25,"IT":26,
-  "PT":25,"AT":27.5,"HK":0,"SG":0,"CN":10,"BR":15,"OTHER":0
+  "US":15,"DE":26.375,"FR":12.8,"GB":0,"ES":19,"CH":35,"NL":15,"BE":30,
+  "AU":30,"CA":25,"JP":20.315,"DK":27,"SE":30,"NO":25,"FI":30,"IE":25,"IT":26,
+  "PT":25,"AT":27.5,"HK":0,"SG":0,"CN":10,"BR":0,
+  // Resto de mercados del universo (antes caían a 0):
+  "TR":15,"MX":10,"CL":35,"PL":19,"CZ":15,"GR":5,"AR":7,"IN":20,"KR":22,
+  "HU":15,"TW":21,"LU":15,"EG":10,
+  "OTHER":15
 }
 
 // Días naturales típicos entre la fecha ex-dividendo y la fecha de pago en cada

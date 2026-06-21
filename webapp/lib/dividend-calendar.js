@@ -92,6 +92,7 @@ function placementsFromCycle(cycleDates, code, year, noOffset = false) {
 // fxToEUR: { CUR: tasa X→EUR }. destWHT: retención de destino del usuario (%).
 export function buildDividendCalendar(enriched, fundamentalsMap, fxToEUR, destWHT = 19, opts = {}) {
   const year  = opts.year || new Date().getFullYear()
+  const whtOverrides = opts.whtOverrides || null
   const today = new Date()
   const fx    = c => (c === 'EUR' ? 1 : (fxToEUR?.[c] ?? null))
 
@@ -147,7 +148,7 @@ export function buildDividendCalendar(enriched, fundamentalsMap, fxToEUR, destWH
     const perLocal   = curAnnual / freq
     const grossEUR   = perLocal * shares * rate
     const priorPer   = priorAnnual != null ? (priorAnnual / freq) * shares * rate : null
-    const originPct  = pos.isFund ? 0 : getWHT(code)
+    const originPct  = pos.isFund ? 0 : getWHT(code, whtOverrides)
     // Retención efectiva con tope del 15% al crédito por doble imposición (ley ES).
     const effPct     = effectiveDivTax(originPct, destWHT || 0, code === 'ES')
 

@@ -17,18 +17,19 @@ async function getUserContext() {
   try {
     const supabase = await authClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { plan: 'free', destWHT: 19, followed: [], isAuthed: false }
+    if (!user) return { plan: 'free', destWHT: 19, whtOverrides: null, followed: [], isAuthed: false }
     const [{ data }, { data: wl }] = await Promise.all([
-      supabase.from('user_settings').select('plan, premium_until, dest_wht').eq('user_id', user.id).maybeSingle(),
+      supabase.from('user_settings').select('plan, premium_until, dest_wht, wht_overrides').eq('user_id', user.id).maybeSingle(),
       supabase.from('watchlist').select('ticker').eq('user_id', user.id),
     ])
     const followed = (wl || []).map(w => w.ticker)
     const destWHT = data?.dest_wht != null ? Number(data.dest_wht) : 19
-    if (user.email === ADMIN_EMAIL) return { plan: 'premium', destWHT, followed, isAuthed: true }
+    const whtOverrides = data?.wht_overrides && typeof data.wht_overrides === 'object' ? data.wht_overrides : null
+    if (user.email === ADMIN_EMAIL) return { plan: 'premium', destWHT, whtOverrides, followed, isAuthed: true }
     let plan = data?.plan || 'free'
     if (plan === 'premium' && data?.premium_until && new Date(data.premium_until) < new Date()) plan = 'free'
-    return { plan, destWHT, followed, isAuthed: true }
-  } catch { return { plan: 'free', destWHT: 19, followed: [], isAuthed: false } }
+    return { plan, destWHT, whtOverrides, followed, isAuthed: true }
+  } catch { return { plan: 'free', destWHT: 19, whtOverrides: null, followed: [], isAuthed: false } }
 }
 
 // Filtros iniciales desde la URL — usado por el detector de huecos de la cartera
@@ -47,7 +48,7 @@ function parseInitialFilters(sp) {
 
 export default async function ScreenerPage({ searchParams }) {
   const sp = (await searchParams) || {}
-  const { plan, destWHT, followed, isAuthed } = await getUserContext()
+  const { plan, destWHT, whtOverrides, followed, isAuthed } = await getUserContext()
   const isPremium = plan === 'premium'
   const dict = await getEffectiveDict()
   const allCompanies = await buildScreenerCompanies(destWHT, dict)
@@ -68,6 +69,7 @@ export default async function ScreenerPage({ searchParams }) {
         isPremium={isPremium}
         sectors={sectors}
         destWHT={destWHT}
+        whtOverrides={whtOverrides}
         followed={followed}
         isAuthed={isAuthed}
         initial={Object.keys(initial).length ? initial : null}

@@ -12,9 +12,23 @@ const ALLOWED = new Set([
   'benchmark_index', 'show_returns_original',
   'monthly_summary_active', 'alerts_email_active', 'recurring_email_active',
   'investor_profile',
+  // Fiscalidad: retención de destino (España) y overrides de retención en origen por país
+  'dest_wht', 'wht_overrides',
   // compatibilidad con la página de ajustes de cartera
   'monthly_summary', 'alert_config', 'alert_dismissed',
 ])
+
+// Sanea el mapa de overrides de retención: { 'US': 15, 'CH': 15, ... } con % en [0,60].
+function sanitizeWhtOverrides(v) {
+  if (v == null || typeof v !== 'object' || Array.isArray(v)) return {}
+  const out = {}
+  for (const [k, val] of Object.entries(v)) {
+    const code = String(k).toUpperCase().slice(0, 4)
+    const n = Number(val)
+    if (/^[A-Z]{2,4}$/.test(code) && !isNaN(n) && n >= 0 && n <= 60) out[code] = Math.round(n * 1000) / 1000
+  }
+  return out
+}
 
 function sb() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -31,7 +45,7 @@ const READABLE = [
   'fx_commission_pct', 'fx_alert_threshold',
   'benchmark_index', 'show_returns_original',
   'monthly_summary_active', 'alerts_email_active', 'recurring_email_active',
-  'investor_profile',
+  'investor_profile', 'dest_wht', 'wht_overrides',
   'plan', 'premium_until', 'subscription_paused', 'pause_end_date', 'retention_discount_used',
 ]
 
@@ -71,6 +85,8 @@ export async function POST(request) {
   for (const k of Object.keys(body || {})) {
     if (ALLOWED.has(k)) updates[k] = body[k]
   }
+  if ('wht_overrides' in updates) updates.wht_overrides = sanitizeWhtOverrides(updates.wht_overrides)
+  if ('dest_wht' in updates) { const n = Number(updates.dest_wht); updates.dest_wht = (!isNaN(n) && n >= 0 && n <= 60) ? n : 19 }
   if (!Object.keys(updates).length) {
     return NextResponse.json({ error: 'No hay cambios válidos para guardar' }, { status: 400 })
   }

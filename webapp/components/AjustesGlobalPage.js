@@ -4,6 +4,12 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import AlertsSettings from '@/components/cartera/AlertsSettings'
+import { WHT_DEFAULTS } from '@/lib/sectors'
+import { COUNTRY_INFO } from '@/lib/helpers'
+
+// Países del universo con retención en origen relevante (orden por relevancia DGI).
+const WHT_COUNTRIES = ['US','GB','DE','FR','CH','NL','IT','ES','PT','BE','AT','IE','LU',
+  'SE','DK','NO','FI','CA','AU','JP','TR','MX','CL','BR','AR','PL','CZ','GR','HU','IN','KR','TW','CN','HK','SG','EG']
 
 // ── Design tokens ──────────────────────────────────────────────────────────
 const ADMIN_EMAIL = 'vayaebookk@gmail.com'
@@ -108,6 +114,10 @@ export default function AjustesGlobalPage() {
   const [fxThreshold,    setFxThreshold]    = useState(10)
   const [showBrokerTable, setShowBrokerTable] = useState(false)
 
+  const [destWht,        setDestWht]        = useState(19)
+  const [whtOverrides,   setWhtOverrides]   = useState({})
+  const [showWhtTable,   setShowWhtTable]   = useState(false)
+
   const [benchmark,      setBenchmark]      = useState('MSCI World')
   const [showOriginal,   setShowOriginal]   = useState(false)
 
@@ -126,6 +136,7 @@ export default function AjustesGlobalPage() {
   // Per-section save helpers
   const s1 = useSave([['base_currency',baseCurrency],['country_residence',country],['broker_name',brokerName||null]], sb)
   const s2 = useSave([['fx_commission_pct',parseFloat(fxPct)||0],['fx_alert_threshold',parseFloat(fxThreshold)||null]], sb)
+  const s5 = useSave([['dest_wht',parseFloat(destWht)||19],['wht_overrides',whtOverrides]], sb)
   const s3 = useSave([['benchmark_index',benchmark],['show_returns_original',showOriginal]], sb)
   const s4 = useSave([['monthly_summary_active',monthlySummary],['alerts_email_active',alertsEmail],['recurring_email_active',recurringEmail||false]], sb)
 
@@ -153,6 +164,8 @@ export default function AjustesGlobalPage() {
       setBrokerName(data.broker_name || '')
       setFxPct(data.fx_commission_pct ?? 0)
       setFxThreshold(data.fx_alert_threshold ?? 10)
+      setDestWht(data.dest_wht ?? 19)
+      setWhtOverrides(data.wht_overrides && typeof data.wht_overrides === 'object' ? data.wht_overrides : {})
       setBenchmark(data.benchmark_index || 'MSCI World')
       setShowOriginal(data.show_returns_original || false)
       setMonthlySummary(data.monthly_summary_active || false)
@@ -299,6 +312,59 @@ export default function AjustesGlobalPage() {
         <div style={{ display:'flex', alignItems:'center', marginTop:6 }}>
           <button onClick={() => s2.save(user.id)} disabled={s2.saving} style={{ ...BTN, opacity:s2.saving?0.6:1 }}>{s2.saving?'Guardando…':'Guardar cambios'}</button>
           <SaveFeedback saved={s2.saved} error={s2.err} />
+        </div>
+      </div>
+
+      {/* ── SECCIÓN FISCALIDAD: retenciones ──────────────────────────────── */}
+      <div style={CARD}>
+        <p style={SEC_TIT}>Fiscalidad — retenciones sobre dividendos</p>
+        <div style={{ marginBottom:14, maxWidth:280 }}>
+          <label style={LABEL}>Impuesto del ahorro (destino, %)</label>
+          <input style={INPUT} type="number" step="0.5" min="0" max="60" placeholder="19" value={destWht} onChange={e => setDestWht(e.target.value)} />
+          <p style={{ fontSize:11, color:'#4a5270', marginTop:4 }}>Tipo del ahorro de tu residencia fiscal (España: 19% el primer tramo).</p>
+        </div>
+        <p style={{ fontSize:12, color:'#8090a8', marginBottom:10, lineHeight:1.55 }}>
+          La <b style={{ color:'#c8d0e0' }}>retención en origen</b> depende del país y de tu bróker: algunos (p.ej. Interactive Brokers) aplican el tipo reducido del convenio, otros retienen el tipo completo. Ajusta aquí el tuyo por país si difiere del estándar. Recuerda que, por doble imposición, en España solo se acredita hasta el 15% (el exceso no es deducible).
+        </p>
+        <button type="button" onClick={() => setShowWhtTable(v => !v)} style={{ fontSize:12, color:'#818cf8', background:'none', border:'none', cursor:'pointer', padding:0, marginBottom: showWhtTable ? 12 : 0 }}>
+          {showWhtTable ? '▲ Ocultar' : '▼ Personalizar'} retención en origen por país
+        </button>
+        {showWhtTable && (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(168px,1fr))', gap:10, marginBottom:14 }}>
+            {WHT_COUNTRIES.map(code => {
+              const info = COUNTRY_INFO[code] || {}
+              const def = WHT_DEFAULTS[code] ?? WHT_DEFAULTS.OTHER
+              const val = whtOverrides[code]
+              return (
+                <div key={code} style={{ background:'rgba(255,255,255,0.02)', borderRadius:8, padding:'7px 9px', display:'flex', alignItems:'center', gap:7 }}>
+                  <span style={{ fontSize:15 }}>{info.flag || '🏳'}</span>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <p style={{ fontSize:11, color:'#c8d0e0', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{info.name || code}</p>
+                    <p style={{ fontSize:9, color:'#4a5270' }}>def. {def}%</p>
+                  </div>
+                  <input
+                    type="number" step="0.5" min="0" max="60"
+                    placeholder={String(def)}
+                    value={val ?? ''}
+                    onChange={e => {
+                      const v = e.target.value
+                      setWhtOverrides(prev => {
+                        const next = { ...prev }
+                        if (v === '' || v == null) delete next[code]
+                        else next[code] = Number(v)
+                        return next
+                      })
+                    }}
+                    style={{ width:52, background:'#0d1220', border:'1px solid rgba(255,255,255,0.10)', borderRadius:6, color:'#e2e8f5', fontSize:12, padding:'5px 6px', textAlign:'right' }}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        )}
+        <div style={{ display:'flex', alignItems:'center', marginTop:6 }}>
+          <button onClick={() => s5.save(user.id)} disabled={s5.saving} style={{ ...BTN, opacity:s5.saving?0.6:1 }}>{s5.saving?'Guardando…':'Guardar cambios'}</button>
+          <SaveFeedback saved={s5.saved} error={s5.err} />
         </div>
       </div>
 

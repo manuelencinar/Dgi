@@ -85,11 +85,12 @@ function fmtEUR0(v) { return v == null ? '—' : v.toLocaleString('es-ES', { max
 function moatBadge(m) { return m === 'wide' ? '🏰' : m === 'narrow' ? '🧱' : null }
 
 // Proyección €1k para una empresa (idéntica al HTML original).
-function projectCompany(co, destWHT) {
+function projectCompany(co, destWHT, overrides = null) {
   if (co.y == null || co.y <= 0) return null
-  const rows = project10y(1000, co.y, co.cagr || 0, getWHT(co.c), destWHT, co.c === 'ES')
+  const o = getWHT(co.c, overrides)
+  const rows = project10y(1000, co.y, co.cagr || 0, o, destWHT, co.c === 'ES')
   if (!rows) return null
-  return { y1: rows[0].net, cum10: rows[9].cum, payback: paybackYear(1000, co.y, co.cagr || 0, getWHT(co.c), destWHT, co.c === 'ES') }
+  return { y1: rows[0].net, cum10: rows[9].cum, payback: paybackYear(1000, co.y, co.cagr || 0, o, destWHT, co.c === 'ES') }
 }
 
 // ── Chips ────────────────────────────────────────────────────────────────────
@@ -137,10 +138,10 @@ function Toggle({ label, value, onChange, locked }) {
 }
 
 // ── Tarjeta de empresa ───────────────────────────────────────────────────────
-function CompanyCard({ co, rank, destWHT, sortKey, selected, onSelect, canSelect, following, isAuthed, isPremium }) {
+function CompanyCard({ co, rank, destWHT, whtOverrides, sortKey, selected, onSelect, canSelect, following, isAuthed, isPremium }) {
   const ct = getCountry(co.c)
-  const proj = projectCompany(co, destWHT)
-  const ny = netYieldOf(co, destWHT)
+  const proj = projectCompany(co, destWHT, whtOverrides)
+  const ny = netYieldOf(co, destWHT, whtOverrides)
   const sb = streakBadge(co.streak)
   const tierName = dividendTierInfo(co.streak)?.name
   const mb = moatBadge(co.moat)
@@ -270,7 +271,7 @@ function Comparator({ companies, destWHT, onClose }) {
 }
 
 // ── Componente principal ───────────────────────────────────────────────────
-export default function ScreenerClient({ companies = [], isPremium = false, sectors = [], destWHT = 19, followed = [], isAuthed = false, initial = null, hueco = null, totalCompanies = 0 }) {
+export default function ScreenerClient({ companies = [], isPremium = false, sectors = [], destWHT = 19, whtOverrides = null, followed = [], isAuthed = false, initial = null, hueco = null, totalCompanies = 0 }) {
   const followedSet = useMemo(() => new Set(followed), [followed])
   const [filters, setFilters] = useState(initial ? { ...INIT, ...initial } : INIT)
   const [showHueco, setShowHueco] = useState(!!hueco)
@@ -341,7 +342,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
   const sorted = useMemo(() => {
     const arr = [...filtered]
     if (sortKey === 'profit') {
-      const val = co => { const p = projectCompany(co, destWHT); return p ? p.cum10 : -Infinity }
+      const val = co => { const p = projectCompany(co, destWHT, whtOverrides); return p ? p.cum10 : -Infinity }
       arr.sort((a, b) => val(b) - val(a))
     } else if (sortKey === 'cheap') {
       // Las valoraciones no fiables (cap de cordura, MoS>80%) se hunden al fondo.
@@ -350,13 +351,13 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
     } else if (sortKey === 'dividend') {
       arr.sort((a, b) => (b.dq ?? -Infinity) - (a.dq ?? -Infinity))
     } else if (sortKey === 'renta') {
-      const val = co => rentaScore(co, destWHT) ?? -Infinity
+      const val = co => rentaScore(co, destWHT, whtOverrides) ?? -Infinity
       arr.sort((a, b) => val(b) - val(a))
     } else if (sortKey === 'netyield') {
-      const val = co => netYieldOf(co, destWHT) ?? -Infinity
+      const val = co => netYieldOf(co, destWHT, whtOverrides) ?? -Infinity
       arr.sort((a, b) => val(b) - val(a))
     } else if (sortKey === 'payback') {
-      const val = co => { const p = projectCompany(co, destWHT); return p && p.payback ? p.payback : Infinity }
+      const val = co => { const p = projectCompany(co, destWHT, whtOverrides); return p && p.payback ? p.payback : Infinity }
       arr.sort((a, b) => val(a) - val(b))   // menos años de recuperación primero
     } else {
       arr.sort((a, b) => (b.sc ?? -Infinity) - (a.sc ?? -Infinity))
@@ -566,7 +567,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       ) : (
         <>
           {pageRows.map((co, i) => (
-            <CompanyCard key={`${co.t}-${i}`} co={co} rank={i + 1} destWHT={destWHT} sortKey={sortKey}
+            <CompanyCard key={`${co.t}-${i}`} co={co} rank={i + 1} destWHT={destWHT} whtOverrides={whtOverrides} sortKey={sortKey}
               selected={selected.includes(co.t)} onSelect={toggleSelect} canSelect={selected.length < 4}
               following={followedSet.has(co.t)} isAuthed={isAuthed} isPremium={isPremium} />
           ))}

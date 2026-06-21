@@ -43,6 +43,7 @@ export default function CalendarioPage({ isPremium }) {
   const [fundMap, setFundMap]     = useState({})
   const [fxToEUR, setFxToEUR]     = useState({})
   const [destWHT, setDestWHT]     = useState(19)
+  const [whtOverrides, setWhtOverrides] = useState(null)
   const [received, setReceived]   = useState([])
   const [loading, setLoading]     = useState(true)
   const [view, setView]           = useState('calendar')   // 'calendar' | 'list'
@@ -69,7 +70,7 @@ export default function CalendarioPage({ isPremium }) {
         ? sb.from('company_fundamentals').select('ticker,current_price,dps,div_cagr5,sector,industry,country,div_history,dividend_events,next_ex_date,next_pay_date').in('ticker', stockTickers)
         : Promise.resolve({ data: [] }),
       fundTickers.length ? sb.from('funds').select('*').in('ticker', fundTickers) : Promise.resolve({ data: [] }),
-      sb.from('user_settings').select('dest_wht').eq('user_id', user.id).maybeSingle(),
+      sb.from('user_settings').select('dest_wht,wht_overrides').eq('user_id', user.id).maybeSingle(),
       sb.from('dividends_received').select('ticker,amount,amount_net,date').eq('user_id', user.id),
     ])
 
@@ -89,13 +90,14 @@ export default function CalendarioPage({ isPremium }) {
     setFundMap(fMap)
     setFxToEUR(fx)
     setDestWHT(settings?.dest_wht != null ? Number(settings.dest_wht) : 19)
+    setWhtOverrides(settings?.wht_overrides && typeof settings.wht_overrides === 'object' ? settings.wht_overrides : null)
     setReceived((divsRec || []).filter(d => d.date && new Date(d.date).getFullYear() === yearNow))
     setLoading(false)
   }
 
   const cal = useMemo(
-    () => buildDividendCalendar(enriched, fundMap, fxToEUR, destWHT),
-    [enriched, fundMap, fxToEUR, destWHT]
+    () => buildDividendCalendar(enriched, fundMap, fxToEUR, destWHT, { whtOverrides }),
+    [enriched, fundMap, fxToEUR, destWHT, whtOverrides]
   )
   const { months, upcoming, nextPayment, totals } = cal
   const maxMonth = Math.max(1, ...months.map(m => m.total))

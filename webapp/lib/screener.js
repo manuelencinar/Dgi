@@ -3,7 +3,14 @@
 
 import { SECTORS, WHT_DEFAULTS } from '@/lib/sectors'
 
-export function getWHT(country) { return WHT_DEFAULTS[country] ?? 0 }
+// Retención en origen del país. `overrides` (opcional) es el mapa personalizado del
+// usuario por código de país (Ajustes) — su bróker puede aplicar tipos distintos.
+export function getWHT(country, overrides = null) {
+  const c = (country || '').toUpperCase()
+  const o = overrides && overrides[c]
+  if (o != null && o !== '' && !isNaN(o)) return Number(o)
+  return WHT_DEFAULTS[c] ?? WHT_DEFAULTS.OTHER ?? 0
+}
 
 // ROIC para ranking/display: SIEMPRE el más conservador (menor) de reported y
 // tangible. Si la BD trae roic_display lo usa; si no, lo deriva al vuelo.
@@ -356,16 +363,17 @@ function pbScore(pb) {
 }
 
 // Yield neto (tras doble imposición) de una empresa ya construida (shape `co`).
-export function netYieldOf(co, destWHT) {
+// `overrides`: mapa de retención en origen personalizado por país (Ajustes).
+export function netYieldOf(co, destWHT, overrides = null) {
   if (co?.y == null || co.y <= 0) return null
-  return netYield(co.y, getWHT(co.c), destWHT, co.c === 'ES')
+  return netYield(co.y, getWHT(co.c, overrides), destWHT, co.c === 'ES')
 }
 
 // Nota de renta 0-10: 60% yield neto, 40% rapidez de recuperación.
-export function rentaScore(co, destWHT) {
-  const ny = netYieldOf(co, destWHT)
+export function rentaScore(co, destWHT, overrides = null) {
+  const ny = netYieldOf(co, destWHT, overrides)
   if (ny == null) return null
-  const pb = paybackYear(1000, co.y, co.cagr || 0, getWHT(co.c), destWHT)
+  const pb = paybackYear(1000, co.y, co.cagr || 0, getWHT(co.c, overrides), destWHT, co.c === 'ES')
   return Math.round((ynScore(ny) * 0.6 + pbScore(pb) * 0.4) * 10) / 10
 }
 

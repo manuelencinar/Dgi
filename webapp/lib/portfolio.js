@@ -3,7 +3,7 @@
 import { DICT } from '@/data/dict'
 import { SUPERSECTORS, SUPERSECTOR_ORDER, sectorInfo, INVESTOR_PROFILES, DEFAULT_PROFILE } from '@/lib/supersectors'
 import { COUNTRY_INFO } from '@/lib/helpers'
-import { FOREIGN_CREDIT_CAP } from '@/lib/screener'
+import { FOREIGN_CREDIT_CAP, getWHT } from '@/lib/screener'
 
 // ── FX ────────────────────────────────────────────────────────────────────
 
@@ -393,19 +393,22 @@ export function calcDividendRisks(enriched, totalIncomeEUR) {
 
 // ── Fiscal ────────────────────────────────────────────────────────────────
 
-export function calcFiscal(enriched) {
+export function calcFiscal(enriched, whtOverrides = null, destWHT = 19) {
+  const destRate = (Number(destWHT) || 19) / 100
   return enriched
     .filter(p => (p.annualIncomeEUR ?? 0) > 0)
     .map(p => {
-      const isDomestic      = p.companyCountry === 'Spain'
-      const sourceRate      = isDomestic ? ES_RATE : (WITHHOLDING[p.companyCountry] ?? 0.15)
+      const code            = (p.countryCode || '').toUpperCase()
+      const isDomestic      = code === 'ES'
+      // Retención en origen del país (con el override del usuario por bróker si lo hay).
+      const sourceRate      = getWHT(code, whtOverrides) / 100
       const gross           = p.annualIncomeEUR
       const sourceWH        = gross * sourceRate
       // Doble imposición: la retención en origen solo es ACREDITABLE hasta el 15%
       // del bruto (ley española); el exceso no se deduce. En acciones nacionales el
       // crédito es la propia retención (es el impuesto español, no hay doble imp.).
       const credit          = isDomestic ? sourceWH : Math.min(sourceWH, gross * FOREIGN_CREDIT_CAP / 100)
-      const additionalES    = Math.max(0, gross * ES_RATE - credit)
+      const additionalES    = Math.max(0, gross * destRate - credit)
       const net             = gross - sourceWH - additionalES
       const effectiveRate   = gross > 0 ? (sourceWH + additionalES) / gross * 100 : 0
       const creditCapped    = !isDomestic && sourceWH > gross * FOREIGN_CREDIT_CAP / 100

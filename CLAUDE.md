@@ -86,6 +86,12 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - `scripts/update_prices.py`: descarga masiva de Yahoo a daily_prices + tipos de cambio. Incluye `BENCHMARK_TICKERS = ["^GSPC","^STOXX","URTH","^NDX","^FTSE","^GDAXI","^N225"]`.
 - Cartera y comparador refrescan precios stale vía `/api/precios` (antes salían desactualizados hasta visitar la ficha de la empresa).
 
+## Fiscalidad de dividendos — retención en origen + doble imposición
+- **Retención en origen por país**: `WHT_DEFAULTS` (ISO-2 → %) en `lib/sectors.js`, fuente única. Cubre los 36 países del universo (TR, MX, CL, PL, CZ, GR, AR, IN, KR, HU, TW, LU, EG… antes caían a 0). `getWHT(country, overrides)` en `lib/screener.js`.
+- **Overrides por usuario/bróker**: `user_settings.wht_overrides` (jsonb `{CODE:%}`) — algunos brókers (IB) aplican el tipo de convenio, otros el completo. Se editan en **Ajustes → Fiscalidad** (`AjustesGlobalPage.js`, sección "retenciones") junto al impuesto de destino `dest_wht`. SQL: `webapp/sql/wht_overrides.sql` (**pendiente de ejecutar**: `wht_overrides` + `dest_wht`). Guardado vía `/api/ajustes` (whitelist + `sanitizeWhtOverrides`, 0-60%).
+- **Doble imposición (ley española)**: el crédito por retención en origen se acredita **solo hasta el 15% del bruto**; el exceso NO es deducible. Helper único `effectiveDivTax(origen, destino, isDomestic)` en `lib/screener.js`: `total = origen + destino − min(origen, 15, destino)`; acción nacional (`code==='ES'`) → solo el impuesto español. Lo usan `netYield`/`netYieldOf`/`project10y`/`paybackYear`/`rentaScore` (screener, comparador, rankings, construir-cartera, ficha) y `calcFiscal` (coste fiscal de la cartera) y `buildDividendCalendar`. El resumen fiscal formal (`buildFiscalSummary`, casillas) ya topaba al 15%.
+- Threading de overrides: `app/screener/page.js`→`ScreenerClient`, `PortfolioPage`/`CalendarioPage` (cartera), ficha (`country==='ES'`). Los scores compartidos del servidor (`calcDivQuality`, build-plan) usan los defaults.
+
 ## Tipos de cambio / FX (tabla exchange_rates) — FUENTE ÚNICA DE DIVISA
 - Tabla `exchange_rates` (SQL en `webapp/sql/fx_and_settings.sql`): pares de divisa por fecha.
 - `lib/currency.js`: `getExchangeRate(from, to, date)` (mira hasta 5 días hábiles atrás, null si no hay), `getLatestExchangeRate`, `getExchangeRateChange`, `convertAmount`, `formatCurrency`. Crea el cliente supabase de navegador internamente.
