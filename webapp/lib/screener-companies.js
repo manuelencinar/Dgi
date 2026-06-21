@@ -10,7 +10,7 @@ import { getIndexConstituents } from '@/lib/index-constituents'
 // Lee company_fundamentals (campos escalares) paginado — PostgREST limita a 1000 filas.
 async function fetchFundamentals() {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
-  const FIELDS = 'ticker, current_price, dps, pays_dividend, div_streak, div_cagr5, payout_fcf, payout_eps, fcf_cagr5, debt_ebitda, net_debt_ebitda, interest_coverage, roic, roic_reported, roic_tangible, roe, operating_margin, gross_margin, revenue_cagr5, pe_trailing, pe_forward, ev_ebitda, market_cap_m, intrinsic_value, week52_high, week52_low, yield_avg, yield_avg_years, ma200, sector, industry, country, bonus_total, improving_flag, bonus_roic_trend, bonus_margin_trend, bonus_debt_reduction, bonus_fcf_growth'
+  const FIELDS = 'ticker, current_price, dps, pays_dividend, div_streak, div_cagr5, payout_fcf, payout_eps, fcf_cagr5, debt_ebitda, net_debt_ebitda, interest_coverage, roic, roic_reported, roic_tangible, roe, operating_margin, gross_margin, revenue_cagr5, pe_trailing, pe_forward, eps_trailing, ev_ebitda, market_cap_m, intrinsic_value, week52_high, week52_low, yield_avg, yield_avg_years, ma200, sector, industry, country, bonus_total, improving_flag, bonus_roic_trend, bonus_margin_trend, bonus_debt_reduction, bonus_fcf_growth'
   const all = []
   try {
     for (let from = 0; ; from += 1000) {
@@ -64,7 +64,9 @@ export async function buildScreenerCompanies(destWHT, baseDict) {
       icov:   f.interest_coverage != null ? Number(f.interest_coverage) : null,
       opm:    f.operating_margin != null ? Number(f.operating_margin) : null,
       rev:    f.revenue_cagr5 != null ? Number(f.revenue_cagr5) : null,
-      pe:     f.pe_trailing != null ? Number(f.pe_trailing) : null,
+      // PER trailing: si Yahoo no lo da pero hay BPA positivo, precio/BPA (fallback).
+      pe:     f.pe_trailing != null ? Number(f.pe_trailing)
+              : (f.eps_trailing != null && Number(f.eps_trailing) > 0 && f.current_price != null ? Number(f.current_price) / Number(f.eps_trailing) : null),
       peFwd:  f.pe_forward != null ? Number(f.pe_forward) : null,
       ev:     f.ev_ebitda != null ? Number(f.ev_ebitda) : null,
       mcap:   f.market_cap_m != null ? Number(f.market_cap_m) : null,

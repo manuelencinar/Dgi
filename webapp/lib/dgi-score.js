@@ -584,7 +584,12 @@ function buildFinancial(data, sectorType, bm = null) {
 
 function buildValuation(data, dcf, sectorType, secM = null) {
   const mos  = dcf?.mos != null ? dcf.mos * 100 : null
-  const pe   = n(data.pe_trailing)
+  // PER trailing: si Yahoo no lo da (suele omitirlo con beneficio negativo) pero hay
+  // BPA positivo, se calcula precio/BPA. Con BPA negativo no hay PER significativo
+  // (pérdidas) → se marcará "n.s." en vez de un hueco. peLoss distingue ambos casos.
+  const epsT = n(data.eps_trailing), px = n(data.current_price)
+  const pe   = n(data.pe_trailing) ?? (epsT != null && epsT > 0 && px != null ? px / epsT : null)
+  const peLoss = pe == null && epsT != null && epsT < 0
   const pef  = n(data.pe_forward)
   const eveb = n(data.ev_ebitda)
   const pb   = n(data.price_to_book)
@@ -617,12 +622,13 @@ function buildValuation(data, dcf, sectorType, secM = null) {
   }
 
   // PER: lower is better, but negative = 0
-  const peScore  = pe  == null ? null : pe  <= 0 || pe  > 55 ? 0 : bsRev(pe,  [[10,10],[18,8],[28,6],[40,4],[56,2]])
+  const peScore  = pe  == null ? (peLoss ? 0 : null) : pe  <= 0 || pe  > 55 ? 0 : bsRev(pe,  [[10,10],[18,8],[28,6],[40,4],[56,2]])
   const pefScore = pef == null ? null : pef <= 0 || pef > 55 ? 0 : bsRev(pef, [[10,10],[18,8],[28,6],[40,4],[56,2]])
+  const peVal = pe != null ? fmtN(pe,1) + '×' : (peLoss ? 'n.s. (pérdidas)' : '—')
 
   return [
     mk('mos','Margen seguridad DCF',mos != null ? (mos > 0 ? '+' : '') + fmtPct(mos) : '—',bs(mos,[[-25,2],[-10,4],[0,6],[10,8],[25,10]]),0.35,'Diferencia entre precio actual y valor intrínseco DCF. Por encima del 20% existe margen de seguridad significativo.'),
-    mk('pe','PER trailing',pe != null ? fmtN(pe,1) + '×' : '—',peScore,0.20,'Precio dividido entre beneficio de los últimos 12 meses. En sectores de crecimiento complementar con PER forward.'),
+    mk('pe','PER trailing',peVal,peScore,0.20,'Precio dividido entre beneficio de los últimos 12 meses. Si la empresa tiene pérdidas no es significativo (n.s.) — usar el PER forward.'),
     mk('pef','PER forward',pef != null ? fmtN(pef,1) + '×' : '—',pefScore,0.20,'Precio dividido entre beneficio estimado próximos 12 meses. Más relevante para empresas en crecimiento.'),
     mk('eveb','EV/EBITDA',eveb != null ? fmtN(eveb,1) + '×' : '—',evScore,0.15,'Valor de empresa dividido entre EBITDA. Independiente de la estructura de capital.'),
     mk('pb','Precio / Valor contable',pb != null ? fmtN(pb,1) + '×' : '—',pbScore,0.10,
