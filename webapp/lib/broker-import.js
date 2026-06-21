@@ -235,21 +235,33 @@ export function computeFinancials(m, currency) {
   return { price, commission, commissionCur: currency, amountOriginal, exchangeRate }
 }
 
+// Retención española (destino) sobre dividendos en origen.
+const ES_DEST_WHT = 19
+
 // Cálculo fiscal de un dividendo. dps = dividendo por acción (= precio en divisa
-// origen). En dividendos en euros se deriva la retención en origen (bruto − neto);
-// en divisa extranjera solo se conoce el neto en € (la retención va mezclada con el
-// cambio), así que se deja sin desglosar.
+// origen). En dividendos en euros se deriva la retención TOTAL (bruto − neto) y se
+// reparte: destino = 19% español sobre el bruto (lo que retiene el bróker español);
+// origen = el resto (retención del país de la empresa). En acción nacional el origen
+// sale 0 (no hay retención extranjera). En divisa extranjera la retención va mezclada
+// con el cambio y no se desglosa.
 export function computeDividend(m, currency) {
   const shares = m.shares || 0
   const dps = m.priceOrig
   if (currency === 'EUR' && dps != null && shares > 0 && m.totalEur != null) {
     const gross = r2(dps * shares)
     const net = r2(m.totalEur)
-    const wh = r2(Math.max(0, gross - net))
-    const whPct = gross > 0 ? r2(wh / gross * 100) : null
-    return { dps, divGross: gross, divNet: net, whAmount: wh, whPct }
+    const total = r2(Math.max(0, gross - net))
+    const dest = r2(Math.min(gross * ES_DEST_WHT / 100, total))
+    const origin = r2(Math.max(0, total - dest))
+    const pct = v => gross > 0 ? r2(v / gross * 100) : null
+    return {
+      dps, divGross: gross, divNet: net,
+      whAmount: total, whPct: pct(total),
+      whOrigin: origin, whOriginPct: pct(origin),
+      whDest: dest, whDestPct: pct(dest),
+    }
   }
-  return { dps, divGross: m.totalEur, divNet: m.totalEur, whAmount: null, whPct: null }
+  return { dps, divGross: m.totalEur, divNet: m.totalEur, whAmount: null, whPct: null, whOrigin: null, whOriginPct: null, whDest: null, whDestPct: null }
 }
 
 // Enriquece cada movimiento con ticker, divisa, precio para la app y comisión.

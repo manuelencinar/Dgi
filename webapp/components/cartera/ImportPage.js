@@ -110,19 +110,21 @@ export default function ImportPage() {
         if (r.type === 'dividend') {
           const divFields = {
             amount: r.divGross, amount_net: r.divNet, shares: r.shares, dps: r.dps,
-            withholding_origin: r.whAmount, withholding_origin_pct: r.whPct,
-            status: 'received', source: 'manual', payment_method: 'cash', date: r.date,
+            withholding_origin: r.whOrigin, withholding_origin_pct: r.whOriginPct,
+            withholding_dest: r.whDest, withholding_dest_pct: r.whDestPct,
+            status: 'received', source: 'manual', date: r.date,
           }
+          // Respaldo si alguna columna opcional no existe: conserva al menos estado/acciones.
+          const safe = { amount: r.divGross, amount_net: r.divNet, shares: r.shares, dps: r.dps, status: 'received', date: r.date }
           const existingId = divIds.get(divKey(r.ticker, r.date, r.divNet))
           if (existingId) {
-            const { error } = await sb.from('dividends_received').update(divFields).eq('id', existingId)
+            let { error } = await sb.from('dividends_received').update(divFields).eq('id', existingId)
+            if (error) ({ error } = await sb.from('dividends_received').update(safe).eq('id', existingId))
             if (error) { errors++; continue }
             updated++
           } else {
             let { error } = await sb.from('dividends_received').insert({ user_id: user.id, ticker: r.ticker, ...divFields })
-            if (error && /dps|shares|withholding|source|payment_method|status/.test(error.message)) {
-              ;({ error } = await sb.from('dividends_received').insert({ user_id: user.id, ticker: r.ticker, amount: r.divGross, amount_net: r.divNet, date: r.date }))
-            }
+            if (error) ({ error } = await sb.from('dividends_received').insert({ user_id: user.id, ticker: r.ticker, ...safe }))
             if (error) { errors++; continue }
             imported++
           }
