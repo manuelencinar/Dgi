@@ -920,6 +920,45 @@ function InsightsSection({ insights, isPremium, limit, onlyStrong, title = 'Aná
   return content
 }
 
+// ── Fortalezas y riesgos (capa narrativa en lenguaje llano) ─────────────────
+// Reparte los insights tipados en dos columnas legibles: fortalezas (positive)
+// y riesgos (negative). El "qué significa esto" por encima de los números crudos.
+function StrengthsRisks({ insights, onSeeAll }) {
+  if (!insights?.length) return null
+  const pos = insights.filter(i => i.type === 'positive' || i.type === 'green')
+  const neg = insights.filter(i => i.type === 'negative' || i.type === 'red')
+  if (!pos.length && !neg.length) return null
+
+  const Col = ({ title, color, bg, bullet, items, empty }) => (
+    <div style={{ flex: 1, minWidth: 250 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>{bullet} {title} {items.length > 0 && <span style={{ color: '#4a5270', fontWeight: 600 }}>· {items.length}</span>}</p>
+      {items.length ? (
+        <div style={{ display: 'grid', gap: 7 }}>
+          {items.slice(0, 6).map((ins, i) => (
+            <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', background: bg, borderRadius: 8, padding: '8px 11px' }}>
+              <span style={{ color, fontSize: 12, fontWeight: 800, flexShrink: 0, marginTop: 1 }}>{bullet}</span>
+              <p style={{ fontSize: 12.5, color: '#c8d0e0', lineHeight: 1.5 }}>{ins.text}</p>
+            </div>
+          ))}
+        </div>
+      ) : <p style={{ fontSize: 12, color: '#4a5270' }}>{empty}</p>}
+    </div>
+  )
+
+  return (
+    <Card>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <SectionTitle>Fortalezas y riesgos</SectionTitle>
+        {onSeeAll && <button onClick={onSeeAll} style={{ fontSize: 11, color: '#818cf8', background: 'none', border: 'none', cursor: 'pointer' }}>Ver análisis completo →</button>}
+      </div>
+      <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+        <Col title="Fortalezas" color="#34d399" bg="rgba(52,211,153,0.06)" bullet="✓" items={pos} empty="Sin fortalezas destacadas con los datos disponibles." />
+        <Col title="Riesgos"    color="#f87171" bg="rgba(248,113,113,0.06)" bullet="✕" items={neg} empty="Sin riesgos relevantes detectados." />
+      </div>
+    </Card>
+  )
+}
+
 // ── DGI score card ─────────────────────────────────────────────────────────
 
 function MetricRow({ m }) {
@@ -1589,15 +1628,7 @@ export default function CompanyDetailPage(props) {
 
               <ResumenProjection yld={yld} cagr={cagr} country={country} currency={currency} destWHT={destWHT} />
 
-              {insights?.length > 0 && (
-                <Card>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <SectionTitle>Insights clave</SectionTitle>
-                    <button onClick={() => goTab('salud')} style={{ fontSize: 11, color: '#818cf8', background: 'none', border: 'none', cursor: 'pointer' }}>Ver todos →</button>
-                  </div>
-                  <InsightsInline insights={insights} />
-                </Card>
-              )}
+              <StrengthsRisks insights={insights} onSeeAll={() => goTab('salud')} />
             </div>
           </div>
           <div style={{ marginTop: 16 }}>
