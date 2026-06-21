@@ -265,6 +265,43 @@ function dilutionScore(annual, sectorType, ffoCagr5 = null) {
   return 1
 }
 
+// Señal forense de inventario: crecimiento del INVENTARIO vs crecimiento de VENTAS
+// a 3 años (suaviza el interanual y la acumulación estratégica de cíclicas). Si el
+// inventario crece bastante más rápido que las ventas → alerta (demanda débil,
+// exceso de stock, obsolescencia) que anticipa caídas de margen. Solo aplica si la
+// empresa tiene inventario MATERIAL (excluye software/servicios/banca/REIT/utilities
+// automáticamente: ahí no hay inventario, no se penaliza con 0/N/A).
+function exInventorySignal(data, sectorType) {
+  if (['bank', 'insurer', 'reit', 'utilities', 'telecom'].includes(sectorType)) return null
+  const bs = data.balance_sheet_annual?.data, is = data.income_statement_annual?.data
+  if (!bs || !is) return null
+  const inv = sRow(bs, 'Inventory', 'Inventario')
+  const rev = sRow(is, 'Total Revenue', 'Ingresos Totales', 'Total Revenues')
+  if (!Array.isArray(inv) || !Array.isArray(rev)) return null
+  const i0 = n(inv[0]), r0 = n(rev[0])
+  if (!(i0 > 0) || !(r0 > 0) || i0 / r0 < 0.02) return null   // inventario no material → excluir
+  const yrs = Math.min(inv.length, rev.length, 4)
+  if (yrs < 3) return null
+  const iOld = n(inv[yrs - 1]), rOld = n(rev[yrs - 1])
+  if (!(iOld > 0) || !(rOld > 0)) return null
+  const span = yrs - 1
+  const invCagr = (Math.pow(i0 / iOld, 1 / span) - 1) * 100
+  const revCagr = (Math.pow(r0 / rOld, 1 / span) - 1) * 100
+  return { gap: invCagr - revCagr, invCagr, revCagr, turnover: r0 / i0 }
+}
+// Puntuación del gap inventario−ventas (el propio gap ya es comparable entre sectores:
+// un súper rota 15× y una relojería 1×, pero ambos con gap ~0 si el stock sigue a las
+// ventas). + = inventario crece más rápido que ventas (malo).
+function inventoryScore(gap) {
+  if (gap == null) return null
+  if (gap <= -3) return 10
+  if (gap <= 0)  return 8
+  if (gap <= 3)  return 6
+  if (gap <= 8)  return 4
+  if (gap <= 15) return 2
+  return 1
+}
+
 function exCfoDivCoverage(data) {
   const d = data.cashflow_annual?.data
   if (!d) return null
@@ -318,6 +355,14 @@ function buildQuality(data, sectorType, industryType, bm = null) {
     fcfConv: exFcfConversion(data),
     marginTrend: exMarginTrend(data),
   }
+
+  // Señal de inventario (eficiencia operativa) — solo si la empresa tiene inventario
+  // material; si no, NO se añade la métrica (no se muestra "—" ni penaliza).
+  const invSig = exInventorySignal(data, sectorType)
+  const invMk = invSig ? mk('inventory', 'Inventario vs ventas (3a)',
+    (invSig.gap > 0 ? '+' : '') + invSig.gap.toFixed(0) + ' pp',
+    inventoryScore(invSig.gap), 0.10,
+    `Inventario al ${invSig.invCagr.toFixed(0)}%/año vs ventas al ${invSig.revCagr.toFixed(0)}%/año (3 años). Si el inventario crece bastante más rápido que las ventas es señal de alerta —demanda débil, exceso de stock u obsolescencia— que suele anticipar caídas de margen. Rotación ~${invSig.turnover.toFixed(1)}×.`) : null
 
   const ROIC_G = [[0,2],[5,4],[8,6],[12,8],[18,10]]
   const ROE_G  = [[0,2],[8,5],[12,7],[18,9],[25,10]]
@@ -383,6 +428,7 @@ function buildQuality(data, sectorType, industryType, bm = null) {
       mk('revCagr','Crecimiento ingresos CAGR 5a',fmtPct(v.revCagr),bs(v.revCagr,REV_G),0.12,'Crecimiento ajustado por vencimiento de patentes. Indica reposición del portfolio.'),
       mk('roe','ROE',fmtPct(v.roe),bs(v.roe,ROE_G),0.12,'Puede estar elevado por intangibles — interpretar junto al ROIC ajustado.'),
       mk('fcfConv','Conversión FCF',fmtPct(v.fcfConv),bs(v.fcfConv,FCF_C),0.05,'Una alta conversión FCF indica que los ingresos por patentes se traducen en caja real.'),
+      ...(invMk ? [invMk] : []),
     ]
   }
 
@@ -394,6 +440,7 @@ function buildQuality(data, sectorType, industryType, bm = null) {
       mk('nm','Margen neto (ciclo)',fmtPct(v.nm),bs(v.nm,[[3,4],[8,7],[14,10]]),0.15,'Margen neto promedio del ciclo. Incluye impacto de deuda e impuestos.'),
       mk('roe','ROE (ciclo)',fmtPct(v.roe),bs(v.roe,[[4,3],[8,6],[13,8],[18,10]]),0.15,'ROE medio del ciclo. En energía es muy variable año a año.'),
       mk('fcfConv','Conversión FCF (ciclo)',fmtPct(v.fcfConv),bs(v.fcfConv,FCF_C),0.10,'En energía puede ser negativa en años de inversión y muy positiva en años de precios altos.'),
+      ...(invMk ? [invMk] : []),
     ]
   }
 
@@ -405,6 +452,7 @@ function buildQuality(data, sectorType, industryType, bm = null) {
       mk('om','Margen operativo',fmtPct(v.om),bs(v.om,[[10,4],[20,7],[30,10]]),0.18,'El margen operativo refleja el apalancamiento operativo de la marca.'),
       mk('marginTrend','Tendencia márgenes',fmtTrend(v.marginTrend),marginTrendScore(v.marginTrend),0.10,'La expansión de márgenes es señal muy positiva de fortaleza de marca.'),
       mk('roe','ROE',fmtPct(v.roe),bs(v.roe,ROE_G),0.05,'Puede estar elevado por activos intangibles de marca no reflejados en balance.'),
+      ...(invMk ? [invMk] : []),
     ]
   }
 
@@ -434,6 +482,7 @@ function buildQuality(data, sectorType, industryType, bm = null) {
     mk('revCagr','Crecimiento ingresos CAGR 5a',fmtPct(v.revCagr),bs(v.revCagr,REV_G),0.12,'Tasa de crecimiento anual compuesta de los ingresos en los últimos 5 años.'),
     mk('niCagr','Crecimiento beneficio CAGR 5a',fmtPct(v.niCagr),bs(v.niCagr,NI_G),0.10,'Si crece más rápido que los ingresos indica mejora de márgenes. Si más lento puede indicar presión en costes.'),
     mk('marginTrend','Tendencia márgenes',fmtTrend(v.marginTrend),marginTrendScore(v.marginTrend),0.12,'Evalúa si los márgenes mejoran o deterioran en los últimos 4 años.'),
+    ...(invMk ? [invMk] : []),
   ]
 }
 
