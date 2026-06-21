@@ -272,6 +272,11 @@ export default async function EmpresaPage({ params, searchParams }) {
   } : null
 
   const price      = liveQuote?.price       ?? dailyPrice?.price ?? detail?.current_price  ?? null
+  // El valor intrínseco, el Score y la salud se calculan con el precio REAL del día
+  // (daily_prices / cotización en vivo), no con el del scrape semanal de yfinance.
+  // Se fija aquí para que la valoración (precio actual y margen de seguridad) y el
+  // resto de la ficha usen un único precio diario coherente.
+  if (detail && price != null) detail.current_price = price
   const change     = liveQuote?.change      ?? null
   const changePct  = liveQuote?.pct         ?? null
   const yld        = price > 0 && detail?.dps != null ? detail.dps / price : null
