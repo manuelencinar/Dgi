@@ -39,7 +39,10 @@ function computeStreak(divHistory) {
     const increased = cur > prev * 1.001
     const spikeNorm = prev2 != null && cur >= prev2 && prev > prev2 * 1.001          // pico→normalización (KO)
     const isDip = cur < prev * 0.999
-    const recovered = isDip && ((rec1 != null && rec1 > prev * 1.001) || (rec2 != null && rec2 > prev * 1.001)) // caída puntual que recupera ≤2a (O)
+    // Caída de TIMING que NETEA: el promedio de la caída con el/los año(s) siguiente(s)
+    // vuelve al nivel previo (Realty Income, KO). Un RECORTE real deja el promedio por
+    // debajo aunque luego recupere algo (Ahold 2021: (0,83+0,98)/2=0,905<0,96 → rompe).
+    const recovered = isDip && rec1 != null && (cur + rec1) / 2 >= prev * 0.999
     if (increased || spikeNorm || recovered) s++
     else break
   }

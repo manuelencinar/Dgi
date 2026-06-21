@@ -281,14 +281,15 @@ def compute_streak(div_history):
         rec1 = dps[i + 1] if i + 1 <= n - 1 else None   # año(s) más recientes (ya en la racha)
         rec2 = dps[i + 2] if i + 2 <= n - 1 else None
         increased = cur > prev * 1.001
-        # Pico→normalización (KO 2001→2002): el previo fue un pico y seguimos por
-        # encima del nivel de hace 2 años.
+        # Pico→normalización (KO 2001→2002): el previo fue un pico (special/timing) y
+        # seguimos por encima del nivel de hace 2 años.
         spike_norm = prev2 is not None and cur >= prev2 and prev > prev2 * 1.001
-        # Caída PUNTUAL que se recupera en ≤2 años (pagadores mensuales / timing,
-        # p.ej. Realty Income). Solo aplica a una caída real (cur<prev), NO a años
-        # planos/congelados (si no, congelaciones como GE 2020-22 colarían).
+        # Caída de TIMING que NETEA: un pago se desplaza de año y crea caída+recuperación,
+        # pero el promedio de la caída con el/los año(s) siguiente(s) vuelve al nivel
+        # previo (Realty Income mensual, KO). Un RECORTE real deja el promedio por debajo
+        # del año previo aunque luego recupere algo (Ahold 2021: (0,83+0,98)/2=0,905<0,96).
         is_dip = cur < prev * 0.999
-        recovered = is_dip and ((rec1 is not None and rec1 > prev * 1.001) or (rec2 is not None and rec2 > prev * 1.001))
+        recovered = is_dip and rec1 is not None and (cur + rec1) / 2 >= prev * 0.999
         if increased or spike_norm or recovered:
             streak += 1
         else:
