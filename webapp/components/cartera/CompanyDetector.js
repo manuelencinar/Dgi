@@ -1,156 +1,138 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { DICT } from '@/data/dict'
-import { getContinent } from '@/lib/helpers'
+import { superSectorOf } from '@/lib/supersectors'
 
-// Zonas que el screener sabe filtrar
-const SCREENER_ZONES = ['América', 'Europa', 'Asia', 'Oceanía']
-
-// ── Gap analysis ───────────────────────────────────────────────────────────
-
-function analyzeGaps(enriched, cagrMap) {
-  const total = enriched.reduce((s, p) => s + (p.valueEUR ?? 0), 0)
-  if (!total) return []
-
-  // Pesos por sector (usando sector del DICT para casar con el screener)
-  const dictSector = t => { const d = DICT.find(x => x[1] === t); return d?.[4] ?? null }
-  const sectorW = {}, zoneW = {}, currW = {}
+// ── Pesos de la cartera (cliente) ────────────────────────────────────────────
+// Se calculan en el navegador desde `enriched` (datos propios del usuario) y se
+// envían al server, que decide las 5 recomendaciones contra el universo completo.
+function computeWeights(enriched) {
+  const total = enriched.reduce((s, p) => s + (p.valueEUR || 0), 0)
+  const sectorW = {}, supW = {}, currW = {}, countryW = {}
   enriched.forEach(p => {
-    const v = p.valueEUR ?? 0
-    const sec  = dictSector(p.ticker) || p.sector || 'Otros'
-    const zone = getContinent(p.countryCode) || 'Otros'
-    const curr = p.currency || 'EUR'
-    sectorW[sec]  = (sectorW[sec]  || 0) + v
-    zoneW[zone]   = (zoneW[zone]   || 0) + v
-    currW[curr]   = (currW[curr]   || 0) + v
+    const v = p.valueEUR || 0
+    const sec = p.sector || '—'
+    const sup = superSectorOf(sec)
+    const cur = p.currency || 'EUR'
+    const ct  = (p.countryCode || '').toUpperCase()
+    sectorW[sec] = (sectorW[sec] || 0) + v
+    supW[sup]    = (supW[sup]    || 0) + v
+    currW[cur]   = (currW[cur]   || 0) + v
+    if (ct) countryW[ct] = (countryW[ct] || 0) + v
   })
-
-  const pct = (map, k) => total > 0 ? (map[k] || 0) / total * 100 : 0
-  const maxEntry = map => Object.entries(map).sort((a, b) => b[1] - a[1])[0] || [null, 0]
-
-  // Medias
-  const avgYield = enriched.reduce((s, p) => s + (p.currentYield ?? 0), 0) / enriched.length
-  const cagrVals = enriched.map(p => cagrMap[p.ticker]).filter(v => v != null)
-  const avgCagr  = cagrVals.length ? cagrVals.reduce((a, b) => a + b, 0) / cagrVals.length : null
-
-  const gaps = []
-
-  // 1. Concentración sectorial
-  const [topSec, topSecVal] = maxEntry(sectorW)
-  if (topSec && topSecVal / total * 100 > 25) {
-    // Sugerir un sector infrarrepresentado con muchas oportunidades en el universo
-    const sectorCounts = {}
-    DICT.forEach(d => { sectorCounts[d[4]] = (sectorCounts[d[4]] || 0) + 1 })
-    const underSector = Object.keys(sectorCounts)
-      .filter(s => pct(sectorW, s) < 10)
-      .sort((a, b) => sectorCounts[b] - sectorCounts[a])[0]
-    if (underSector) {
-      gaps.push({
-        type: 'sector',
-        title: `Concentración alta en ${topSec}`,
-        explanation: `${topSec} representa el ${(topSecVal / total * 100).toFixed(0)}% de tu cartera. Diversifica añadiendo exposición a ${underSector}.`,
-        params: { sector: underSector },
-        bannerDesc: `empresas del sector ${underSector} para diversificar`,
-      })
-    }
-  }
-
-  // 2. Concentración por zona
-  const [topZone, topZoneVal] = maxEntry(zoneW)
-  if (topZone && topZoneVal / total * 100 > 40) {
-    const underZone = SCREENER_ZONES
-      .filter(z => z !== topZone)
-      .sort((a, b) => pct(zoneW, a) - pct(zoneW, b))[0]
-    if (underZone) {
-      gaps.push({
-        type: 'zona',
-        title: `Poca exposición fuera de ${topZone}`,
-        explanation: `${topZone} concentra el ${(topZoneVal / total * 100).toFixed(0)}% de tu cartera. ${underZone} representa solo el ${pct(zoneW, underZone).toFixed(0)}%.`,
-        params: { zona: underZone },
-        bannerDesc: `empresas de ${underZone} para equilibrar geográficamente`,
-      })
-    }
-  }
-
-  // 3. Concentración por divisa
-  const [topCurr, topCurrVal] = maxEntry(currW)
-  if (topCurr && topCurrVal / total * 100 > 55) {
-    // Diversificar divisa vía zona con divisa distinta
-    const currZone = { EUR: 'América', USD: 'Europa', GBP: 'América', JPY: 'Europa' }[topCurr] || 'América'
-    gaps.push({
-      type: 'currency',
-      title: `Exposición elevada a ${topCurr}`,
-      explanation: `El ${(topCurrVal / total * 100).toFixed(0)}% de tu cartera está en ${topCurr}. Considera empresas en otra divisa.`,
-      params: { zona: currZone },
-      bannerDesc: `empresas en otra divisa distinta de ${topCurr}`,
-    })
-  }
-
-  // 4. Yield bajo
-  if (avgYield < 2.5) {
-    gaps.push({
-      type: 'yield',
-      title: 'Yield medio bajo',
-      explanation: `El yield medio de tu cartera es ${avgYield.toFixed(1)}%. Añade empresas con yield superior al 3.5% para aumentar la renta.`,
-      params: { yield: '0.035' },
-      bannerDesc: 'empresas con yield superior al 3.5%',
-    })
-  }
-
-  // 5. CAGR bajo
-  if (avgCagr != null && avgCagr < 7) {
-    gaps.push({
-      type: 'cagr',
-      title: 'Crecimiento del dividendo bajo',
-      explanation: `El CAGR medio del dividendo es ${avgCagr.toFixed(1)}%. Añade empresas con crecimiento superior al 8% para acelerar tu renta futura.`,
-      params: { cagr: '8' },
-      bannerDesc: 'empresas con CAGR del dividendo superior al 8%',
-    })
-  }
-
-  return gaps.slice(0, 3)
+  const toPct = m => Object.fromEntries(Object.entries(m).map(([k, x]) => [k, total > 0 ? x / total * 100 : 0]))
+  return { sectorW: toPct(sectorW), supW: toPct(supW), currW: toPct(currW), countryW: toPct(countryW) }
 }
 
-// ── Component ──────────────────────────────────────────────────────────────
+const fmtPrice = (v, cur) => v == null ? '—' : `${Number(v).toLocaleString('es-ES', { maximumFractionDigits: 2 })} ${cur || ''}`.trim()
 
+// ── Tarjeta de empresa recomendada ───────────────────────────────────────────
+function RecCard({ rec }) {
+  const [following, setFollowing] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  const follow = async () => {
+    if (following || busy) return
+    setBusy(true)
+    setFollowing(true) // optimista
+    try {
+      const res = await fetch('/api/watchlist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker: rec.ticker }),
+      })
+      if (res.status === 403) { setFollowing(false); alert('Límite del plan gratuito (10 empresas). Hazte Premium para seguir más.') }
+      else if (!res.ok) setFollowing(false)
+    } catch { setFollowing(false) }
+    setBusy(false)
+  }
+
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 10, padding: '12px 14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 15 }}>{rec.flag}</span>
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: '#e6ebf5' }}>{rec.name}</span>
+            <span style={{ fontSize: 10.5, color: '#7a85a0', fontWeight: 600 }}>{rec.ticker}</span>
+          </div>
+          <p style={{ fontSize: 11.5, color: '#8090a8', marginTop: 3 }}>{rec.sectorEs}{rec.supersectorLabel ? ` · ${rec.supersectorLabel}` : ''}</p>
+        </div>
+        <div style={{ display: 'flex', gap: 14, textAlign: 'right', flexShrink: 0 }}>
+          <div>
+            <p style={{ fontSize: 9.5, color: '#5a647e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score</p>
+            <p style={{ fontSize: 14, fontWeight: 800, color: '#34d399' }}>{rec.score != null ? rec.score.toFixed(1) : '—'}</p>
+          </div>
+          <div>
+            <p style={{ fontSize: 9.5, color: '#5a647e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Yield</p>
+            <p style={{ fontSize: 14, fontWeight: 800, color: '#fbbf24' }}>{rec.yield != null ? `${rec.yield.toFixed(1)}%` : '—'}</p>
+          </div>
+        </div>
+      </div>
+
+      {rec.reason && (
+        <p style={{ fontSize: 11.5, color: '#34d399', marginTop: 8 }}>✓ {rec.reason}</p>
+      )}
+      <p style={{ fontSize: 11.5, color: '#8090a8', marginTop: 4 }}>Encaje: {rec.whyFit}.</p>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11.5, color: '#7a85a0' }}>{fmtPrice(rec.price, rec.currency)}</span>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={follow} disabled={following} style={{
+            fontSize: 11.5, fontWeight: 700, padding: '6px 12px', borderRadius: 8, cursor: following ? 'default' : 'pointer',
+            color: following ? '#34d399' : '#818cf8',
+            background: following ? 'rgba(52,211,153,0.12)' : 'rgba(99,102,241,0.12)',
+            border: `1px solid ${following ? 'rgba(52,211,153,0.3)' : 'rgba(99,102,241,0.3)'}`,
+          }}>
+            {following ? '✓ Siguiendo' : '👁 Seguir'}
+          </button>
+          <Link href={`/empresa/${rec.ticker}`} style={{
+            fontSize: 11.5, fontWeight: 700, padding: '6px 12px', borderRadius: 8, textDecoration: 'none',
+            color: '#c8d0e0', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+          }}>
+            Ver ficha →
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Componente ───────────────────────────────────────────────────────────────
 export default function CompanyDetector({ enriched, isPremium }) {
-  const router = useRouter()
-  const [open,    setOpen]    = useState(false)
-  const [gaps,    setGaps]    = useState([])
-  const [loading, setLoading] = useState(false)
-  const [loaded,  setLoaded]  = useState(false)
+  const [recs, setRecs]       = useState([])
+  const [nextUpdate, setNext] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(false)
 
-  const sb = createClient()
+  const weights = useMemo(() => computeWeights(enriched), [enriched])
 
-  const analyze = async () => {
-    setOpen(true)
-    if (loaded) return
-    setLoading(true)
-    const tickers = enriched.map(e => e.ticker)
-    const { data: funds } = await sb
-      .from('company_fundamentals')
-      .select('ticker, div_cagr5')
-      .in('ticker', tickers)
-    const cagrMap = Object.fromEntries((funds || []).map(f => [f.ticker, f.div_cagr5]))
-    setGaps(analyzeGaps(enriched, cagrMap))
-    setLoaded(true)
-    setLoading(false)
-  }
+  useEffect(() => {
+    if (!isPremium) { setLoading(false); return }
+    let cancelled = false
+    setLoading(true); setError(false)
+    fetch('/api/empresas-encajan', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ weights }),
+    })
+      .then(r => r.json())
+      .then(d => { if (cancelled) return; setRecs(d.recommendations || []); setNext(d.nextUpdate || null) })
+      .catch(() => { if (!cancelled) setError(true) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [isPremium, weights])
 
-  const goToScreener = (gap) => {
-    const params = new URLSearchParams({ ...gap.params, from: 'cartera', hueco: gap.bannerDesc })
-    router.push(`/screener?${params.toString()}`)
-  }
+  const daysLeft = useMemo(() => {
+    if (!nextUpdate) return null
+    const d = Math.ceil((new Date(nextUpdate) - Date.now()) / (24 * 60 * 60 * 1000))
+    return d > 0 ? d : null
+  }, [nextUpdate])
 
   if (!isPremium) {
     return (
       <div style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 12, padding: '14px 18px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0', marginBottom: 2 }}>Encuentra empresas que encajan en tu cartera</p>
-          <p style={{ fontSize: 12, color: '#4a5270' }}>Análisis automático de huecos y búsqueda personalizada en el screener.</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0', marginBottom: 2 }}>Empresas que encajan en tu cartera</p>
+          <p style={{ fontSize: 12, color: '#4a5270' }}>Cada semana, 5 empresas de calidad en zona de compra que refuerzan tus huecos de sector, divisa y país.</p>
         </div>
         <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '8px 16px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, flexShrink: 0 }}>
           Premium →
@@ -160,47 +142,29 @@ export default function CompanyDetector({ enriched, isPremium }) {
   }
 
   return (
-    <div style={{ marginBottom: 16 }}>
-      {!open ? (
-        <button onClick={analyze} style={{
-          width: '100%', padding: '12px 18px', background: 'rgba(99,102,241,0.1)',
-          border: '1px solid rgba(99,102,241,0.25)', borderRadius: 12, cursor: 'pointer',
-          color: '#818cf8', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-        }}>
-          🔍 Encontrar empresas que encajan
-        </button>
-      ) : (
-        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 12, padding: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Huecos detectados en tu cartera</p>
-            <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#4a5270', cursor: 'pointer', fontSize: 18 }}>×</button>
-          </div>
+    <div style={{ marginBottom: 16, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 12, padding: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Empresas que encajan · recomendación semanal</p>
+        {daysLeft != null && (
+          <span style={{ fontSize: 11, color: '#5a647e' }}>Se renueva en {daysLeft} {daysLeft === 1 ? 'día' : 'días'}</span>
+        )}
+      </div>
+      <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 14 }}>
+        5 empresas de calidad <strong style={{ color: '#34d399' }}>en zona de compra</strong> que cubren sectores, divisas y países poco presentes en tu cartera.
+      </p>
 
-          {loading ? (
-            <p style={{ fontSize: 12, color: '#4a5270' }}>Analizando tu cartera…</p>
-          ) : gaps.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <p style={{ fontSize: 14, color: '#34d399', marginBottom: 4 }}>✓ Tu cartera está bien diversificada</p>
-              <p style={{ fontSize: 12, color: '#4a5270' }}>No se detectan huecos significativos según los criterios DGI.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gap: 10 }}>
-              {gaps.map((gap, i) => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 200 }}>
-                    <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0', marginBottom: 2 }}>{gap.title}</p>
-                    <p style={{ fontSize: 12, color: '#8090a8' }}>{gap.explanation}</p>
-                  </div>
-                  <button onClick={() => goToScreener(gap)} style={{
-                    fontSize: 12, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.15)',
-                    border: '1px solid rgba(99,102,241,0.3)', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', flexShrink: 0,
-                  }}>
-                    Buscar empresas →
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+      {loading ? (
+        <p style={{ fontSize: 12, color: '#4a5270' }}>Analizando tu cartera y buscando oportunidades…</p>
+      ) : error ? (
+        <p style={{ fontSize: 12, color: '#f87171' }}>No se pudieron generar recomendaciones. Inténtalo más tarde.</p>
+      ) : recs.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '16px 0' }}>
+          <p style={{ fontSize: 13.5, color: '#34d399', marginBottom: 4 }}>✓ Sin huecos claros esta semana</p>
+          <p style={{ fontSize: 12, color: '#4a5270' }}>No hay empresas de calidad en zona de compra que refuercen tus sectores, divisas o países infraponderados ahora mismo. Vuelve la semana que viene.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: 10 }}>
+          {recs.map(rec => <RecCard key={rec.ticker} rec={rec} />)}
         </div>
       )}
     </div>
