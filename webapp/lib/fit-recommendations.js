@@ -72,11 +72,15 @@ export function recommendFitCompanies(companies = [], weights = {}, weekSeed = 0
     return { co, sup, preferred, fit }
   })
 
-  // Ranking de calidad: preferentes (US/CA/Europa) primero, luego mejor encaje.
-  candidates.sort((a, b) => (Number(b.preferred) - Number(a.preferred)) || (b.fit - a.fit))
-
-  // Preselección de la que se rota semanalmente.
-  const shortlist = candidates.slice(0, SHORTLIST)
+  // Preferencia geográfica FUERTE: las no-preferentes (ni US/CA ni Europa) solo
+  // entran si no hay suficientes preferentes. Por eso el shortlist —del que rota
+  // la recomendación semanal— se llena PRIMERO con preferentes (ordenadas por
+  // encaje) y solo se completa con el resto si faltan.
+  const byFit = (a, b) => b.fit - a.fit
+  const preferred = candidates.filter(c => c.preferred).sort(byFit)
+  const rest      = candidates.filter(c => !c.preferred).sort(byFit)
+  const pool = preferred.length >= Math.min(SHORTLIST, size) ? preferred : [...preferred, ...rest]
+  const shortlist = pool.slice(0, SHORTLIST)
   // Orden semanal estable (cambia cada 7 días vía weekSeed).
   shortlist.sort((a, b) => seededHash(a.co.t, weekSeed) - seededHash(b.co.t, weekSeed))
 
