@@ -229,6 +229,90 @@ export const PROFILES = {
   'AXON': 'Fabricante de las pistolas Taser y de cámaras corporales y software para la policía. Modelo de suscripción con clientes muy fieles.',
   'TDG': 'Fabricante de componentes de aviación propietarios (piezas únicas para aviones ya en vuelo). Gran poder de precio en el mercado de repuestos.',
   'CPRT': 'Mayor plataforma de subastas online de coches siniestrados de EE. UU. Conecta aseguradoras con compradores; negocio de plataforma muy rentable.',
+
+  // ── España (IBEX) ──────────────────────────────────────────────────────────
+  'BBVA.MC': 'Segundo banco español, con un peso decisivo de México (su mayor mercado), además de Turquía, América del Sur y España. Banca minorista digital y rentable.',
+  'FER.MC': 'Constructora y gestora de infraestructuras de transporte: autopistas de peaje (sobre todo en Norteamérica) y el aeropuerto de Heathrow. Su valor está en las concesiones.',
+  'NTGY.MC': 'Energética española (antes Gas Natural Fenosa): distribución y comercialización de gas y electricidad, generación y redes, con fuerte presencia internacional.',
+  'REP.MC': 'Petrolera y gasista integrada española: explora, refina y comercializa hidrocarburos, con una apuesta creciente por la electricidad y las renovables.',
+
+  // ── Francia (CAC 40) ────────────────────────────────────────────────────────
+  'AI.PA': 'Líder mundial de gases industriales (oxígeno, nitrógeno, hidrógeno) junto a Linde. Contratos a largo plazo, foso local y crecimiento muy estable.',
+  'BN.PA': 'Multinacional francesa de alimentación: líder mundial en lácteos (Danone, Actimel), aguas (Evian, Volvic) y nutrición infantil y médica.',
+  'KER.PA': 'Grupo de lujo francés, dueño de Gucci, Saint Laurent y Bottega Veneta. Muy dependiente de Gucci, su marca estrella, en plena fase de relanzamiento.',
+  'SAN.PA': 'Una de las mayores farmacéuticas de Europa. Fuerte en inmunología (Dupixent) y vacunas, con foco creciente en I+D tras desinvertir negocios maduros.',
+  'RI.PA': 'Segundo grupo mundial de bebidas espirituosas (Absolut, Chivas, Ballantine’s, Beefeater). Marcas premium con poder de precio y exposición a emergentes.',
+  'SGO.PA': 'Líder mundial en materiales de construcción ligeros y soluciones de aislamiento. Beneficiado por la renovación energética de edificios.',
+  'SU.PA': 'Líder mundial en gestión de la energía y automatización eléctrica para edificios, industria y centros de datos. Clave en la electrificación y la eficiencia.',
+  'TTE.PA': 'Una de las mayores petroleras integradas del mundo, con una apuesta destacada por el gas natural licuado (GNL) y la electricidad renovable.',
+  'DG.PA': 'Grupo francés de concesiones (autopistas, aeropuertos) y construcción. Las concesiones aportan ingresos estables y recurrentes de peaje.',
+
+  // ── Alemania (DAX) ──────────────────────────────────────────────────────────
+  'BAS.DE': 'Mayor empresa química del mundo, muy diversificada e integrada (desde productos básicos hasta especialidades y agroquímica). Cíclica y ligada a la industria.',
+  'BAYN.DE': 'Grupo alemán de farmacia, salud de consumo y agroquímica (semillas y pesticidas, tras comprar Monsanto). Lastrada por los litigios del glifosato.',
+  'BMW.DE': 'Fabricante alemán de automóviles premium (BMW, Mini, Rolls-Royce). Marca fuerte y rentable, en plena transición al coche eléctrico.',
+  'VOW3.DE': 'Mayor fabricante de coches de Europa (Volkswagen, Audi, Porsche, Škoda, SEAT). Enorme escala, pero con el reto de la transición eléctrica y China.',
+  'ADS.DE': 'Segundo fabricante mundial de ropa y calzado deportivo tras Nike, dueño de la marca Adidas. Marca icónica en plena recuperación.',
+  'DTE.DE': 'Mayor teleco de Europa. Su gran activo es la participación de control en T-Mobile US, su filial estadounidense y motor de crecimiento.',
+  'DHL.DE': 'Líder mundial de la logística y la paquetería (DHL). Reparto exprés internacional, transporte de mercancías y correo alemán.',
+  'MUV2.DE': 'Una de las mayores reaseguradoras del mundo (Munich Re): asegura a las aseguradoras. Negocio técnico disciplinado y rentable, más la aseguradora ERGO.',
+  'IFX.DE': 'Mayor fabricante de semiconductores de Europa, líder en chips de potencia y automoción. Clave en la electrificación del coche y la energía.',
+  'ENR.DE': 'Fabricante de turbinas y equipos para generación y transmisión eléctrica, incluida la eólica (Siemens Gamesa). Beneficiada de la transición energética.',
+  'SHL.DE': 'Líder en tecnología médica de imagen (resonancia, TAC) y diagnóstico, escindida de Siemens. Vende equipos y servicios a hospitales de todo el mundo.',
+  'DBK.DE': 'Mayor banco de Alemania. Banca de inversión, corporativa y minorista, en proceso de recuperación de rentabilidad tras años difíciles.',
+  'DB1.DE': 'Operadora de la Bolsa de Fráncfort y de mercados de derivados (Eurex) y datos. Negocio de infraestructura financiera, recurrente y de altos márgenes.',
+  'FME.DE': 'Mayor proveedor mundial de diálisis: clínicas y equipos para enfermos renales. Negocio defensivo ligado a una patología crónica.',
+
+  // ── Países Bajos ────────────────────────────────────────────────────────────
+  'HEIA.AS': 'Segunda cervecera del mundo (Heineken, Amstel, Cruzcampo). Marca global premium con fuerte presencia en mercados emergentes.',
+  'PHIA.AS': 'Empresa neerlandesa centrada en tecnología médica (imagen, monitorización y cuidado personal de la salud) tras salir de la iluminación y la electrónica.',
+
+  // ── Reino Unido (FTSE) ──────────────────────────────────────────────────────
+  'AZN.L': 'Una de las mayores farmacéuticas del mundo, líder en oncología y con fuerte presencia en respiratorio y cardio-renal. Gran motor de I+D y crecimiento.',
+  'GSK.L': 'Farmacéutica británica centrada en vacunas y medicamentos de especialidad (VIH, respiratorio), tras escindir su negocio de consumo (Haleon).',
+  'BP.L': 'Una de las grandes petroleras integradas del mundo. Explora, refina y comercializa petróleo y gas, con una apuesta (revisada a la baja) por la energía baja en carbono.',
+  'HSBA.L': 'Uno de los mayores bancos del mundo, con el grueso de su beneficio en Asia (Hong Kong y China). Banca internacional y de transacciones.',
+  'RIO.L': 'Una de las mayores mineras del mundo, líder en mineral de hierro, además de cobre, aluminio y litio. Muy ligada a la demanda china de materias primas.',
+  'VOD.L': 'Gran teleco europea con presencia en Reino Unido, Alemania y África (M-Pesa). Negocio maduro, intensivo en capital, en plena reestructuración.',
+  'PHNX.L': 'Mayor consolidador de seguros de vida y pensiones del Reino Unido. Compra carteras cerradas y las gestiona generando caja para un alto dividendo.',
+
+  // ── Suiza ───────────────────────────────────────────────────────────────────
+  'NOVN.SW': 'Una de las mayores farmacéuticas del mundo, centrada en medicamentos innovadores de patente tras escindir su negocio de genéricos (Sandoz).',
+  'ROG.SW': 'Gigante farmacéutico suizo, líder mundial en oncología y en diagnóstico in vitro. Combina medicamentos de patente con tests de laboratorio.',
+  'RO.SW': 'Gigante farmacéutico suizo, líder mundial en oncología y en diagnóstico in vitro. Combina medicamentos de patente con tests de laboratorio.',
+  'UBSG.SW': 'Mayor banco suizo y uno de los líderes mundiales en gestión de grandes patrimonios, reforzado tras absorber a Credit Suisse. Negocio estable y de comisiones.',
+  'ZURN.SW': 'Una de las mayores aseguradoras de Europa: seguros de daños y vida globales, más el negocio en EE. UU. (Farmers). Disciplina técnica y buen dividendo.',
+  'ABBN.SS': 'Líder mundial en electrificación, automatización y robótica industrial. Beneficiada de la electrificación, los centros de datos y la automatización de fábricas.',
+
+  // ── Italia ──────────────────────────────────────────────────────────────────
+  'ENEL.MI': 'Una de las mayores eléctricas del mundo. Redes de distribución reguladas y gran cartera de renovables, con fuerte presencia en Europa y Latinoamérica.',
+  'ENI.MI': 'Mayor petrolera integrada de Italia: producción de petróleo y gas, refino y un creciente negocio de gas y renovables (Plenitude).',
+  'RACE.MI': 'Fabricante del automóvil de lujo más icónico, Ferrari. Produce pocas unidades muy caras y de gran margen; funciona más como marca de lujo que como automovilística.',
+  'ISP.MI': 'Mayor banco de Italia por capitalización. Banca minorista y gestión de patrimonios, con uno de los dividendos más generosos del sector en Europa.',
+  'UCG.MI': 'Uno de los mayores bancos de Italia, con fuerte presencia en Alemania y Europa central. Muy rentable y gran repartidor de capital a sus accionistas.',
+  'STLAM.MI': 'Cuarto fabricante de coches del mundo, dueño de Peugeot, Fiat, Jeep, Citroën y Opel. Gran escala multimarca, con el reto de la transición eléctrica.',
+
+  // ── Nórdicos ────────────────────────────────────────────────────────────────
+  'NOVO-B.CO': 'Farmacéutica danesa líder mundial en diabetes y obesidad. Sus fármacos Ozempic y Wegovy la han convertido en la mayor empresa de Europa por valor.',
+  'EQNR.OL': 'Mayor petrolera y gasista de Noruega (control estatal). Gran proveedor de gas a Europa y con una apuesta creciente por la eólica marina.',
+  'ATCOA.ST': 'Líder mundial sueco en compresores, herramientas industriales y equipos de vacío. Negocio de gran calidad, con muchos ingresos recurrentes de servicio.',
+  'ATCOB.ST': 'Líder mundial sueco en compresores, herramientas industriales y equipos de vacío. Negocio de gran calidad, con muchos ingresos recurrentes de servicio.',
+  'VOLVB.ST': 'Uno de los mayores fabricantes de camiones, autobuses y maquinaria de construcción del mundo (no confundir con Volvo Cars). Negocio industrial cíclico.',
+  'ERICb.ST': 'Fabricante sueco de equipos de redes móviles (5G). Junto a Nokia y Huawei, uno de los grandes proveedores de infraestructura para las operadoras.',
+  'INVEb.ST': 'Sociedad de inversión de la familia Wallenberg. Tiene participaciones de control en grandes industriales suecas (Atlas Copco, ABB, Ericsson, SEB).',
+  'NOKIA.HE': 'Fabricante finlandés de equipos de redes de telecomunicaciones (5G, fibra). Compite con Ericsson y Huawei por la infraestructura de las operadoras.',
+  'SAMPO.HE': 'Aseguradora nórdica de daños (If, Topdanmark), una de las más rentables y disciplinadas de Europa en su negocio técnico.',
+
+  // ── Canadá ──────────────────────────────────────────────────────────────────
+  'RY.TO': 'Mayor banco de Canadá. Banca minorista, mercados de capitales y gestión de patrimonios, en un sector bancario muy concentrado y protegido.',
+  'TD.TO': 'Segundo banco de Canadá, con una gran red minorista también en la costa este de EE. UU. Banca de consumo de escala.',
+  'CM.TO': 'Uno de los cinco grandes bancos de Canadá (CIBC). Banca minorista y comercial, con un alto dividendo característico de la banca canadiense.',
+  'CNR.TO': 'Mayor ferrocarril de Canadá, único que conecta los tres océanos (Atlántico, Pacífico y Golfo). Infraestructura irreplicable y negocio de peaje.',
+  'CP.TO': 'Ferrocarril de mercancías que, tras fusionarse con Kansas City Southern, es el único que une Canadá, EE. UU. y México. Foso de infraestructura.',
+  'CNQ.TO': 'Mayor productora de petróleo y gas de Canadá, con enormes reservas de arenas bituminosas de larga vida y bajo coste de declive.',
+  'ENB.TO': 'Operadora de la mayor red de oleoductos de Norteamérica. Negocio de peaje (transporta crudo y gas) con ingresos estables y alto dividendo.',
+  'TRP.TO': 'Operadora de gasoductos y oleoductos en Norteamérica. Negocio de infraestructura energética regulada y por contrato, con dividendo elevado.',
+  'CU.TO': 'Utility canadiense de electricidad y gas regulada (Canadian Utilities), del grupo ATCO. Negocio defensivo y aristócrata del dividendo en Canadá.',
 }
 
 // Devuelve el perfil curado del ticker, o null si aún no está redactado.
