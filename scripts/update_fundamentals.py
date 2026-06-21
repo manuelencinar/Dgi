@@ -616,6 +616,27 @@ def _revenue_declining_3y(income):
             break
     return declines >= 3
 
+def _adjusted_cagr(df, names, fallback):
+    # CAGR robusto a un año de inicio deprimido (outlier >1,5 desv. por debajo de la
+    # tendencia de los demás). Si lo es, se excluye del CAGR (Colgate: FCF base
+    # deprimido por inflación de costes). Espejo de adjustedCagr en lib/valuation.js.
+    recent_first = _series(df, names, 5)
+    v = [x for x in reversed(recent_first) if x is not None and x > 0]  # antiguo→reciente
+    if len(v) < 4:
+        return fallback
+    others = v[1:]; m = len(others); xs = list(range(1, m + 1))
+    mx = sum(xs) / m; my = sum(others) / m
+    den = sum((xs[i] - mx) ** 2 for i in range(m))
+    slope = (sum((xs[i] - mx) * (others[i] - my) for i in range(m)) / den) if den else 0
+    intercept = my - slope * mx
+    ss = sum((others[i] - (intercept + slope * xs[i])) ** 2 for i in range(m))
+    std = (ss / m) ** 0.5
+    if v[0] < intercept - 1.5 * std:
+        start, end, yrs = v[1], v[-1], len(v) - 2
+        if start > 0 and end > 0 and yrs >= 1:
+            return (pow(end / start, 1 / yrs) - 1) * 100
+    return fallback
+
 def _business_growth(rev_cagr5, fcf_cagr5, revenue_only=False):
     # Corrección 1 — nunca usa div_cagr5
     if revenue_only:
@@ -875,7 +896,10 @@ def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_c
     if not shares:
         return None, warning, None
 
-    gpct, src = _business_growth(rev_cagr5, fcf_cagr5, revenue_only)
+    # CAGR ajustado por año de inicio deprimido (outlier) antes del crecimiento blended.
+    rev_c = _adjusted_cagr(income, ["Total Revenue", "Total Revenues", "Ingresos Totales"], rev_cagr5)
+    fcf_c = _adjusted_cagr(cashflow, ["Free Cash Flow", "Flujo de Caja Libre"], fcf_cagr5)
+    gpct, src = _business_growth(rev_c, fcf_c, revenue_only)
     # Corrección 3 — límites
     g1 = max(-0.15, min(gpct / 100, cap))
     if g1 >= 0:        g2 = g1 / 2

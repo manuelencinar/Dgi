@@ -106,12 +106,39 @@ function fcfBaseWithFallback(data) {
   return { value: null, normalized: false, sustainedNegative: true }
 }
 
+// CAGR robusto a un AÑO DE INICIO DEPRIMIDO: si el año más antiguo de la ventana es
+// un outlier estadístico (>1,5 desviaciones por debajo de la tendencia de los demás
+// años), se EXCLUYE del cálculo del CAGR para no inflar el crecimiento (p.ej. Colgate,
+// cuyo FCF base estaba deprimido por inflación de costes). El año sí se mantiene en la
+// MEDIA del FCF base (suavizado de ciclo); aquí solo se corrige el crecimiento.
+// Misma idea que con las cíclicas de materiales, pero el "ciclo" aquí es de márgenes.
+function adjustedCagr(data, key, names, fallback) {
+  const recentFirst = fromStmtSlice(data, key, names, 5)   // más reciente primero, sin nulos
+  const v = recentFirst.slice().reverse().filter(x => x != null && x > 0)  // antiguo→reciente
+  if (v.length < 4) return fallback                        // pocos datos → CAGR precalculado
+  const others = v.slice(1)                                // todos menos el más antiguo
+  const m = others.length
+  const xs = others.map((_, i) => i + 1)
+  const mx = xs.reduce((a, b) => a + b, 0) / m, my = others.reduce((a, b) => a + b, 0) / m
+  let num = 0, den = 0
+  for (let i = 0; i < m; i++) { num += (xs[i] - mx) * (others[i] - my); den += (xs[i] - mx) ** 2 }
+  const slope = den ? num / den : 0, intercept = my - slope * mx
+  const pred0 = intercept                                  // tendencia extrapolada al año 0 (más antiguo)
+  let ss = 0; for (let i = 0; i < m; i++) { const e = others[i] - (intercept + slope * xs[i]); ss += e * e }
+  const std = Math.sqrt(ss / m)
+  if (v[0] < pred0 - 1.5 * std) {                          // año de inicio deprimido → excluirlo
+    const start = v[1], end = v[v.length - 1], yrs = v.length - 2
+    if (start > 0 && end > 0 && yrs >= 1) return (Math.pow(end / start, 1 / yrs) - 1) * 100
+  }
+  return fallback
+}
+
 // ── Business growth hierarchy (Corrección 1) ───────────────────────────────
 // Nunca usa div_cagr5. Devuelve gPct en %, fuente, y rev/fcf crudos.
 
 function businessGrowth(data, revenueOnly = false) {
-  const rev = n(data.revenue_cagr5)
-  const fcf = n(data.fcf_cagr5)
+  const rev = adjustedCagr(data, 'income_statement_annual', REV_NAMES, n(data.revenue_cagr5))
+  const fcf = adjustedCagr(data, 'cashflow_annual', FCF_NAMES, n(data.fcf_cagr5))
   let gPct, source
   if (revenueOnly) {
     gPct = rev != null ? rev : 0
