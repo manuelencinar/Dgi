@@ -55,6 +55,18 @@ function netDebtAbs(data) {
   const nd = n(data.net_debt)   // almacenado en MILLONES
   return nd != null ? nd * 1e6 : 0
 }
+// Obligaciones por arrendamientos (IFRS 16 / leases). Total y porción corriente
+// (≈ principal de lease pagado al año). Bajo IFRS 16 el principal del lease va a
+// FINANCIACIÓN, así que el FCF (OCF−capex) NO lo resta → infla el FCF de retailers
+// intensivos en alquiler (Dunelm, Ahold). El "Total Debt" SÍ engloba los leases.
+function leaseTotal(data) {
+  const v = fromStmt(data, 'balance_sheet_annual', ['Capital Lease Obligations', 'Long Term Capital Lease Obligation'])
+  return v != null && v > 0 ? v : 0
+}
+function leaseCurrent(data) {
+  const v = fromStmt(data, 'balance_sheet_annual', ['Current Capital Lease Obligation'])
+  return v != null && v > 0 ? v : 0
+}
 function minorityAbs(data) {
   const v = fromStmt(data, 'balance_sheet_annual', MINORITY_NAMES)
   return v != null && v > 0 ? v : 0
@@ -312,10 +324,16 @@ function buildDCF(data, opts) {
   // devuelven los intereses netos de impuestos para volverlo FCFF; en IFRS se asume
   // ya no apalancado (intereses en financiación). El CFO de utilities se deja igual.
   const t = effTax(data)
-  const isUS = (data.country || '') === 'US'
+  // US-GAAP ≈ ticker sin sufijo de mercado (AAPL, PG). El campo country viene como
+  // nombre completo ("United States"), no sirve para comparar con 'US'.
+  const isUS = !(data.ticker || '').includes('.')
   let intAdd = 0
   if (baseSource !== 'cfo' && isUS) intAdd = interestAfterTax(data, t)
-  const fcffBase = base + intAdd
+  // Ajuste por arrendamientos (IFRS 16): en no-US el FCF excluye el principal del
+  // lease (va a financiación) → se expensa el principal anual para reflejar el coste
+  // recurrente real (un retailer alquila a perpetuidad). El CFO de utilities no se toca.
+  const leaseAdj = (!isUS && baseSource !== 'cfo') ? leaseCurrent(data) : 0
+  const fcffBase = base + intAdd - leaseAdj
 
   // Descuento del FCFF: la tasa ajustada por foso/sector (gp.r) se usa como WACC
   // (ya está calibrada a ~coste de capital; derivar un WACC más bajo desde ella como
@@ -323,7 +341,10 @@ function buildDCF(data, opts) {
   const wacc = gp.r
 
   const stage2 = opts.stage2 || 5
-  const netDebt = netDebtAbs(data) + minorityAbs(data)
+  // La deuda neta engloba los leases (Total Debt los incluye). Como el coste del lease
+  // ya está en el FCF (US: en OCF; IFRS: restado arriba), se EXCLUYE la obligación de
+  // leases del puente EV→equity para no contarla dos veces.
+  const netDebt = netDebtAbs(data) - leaseTotal(data) + minorityAbs(data)
   const params = { base: fcffBase, g1: gp.g1, g2: gp.g2, gT: gp.gT, r: wacc, shares, stage2, netDebt }
   const proj = dcfProjection(params)
   const ev = proj.totalPV                 // Enterprise Value
@@ -334,6 +355,7 @@ function buildDCF(data, opts) {
     { label: baseLabel || 'FCF base', value: fmtBig(base) },
   ]
   if (intAdd > 0) inputs.push({ label: '+ Intereses netos de imp. (a FCFF)', value: fmtBig(intAdd) })
+  if (leaseAdj > 0) inputs.push({ label: '− Principal de arrendamientos (IFRS 16)', value: fmtBig(leaseAdj), danger: true })
   inputs.push(
     { label: 'Crecimiento fase 1 (años 1–5)', value: fmtPct(gp.g1) },
     { label: `Crecimiento fase 2 (años 6–${5 + stage2})`, value: fmtPct(gp.g2) },
@@ -430,10 +452,12 @@ function dcfPharma(data, moatWidth, currency) {
   const gp = growthAndPenalties(data, { discountBase, terminalBase: currency === 'EUR' ? 0.025 : 0.030, capHigh: 0.15 })
   // FCFF (des-apalancar si US-GAAP) + WACC + puente EV→equity (igual que buildDCF).
   const t = effTax(data)
-  const intAdd = (data.country || '') === 'US' ? interestAfterTax(data, t) : 0
+  const isUS = !(data.ticker || '').includes('.')
+  const intAdd = isUS ? interestAfterTax(data, t) : 0
+  const leaseAdj = !isUS ? leaseCurrent(data) : 0
   const wacc = gp.r
-  const netDebt = netDebtAbs(data) + minorityAbs(data)
-  const params = { base: base + intAdd, g1: gp.g1, g2: gp.g2, gT: gp.gT, r: wacc, shares, netDebt }
+  const netDebt = netDebtAbs(data) - leaseTotal(data) + minorityAbs(data)
+  const params = { base: base + intAdd - leaseAdj, g1: gp.g1, g2: gp.g2, gT: gp.gT, r: wacc, shares, netDebt }
   const proj = dcfProjection(params)
   const ev = proj.totalPV
   const equity = ev - netDebt

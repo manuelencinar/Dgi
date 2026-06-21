@@ -908,12 +908,19 @@ def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_c
         intr = _first(income, ["Interest Expense", "Interest Expense Non Operating"])
         if intr is not None:
             fcff = base + abs(intr) * (1 - tax)
+    # Ajuste por arrendamientos (IFRS 16): en no-US el FCF excluye el principal del
+    # lease (va a financiación) → se expensa el principal anual (≈ porción corriente).
+    lease_total = _first(balance, ["Capital Lease Obligations", "Long Term Capital Lease Obligation"]) or 0
+    lease_cur = _first(balance, ["Current Capital Lease Obligation"]) or 0
+    if st != "utilities" and not is_us and lease_cur > 0:
+        fcff -= lease_cur
     ev = _run_dcf(fcff, g1, g2, gT, r)            # Enterprise Value
-    # Puente a equity: − deuda neta (+ minoritarios).
+    # Puente a equity: − deuda neta (+ minoritarios). Se EXCLUYE la obligación de leases
+    # (el Total Debt la engloba) para no contarla dos veces — ya está en el FCF.
     td = _first(balance, ["Total Debt", "Deuda Total"])
     cashb = _first(balance, ["Cash And Cash Equivalents", "Caja y Equivalentes",
                              "Cash Cash Equivalents And Short Term Investments"])
-    net_debt_v = (td or 0) - (cashb or 0)
+    net_debt_v = (td or 0) - (cashb or 0) - (lease_total if lease_total > 0 else 0)
     mi = _first(balance, ["Minority Interest", "Intereses Minoritarios"])
     if mi and mi > 0:
         net_debt_v += mi
