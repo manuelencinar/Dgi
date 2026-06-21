@@ -40,6 +40,31 @@ function getShares(data) {
   return p && m && p > 0 ? (m * 1e6) / p : null
 }
 
+// ── FCFF / WACC / puente EV→Equity ──────────────────────────────────────────
+// El DCF se hace SIEMPRE sobre FCFF (no apalancado) → da Enterprise Value → se resta
+// la deuda neta para llegar al equity. Así no se duplica el efecto de la deuda en
+// empresas US (cuyo FCF de Yahoo ya es post-intereses) ni se ignora en las europeas.
+const INTEREST_NAMES = ['Interest Expense', 'Gastos por Intereses', 'Interest Expense Non Operating']
+const TOTAL_DEBT_NAMES = ['Total Debt', 'Deuda Total']
+const MINORITY_NAMES = ['Minority Interest', 'Intereses Minoritarios', 'Minority Interests']
+function effTax(data) {
+  const t = n(data.tax_rate_effective)
+  return (t != null && t >= 0.05 && t <= 0.45) ? t : 0.25
+}
+function netDebtAbs(data) {
+  const nd = n(data.net_debt)   // almacenado en MILLONES
+  return nd != null ? nd * 1e6 : 0
+}
+function minorityAbs(data) {
+  const v = fromStmt(data, 'balance_sheet_annual', MINORITY_NAMES)
+  return v != null && v > 0 ? v : 0
+}
+// Intereses netos de impuestos (para "des-apalancar" el FCF US-GAAP a FCFF).
+function interestAfterTax(data, t) {
+  const v = fromStmt(data, 'income_statement_annual', INTEREST_NAMES)
+  return v != null ? Math.abs(v) * (1 - t) : 0
+}
+
 const FCF_NAMES = ['Flujo de Caja Libre', 'Free Cash Flow']
 const OCF_NAMES = ['Cash Flow Operativo', 'Operating Cash Flow', 'Cash Flow From Continuing Operating Activities', 'Total Cash From Operating Activities']
 const REV_NAMES = ['Ingresos Totales', 'Total Revenue', 'Total Revenues']
@@ -164,9 +189,9 @@ export function recomputeValuation(engine, params, price) {
     const iv = (ke > g && roe > g && bvps > 0) ? bvps * (roe - g) / (ke - g) : null
     return { intrinsicValue: iv, mos: mosFn(iv, price), projection: null }
   }
-  // dcf
+  // dcf — el DCF da Enterprise Value (FCFF); se resta deuda neta (+minoritarios) → equity.
   const proj = dcfProjection(params)
-  const iv = params.shares > 0 ? proj.totalPV / params.shares : null
+  const iv = params.shares > 0 ? (proj.totalPV - (params.netDebt || 0)) / params.shares : null
   return { intrinsicValue: iv, mos: mosFn(iv, price), projection: proj.years }
 }
 
@@ -279,33 +304,56 @@ function buildDCF(data, opts) {
   const shares = getShares(data)
   if (!shares) return na(method, label, price, 'Datos insuficientes — capitalización no disponible', tooltip)
 
-  // Crecimiento + penalizaciones
+  // Crecimiento + penalizaciones (gp.r = coste de equity: foso + penalización declive)
   const gp = growthAndPenalties(data, { discountBase, terminalBase, capHigh, revenueOnly })
 
+  // ── Homogeneizar a FCFF (no apalancado) ───────────────────────────────────
+  // El FCF de Yahoo (OCF−Capex) es post-intereses en US-GAAP (apalancado). Se le
+  // devuelven los intereses netos de impuestos para volverlo FCFF; en IFRS se asume
+  // ya no apalancado (intereses en financiación). El CFO de utilities se deja igual.
+  const t = effTax(data)
+  const isUS = (data.country || '') === 'US'
+  let intAdd = 0
+  if (baseSource !== 'cfo' && isUS) intAdd = interestAfterTax(data, t)
+  const fcffBase = base + intAdd
+
+  // Descuento del FCFF: la tasa ajustada por foso/sector (gp.r) se usa como WACC
+  // (ya está calibrada a ~coste de capital; derivar un WACC más bajo desde ella como
+  // si fuera coste de equity inflaba el EV). El FCFF a WACC da Enterprise Value.
+  const wacc = gp.r
+
   const stage2 = opts.stage2 || 5
-  const params = { base, g1: gp.g1, g2: gp.g2, gT: gp.gT, r: gp.r, shares, stage2 }
+  const netDebt = netDebtAbs(data) + minorityAbs(data)
+  const params = { base: fcffBase, g1: gp.g1, g2: gp.g2, gT: gp.gT, r: wacc, shares, stage2, netDebt }
   const proj = dcfProjection(params)
-  const iv = proj.totalPV / shares
+  const ev = proj.totalPV                 // Enterprise Value
+  const equity = ev - netDebt             // − deuda neta (+minoritarios) → Equity Value
+  const iv = equity / shares
 
   const inputs = [
     { label: baseLabel || 'FCF base', value: fmtBig(base) },
+  ]
+  if (intAdd > 0) inputs.push({ label: '+ Intereses netos de imp. (a FCFF)', value: fmtBig(intAdd) })
+  inputs.push(
     { label: 'Crecimiento fase 1 (años 1–5)', value: fmtPct(gp.g1) },
     { label: `Crecimiento fase 2 (años 6–${5 + stage2})`, value: fmtPct(gp.g2) },
     { label: 'Crecimiento terminal', value: fmtPct(gp.gT) },
-    { label: 'Tasa de descuento', value: fmtPct(gp.r) },
+    { label: 'WACC (descuento)', value: fmtPct(wacc) },
+    { label: 'Valor de empresa (EV)', value: fmtBig(ev) },
+    { label: '− Deuda neta', value: fmtBig(netDebt), danger: netDebt > 0 },
+    { label: 'Valor del equity', value: fmtBig(equity) },
     { label: 'Métrica de crecimiento usada', value: SOURCE_LABEL[gp.source] || gp.source },
     { label: 'CAGR ingresos 5a', value: gp.rev != null ? fmtRaw(gp.rev) : '—', danger: gp.rev != null && gp.rev < 0 },
-    { label: 'CAGR FCF 5a', value: gp.fcf != null ? fmtRaw(gp.fcf) : '—', danger: gp.fcf != null && gp.fcf < 0 },
     { label: 'Acciones (aprox.)', value: fmtBig(shares) },
-  ]
+  )
   if (gp.declinePenalty > 0) {
-    inputs.push({ label: 'Penalización por ingresos en declive', value: `+${(gp.declinePenalty * 100).toFixed(0)}% al descuento`, danger: true })
+    inputs.push({ label: 'Penalización por ingresos en declive', value: `+${(gp.declinePenalty * 100).toFixed(0)}% al coste de equity`, danger: true })
   }
 
   return {
     method, methodLabel: label, available: true, unavailableReason: null,
     intrinsicValue: iv, price, mos: mosFn(iv, price),
-    discount: gp.r, growth: gp.g1, terminal: gp.gT,
+    discount: wacc, growth: gp.g1, terminal: gp.gT,
     inputs, notes: [...notes, ...gp.notes], warnings: gp.warnings,
     fcfYears, tooltip,
     engine: 'dcf', params, editable: editableFor('dcf', currency),
@@ -380,28 +428,36 @@ function dcfPharma(data, moatWidth, currency) {
   if (!shares) return na('dcf_pharma', 'DCF · Prima riesgo', price, 'Datos insuficientes — capitalización no disponible', '')
 
   const gp = growthAndPenalties(data, { discountBase, terminalBase: currency === 'EUR' ? 0.025 : 0.030, capHigh: 0.15 })
-  const params = { base, g1: gp.g1, g2: gp.g2, gT: gp.gT, r: gp.r, shares }
+  // FCFF (des-apalancar si US-GAAP) + WACC + puente EV→equity (igual que buildDCF).
+  const t = effTax(data)
+  const intAdd = (data.country || '') === 'US' ? interestAfterTax(data, t) : 0
+  const wacc = gp.r
+  const netDebt = netDebtAbs(data) + minorityAbs(data)
+  const params = { base: base + intAdd, g1: gp.g1, g2: gp.g2, gT: gp.gT, r: wacc, shares, netDebt }
   const proj = dcfProjection(params)
-  const iv = proj.totalPV / shares
+  const ev = proj.totalPV
+  const equity = ev - netDebt
+  const iv = equity / shares
 
   const inputs = [
     { label: 'FCF base' + (preNotes.length ? ' (ajustado)' : ''), value: fmtBig(base) },
+    ...(intAdd > 0 ? [{ label: '+ Intereses netos de imp. (a FCFF)', value: fmtBig(intAdd) }] : []),
     { label: 'Crecimiento fase 1', value: fmtPct(gp.g1) },
     { label: 'Crecimiento fase 2', value: fmtPct(gp.g2) },
     { label: 'Crecimiento terminal', value: fmtPct(gp.gT) },
-    { label: 'Tasa de descuento (con prima)', value: fmtPct(gp.r) },
+    { label: 'WACC (con prima de riesgo)', value: fmtPct(wacc) },
+    { label: 'Valor de empresa (EV)', value: fmtBig(ev) },
+    { label: '− Deuda neta', value: fmtBig(netDebt), danger: netDebt > 0 },
+    { label: 'Valor del equity', value: fmtBig(equity) },
     { label: 'Ajuste por I+D', value: rdAdj ? '−1pp (I+D >20%)' : 'No aplicado' },
-    { label: 'Métrica de crecimiento usada', value: SOURCE_LABEL[gp.source] || gp.source },
-    { label: 'CAGR ingresos 5a', value: gp.rev != null ? fmtRaw(gp.rev) : '—', danger: gp.rev != null && gp.rev < 0 },
-    { label: 'CAGR FCF 5a', value: gp.fcf != null ? fmtRaw(gp.fcf) : '—', danger: gp.fcf != null && gp.fcf < 0 },
     { label: 'Acciones (aprox.)', value: fmtBig(shares) },
   ]
-  if (gp.declinePenalty > 0) inputs.push({ label: 'Penalización por ingresos en declive', value: `+${(gp.declinePenalty * 100).toFixed(0)}% al descuento`, danger: true })
+  if (gp.declinePenalty > 0) inputs.push({ label: 'Penalización por ingresos en declive', value: `+${(gp.declinePenalty * 100).toFixed(0)}% al coste de equity`, danger: true })
 
   return {
     method: 'dcf_pharma', methodLabel: 'DCF · Prima riesgo', available: true, unavailableReason: null,
     intrinsicValue: iv, price, mos: mosFn(iv, price),
-    discount: gp.r, growth: gp.g1, terminal: gp.gT,
+    discount: wacc, growth: gp.g1, terminal: gp.gT,
     inputs, notes: [...preNotes, ...gp.notes], warnings: gp.warnings,
     fcfYears: null,
     tooltip: 'En farmacéuticas se aplica una tasa de descuento más alta para reflejar la incertidumbre del pipeline de patentes. Una alta inversión en I+D reduce parcialmente esta prima.',

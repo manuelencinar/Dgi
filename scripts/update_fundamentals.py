@@ -894,7 +894,30 @@ def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_c
         gT = 0.0
         used = "cero_por_declive"
 
-    iv = _run_dcf(base, g1, g2, gT, r) / shares
+    # ── FCFF + puente EV→Equity (espejo de lib/valuation.js) ──────────────────
+    # Tipo impositivo efectivo (para des-apalancar y, si hace falta, normalizar).
+    taxp = _first(income, ["Tax Provision", "Income Tax Expense"])
+    pretax = _first(income, ["Pretax Income", "Income Before Tax"])
+    tax = taxp / pretax if (taxp is not None and pretax and pretax > 0) else 0.25
+    tax = min(0.45, max(0.05, tax))
+    # En US-GAAP el FCF de Yahoo es post-intereses (apalancado): se le suman los
+    # intereses netos de impuestos para volverlo FCFF. En IFRS se asume ya no apalancado.
+    is_us = "." not in (ticker or "")
+    fcff = base
+    if st != "utilities" and is_us:
+        intr = _first(income, ["Interest Expense", "Interest Expense Non Operating"])
+        if intr is not None:
+            fcff = base + abs(intr) * (1 - tax)
+    ev = _run_dcf(fcff, g1, g2, gT, r)            # Enterprise Value
+    # Puente a equity: − deuda neta (+ minoritarios).
+    td = _first(balance, ["Total Debt", "Deuda Total"])
+    cashb = _first(balance, ["Cash And Cash Equivalents", "Caja y Equivalentes",
+                             "Cash Cash Equivalents And Short Term Investments"])
+    net_debt_v = (td or 0) - (cashb or 0)
+    mi = _first(balance, ["Minority Interest", "Intereses Minoritarios"])
+    if mi and mi > 0:
+        net_debt_v += mi
+    iv = (ev - net_debt_v) / shares
     return safe2(iv), warning, used
 
 # ── Fetch ─────────────────────────────────────────────────────────────────
