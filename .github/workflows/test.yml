@@ -1,0 +1,30 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'webapp/lib/**'
+      - 'webapp/test/**'
+      - 'webapp/package.json'
+  pull_request:
+    paths:
+      - 'webapp/lib/**'
+      - 'webapp/test/**'
+      - 'webapp/package.json'
+  workflow_dispatch:
+
+jobs:
+  unit:
+    name: Tests unitarios (lib)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # Los libs probados (fiscal-es, metrics, helpers, screener) solo dependen de
+      # otros libs y de Node nativo → no hace falta instalar dependencias.
+      - name: Ejecutar tests
+        working-directory: webapp
+        run: npm test
