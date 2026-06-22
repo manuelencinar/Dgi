@@ -161,6 +161,20 @@ export function moatErosion(f) {
 // Score DGI 0-10 usando las métricas sector-aware (mismo enfoque que el HTML original).
 const SECTOR_KEY = { banco: 'banco', aseguradora: 'aseguradora', reit: 'reit', bdc: 'bdc' }
 
+// Farmacéutica/biotec: sector salud + industria de medicamentos/biotecnología
+// (excluye dispositivos médicos, donde la intensidad de I+D no es la misma señal).
+export function isPharmaCo(sector, industry) {
+  if ((sector || '') !== 'Healthcare') return false
+  return /drug manufacturers|biotech|pharmaceutical|therapeut/i.test(industry || '')
+}
+
+// Métrica de I+D/ingresos para el scoring de farmacéuticas en el screener.
+// Mismos tramos que la ficha (buildQuality pharma): ≥25→10, ≥18→8, ≥12→6, ≥5→3.
+const RD_METRIC = {
+  id: 'rd_intensity', label: 'I+D / Ingresos', short: 'I+D', unit: '%',
+  score: v => { const n = parseFloat(v); if (isNaN(n)) return null; if (n >= 25) return 10; if (n >= 18) return 8; if (n >= 12) return 6; if (n >= 8) return 5; if (n >= 5) return 3; if (n > 0) return 2; return 1 },
+}
+
 export function computeScore(f, type) {
   if (!f) return null
   // Sin dividendo (o testimonial, < MIN_DGI_YIELD) no es una empresa DGI
@@ -169,7 +183,9 @@ export function computeScore(f, type) {
   const yld = yieldPct(f)
   if (yld == null || yld < MIN_DGI_YIELD) return null
   const key = SECTOR_KEY[type] || 'general'
-  const metrics = (SECTORS[key] || SECTORS.general).metrics
+  let metrics = (SECTORS[key] || SECTORS.general).metrics
+  // Farmacéuticas: añadir la intensidad de I+D como métrica de calidad extra.
+  if (isPharmaCo(f.sector, f.industry) && f.rd_intensity != null) metrics = [...metrics, RD_METRIC]
   const vals = mapValues(f)
   let tot = 0, cnt = 0
   for (const m of metrics) {
@@ -215,6 +231,7 @@ function mapValues(f) {
     roe:          num(f.roe),
     eps_cagr5:    num(f.eps_cagr5),
     margin_safety: marginSafety(f),
+    rd_intensity: num(f.rd_intensity),
   }
 }
 

@@ -3,18 +3,24 @@
 // (`/screener`) y el wizard "construir cartera" (`/construir-cartera`).
 import { createClient } from '@supabase/supabase-js'
 import { getContinent } from '@/lib/helpers'
-import { computeScore, resolveRoic, marginSafety, yieldPct, deriveMoat, moatErosion, calcDivQuality, rule1010, sanePayout, mosUnreliable } from '@/lib/screener'
+import { computeScore, resolveRoic, marginSafety, yieldPct, deriveMoat, moatErosion, calcDivQuality, rule1010, sanePayout, mosUnreliable, isPharmaCo } from '@/lib/screener'
 import { isSecondary } from '@/lib/listings'
 import { getIndexConstituents } from '@/lib/index-constituents'
 
 // Lee company_fundamentals (campos escalares) paginado — PostgREST limita a 1000 filas.
 async function fetchFundamentals() {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
-  const FIELDS = 'ticker, current_price, dps, pays_dividend, div_streak, div_cagr5, payout_fcf, payout_eps, fcf_cagr5, debt_ebitda, net_debt_ebitda, interest_coverage, roic, roic_reported, roic_tangible, roe, operating_margin, gross_margin, revenue_cagr5, pe_trailing, pe_forward, eps_trailing, ev_ebitda, market_cap_m, intrinsic_value, week52_high, week52_low, yield_avg, yield_avg_years, ma200, sector, industry, country, bonus_total, improving_flag, bonus_roic_trend, bonus_margin_trend, bonus_debt_reduction, bonus_fcf_growth'
+  const FIELDS_BASE = 'ticker, current_price, dps, pays_dividend, div_streak, div_cagr5, payout_fcf, payout_eps, fcf_cagr5, debt_ebitda, net_debt_ebitda, interest_coverage, roic, roic_reported, roic_tangible, roe, operating_margin, gross_margin, revenue_cagr5, pe_trailing, pe_forward, eps_trailing, ev_ebitda, market_cap_m, intrinsic_value, week52_high, week52_low, yield_avg, yield_avg_years, ma200, sector, industry, country, bonus_total, improving_flag, bonus_roic_trend, bonus_margin_trend, bonus_debt_reduction, bonus_fcf_growth'
+  // rd_intensity puede no existir aún (SQL pendiente) → fallback sin esa columna.
+  let fields = FIELDS_BASE + ', rd_intensity'
   const all = []
   try {
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await sb.from('company_fundamentals').select(FIELDS).range(from, from + 999)
+      let { data, error } = await sb.from('company_fundamentals').select(fields).range(from, from + 999)
+      if (error && fields !== FIELDS_BASE) {   // columna nueva no existe → reintenta sin ella
+        fields = FIELDS_BASE
+        ;({ data, error } = await sb.from('company_fundamentals').select(fields).range(from, from + 999))
+      }
       if (error || !data?.length) break
       all.push(...data)
       if (data.length < 1000) break
@@ -82,6 +88,8 @@ export async function buildScreenerCompanies(destWHT, baseDict) {
       dq:     calcDivQuality(f, t, country, destWHT),
       r1010:  rule1010(f),
       pays:   f.pays_dividend ?? null,
+      rd:     f.rd_intensity != null ? Number(f.rd_intensity) : null,
+      isPharma: isPharmaCo(f.sector, f.industry),
       bonus:  f.bonus_total != null ? Number(f.bonus_total) : 0,
       bRoic:  f.bonus_roic_trend != null ? Number(f.bonus_roic_trend) : 0,
       bMargin: f.bonus_margin_trend != null ? Number(f.bonus_margin_trend) : 0,

@@ -1399,6 +1399,11 @@ def fetch_ticker(sym):
         shares_pct, shares_base = compute_shares_reduction(is_annual, bs_annual)
         capex_cfo = compute_capex_cfo(cf_annual)
 
+        # Intensidad de I+D (I+D / ingresos, último año, %). Para el screener (pharma).
+        _rd = _first(income, ["Research And Development", "I+D"])
+        _rv = _first(income, ["Total Revenue", "Total Revenues", "Ingresos Totales"])
+        rd_intensity = round(abs(_rd) / _rv * 1000) / 10 if (_rd is not None and _rv and _rv > 0) else None
+
         return sanitize({
             "ticker":           sym,
             **cdr_fields,
@@ -1430,6 +1435,7 @@ def fetch_ticker(sym):
             "operating_margin": om,
             "net_margin":       nm,
             "gross_margin":     gm,
+            "rd_intensity":     rd_intensity,
             "current_ratio":    cr,
             "revenue_cagr5":    rev_cagr5,
             "pe_trailing":      pe_trail,
