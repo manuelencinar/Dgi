@@ -178,6 +178,47 @@ async function buildPeHistory(detail, supabase, ticker) {
   return out.reverse()   // de más antiguo a más reciente
 }
 
+// EV/EBITDA por ejercicio = (precio·acciones + deuda neta) / EBITDA, reconstruido
+// con los mismos datos que el PER (precio de cierre fiscal + estados anuales).
+async function buildEvEbitdaHistory(detail, supabase, ticker) {
+  const isa = detail?.income_statement_annual
+  const bsa = detail?.balance_sheet_annual
+  const cols = isa?.columns
+  if (!Array.isArray(cols) || !cols.length) return []
+  const ebRow   = stmtRowArr(isa, 'EBITDA', 'Normalized EBITDA')
+  const shRow   = stmtRowArr(isa, 'Acciones Medias Diluidas', 'Diluted Average Shares', 'Acciones Medias Básicas', 'Basic Average Shares')
+  const ndRow   = stmtRowArr(bsa, 'Net Debt', 'Deuda Neta')
+  const debtRow = stmtRowArr(bsa, 'Total Debt', 'Deuda Total')
+  const cashRow = stmtRowArr(bsa, 'Cash And Cash Equivalents', 'Caja y Equivalentes', 'Efectivo y Equivalentes')
+  if (!ebRow || !shRow) return []
+  const n = Math.min(cols.length, 4)
+
+  const closes = await Promise.all(
+    Array.from({ length: n }, (_, i) => {
+      const end = String(cols[i]).slice(0, 10)
+      return supabase.from('daily_prices').select('close_price')
+        .eq('ticker', ticker).lte('date', end)
+        .order('date', { ascending: false }).limit(1).maybeSingle()
+        .then(r => (r.data ? Number(r.data.close_price) : null)).catch(() => null)
+    })
+  )
+
+  const out = []
+  for (let i = 0; i < n; i++) {
+    const close = closes[i]
+    const ebitda = ebRow?.[i] != null ? parseFloat(ebRow[i]) : null
+    const sh     = shRow?.[i] != null ? parseFloat(shRow[i]) : null
+    let nd = ndRow?.[i] != null ? parseFloat(ndRow[i]) : null
+    if (nd == null && debtRow?.[i] != null) nd = parseFloat(debtRow[i]) - (cashRow?.[i] != null ? parseFloat(cashRow[i]) : 0)
+    if (close != null && sh != null && sh > 0 && ebitda != null && ebitda > 0) {
+      const ev = close * sh + (nd != null ? nd : 0)
+      const m = ev / ebitda
+      if (m > 0 && m < 100) out.push({ year: String(cols[i]).slice(0, 4), val: Math.round(m * 10) / 10 })
+    }
+  }
+  return out.reverse()
+}
+
 async function getUserPlan() {
   try {
     const supabase = await authClient()
@@ -375,6 +416,7 @@ export default async function EmpresaPage({ params, searchParams }) {
   const payoutEps  = detail?.payout_eps ?? null
   const priceToBook = detail?.price_to_book ?? null
   const peHistory  = detail ? await buildPeHistory(detail, supabase, t) : []
+  const evHistory  = detail ? await buildEvEbitdaHistory(detail, supabase, t) : []
   const manualImport = detail ? {
     active: !!(detail.manual_fields && typeof detail.manual_fields === 'object' && Object.values(detail.manual_fields).some(v => v === true)),
     date: detail.last_manual_import ?? null,
@@ -397,6 +439,7 @@ export default async function EmpresaPage({ params, searchParams }) {
   const dgiScorePub = isPremium ? dgiScore : null
   const roicPub   = isPremium ? roicData : null
   const peHistPub = isPremium ? peHistory : []
+  const evHistPub = isPremium ? evHistory : []
   const scoreHistPub = isPremium ? scoreHistory : []
   const healthPub = isPremium ? healthPanel
     : (healthPanel ? { ...healthPanel, cards: (healthPanel.cards || []).map(() => ({})) } : null)
@@ -465,6 +508,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         paysDividend={paysDividend}
         noDividendAt={noDividendAt}
         peHistory={peHistPub}
+        evHistory={evHistPub}
         manualImport={manualImport}
         finScalars={finScalars}
         healthPanel={healthPub}

@@ -841,73 +841,55 @@ function MultiplesGrid({ valuationMetrics, isPremium }) {
 
 // ── PER history chart ──────────────────────────────────────────────────────
 
-function PerHistoryChart({ peHistory, peTrailing, isPremium }) {
-  if (!isPremium) return <PremiumGate label="Historial de valoración (Premium)" hint="Evolución del PER por ejercicio frente al PER actual." />
-  const data = (peHistory || []).filter(d => d.pe != null)
-  const hasChart = data.length >= 2
-  const mean = data.length ? data.reduce((s, d) => s + d.pe, 0) / data.length : null
+// Gráfico genérico de historial de un múltiplo (PER o EV/EBITDA) vs su media y
+// el valor actual, con veredicto barata/cara frente a su propia historia.
+function ValuationHistoryChart({ history, current, isPremium, title, noun, note, gateHint, showGate = true }) {
+  if (!isPremium) return showGate ? <PremiumGate label={`${title} (Premium)`} hint={gateHint} /> : null
+  const data = (history || []).filter(d => d.val != null)
+  if (data.length < 2) return null
+  const mean = data.reduce((s, d) => s + d.val, 0) / data.length
 
   const W = 320, H = 120, padX = 28, padY = 16
-  let body
-  if (hasChart) {
-    const series = peTrailing != null ? [...data, { year: 'Hoy', pe: peTrailing }] : data
-    const peVals = series.map(d => d.pe).concat(peTrailing != null ? [peTrailing] : [])
-    const min = Math.min(...peVals), max = Math.max(...peVals)
-    const span = max - min || 1
-    const x = i => padX + (i / (series.length - 1)) * (W - padX * 2)
-    const y = v => padY + (1 - (v - min) / span) * (H - padY * 2)
-    const pts = series.map((d, i) => `${x(i).toFixed(1)},${y(d.pe).toFixed(1)}`).join(' ')
-    const curY = peTrailing != null ? y(peTrailing) : null
+  const series = current != null ? [...data, { year: 'Hoy', val: current }] : data
+  const vals = series.map(d => d.val)
+  const min = Math.min(...vals), max = Math.max(...vals)
+  const span = max - min || 1
+  const x = i => padX + (i / (series.length - 1)) * (W - padX * 2)
+  const y = v => padY + (1 - (v - min) / span) * (H - padY * 2)
+  const pts = series.map((d, i) => `${x(i).toFixed(1)},${y(d.val).toFixed(1)}`).join(' ')
+  const curY = current != null ? y(current) : null
 
-    body = (
+  return (
+    <Card>
+      <SectionTitle>{title}</SectionTitle>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block' }}>
-        {curY != null && (
-          <line x1={padX} y1={curY} x2={W - padX} y2={curY} stroke="#818cf8" strokeWidth="1" strokeDasharray="4 4" opacity="0.6" />
-        )}
+        {curY != null && <line x1={padX} y1={curY} x2={W - padX} y2={curY} stroke="#818cf8" strokeWidth="1" strokeDasharray="4 4" opacity="0.6" />}
         <polyline points={pts} fill="none" stroke="#fbbf24" strokeWidth="2" />
         {series.map((d, i) => (
           <g key={i}>
-            <circle cx={x(i)} cy={y(d.pe)} r="3" fill={d.year === 'Hoy' ? '#818cf8' : '#fbbf24'} />
+            <circle cx={x(i)} cy={y(d.val)} r="3" fill={d.year === 'Hoy' ? '#818cf8' : '#fbbf24'} />
             <text x={x(i)} y={H - 3} textAnchor="middle" fontSize="8" fill="#4a5270">{d.year}</text>
           </g>
         ))}
       </svg>
-    )
-  }
-
-  const content = (
-    <Card>
-      <SectionTitle>Historial de valoración (PER)</SectionTitle>
-      {hasChart ? (
-        <>
-          {body}
-          <p style={{ fontSize: 11, color: '#8090a8', marginTop: 10 }}>
-            PER medio histórico: <span style={{ color: '#fbbf24', fontWeight: 700 }}>{mean.toFixed(1)}×</span>
-            {peTrailing != null && (
-              <> · PER actual: <span style={{ color: peTrailing <= mean ? '#34d399' : '#f87171', fontWeight: 700 }}>{peTrailing.toFixed(1)}×</span></>
-            )}
+      <p style={{ fontSize: 11, color: '#8090a8', marginTop: 10 }}>
+        {noun} medio histórico: <span style={{ color: '#fbbf24', fontWeight: 700 }}>{mean.toFixed(1)}×</span>
+        {current != null && <> · {noun} actual: <span style={{ color: current <= mean ? '#34d399' : '#f87171', fontWeight: 700 }}>{current.toFixed(1)}×</span></>}
+      </p>
+      {current != null && mean > 0 && (() => {
+        const pct = (current / mean - 1) * 100
+        const cheap = pct <= -10, exp = pct >= 10
+        return (
+          <p style={{ fontSize: 12, fontWeight: 600, color: cheap ? '#34d399' : exp ? '#f87171' : '#fbbf24', marginTop: 6 }}>
+            {cheap ? `Cotiza un ${Math.abs(pct).toFixed(0)}% por debajo de su ${noun} medio — barata frente a su propia historia.`
+              : exp ? `Cotiza un ${pct.toFixed(0)}% por encima de su ${noun} medio — cara frente a su propia historia.`
+              : `Cotiza en línea con su ${noun} medio histórico.`}
           </p>
-          {peTrailing != null && mean > 0 && (() => {
-            const pct = (peTrailing / mean - 1) * 100
-            const cheap = pct <= -10, exp = pct >= 10
-            return (
-              <p style={{ fontSize: 12, fontWeight: 600, color: cheap ? '#34d399' : exp ? '#f87171' : '#fbbf24', marginTop: 6 }}>
-                {cheap ? `Cotiza un ${Math.abs(pct).toFixed(0)}% por debajo de su PER medio — barata frente a su propia historia.`
-                  : exp ? `Cotiza un ${pct.toFixed(0)}% por encima de su PER medio — cara frente a su propia historia.`
-                  : 'Cotiza en línea con su PER medio histórico.'}
-              </p>
-            )
-          })()}
-          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 4 }}>
-            Calculado con el precio de cierre de cada ejercicio fiscal y el BPA de ese año.
-          </p>
-        </>
-      ) : (
-        <p style={{ fontSize: 12, color: '#4a5270' }}>Sin datos suficientes para reconstruir el PER histórico.</p>
-      )}
+        )
+      })()}
+      {note && <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 4 }}>{note}</p>}
     </Card>
   )
-  return content
 }
 
 // ── insights section ───────────────────────────────────────────────────────
@@ -1488,7 +1470,7 @@ export default function CompanyDetailPage(props) {
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
     peTrailing, peForward, evEbitda, eps, payout, mktCap, priceToBook,
-    divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, originWHT, peHistory,
+    divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, originWHT, peHistory, evHistory,
     paysDividend, noDividendAt,
     healthPanel, moat, dcf, projection, dgiScore, scoreHistory, insights, roicData, badges, buybacks, ma200,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
@@ -1808,7 +1790,15 @@ export default function CompanyDetailPage(props) {
                 </p>
               )}
             </Card>
-            <PerHistoryChart peHistory={peHistory} peTrailing={peTrailing} isPremium={isPremium} />
+            <ValuationHistoryChart
+              history={(peHistory || []).map(d => ({ year: d.year, val: d.pe }))} current={peTrailing}
+              isPremium={isPremium} title="Historial de valoración (PER)" noun="PER"
+              note="Calculado con el precio de cierre de cada ejercicio fiscal y el BPA de ese año."
+              gateHint="Evolución del PER por ejercicio frente al PER actual y su media histórica." />
+            {isPremium && <ValuationHistoryChart
+              history={evHistory} current={evEbitda}
+              isPremium title="Historial EV/EBITDA" noun="EV/EBITDA" showGate={false}
+              note="EV (capitalización + deuda neta) de cada cierre fiscal entre el EBITDA de ese año." />}
           </div>
         )}
 
