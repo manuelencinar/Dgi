@@ -231,13 +231,26 @@ export async function GET(req) {
     }, 0)
     const contributedYear = buysYearEUR - sellsYearEUR
 
-    // ── S&P 500 en el período del ejercicio ──
+    // ── S&P 500 como benchmark de la rentabilidad TOTAL (mismo período) ──
+    // La rentabilidad total es acumulada (todo el histórico de la cartera), así que
+    // el S&P debe medirse en EL MISMO período: desde la primera compra hasta el último
+    // precio disponible del índice. Si los datos del índice no cubren un tramo
+    // significativo (p.ej. benchmark obsoleto), devolvemos null → la UI muestra "—".
     let sp500Pct = null, beatsSP500 = false
     const sp = priceMap['^GSPC']
+    const txDates = transactions.filter(t => t.date).map(t => t.date).sort()
+    const firstTxDate = txDates[0] || yearStart
     if (sp && sp.length) {
-      const startSp = lastBefore(sp, yearStart) ?? sp[0].v
-      const endSp = sp[sp.length - 1].v
-      if (startSp > 0) { sp500Pct = (endSp - startSp) / startSp * 100; if (totalReturnPct != null) beatsSP500 = totalReturnPct > sp500Pct }
+      // Primer precio del índice DESPUÉS de la primera compra; si el índice arranca
+      // más tarde (datos limitados), usamos su primer dato disponible.
+      const startRow = sp.find(r => r.date >= firstTxDate) || null
+      const endRow = sp[sp.length - 1]
+      const spanDays = startRow ? (new Date(endRow.date) - new Date(startRow.date)) / 86400000 : 0
+      // Necesitamos un tramo de al menos ~3 meses para que la comparación tenga sentido.
+      if (startRow && startRow.v > 0 && spanDays >= 90) {
+        sp500Pct = (endRow.v - startRow.v) / startRow.v * 100
+        if (totalReturnPct != null) beatsSP500 = totalReturnPct > sp500Pct
+      }
     }
 
     return NextResponse.json({

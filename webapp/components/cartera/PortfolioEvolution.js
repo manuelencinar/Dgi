@@ -130,7 +130,7 @@ export default function PortfolioEvolution({ isPremium, summary }) {
           )}
           {isPremium && (
             <Kpi label="Rentabilidad total" value={fmtPct(kTotalPct)} col={kTotalPct >= 0 ? GREEN : RED}
-              badge={k.beatsSP500 ? '🏆 Superas al S&P 500' : null} sub={k.sp500Pct != null ? `S&P 500: ${fmtPct(k.sp500Pct)}` : 'Precio + dividendos + ventas'} />
+              badge={(k.sp500Pct != null && kTotalPct != null && kTotalPct > k.sp500Pct) ? '🏆 Superas al S&P 500' : null} sub={k.sp500Pct != null ? `S&P 500: ${fmtPct(k.sp500Pct)}` : 'Precio + dividendos + ventas'} />
           )}
         </div>
       )}
