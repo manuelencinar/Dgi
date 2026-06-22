@@ -166,7 +166,8 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - APIs: `/api/watchlist` (GET/POST/PUT/DELETE, RLS, aplica límite freemium en POST), `/api/watchlist/enriched` (GET, para la mini), `/api/notifications` (GET lista+nº no leídas, POST marca leídas).
 - Cron `/api/check-watchlist-alerts` (service_role, en `vercel.json`: `30 16` y `30 22` L-V, 30 min tras cada cierre). Comprueba alertas activas, crea notificación in-app siempre y envía email (Resend) solo a premium. Anti-spam: no repite hasta que el precio/yield sale de zona y vuelve a entrar. CRON_SECRET opcional.
 - **Freemium**: gratuito hasta 10 empresas, sin alertas por email (pero sí notificación in-app); premium ilimitado + email.
-- También genera notificación `recurring` al ejecutarse una aportación periódica (en `/api/procesar-aportaciones`). Pendiente: notificación `dividend_cut` (no hay job detector aún).
+- También genera notificación `recurring` al ejecutarse una aportación periódica (en `/api/procesar-aportaciones`).
+- **Detector de recortes de dividendo** (`/api/check-dividend-cuts`, cron lunes 8:00 UTC en `vercel.json`): detecta empresas cuyo último año completo recorta el dividendo (`dividendTrend.down>=1` con `lastYear>=año-2`) y avisa a quien la TIENE (positions) o la SIGUE (watchlist). Notificación `dividend_cut` in-app siempre + email (Resend) solo premium. Dedup: 1 aviso por usuario+ticker al año. CRON_SECRET opcional.
 
 ## Aportaciones periódicas (solo ETFs/fondos)
 - Tabla `recurring_contributions` (SQL en `webapp/sql/recurring.sql`) + `transactions.price_date`.
