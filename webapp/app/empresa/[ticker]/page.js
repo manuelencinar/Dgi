@@ -14,6 +14,7 @@ import { sectorInfo, SUPERSECTORS } from '@/lib/supersectors'
 import { industryEs } from '@/lib/taxonomy'
 import { getProfile } from '@/data/profiles'
 import { resolveDestWHT } from '@/lib/fiscal-es'
+import { yieldReversionValue, twoStageDDM, peRelativeValue, epvValue, impliedGrowth, chowder } from '@/lib/valuation-methods'
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
 import { isCreditRiskFinancial } from '@/lib/dgi-score'
@@ -183,6 +184,19 @@ async function buildPeHistory(detail, supabase, ticker) {
 // Devuelve { history, current }: el punto "Hoy" se calcula con la MISMA fórmula
 // (precio en vivo × acciones + deuda neta del último ejercicio / EBITDA de ese año)
 // para que sea coherente con la serie, en vez del escalar ev_ebitda almacenado.
+// Mediana del PER del sector (para la valoración relativa). null si < 5 pares.
+async function sectorMedianPe(supabase, sector, selfTicker) {
+  if (!sector) return null
+  try {
+    const { data } = await supabase.from('company_fundamentals').select('ticker, pe_trailing').eq('sector', sector)
+    const vals = (data || []).filter(r => r.ticker !== selfTicker && r.pe_trailing != null)
+      .map(r => Number(r.pe_trailing)).filter(v => v > 0 && v < 60).sort((a, b) => a - b)
+    if (vals.length < 5) return null
+    const mid = Math.floor(vals.length / 2)
+    return vals.length % 2 ? vals[mid] : (vals[mid - 1] + vals[mid]) / 2
+  } catch { return null }
+}
+
 async function buildEvEbitdaHistory(detail, supabase, ticker, livePrice = null) {
   const empty = { history: [], current: null }
   const isa = detail?.income_statement_annual
@@ -429,6 +443,28 @@ export default async function EmpresaPage({ params, searchParams }) {
   const priceToBook = detail?.price_to_book ?? null
   const peHistory  = detail ? await buildPeHistory(detail, supabase, t) : []
   const evData     = detail ? await buildEvEbitdaHistory(detail, supabase, t, price) : { history: [], current: null }
+
+  // ── Valoración por múltiples métodos (triangulación, premium) ──────────────
+  let valuationMethods = null
+  if (isPremium && detail && price > 0) {
+    const dpsAnnual = Number(detail.dps) || null
+    const yldPct = (dpsAnnual && price > 0) ? dpsAnnual / price * 100 : null
+    const waccPct = dcf?.discount != null ? dcf.discount * 100 : null
+    const medPe = await sectorMedianPe(supabase, detail.sector, t)
+    const methods = []
+    if (dcf?.available && dcf.intrinsicValue > 0) methods.push({ label: 'DCF sector-aware', value: dcf.intrinsicValue, mos: dcf.mos, note: dcf.methodLabel })
+    const add = (label, res, note) => { if (res && res.value > 0) methods.push({ label, value: res.value, mos: res.mos, note }) }
+    add('Reversión de yield', yieldReversionValue(dpsAnnual, detail.yield_avg, price), 'Dividendo ÷ yield medio histórico')
+    if (dpsAnnual > 0) add('DDM bietápico', twoStageDDM(dpsAnnual, detail.div_cagr5, waccPct, price), 'Dividendos descontados a 2 etapas')
+    if (medPe) add('PER mediana del sector', peRelativeValue(detail.pe_trailing, medPe, price), `Mediana del sector: ${medPe.toFixed(0)}×`)
+    if (dcf?.engine === 'dcf') add('EPV — valor sin crecimiento', epvValue(dcf.params, price), 'Negocio actual a crecimiento cero')
+    const implied = dcf?.engine === 'dcf' ? impliedGrowth(dcf.params, price) : null
+    valuationMethods = {
+      methods, implied,
+      histRevG: dcf?.revCagr ?? null, histFcfG: dcf?.fcfCagr ?? null,
+      chowder: chowder(yldPct, detail.div_cagr5 != null ? Number(detail.div_cagr5) : null, type === 'reit' ? 'reit' : null),
+    }
+  }
   const manualImport = detail ? {
     active: !!(detail.manual_fields && typeof detail.manual_fields === 'object' && Object.values(detail.manual_fields).some(v => v === true)),
     date: detail.last_manual_import ?? null,
@@ -523,6 +559,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         peHistory={peHistPub}
         evHistory={evHistPub}
         evCurrent={evCurrentPub}
+        valuationMethods={valuationMethods}
         manualImport={manualImport}
         finScalars={finScalars}
         healthPanel={healthPub}

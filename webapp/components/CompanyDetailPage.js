@@ -892,6 +892,69 @@ function ValuationHistoryChart({ history, current, isPremium, title, noun, note,
   )
 }
 
+// ── Valoración por múltiples métodos (triangulación) ────────────────────────
+function ValuationMethodsPanel({ vm, currency, price, isPremium }) {
+  if (!isPremium) return <PremiumGate label="Valoración por métodos (Premium)" hint="Triangulación del valor justo con DCF, reversión de yield, DDM, múltiplo sectorial y EPV." />
+  if (!vm || !vm.methods?.length || !(price > 0)) return null
+  const fmtV = v => v == null ? '—' : `${v.toLocaleString('es-ES', { maximumFractionDigits: 2 })} ${currency}`
+  const fmtPctSigned = m => m == null ? '—' : `${m >= 0 ? '+' : ''}${(m * 100).toFixed(0)}%`
+  const col = m => m == null ? '#8090a8' : m > 0.1 ? '#34d399' : m > -0.1 ? '#fbbf24' : '#f87171'
+  // Consenso = mediana de los valores justos.
+  const fairs = vm.methods.map(m => m.value).sort((a, b) => a - b)
+  const mid = Math.floor(fairs.length / 2)
+  const consensus = fairs.length % 2 ? fairs[mid] : (fairs[mid - 1] + fairs[mid]) / 2
+  const consMos = (consensus - price) / price
+  const CAP = 60   // tope visual del % para la barra
+  const ig = vm.implied
+  const histG = vm.histFcfG ?? vm.histRevG
+
+  return (
+    <Card>
+      <SectionTitle>Valoración por métodos · triangulación</SectionTitle>
+      <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 14, lineHeight: 1.5 }}>
+        Valor justo estimado por varios métodos. Cuando coinciden, más fiable; cuando divergen, conviene entender por qué.
+      </p>
+      <div style={{ display: 'grid', gap: 9 }}>
+        {vm.methods.map((m, i) => {
+          const pct = Math.max(-CAP, Math.min(CAP, (m.mos ?? 0) * 100))
+          return (
+            <div key={i}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 3 }}>
+                <span style={{ fontSize: 12.5, color: '#c8d0e0', fontWeight: 600 }}>{m.label}{m.note && <span style={{ fontSize: 10.5, color: '#4a5270', fontWeight: 400 }}> · {m.note}</span>}</span>
+                <span style={{ fontSize: 12.5, color: '#c8d0e0', whiteSpace: 'nowrap' }}>{fmtV(m.value)} <span style={{ color: col(m.mos), fontWeight: 700 }}>({fmtPctSigned(m.mos)})</span></span>
+              </div>
+              {/* barra centrada: derecha verde (infravalorada), izquierda roja (sobrevalorada) */}
+              <div style={{ position: 'relative', height: 5, background: 'rgba(255,255,255,0.05)', borderRadius: 3 }}>
+                <div style={{ position: 'absolute', left: '50%', top: -1, bottom: -1, width: 1, background: 'rgba(255,255,255,0.25)' }} />
+                <div style={{ position: 'absolute', top: 0, bottom: 0, borderRadius: 3, background: col(m.mos),
+                  left: pct >= 0 ? '50%' : `${50 + pct / CAP * 50}%`, width: `${Math.abs(pct) / CAP * 50}%` }} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <p style={{ fontSize: 13, color: '#c8d0e0' }}>
+          Consenso (mediana): <b>{fmtV(consensus)}</b> · <span style={{ color: col(consMos), fontWeight: 700 }}>{fmtPctSigned(consMos)}</span> vs precio actual ({fmtV(price)}).
+        </p>
+        {ig && histG != null && (
+          <p style={{ fontSize: 12, color: '#8090a8', marginTop: 6, lineHeight: 1.5 }}>
+            <b style={{ color: '#c8d0e0' }}>Crecimiento implícito:</b> al precio actual el mercado descuenta {ig.floor ? '<−20%' : ig.ceil ? '>40%' : `~${(ig.impliedG * 100).toFixed(0)}%`}/año de FCF, frente a un histórico del {histG.toFixed(0)}%.
+            {!ig.floor && !ig.ceil && (ig.impliedG * 100 > histG + 2 ? ' Expectativas exigentes.' : ig.impliedG * 100 < histG - 2 ? ' Expectativas conservadoras — margen si el crecimiento se mantiene.' : ' Expectativas en línea con su historia.')}
+          </p>
+        )}
+        {vm.chowder && (
+          <p style={{ fontSize: 12, marginTop: 6 }}>
+            <b style={{ color: '#c8d0e0' }}>Regla Chowder:</b> yield + crecimiento del dividendo = <b style={{ color: vm.chowder.pass ? '#34d399' : '#f87171' }}>{vm.chowder.sum}</b> (umbral {vm.chowder.threshold}) — {vm.chowder.pass ? '✓ cumple el mínimo DGI de renta + crecimiento.' : '✗ por debajo del mínimo DGI.'}
+          </p>
+        )}
+      </div>
+      <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10 }}>Estimaciones orientativas; ningún método sustituye al análisis del negocio. El DCF y EPV no aplican a banca/seguros/REITs.</p>
+    </Card>
+  )
+}
+
 // ── insights section ───────────────────────────────────────────────────────
 
 function InsightsSection({ insights, isPremium, limit, onlyStrong, title = 'Análisis automático' }) {
@@ -1470,7 +1533,7 @@ export default function CompanyDetailPage(props) {
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
     peTrailing, peForward, evEbitda, eps, payout, mktCap, priceToBook,
-    divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, originWHT, peHistory, evHistory, evCurrent,
+    divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, originWHT, peHistory, evHistory, evCurrent, valuationMethods,
     paysDividend, noDividendAt,
     healthPanel, moat, dcf, projection, dgiScore, scoreHistory, insights, roicData, badges, buybacks, ma200,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
@@ -1779,6 +1842,7 @@ export default function CompanyDetailPage(props) {
         {tab === 'valoracion' && (
           <div style={{ display: 'grid', gap: 16 }}>
             <DCFSection dcf={dcf} ticker={ticker} isPremium={isPremium} ma200={ma200} />
+            <ValuationMethodsPanel vm={valuationMethods} currency={currency} price={price} isPremium={isPremium} />
             <MultiplesGrid valuationMetrics={valuationMetrics} isPremium={isPremium} />
             <Card>
               <SectionTitle>Posición en el rango anual</SectionTitle>

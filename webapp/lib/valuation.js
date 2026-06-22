@@ -195,7 +195,7 @@ function growthAndPenalties(data, { discountBase, terminalBase, capHigh, revenue
 
 // ── DCF core / projection ──────────────────────────────────────────────────
 
-function dcfProjection({ base, g1, g2, gT, r, stage2 = 5 }) {
+export function dcfProjection({ base, g1, g2, gT, r, stage2 = 5 }) {
   const years = []
   let cf = base, totalPV = 0
   for (let i = 1; i <= 5; i++) { cf *= (1 + g1); const pv = cf / Math.pow(1 + r, i);     totalPV += pv; years.push({ year: i, cf, pv }) }
