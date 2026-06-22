@@ -38,7 +38,7 @@ export default function WatchlistEyeButton({ ticker, isAuthed = false, initialFo
   return (
     <button
       onClick={toggle}
-      title={following ? 'Siguiendo — clic para dejar de seguir' : 'Seguir empresa'}
+      title={following ? 'En tu watchlist — clic para quitarla' : 'Añadir a tu watchlist (seguir)'}
       style={{
         background: following ? 'rgba(99,102,241,0.16)' : 'transparent',
         border: '1px solid ' + (following ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.12)'),

@@ -12,7 +12,6 @@ import ScoreHistory from '@/components/empresa/ScoreHistory'
 import LocalPrice from '@/components/LocalPrice'
 import HealthTwoLevel, { Semaforo } from '@/components/empresa/HealthPanel'
 import InsiderCard from '@/components/empresa/InsiderCard'
-import CompanyNews from '@/components/news/CompanyNews'
 import { recomputeValuation } from '@/lib/valuation'
 import { dividendTierInfo, dividendTrend, dividendTrendBadges } from '@/lib/helpers'
 import { project10y, paybackYear, netYield, getWHT, effectiveDivTax } from '@/lib/screener'
@@ -335,6 +334,33 @@ function DividendBanner({ state, date }) {
           <p style={{ fontSize: 14, fontWeight: 700, color: c.color, marginBottom: 4 }}>{c.title}</p>
           <p style={{ fontSize: 12, color: '#8090a8', lineHeight: 1.5 }}>{c.sub}</p>
         </div>
+      </div>
+    </Card>
+  )
+}
+
+// Bloque compacto y prominente del próximo dividendo (resumen, visible en free).
+function NextDividendCard({ nextExDate, payments, currency, onSeeAll }) {
+  const exLabel = fmtDateEs(nextExDate)
+  const nextPay = payments?.[0]
+  if (!exLabel && !nextPay?.payLabel) return null
+  const Item = ({ label, value, sub, color }) => (
+    <div style={{ minWidth: 110 }}>
+      <p style={{ fontSize: 10.5, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>{label}</p>
+      <p style={{ fontSize: 16, fontWeight: 800, color: color || '#e6ebf5', lineHeight: 1.1 }}>{value}</p>
+      {sub && <p style={{ fontSize: 10.5, color: '#6b7693', marginTop: 2 }}>{sub}</p>}
+    </div>
+  )
+  return (
+    <Card>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <SectionTitle>Próximo dividendo</SectionTitle>
+        {onSeeAll && <button onClick={onSeeAll} style={{ fontSize: 11, color: '#818cf8', background: 'none', border: 'none', cursor: 'pointer' }}>Ver detalle →</button>}
+      </div>
+      <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap' }}>
+        {exLabel && <Item label="Fecha ex-dividendo" value={exLabel} color="#34d399" />}
+        {nextPay?.payLabel && <Item label="Fecha de pago" value={nextPay.payLabel} sub={nextPay.confirmed ? 'confirmado' : 'estimado'} />}
+        {nextPay?.gross != null && <Item label={`Importe/acción (${currency})`} value={fmt(nextPay.gross, 3)} sub={nextPay.net != null ? `neto ~${fmt(nextPay.net, 3)}` : null} />}
       </div>
     </Card>
   )
@@ -1633,6 +1659,7 @@ export default function CompanyDetailPage(props) {
           <div className="cdp-2col">
             <div style={{ display: 'grid', gap: 16, alignContent: 'start' }}>
               <Card><PriceChart ticker={ticker} currency={currency} avgCost={avgCost} divHistory={divHistory} /></Card>
+              {divHistory?.length > 0 && <DividendHistorySection divHistory={divHistory} streak={streak} cagr={cagr} currency={currency} />}
               <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} compact />
               <Card>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -1644,6 +1671,7 @@ export default function CompanyDetailPage(props) {
             </div>
 
             <div style={{ display: 'grid', gap: 16, alignContent: 'start' }}>
+              {paysDividend !== false && <NextDividendCard nextExDate={nextExDate} payments={upcomingPayments} currency={currency} onSeeAll={() => goTab('dividendo')} />}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                 <MiniMetric label="Yield" value={yld != null ? fmtPct(yld) : '—'} sub={yldNet != null ? `Neto ~${yldNet.toFixed(2)}%` : null} color="#34d399" />
                 <MiniMetric label="CAGR div. 5a" value={cagr != null ? (cagr * 100).toFixed(1) + '%' : '—'} />
@@ -1668,9 +1696,6 @@ export default function CompanyDetailPage(props) {
 
               <StrengthsRisks insights={insights} onSeeAll={() => goTab('salud')} />
             </div>
-          </div>
-          <div style={{ marginTop: 16 }}>
-            <CompanyNews ticker={ticker} country={country} name={name} />
           </div>
           </>
         )}

@@ -140,10 +140,14 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
       <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Posiciones</p>
       {enriched.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <p style={{ color: '#4a5270', fontSize: 14, marginBottom: 16 }}>Añade tu primera posición o importa tus movimientos de ING para empezar</p>
+          <p style={{ color: '#4a5270', fontSize: 14, marginBottom: 8 }}>Empieza tu cartera DGI</p>
+          <p style={{ color: '#6b7693', fontSize: 12.5, marginBottom: 18, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.5 }}>¿No sabes por dónde empezar? Responde 4 preguntas y te proponemos una cartera inicial de empresas DGI a tu medida.</p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/construir-cartera" style={{ padding: '10px 20px', background: 'rgba(52,211,153,0.85)', borderRadius: 8, color: '#06281d', fontSize: 13, fontWeight: 800, textDecoration: 'none' }}>
+              🧭 Construir mi cartera desde cero
+            </Link>
             <Link href="/cartera/nueva-posicion" style={{ padding: '10px 20px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-              Añadir primera posición
+              Añadir posición
             </Link>
             <Link href="/cartera/importar" style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#c8d0e0', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
               ⭳ Importar de ING

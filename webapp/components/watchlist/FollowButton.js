@@ -78,17 +78,18 @@ export default function FollowButton({ ticker, name, currency = 'EUR', isAuthed 
 
   return (
     <>
-      <button onClick={handleClick} style={btnStyle}>
-        {following ? '👁 Siguiendo' : '👁 Seguir'}
+      <button onClick={handleClick} style={btnStyle} title={following ? 'En tu watchlist' : 'Añadir a tu watchlist con precio/yield objetivo y alertas'}>
+        {following ? '👁 En watchlist' : '👁 Seguir'}
       </button>
 
       {open && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', padding: 16 }} onClick={() => setOpen(false)}>
           <div style={{ ...CARD, minWidth: 300, maxWidth: 420, width: '100%' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-              <p style={{ fontWeight: 700, color: '#c8d0e0', fontSize: 15 }}>{following ? 'Editar seguimiento' : 'Seguir'} {name}</p>
+              <p style={{ fontWeight: 700, color: '#c8d0e0', fontSize: 15 }}>{following ? 'Editar en watchlist' : 'Añadir a watchlist'} · {name}</p>
               <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#4a5270', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
             </div>
+            <p style={{ fontSize: 11.5, color: '#6b7693', marginTop: -6, marginBottom: 12 }}>Seguir una empresa = añadirla a tu watchlist. Define precio o yield objetivo y te avisamos cuando los alcance.</p>
             <form onSubmit={save} style={{ display: 'grid', gap: 14 }}>
               <div>
                 <label style={{ fontSize: 11, color: '#4a5270', marginBottom: 4, display: 'block' }}>Precio objetivo ({currency})</label>

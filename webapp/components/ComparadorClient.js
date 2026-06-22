@@ -434,8 +434,25 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
       {loading && <p style={{ fontSize: 13, color: '#4a5270', textAlign: 'center', padding: 20 }}>Cargando datos…</p>}
 
       {companies.length === 0 && !loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#4a5270' }}>
-          <p style={{ fontSize: 14 }}>Busca y selecciona empresas para compararlas lado a lado.</p>
+        <div style={{ textAlign: 'center', padding: '40px 20px 50px' }}>
+          <p style={{ fontSize: 14, color: '#8090a8', marginBottom: 4 }}>Busca empresas arriba para compararlas lado a lado…</p>
+          <p style={{ fontSize: 12.5, color: '#4a5270', marginBottom: 22 }}>o empieza por una de estas comparativas típicas:</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', maxWidth: 680, margin: '0 auto' }}>
+            {[
+              { label: '👑 Aristócratas defensivos', t: ['KO', 'PG', 'JNJ', 'PEP', 'CL'] },
+              { label: '💳 Gigantes del pago', t: ['V', 'MA', 'AXP'] },
+              { label: '💊 Grandes farmacéuticas', t: ['LLY', 'MRK', 'ABBV', 'NOVN.SW', 'PFE'] },
+              { label: '🛢️ Petroleras integradas', t: ['XOM', 'CVX', 'SHEL.L', 'TTE.PA', 'BP.L'] },
+              { label: '👜 Lujo europeo', t: ['MC.PA', 'RACE.MI', 'CFR.SS', 'KER.PA'] },
+              { label: '💻 Tecnología con dividendo', t: ['MSFT', 'AAPL', 'TXN', 'AVGO', 'CSCO'] },
+            ].map(p => (
+              <button key={p.label} onClick={() => reload(p.t.slice(0, maxCompanies))} style={{
+                fontSize: 12.5, fontWeight: 700, color: '#c8d0e0', background: 'rgba(99,102,241,0.1)',
+                border: '1px solid rgba(99,102,241,0.25)', borderRadius: 9, padding: '9px 14px', cursor: 'pointer',
+              }}>{p.label}</button>
+            ))}
+          </div>
+          {!isPremium && <p style={{ fontSize: 11, color: '#4a5270', marginTop: 18 }}>En el plan gratuito se comparan 2 empresas; Premium permite hasta 5.</p>}
         </div>
       ) : companies.length > 0 && (
         <div ref={captureRef}>
