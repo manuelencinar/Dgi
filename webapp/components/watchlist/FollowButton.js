@@ -32,6 +32,7 @@ export default function FollowButton({ ticker, name, currency = 'EUR', isAuthed 
   const [notes, setNotes] = useState(entry?.notes ?? '')
   const [alertPrice, setAlertPrice] = useState(!!entry?.alert_price_active)
   const [alertYield, setAlertYield] = useState(!!entry?.alert_yield_active)
+  const [alertBuyzone, setAlertBuyzone] = useState(!!entry?.alert_buyzone_active)
 
   const handleClick = () => {
     if (!isAuthed) {
@@ -48,6 +49,7 @@ export default function FollowButton({ ticker, name, currency = 'EUR', isAuthed 
     const payload = {
       ticker, target_price: targetPrice, target_yield: targetYield, notes,
       alert_price_active: alertPrice, alert_yield_active: alertYield,
+      alert_buyzone_active: alertBuyzone,
     }
     const res = await fetch('/api/watchlist', {
       method: following ? 'PUT' : 'POST',
@@ -107,7 +109,11 @@ export default function FollowButton({ ticker, name, currency = 'EUR', isAuthed 
               </div>
               <Toggle label="Activar alerta de precio" value={alertPrice} onChange={setAlertPrice} />
               <Toggle label="Activar alerta de yield" value={alertYield} onChange={setAlertYield} />
-              {!isPremium && (alertPrice || alertYield) && (
+              <div>
+                <Toggle label="Avísame cuando sea COMPRA" value={alertBuyzone} onChange={setAlertBuyzone} />
+                <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 4 }}>Sin fijar precio: te avisamos cuando entre en zona de compra por su Score DGI y margen de seguridad</p>
+              </div>
+              {!isPremium && (alertPrice || alertYield || alertBuyzone) && (
                 <p style={{ fontSize: 10, color: '#fbbf24' }}>Las alertas por email son Premium. Verás el aviso en la campana de notificaciones igualmente.</p>
               )}
               {err && <p style={{ fontSize: 11, color: '#f87171' }}>{err}</p>}

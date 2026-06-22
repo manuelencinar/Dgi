@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-const ICON = { watchlist_price: '🎯', watchlist_yield: '🎯', dividend_cut: '⚠️', dividend_increase: '📈', recurring: '💰' }
+const ICON = { watchlist_price: '🎯', watchlist_yield: '🎯', watchlist_buyzone: '🟢', dividend_cut: '⚠️', dividend_increase: '📈', recurring: '💰' }
 
 function timeAgo(date) {
   const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000)

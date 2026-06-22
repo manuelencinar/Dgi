@@ -28,6 +28,7 @@ function pickFields(body) {
   if (body.notes !== undefined) out.notes = body.notes ? String(body.notes).slice(0, 500) : null
   if (body.alert_price_active !== undefined) out.alert_price_active = !!body.alert_price_active
   if (body.alert_yield_active !== undefined) out.alert_yield_active = !!body.alert_yield_active
+  if (body.alert_buyzone_active !== undefined) out.alert_buyzone_active = !!body.alert_buyzone_active
   return out
 }
 
@@ -80,6 +81,7 @@ export async function PUT(request) {
   // Si cambian objetivos o se desactiva una alerta, reseteamos el estado anti-spam.
   if (fields.target_price !== undefined || fields.alert_price_active === false) fields.alert_price_triggered = false
   if (fields.target_yield !== undefined || fields.alert_yield_active === false) fields.alert_yield_triggered = false
+  if (fields.alert_buyzone_active === false) fields.alert_buyzone_triggered = false
 
   const { data, error } = await supabase.from('watchlist').update(fields).eq('user_id', user.id).eq('ticker', ticker).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

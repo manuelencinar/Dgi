@@ -8,6 +8,9 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const ADMIN_EMAIL = 'vayaebookk@gmail.com'
+// Umbrales de la alerta "zona de compra" (alineados con el gate de buyZoneReason).
+const BUYZONE_MIN_SCORE = 6.5
+const BUYZONE_MIN_MOS = 0.20
 
 function sb() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -32,20 +35,24 @@ export async function GET(request) {
 
   // 1. Entradas con alguna alerta activa.
   const { data: rows } = await client.from('watchlist').select('*')
-    .or('alert_price_active.eq.true,alert_yield_active.eq.true')
+    .or('alert_price_active.eq.true,alert_yield_active.eq.true,alert_buyzone_active.eq.true')
   if (!rows?.length) return NextResponse.json({ checked: 0, fired: 0, message: 'Sin alertas activas' })
 
   const tickers = [...new Set(rows.map(r => r.ticker))]
 
-  // 2. Precio actual (último cierre de daily_prices) + fundamentales (dps, valor intrínseco).
+  // 2. Precio actual (último cierre de daily_prices) + fundamentales (dps, valor intrínseco)
+  //    + último Score DGI (score_history) para la alerta "zona de compra".
   const cutoff = new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10)
-  const [{ data: priceRows }, { data: funds }] = await Promise.all([
+  const [{ data: priceRows }, { data: funds }, { data: scoreRows }] = await Promise.all([
     client.from('daily_prices').select('ticker, close_price, date').in('ticker', tickers).gte('date', cutoff).order('date', { ascending: false }),
     client.from('company_fundamentals').select('ticker, dps, current_price, intrinsic_value').in('ticker', tickers),
+    client.from('score_history').select('ticker, score, date').in('ticker', tickers).order('date', { ascending: false }),
   ])
   const priceMap = {}
   for (const p of priceRows || []) if (!(p.ticker in priceMap)) priceMap[p.ticker] = Number(p.close_price)
   const fundMap = Object.fromEntries((funds || []).map(f => [f.ticker, f]))
+  const scoreMap = {}
+  for (const s of scoreRows || []) if (!(s.ticker in scoreMap)) scoreMap[s.ticker] = Number(s.score)
 
   // 3. Plan de cada usuario (para decidir si se envía email).
   const userIds = [...new Set(rows.map(r => r.user_id))]
@@ -98,6 +105,25 @@ export async function GET(request) {
       }
     }
 
+    // ── Alerta "zona de compra" (por valoración, sin precio objetivo manual) ──
+    // Entra en zona cuando el Score DGI es bueno Y hay margen de seguridad: el
+    // usuario no tiene que adivinar a qué precio está barata.
+    if (r.alert_buyzone_active) {
+      const score = scoreMap[r.ticker]
+      const iv = f?.intrinsic_value != null ? Number(f.intrinsic_value) : null
+      const mos = iv != null && price > 0 ? (iv - price) / price : null
+      const inZone = score != null && score >= BUYZONE_MIN_SCORE && mos != null && mos >= BUYZONE_MIN_MOS
+      if (inZone && !r.alert_buyzone_triggered) {
+        await fireAlert(client, r, 'watchlist_buyzone', {
+          price, currency, score, mos: mos * 100, intrinsic: iv,
+          isPremium: !!premiumOf[r.user_id],
+        })
+        patch.alert_buyzone_triggered = true; fired++
+      } else if (!inZone && r.alert_buyzone_triggered) {
+        patch.alert_buyzone_triggered = false
+      }
+    }
+
     if (Object.keys(patch).length) updates.push(client.from('watchlist').update(patch).eq('id', r.id))
   }
 
@@ -119,7 +145,10 @@ export async function GET(request) {
 async function fireAlert(client, row, type, info) {
   const name = NAME_OF[row.ticker] || row.ticker
   const isPrice = type === 'watchlist_price'
-  const message = isPrice
+  const isBuyzone = type === 'watchlist_buyzone'
+  const message = isBuyzone
+    ? `${name} está en zona de compra: Score DGI ${info.score.toFixed(1)} y margen de seguridad +${info.mos.toFixed(0)}%`
+    : isPrice
     ? `${name} ha llegado a tu precio objetivo (${fmtPx(info.price, info.currency)}, objetivo ${fmtPx(info.target, info.currency)})`
     : `${name} ha alcanzado tu yield objetivo (${info.yld.toFixed(2)}%, objetivo ${Number(info.target).toFixed(2)}%)`
 
@@ -128,6 +157,25 @@ async function fireAlert(client, row, type, info) {
   })
 
   if (!info.isPremium) return // alertas por email solo premium
+
+  if (isBuyzone) {
+    try {
+      const { data: u } = await client.auth.admin.getUserById(row.user_id)
+      const email = u?.user?.email
+      if (!email) return
+      const body = `
+        <p style="color:#c8d0e0;font-size:15px;margin:0 0 16px"><strong style="color:#e0e8f0">${name}</strong> ha entrado en <strong style="color:#34d399">zona de compra</strong>.</p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;color:#c8d0e0">
+          <tr><td style="padding:4px 0;color:#4a5270">Precio actual</td><td align="right" style="padding:4px 0;font-weight:bold">${fmtPx(info.price, info.currency)}</td></tr>
+          <tr><td style="padding:4px 0;color:#4a5270">Score DGI</td><td align="right" style="padding:4px 0;color:#34d399;font-weight:bold">${info.score.toFixed(1)}/10</td></tr>
+          <tr><td style="padding:4px 0;color:#4a5270">Margen de seguridad</td><td align="right" style="padding:4px 0;color:#34d399;font-weight:bold">+${info.mos.toFixed(0)}%</td></tr>
+        </table>
+        ${emailButton(`${APP_URL}/empresa/${encodeURIComponent(row.ticker)}`, 'Ver empresa')}
+        <p style="color:#4a5270;font-size:12px;margin:16px 0 0">Recibes este aviso porque pediste que te avisáramos cuando ${name} fuera una compra. Puedes desactivarlo en tu watchlist.</p>`
+      await sendEmail(email, `🟢 ${row.ticker} está en zona de compra`, emailShell('Zona de compra', body))
+    } catch {}
+    return
+  }
 
   try {
     const { data: u } = await client.auth.admin.getUserById(row.user_id)
