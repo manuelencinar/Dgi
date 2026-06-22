@@ -140,14 +140,37 @@ export function yieldPct(f) {
 }
 
 // Foso económico aproximado a partir de ROIC y margen bruto (rápido, para 2000 empresas).
+// Foso sector-aware (espejo de computeMoat en lib/company-detail.js): banca/seguros
+// por ROE+escala+racha y REITs por escala+rentas+margen+racha (el ROIC/márgenes no
+// aplican ahí). El resto, por ROIC + margen bruto.
 export function deriveMoat(f) {
+  if (!f) return 'none'
+  const sec = (f.sector || '').toLowerCase(), ind = (f.industry || '').toLowerCase()
+  const streak = num(f.div_streak) || 0
+  const isBankIns = sec.includes('financ') || ind.includes('bank') || ind.includes('insur') || ind.includes('capital market') || ind.includes('asset manage')
+  const isReit = ind.includes('reit') || ind.includes('real estate investment') || sec.includes('real estate')
+
+  if (isBankIns) {
+    const roe = num(f.roe), mcap = num(f.market_cap_m); let s = 0
+    if (roe != null) { if (roe > 18) s += 40; else if (roe > 13) s += 28; else if (roe > 10) s += 15 }
+    if (streak >= 20) s += 20; else if (streak >= 10) s += 10
+    if (mcap != null) { if (mcap > 50000) s += 20; else if (mcap > 10000) s += 10 }
+    return s >= 60 ? 'wide' : s >= 35 ? 'narrow' : 'none'
+  }
+  if (isReit) {
+    const mcap = num(f.market_cap_m), revCagr = num(f.revenue_cagr5), opM = num(f.operating_margin); let s = 0
+    if (mcap != null) { if (mcap > 20000) s += 30; else if (mcap > 5000) s += 18 }
+    if (revCagr != null) { if (revCagr > 6) s += 25; else if (revCagr > 3) s += 15; else if (revCagr > 0) s += 6 }
+    if (opM != null) { if (opM > 55) s += 20; else if (opM > 40) s += 10 }
+    if (streak >= 15) s += 20; else if (streak >= 10) s += 12; else if (streak >= 5) s += 6
+    return s >= 60 ? 'wide' : s >= 35 ? 'narrow' : 'none'
+  }
+
   const roic = resolveRoic(f), gm = num(f?.gross_margin)
   let score = 0
   if (roic != null) { if (roic > 20) score += 2; else if (roic > 12) score += 1 }
   if (gm != null)   { if (gm > 50) score += 2; else if (gm > 35) score += 1 }
-  if (score >= 3) return 'wide'
-  if (score >= 2) return 'narrow'
-  return 'none'
+  return score >= 3 ? 'wide' : score >= 2 ? 'narrow' : 'none'
 }
 
 // Señal de erosión del foso: ingresos en declive o márgenes débiles con ROIC bajo.
