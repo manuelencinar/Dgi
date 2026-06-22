@@ -93,7 +93,7 @@ export default function PortfolioEvolution({ isPremium, summary }) {
   // Rentabilidad TOTAL = ganancia latente (precio) + plusvalías realizadas + dividendos
   // cobrados. Recalculada con el latente en vivo para que cuadre con las KPIs.
   const kDividends    = k?.dividendsAllTime ?? 0
-  const kRealized     = k?.realizedYear ?? 0
+  const kRealized     = k?.realizedAllTime ?? 0     // histórico, mismo periodo que dividendos
   const kTotalEUR     = (kLatent ?? 0) + kRealized + kDividends
   const kTotalPct     = kInvested > 0 ? kTotalEUR / kInvested * 100 : (useLive ? null : k?.totalReturnPct)
 
@@ -126,7 +126,7 @@ export default function PortfolioEvolution({ isPremium, summary }) {
             <Kpi label="Dividendos cobrados" value={`+${fmtEUR(kDividends)}`} sub="Renta acumulada" col={GREEN} />
           )}
           {isPremium && hasRealized && (
-            <Kpi label={`Plusvalías realizadas ${year}`} value={(kRealized >= 0 ? '+' : '') + fmtEUR(kRealized)} sub="Ventas del ejercicio" col={kRealized >= 0 ? TEAL : RED} />
+            <Kpi label="Plusvalías realizadas" value={(kRealized >= 0 ? '+' : '') + fmtEUR(kRealized)} sub="Ventas (histórico)" col={kRealized >= 0 ? TEAL : RED} />
           )}
           {isPremium && (
             <Kpi label="Rentabilidad total" value={fmtPct(kTotalPct)} col={kTotalPct >= 0 ? GREEN : RED}

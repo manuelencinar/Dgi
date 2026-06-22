@@ -123,7 +123,7 @@ export async function GET(req) {
     // ── Resultado realizado (ventas) por FIFO ──
     // Para cada venta: proceeds (neto de comisiones) − coste FIFO de las acciones
     // vendidas (con comisiones de compra). Solo cuentan ventas con compra previa.
-    const realizedEvents = (() => {
+    const allRealized = (() => {
       const byTicker = {}
       transactions.forEach(t => { (byTicker[t.ticker] ||= []).push(t) })
       const out = []
@@ -152,10 +152,14 @@ export async function GET(req) {
           }
         }
       }
-      return out.filter(e => new Date(e.date).getFullYear() === year)
+      return out
     })()
+    // Eventos del año seleccionado (para la línea del gráfico) y total histórico
+    // (para las KPIs, que son acumuladas como la ganancia latente).
+    const realizedEvents = allRealized.filter(e => new Date(e.date).getFullYear() === year)
     const realizedAt = monthEnd => realizedEvents.filter(e => e.date <= monthEnd).reduce((s, e) => s + e.gain, 0)
     const realizedYear = realizedEvents.reduce((s, e) => s + e.gain, 0)
+    const realizedAllTime = allRealized.reduce((s, e) => s + e.gain, 0)
 
     let usedFallback = false
     const maxMonth = year < nowYear ? 12 : today.getMonth() + 1
@@ -213,8 +217,9 @@ export async function GET(req) {
     const dividendsAllTime = dividends.reduce((s, d) => s + n(d.amount), 0)
     const latentGain = currentValue - investedTotal
     const latentPct = investedTotal > 0 ? latentGain / investedTotal * 100 : null
-    // Rentabilidad total = latente + resultado realizado del año + dividendos
-    const totalReturnPct = investedTotal > 0 ? (latentGain + realizedYear + dividendsAllTime) / investedTotal * 100 : null
+    // Rentabilidad total (acumulada): latente + plusvalías realizadas históricas +
+    // dividendos cobrados históricos. Los tres del mismo periodo (todo el histórico).
+    const totalReturnPct = investedTotal > 0 ? (latentGain + realizedAllTime + dividendsAllTime) / investedTotal * 100 : null
 
     // Aportación neta del ejercicio (compras − ingresos por ventas). Sirve para
     // distinguir el crecimiento del patrimonio por DINERO NUEVO del rendimiento.
@@ -237,8 +242,8 @@ export async function GET(req) {
 
     return NextResponse.json({
       months, years,
-      kpis: { currentValue: Math.round(currentValue), investedTotal: Math.round(investedTotal), latentGain: Math.round(latentGain), latentPct, totalReturnPct, dividendsAllTime: Math.round(dividendsAllTime), realizedYear: Math.round(realizedYear), contributedYear: Math.round(contributedYear), beatsSP500, sp500Pct },
-      flags: { hasDividends: dividends.length > 0, hasRealized: realizedEvents.length > 0, usedFallback, empty: false },
+      kpis: { currentValue: Math.round(currentValue), investedTotal: Math.round(investedTotal), latentGain: Math.round(latentGain), latentPct, totalReturnPct, dividendsAllTime: Math.round(dividendsAllTime), realizedYear: Math.round(realizedYear), realizedAllTime: Math.round(realizedAllTime), contributedYear: Math.round(contributedYear), beatsSP500, sp500Pct },
+      flags: { hasDividends: dividends.length > 0, hasRealized: allRealized.length > 0, usedFallback, empty: false },
     })
   } catch (e) {
     return NextResponse.json({ error: String(e?.message || e), months: [], kpis: null, flags: {} }, { status: 200 })
