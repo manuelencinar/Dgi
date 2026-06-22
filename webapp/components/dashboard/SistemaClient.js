@@ -1,6 +1,57 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Card, PageTitle, SectionTitle, StatusDot, fmtDateTime } from '@/components/dashboard/ui'
+
+const HEALTH_COL = { ok: '#34d399', warn: '#fbbf24', stale: '#f87171' }
+const HEALTH_TXT = { ok: 'al día', warn: 'con retraso', stale: 'obsoleto' }
+function ageLabel(age) {
+  if (age == null) return 'sin datos'
+  if (age === 0) return 'hoy'
+  if (age === 1) return 'hace 1 día'
+  return `hace ${age} días`
+}
+
+// Tarjeta de frescura de cada fuente de datos. Comprueba cada benchmark por
+// separado (el indicador global no detecta una serie congelada, p.ej. ^GSPC).
+function DataHealthCard() {
+  const [health, setHealth] = useState(null)
+  const [err, setErr] = useState(null)
+  useEffect(() => {
+    fetch('/api/admin/data-health').then(r => r.json())
+      .then(d => d.error ? setErr(d.error) : setHealth(d))
+      .catch(e => setErr(String(e)))
+  }, [])
+
+  const Row = ({ label, status, age }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: 13 }}>
+      <span style={{ color: '#c8d0e0', display: 'flex', alignItems: 'center', gap: 7 }}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: HEALTH_COL[status] || '#4a5270', flexShrink: 0 }} />
+        {label}
+      </span>
+      <span style={{ color: HEALTH_COL[status] || '#4a5270', fontWeight: 600 }}>{ageLabel(age)} · {HEALTH_TXT[status] || '—'}</span>
+    </div>
+  )
+
+  return (
+    <Card style={{ marginBottom: 16 }}>
+      <SectionTitle>Salud de los datos</SectionTitle>
+      {err && <p style={{ fontSize: 13, color: '#f87171' }}>{err}</p>}
+      {!health && !err && <p style={{ fontSize: 13, color: '#4a5270' }}>Comprobando…</p>}
+      {health && (
+        <div>
+          {health.sources.map(s => <Row key={s.key} label={s.label} status={s.status} age={s.age} />)}
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '14px 0 4px' }}>Índices benchmark</p>
+          {health.benchmarks.map(b => <Row key={b.ticker} label={b.ticker} status={b.status} age={b.age} />)}
+          {health.worst !== 'ok' && (
+            <p style={{ fontSize: 12, color: HEALTH_COL[health.worst], marginTop: 12 }}>
+              {health.worst === 'stale' ? '⚠️ Hay datos obsoletos. Lanza "Actualizar precios ahora" o revisa el workflow.' : 'Algún dato va con retraso; se pondrá al día en el próximo run.'}
+            </p>
+          )}
+        </div>
+      )}
+    </Card>
+  )
+}
 
 function downloadCSV(filename, rows) {
   const csv = rows.map(r => r.map(c => {
@@ -63,6 +114,8 @@ export default function SistemaClient({ pingMs, pingOk, lastRun, logs, nextRun }
   return (
     <div style={{ maxWidth: 1100 }}>
       <PageTitle sub="Logs y estado del sistema">Sistema</PageTitle>
+
+      <DataHealthCard />
 
       {/* Estado actual */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 16, marginBottom: 16 }}>
