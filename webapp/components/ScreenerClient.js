@@ -2,7 +2,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { getCountry, streakBadge, dividendTierInfo, debtEbitdaIsArtifact } from '@/lib/helpers'
-import { project10y, paybackYear, getWHT, rentaScore, netYieldOf, buyZoneReason } from '@/lib/screener'
+import { project10y, paybackYear, getWHT, rentaScore, netYieldOf, buyZoneReason, goldenRules } from '@/lib/screener'
 import WatchlistEyeButton from '@/components/watchlist/WatchlistEyeButton'
 import PriceAlertButton from '@/components/watchlist/PriceAlertButton'
 
@@ -32,7 +32,7 @@ const INIT = {
   roic: 0, opm: 0, rev: 'all', moat: 'all',
   debt: 99, icov: 0,
   mos: -999, pe: 999, ev: 999, cap: 'all',
-  improving: false, improvingType: 'any',
+  improving: false, improvingType: 'any', golden: false,
 }
 
 const PAGE = 50
@@ -243,6 +243,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
     return companies.filter(co => {
       if (q && !co.n.toLowerCase().includes(q) && !co.t.toLowerCase().includes(q)) return false
       if (filters.score > 0 && (co.sc == null || co.sc < filters.score)) return false
+      if (filters.golden && !goldenRules(co).pass) return false
       if (filters.zona !== 'all' && co.cont !== filters.zona) return false
       if (filters.cur !== 'all' && co.cur !== filters.cur) return false
       if (filters.sector !== 'all' && co.s !== filters.sector) return false
@@ -323,6 +324,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
     const chips = []
     const add = (k, label) => chips.push({ k, label })
     if (filters.score > 0) add('score', `Score ≥${filters.score}`)
+    if (filters.golden) add('golden', '🏅 5 reglas de oro')
     if (filters.zona !== 'all') add('zona', filters.zona)
     if (filters.cur !== 'all') add('cur', `Divisa ${filters.cur}`)
     if (filters.sector !== 'all') add('sector', filters.sector)
@@ -394,6 +396,22 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
         <p style={{ fontSize: 11.5, color: '#4a5270', marginTop: 7, lineHeight: 1.5 }}>
           {MODES.find(o => o.m === mode)?.d}
         </p>
+      </div>
+
+      {/* Filtro destacado: Las 5 reglas de oro (Pat Dorsey) */}
+      <div style={{ marginBottom: 12 }}>
+        <button onClick={() => set('golden', !filters.golden)} title="Pat Dorsey: foso real y estable, capital bien asignado, finanzas sólidas y precio razonable" style={{
+          fontSize: 13, fontWeight: 800, padding: '9px 16px', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit',
+          border: '1px solid ' + (filters.golden ? 'rgba(251,191,36,0.6)' : 'rgba(255,255,255,0.1)'),
+          background: filters.golden ? 'rgba(251,191,36,0.15)' : 'transparent',
+          color: filters.golden ? '#fbbf24' : '#8090a8',
+        }}>🏅 Las 5 reglas de oro</button>
+        {filters.golden && (
+          <p style={{ fontSize: 11.5, color: '#8090a8', marginTop: 8, lineHeight: 1.6, maxWidth: 720 }}>
+            Solo empresas que cumplen <b style={{ color: '#fbbf24' }}>las 5 reglas de Pat Dorsey</b>:
+            (1) <b>foso económico real</b> · (2) <b>foso estable</b>, no erosionándose · (3) <b>capital bien asignado</b> (payout contenido, sin financiar el dividendo con deuda) · (4) <b>finanzas sólidas</b> (ROIC ≥12%, deuda manejable, el beneficio se convierte en caja) · (5) <b>precio razonable</b> con margen de seguridad. Un filtro exigente: aparecerán pocas, pero de gran calidad.
+          </p>
+        )}
       </div>
 
       {/* Buscador + ordenación */}

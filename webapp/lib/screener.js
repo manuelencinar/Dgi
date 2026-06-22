@@ -163,6 +163,28 @@ const SECTOR_KEY = { banco: 'banco', aseguradora: 'aseguradora', reit: 'reit', b
 
 // Farmacéutica/biotec: sector salud + industria de medicamentos/biotecnología
 // (excluye dispositivos médicos, donde la intensidad de I+D no es la misma señal).
+// Las 5 reglas de oro (Pat Dorsey): solo negocios con foso real y estable, capital
+// bien asignado, finanzas sólidas y precio razonable. Mapeo a los datos del screener.
+// Devuelve { pass, moat, stable, capital, finances, price } (cada regla true/false).
+export function goldenRules(co) {
+  if (!co) return { pass: false }
+  // 1. ¿Foso económico real? (ancho o estrecho, no "sin foso")
+  const moat = co.moat === 'wide' || co.moat === 'narrow'
+  // 2. ¿Foso estable, no erosionándose?
+  const stable = !co.ero
+  // 3. Dirección / asignación de capital: ni sobre-distribuye ni financia el
+  //    dividendo con deuda (payout contenido y deuda no excesiva).
+  const capital = (co.payout == null || co.payout < 80) && (co.debt == null || co.debt < 3.5)
+  // 4. Finanzas sólidas: ROIC alto y sostenido (≥12%), deuda manejable y el
+  //    beneficio se convierte en caja (payout sobre FCF razonable).
+  const finances = !co.roicNA && co.roic != null && co.roic >= 12 &&
+    (co.debt == null || co.debt < 3) && (co.payout == null || co.payout < 90)
+  // 5. Precio razonable con margen de seguridad (no ganga extrema, pero sin sobrepagar)
+  const price = co.mos != null && co.mos > 0 && !co.mosUnreliable
+  const pass = moat && stable && capital && finances && price && co.pays !== false
+  return { pass, moat, stable, capital, finances, price }
+}
+
 export function isPharmaCo(sector, industry) {
   if ((sector || '') !== 'Healthcare') return false
   return /drug manufacturers|biotech|pharmaceutical|therapeut/i.test(industry || '')
