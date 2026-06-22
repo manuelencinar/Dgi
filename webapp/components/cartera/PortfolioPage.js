@@ -251,11 +251,15 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 700 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 860 }}>
             <thead>
               <tr>
-                {['Empresa','Acciones','P. Medio','Coste real','P. Actual','Valor','Rentab.','YoC','Yield','Renta/año',''].map(h => (
-                  <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: '#4a5270', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap' }} title={h === 'Coste real' ? 'Coste por acción incluyendo comisiones de compra' : undefined}>{h}</th>
+                {['Empresa','Acciones','P. Medio','Coste real','P. Actual','Valor','Rentab.','YoC','Yield','Renta/año','Cobrado','Coste neto',''].map(h => (
+                  <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: '#4a5270', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap' }} title={
+                    h === 'Coste real' ? 'Coste por acción incluyendo comisiones de compra'
+                    : h === 'Cobrado' ? 'Dividendos netos cobrados de esta posición (acumulado)'
+                    : h === 'Coste neto' ? 'Coste de compra menos dividendos cobrados. Debajo, el YoC real = renta anual / coste neto.'
+                    : undefined}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -288,6 +292,15 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
                   <td style={{ padding: '8px', textAlign: 'right', color: '#818cf8', borderBottom: '1px solid rgba(255,255,255,0.04)' }} title="Yield on cost sobre el coste real (con comisiones)">{(p.yieldOnCostReal ?? p.yieldOnCost) != null ? (p.yieldOnCostReal ?? p.yieldOnCost).toFixed(2) + '%' : '—'}</td>
                   <td style={{ padding: '8px', textAlign: 'right', color: '#34d399', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{p.currentYield != null ? p.currentYield.toFixed(2) + '%' : '—'}</td>
                   <td style={{ padding: '8px', textAlign: 'right', color: '#fbbf24', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{p.annualIncomeEUR != null ? fmtEUR(p.annualIncomeEUR) : '—'}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: p.dividendsCollectedEUR > 0 ? '#34d399' : '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{p.dividendsCollectedEUR > 0 ? fmtEUR(p.dividendsCollectedEUR) : '—'}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.04)' }} title={p.dividendsCollectedEUR > 0 ? `Compra ${fmtEUR(p.costEUR)} − dividendos ${fmtEUR(p.dividendsCollectedEUR)}` : undefined}>
+                    {p.netCostEUR != null ? (
+                      <div>
+                        <span style={{ color: p.netCostEUR <= 0 ? '#34d399' : '#c8d0e0', fontWeight: 700 }}>{fmtEUR(Math.max(0, p.netCostEUR))}</span>
+                        <p style={{ fontSize: 10, color: '#818cf8' }}>{p.yoCNet == null ? '' : p.yoCNet === Infinity ? 'YoC ✓ recuperada' : `YoC ${p.yoCNet.toFixed(2)}%`}</p>
+                      </div>
+                    ) : '—'}
+                  </td>
                   <td style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.04)', whiteSpace: 'nowrap' }}>
                     <button onClick={() => onEdit(p)} title="Editar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#818cf8', fontSize: 14, padding: '2px 4px' }}>✏</button>
                     <button onClick={() => onDividend(p)} title="Registrar dividendo" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#34d399', fontSize: 14, padding: '2px 4px' }}>$</button>
@@ -608,9 +621,10 @@ export default function PortfolioPage({ isPremium }) {
     const { data: { user } } = await sb.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    const [{ data: positions }, { data: txs }] = await Promise.all([
+    const [{ data: positions }, { data: txs }, { data: divsRec }] = await Promise.all([
       sb.from('positions').select('*').eq('user_id', user.id),
       sb.from('transactions').select('*').eq('user_id', user.id),
+      sb.from('dividends_received').select('ticker, amount, amount_net').eq('user_id', user.id),
     ])
     if (!positions?.length) { setEnriched([]); setLoading(false); return }
 
@@ -619,6 +633,14 @@ export default function PortfolioPage({ isPremium }) {
     ;(txs || []).forEach(t => {
       if (t.type === 'sell') return
       commByTicker[t.ticker] = (commByTicker[t.ticker] || 0) + (Number(t.commission) || 0)
+    })
+
+    // Dividendos NETOS cobrados acumulados por ticker (en EUR, como el resto de la
+    // cartera). Sirven para el coste neto efectivo = coste de compra − cobrado.
+    const divByTicker = {}
+    ;(divsRec || []).forEach(d => {
+      const v = Number(d.amount_net ?? d.amount) || 0
+      divByTicker[d.ticker] = (divByTicker[d.ticker] || 0) + v
     })
 
     const stockTickers = [...new Set(positions.filter(p => (p.asset_type || 'stock') === 'stock').map(p => p.ticker))]
@@ -661,9 +683,18 @@ export default function PortfolioPage({ isPremium }) {
       const shares = Number(p.shares) || 0
       const avgCostReal = shares > 0 ? (Number(p.avg_cost) * shares + comm) / shares : p.avg_cost
       const yieldOnCostReal = (avgCostReal > 0 && p.dps != null) ? p.dps / avgCostReal * 100 : null
+      // Coste neto efectivo = coste de compra (EUR) − dividendos netos cobrados.
+      // YoC real = renta anual / coste neto (la rentabilidad sobre lo que de verdad
+      // sigues teniendo en riesgo una vez recuperados dividendos).
+      const dividendsCollectedEUR = divByTicker[p.ticker] || 0
+      const netCostEUR = p.costEUR != null ? p.costEUR - dividendsCollectedEUR : null
+      const yoCNet = (netCostEUR == null || p.annualIncomeEUR == null) ? null
+        : netCostEUR <= 0 ? Infinity
+        : p.annualIncomeEUR / netCostEUR * 100
       const f = fundMap[p.ticker]
       return {
         ...p, buyCommission: comm, avgCostReal, yieldOnCostReal,
+        dividendsCollectedEUR, netCostEUR, yoCNet,
         div_cagr5: p.div_cagr5 ?? f?.div_cagr5 ?? null,
         divG1y: lastDivGrowth(f?.div_history),
       }
