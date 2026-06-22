@@ -128,7 +128,7 @@ function IncomeProjectionCard({ enriched, taxRate, isPremium }) {
   const proj = useMemo(() => enriched.length ? projectIncome(enriched, { horizon: 10, taxRate }) : null, [enriched, taxRate])
   const growth = useMemo(() => calcDividendGrowth(enriched), [enriched])
   const yr0 = new Date().getFullYear()
-  const fwdData = (proj?.base || []).map(d => ({ year: String(yr0 + d.year - 1), income: d.income }))
+  const fwdData = (proj?.base || []).map(d => ({ year: String(yr0 + d.year - 1), income: d.net }))
 
   // Histórico cobrado por año (para BWD) — se carga al pulsar Pasado.
   useEffect(() => {
@@ -136,10 +136,10 @@ function IncomeProjectionCard({ enriched, taxRate, isPremium }) {
     let cancel = false
     sb.auth.getUser().then(({ data: { user } }) => {
       if (!user) { setReceived([]); return }
-      return sb.from('dividends_received').select('amount, date').eq('user_id', user.id).then(({ data }) => {
+      return sb.from('dividends_received').select('amount, amount_net, date').eq('user_id', user.id).then(({ data }) => {
         if (cancel) return
         const byYear = {}
-        for (const d of data || []) { const y = d.date ? String(d.date).slice(0, 4) : null; if (y && d.amount != null) byYear[y] = (byYear[y] || 0) + Number(d.amount) }
+        for (const d of data || []) { const y = d.date ? String(d.date).slice(0, 4) : null; const net = d.amount_net ?? d.amount; if (y && net != null) byYear[y] = (byYear[y] || 0) + Number(net) }
         setReceived(Object.entries(byYear).sort((a, b) => a[0] < b[0] ? -1 : 1).map(([year, income]) => ({ year, income: Math.round(income) })))
       })
     })
@@ -167,7 +167,7 @@ function IncomeProjectionCard({ enriched, taxRate, isPremium }) {
   return (
     <div style={{ ...CARD, marginBottom: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Renta anual por dividendos, €</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Renta anual neta por dividendos, €</p>
         <div style={{ display: 'flex', gap: 6 }}>
           <TogBtn k="bwd" label="Pasado" />
           <TogBtn k="fwd" label="Futuro" />
@@ -190,7 +190,7 @@ function IncomeProjectionCard({ enriched, taxRate, isPremium }) {
       )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 2, marginBottom: 14 }}>
         <span style={{ width: 11, height: 11, background: '#e2e8f5', borderRadius: 2 }} />
-        <span style={{ fontSize: 11, color: '#8090a8' }}>{legend}{dir === 'fwd' ? ' (escenario base, CAGR real de cada empresa)' : ''}</span>
+        <span style={{ fontSize: 11, color: '#8090a8' }}>{legend} (neto){dir === 'fwd' ? ' · escenario base, CAGR real de cada empresa' : ''}</span>
         <Link href="/cartera/proyeccion" style={{ fontSize: 11, color: '#818cf8', textDecoration: 'none', marginLeft: 'auto' }}>Detalle y escenarios →</Link>
       </div>
 
