@@ -771,7 +771,7 @@ export default function PortfolioPage({ isPremium }) {
       {enriched.length > 0 && <IncomeProjectionCard enriched={enriched} taxRate={destWHT} isPremium={isPremium} />}
 
       {/* Evolución del patrimonio — debajo del resumen, antes de las posiciones */}
-      {enriched.length > 0 && <PortfolioEvolution isPremium={isPremium} />}
+      {enriched.length > 0 && <PortfolioEvolution isPremium={isPremium} summary={summary} />}
 
       {/* Module 1: Score DGI de la cartera con benchmark */}
       {enriched.length > 0 && <PortfolioDGIScore enriched={enriched} isPremium={isPremium} />}

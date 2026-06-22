@@ -10,7 +10,7 @@ const fmtEUR = (v, d = 0) => v == null || isNaN(v) ? '—' : Number(v).toLocaleS
 const fmtPct = v => v == null || isNaN(v) ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%'
 const axisEUR = v => Math.abs(v) >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : Math.abs(v) >= 1e3 ? Math.round(v / 1e3) + 'K' : String(v)
 
-export default function PortfolioEvolution({ isPremium }) {
+export default function PortfolioEvolution({ isPremium, summary }) {
   const nowYear = new Date().getFullYear()
   const [year, setYear] = useState(nowYear)
   const [data, setData] = useState(null)
@@ -63,6 +63,15 @@ export default function PortfolioEvolution({ isPremium }) {
   const hasRealized = data?.flags?.hasRealized
   const years = data?.years || [nowYear]
   const k = data?.kpis
+  // Reconciliación: para el año EN CURSO, "Valor actual / Capital invertido /
+  // Ganancia latente" deben coincidir con el resumen de la cabecera (precio en
+  // vivo), no con el cálculo de fin de mes del API (que provocaba cifras y signo
+  // distintos justo encima). En años pasados se respeta el dato histórico del API.
+  const useLive = year === nowYear && summary != null && summary.totalValueEUR != null
+  const kCurrentValue = useLive ? summary.totalValueEUR : k?.currentValue
+  const kInvested     = useLive && summary.totalCostEUR != null ? summary.totalCostEUR : k?.investedTotal
+  const kLatent       = useLive ? summary.gainEUR : k?.latentGain
+  const kLatentPct    = useLive ? summary.gainPct : k?.latentPct
 
   return (
     <div style={{ ...CARD, marginBottom: 16 }}>
@@ -86,9 +95,9 @@ export default function PortfolioEvolution({ isPremium }) {
       {/* KPIs */}
       {k && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
-          <Kpi label="Valor actual" value={fmtEUR(k.currentValue)} sub={k.contributedYear ? `Aportado en ${year}: ${k.contributedYear >= 0 ? '+' : ''}${fmtEUR(k.contributedYear)}` : null} subCol="#8090a8" col="#e0e8f0" />
-          <Kpi label="Capital invertido" value={fmtEUR(k.investedTotal)} sub="Coste medio ponderado" col="#c8d0e0" />
-          <Kpi label="Ganancia latente" value={(k.latentGain >= 0 ? '+' : '') + fmtEUR(k.latentGain)} sub={fmtPct(k.latentPct)} subCol={k.latentGain >= 0 ? GREEN : RED} col={k.latentGain >= 0 ? GREEN : RED} />
+          <Kpi label="Valor actual" value={fmtEUR(kCurrentValue)} sub={k.contributedYear ? `Aportado en ${year}: ${k.contributedYear >= 0 ? '+' : ''}${fmtEUR(k.contributedYear)}` : null} subCol="#8090a8" col="#e0e8f0" />
+          <Kpi label="Capital invertido" value={fmtEUR(kInvested)} sub="Coste medio ponderado" col="#c8d0e0" />
+          <Kpi label="Ganancia latente" value={(kLatent >= 0 ? '+' : '') + fmtEUR(kLatent)} sub={fmtPct(kLatentPct)} subCol={kLatent >= 0 ? GREEN : RED} col={kLatent >= 0 ? GREEN : RED} />
           {isPremium && hasRealized && (
             <Kpi label={`Resultado realizado ${year}`} value={(k.realizedYear >= 0 ? '+' : '') + fmtEUR(k.realizedYear)} sub="Ventas del ejercicio" col={k.realizedYear >= 0 ? TEAL : RED} />
           )}
