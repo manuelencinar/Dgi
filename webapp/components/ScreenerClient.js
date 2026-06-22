@@ -9,6 +9,7 @@ import PriceAlertButton from '@/components/watchlist/PriceAlertButton'
 // ── Opciones de filtros ────────────────────────────────────────────────────
 const SCORE_OPTS  = [{ v: 0, l: 'Todas' }, { v: 5, l: '≥5' }, { v: 6, l: '≥6' }, { v: 7, l: '≥7' }, { v: 8, l: '≥8' }]
 const ZONA_OPTS   = [{ v: 'all', l: 'Todas' }, { v: 'América', l: 'América' }, { v: 'Europa', l: 'Europa' }, { v: 'Asia', l: 'Asia' }, { v: 'Oceanía', l: 'Oceanía' }, { v: 'África', l: 'África' }]
+const CUR_OPTS    = [{ v: 'all', l: 'Todas' }, { v: 'EUR', l: '€ EUR' }, { v: 'USD', l: '$ USD' }, { v: 'GBP', l: '£ GBP' }, { v: 'CHF', l: 'CHF' }, { v: 'CAD', l: 'CAD' }, { v: 'JPY', l: 'JPY' }]
 const YIELD_OPTS  = [{ v: 0, l: 'Todas' }, { v: 1, l: '>1%' }, { v: 2, l: '>2%' }, { v: 3, l: '>3%' }, { v: 4, l: '>4%' }, { v: 5, l: '>5%' }]
 const STREAK_OPTS = [{ v: 0, l: 'Todas' }, { v: 5, l: '>5a' }, { v: 10, l: '>10a' }, { v: 25, l: '>25a' }, { v: 35, l: '>35a' }]
 const CAGR_OPTS   = [{ v: 0, l: 'Todas' }, { v: 3, l: '>3%' }, { v: 5, l: '>5%' }, { v: 7, l: '>7%' }, { v: 10, l: '>10%' }, { v: 12, l: '>12%' }]
@@ -26,7 +27,7 @@ const CAP_OPTS    = [{ v: 'all', l: 'Todas' }, { v: 'small', l: 'Small <2B' }, {
 const IMPROVING_OPTS = [{ v: 'any', l: 'Cualquier mejora' }, { v: 'roic', l: 'ROIC' }, { v: 'margin', l: 'Márgenes' }, { v: 'debt', l: 'Deuda' }, { v: 'fcf', l: 'FCF' }]
 
 const INIT = {
-  score: 0, zona: 'all', sector: 'all',
+  score: 0, zona: 'all', sector: 'all', cur: 'all',
   yield: 0, streak: 0, cagr: 0, rule1010: false, payout: 999,
   roic: 0, opm: 0, rev: 'all', moat: 'all',
   debt: 99, icov: 0,
@@ -243,6 +244,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       if (q && !co.n.toLowerCase().includes(q) && !co.t.toLowerCase().includes(q)) return false
       if (filters.score > 0 && (co.sc == null || co.sc < filters.score)) return false
       if (filters.zona !== 'all' && co.cont !== filters.zona) return false
+      if (filters.cur !== 'all' && co.cur !== filters.cur) return false
       if (filters.sector !== 'all' && co.s !== filters.sector) return false
       // Si hay cualquier filtro de dividendo activo, excluir las empresas que no
       // reparten dividendo (aparecen en el screener, pero no en búsquedas por dividendo).
@@ -322,6 +324,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
     const add = (k, label) => chips.push({ k, label })
     if (filters.score > 0) add('score', `Score ≥${filters.score}`)
     if (filters.zona !== 'all') add('zona', filters.zona)
+    if (filters.cur !== 'all') add('cur', `Divisa ${filters.cur}`)
     if (filters.sector !== 'all') add('sector', filters.sector)
     if (filters.yield > 0) add('yield', `Yield >${filters.yield}%`)
     if (filters.streak > 0) add('streak', `Racha >${filters.streak}a`)
@@ -432,6 +435,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
           <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 16 }}>
             <Chips label="Score DGI" opts={SCORE_OPTS} value={filters.score} onChange={v => set('score', v)} />
             <Chips label="Zona" opts={ZONA_OPTS} value={filters.zona} onChange={v => set('zona', v)} />
+            <Chips label="Divisa" opts={CUR_OPTS} value={filters.cur} onChange={v => set('cur', v)} />
             <div style={{ minWidth: 0 }}>
               <p style={{ fontSize: 10, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Sector</p>
               <select value={filters.sector} onChange={e => set('sector', e.target.value)} style={{ fontSize: 11, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: '#0d1424', color: '#6a7090', fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}>

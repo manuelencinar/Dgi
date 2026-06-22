@@ -887,6 +887,17 @@ function PerHistoryChart({ peHistory, peTrailing, isPremium }) {
               <> · PER actual: <span style={{ color: peTrailing <= mean ? '#34d399' : '#f87171', fontWeight: 700 }}>{peTrailing.toFixed(1)}×</span></>
             )}
           </p>
+          {peTrailing != null && mean > 0 && (() => {
+            const pct = (peTrailing / mean - 1) * 100
+            const cheap = pct <= -10, exp = pct >= 10
+            return (
+              <p style={{ fontSize: 12, fontWeight: 600, color: cheap ? '#34d399' : exp ? '#f87171' : '#fbbf24', marginTop: 6 }}>
+                {cheap ? `Cotiza un ${Math.abs(pct).toFixed(0)}% por debajo de su PER medio — barata frente a su propia historia.`
+                  : exp ? `Cotiza un ${pct.toFixed(0)}% por encima de su PER medio — cara frente a su propia historia.`
+                  : 'Cotiza en línea con su PER medio histórico.'}
+              </p>
+            )
+          })()}
           <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 4 }}>
             Calculado con el precio de cierre de cada ejercicio fiscal y el BPA de ese año.
           </p>
