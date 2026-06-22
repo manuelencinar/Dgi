@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, LabelList } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import {
   enrichPositions, calcSummary, calcConcentration, calcAlerts,
@@ -119,36 +119,81 @@ function lastDivGrowth(hist) {
   return last && last.growth != null && !isNaN(last.growth) ? Number(last.growth) * 100 : null
 }
 
-// ── Renta por dividendos proyectada (gráfico anual + crecimiento del dividendo) ──
+// ── Renta por dividendos: anual (pasado cobrado / futuro estimado) + crecimiento ──
 function IncomeProjectionCard({ enriched, taxRate, isPremium }) {
+  const [dir, setDir] = useState('fwd')         // 'bwd' (cobrado) | 'fwd' (estimado)
+  const [received, setReceived] = useState(null)
+  const sb = createClient()
+
   const proj = useMemo(() => enriched.length ? projectIncome(enriched, { horizon: 10, taxRate }) : null, [enriched, taxRate])
   const growth = useMemo(() => calcDividendGrowth(enriched), [enriched])
   const yr0 = new Date().getFullYear()
-  const data = (proj?.base || []).map(d => ({ year: yr0 + d.year - 1, income: d.income }))
-  if (!data.length) return null
+  const fwdData = (proj?.base || []).map(d => ({ year: String(yr0 + d.year - 1), income: d.income }))
+
+  // Histórico cobrado por año (para BWD) — se carga al pulsar Pasado.
+  useEffect(() => {
+    if (dir !== 'bwd' || received != null) return
+    let cancel = false
+    sb.auth.getUser().then(({ data: { user } }) => {
+      if (!user) { setReceived([]); return }
+      return sb.from('dividends_received').select('amount, date').eq('user_id', user.id).then(({ data }) => {
+        if (cancel) return
+        const byYear = {}
+        for (const d of data || []) { const y = d.date ? String(d.date).slice(0, 4) : null; if (y && d.amount != null) byYear[y] = (byYear[y] || 0) + Number(d.amount) }
+        setReceived(Object.entries(byYear).sort((a, b) => a[0] < b[0] ? -1 : 1).map(([year, income]) => ({ year, income: Math.round(income) })))
+      })
+    })
+    return () => { cancel = true }
+  }, [dir, received, sb])
+
+  if (!fwdData.length) return null
   if (!isPremium) return <PremiumGate />
 
+  const data = dir === 'bwd' ? (received || []) : fwdData
+  const legend = dir === 'bwd' ? 'Cobrado' : 'Estimado'
   const Stat = ({ label, value, color }) => (
     <div style={{ flex: 1, minWidth: 150, background: `${color}12`, border: `1px solid ${color}30`, borderRadius: 10, padding: '12px 14px' }}>
       <p style={{ fontSize: 11, color: '#8090a8', marginBottom: 4 }}>{label}</p>
       <p style={{ fontSize: 22, fontWeight: 800, color }}>{value}</p>
     </div>
   )
+  const TogBtn = ({ k, label }) => (
+    <button onClick={() => setDir(k)} style={{
+      fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit',
+      border: '1px solid ' + (dir === k ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.1)'),
+      background: dir === k ? 'rgba(52,211,153,0.18)' : 'transparent', color: dir === k ? '#34d399' : '#8090a8',
+    }}>{label}</button>
+  )
   return (
     <div style={{ ...CARD, marginBottom: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Renta por dividendos proyectada</p>
-        <Link href="/cartera/proyeccion" style={{ fontSize: 11, color: '#818cf8', textDecoration: 'none' }}>Detalle y escenarios →</Link>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Renta anual por dividendos, €</p>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <TogBtn k="bwd" label="Pasado" />
+          <TogBtn k="fwd" label="Futuro" />
+        </div>
       </div>
-      <ResponsiveContainer width="100%" height={230}>
-        <BarChart data={data} margin={{ top: 16, right: 4, left: 4, bottom: 0 }}>
-          <XAxis dataKey="year" stroke="#4a5270" fontSize={10} tickLine={false} axisLine={false} />
-          <YAxis stroke="#4a5270" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v} width={34} />
-          <Tooltip contentStyle={{ background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} formatter={v => [fmtEUR(v), 'Renta anual estimada']} labelFormatter={l => `Año ${l}`} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-          <Bar dataKey="income" fill="#34d399" radius={[4, 4, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
-      <p style={{ fontSize: 10.5, color: '#2e3a55', margin: '6px 0 14px' }}>Proyección (escenario base) con el CAGR real de cada empresa, moderándose hacia ~3% a 10 años.</p>
+
+      {dir === 'bwd' && received != null && received.length === 0 ? (
+        <p style={{ fontSize: 12.5, color: '#4a5270', padding: '30px 0', textAlign: 'center' }}>Aún no hay dividendos cobrados registrados. Regístralos o impórtalos de tu bróker para ver tu historial de renta.</p>
+      ) : (
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={data} margin={{ top: 22, right: 6, left: 2, bottom: 0 }}>
+            <XAxis dataKey="year" stroke="#8090a8" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.15)' }} angle={-90} textAnchor="end" height={42} interval={0} />
+            <YAxis stroke="#4a5270" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v} width={34} />
+            <Tooltip contentStyle={{ background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} formatter={v => [fmtEUR(v), dir === 'bwd' ? 'Cobrado' : 'Estimado']} labelFormatter={l => l} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+            <Bar dataKey="income" fill="#e2e8f5" radius={[3, 3, 0, 0]} maxBarSize={46}>
+              <LabelList dataKey="income" position="top" fill="#c8d0e0" fontSize={10} fontWeight={700} formatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : Math.round(v)} />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 2, marginBottom: 14 }}>
+        <span style={{ width: 11, height: 11, background: '#e2e8f5', borderRadius: 2 }} />
+        <span style={{ fontSize: 11, color: '#8090a8' }}>{legend}{dir === 'fwd' ? ' (escenario base, CAGR real de cada empresa)' : ''}</span>
+        <Link href="/cartera/proyeccion" style={{ fontSize: 11, color: '#818cf8', textDecoration: 'none', marginLeft: 'auto' }}>Detalle y escenarios →</Link>
+      </div>
+
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <Stat label="Crecimiento del dividendo · últimos 12 meses" value={growth.g1y != null ? `${growth.g1y >= 0 ? '+' : ''}${growth.g1y.toFixed(1)}%` : '—'} color="#34d399" />
         <Stat label="Crecimiento del dividendo · últimos 5 años (anual)" value={growth.g5y != null ? `${growth.g5y.toFixed(1)}%` : '—'} color="#818cf8" />
