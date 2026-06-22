@@ -1198,7 +1198,19 @@ def fetch_ticker(sym):
         pe_trail   = safe(info.get("trailingPE"))
         pe_fwd     = safe(info.get("forwardPE"))
         pb         = safe(info.get("priceToBook"))
+        # EV/EBITDA homogéneo (igual que el gráfico histórico de la ficha): precio ×
+        # acciones + deuda neta / EBITDA del último ejercicio. Salta financieras/REITs.
         ev_ebitda  = safe(info.get("enterpriseToEbitda"))
+        if (info.get("sector") or "") not in ("Financial Services", "Real Estate"):
+            _eb = _first(income,  ["EBITDA", "Normalized EBITDA"])
+            _sh = _first(income,  ["Diluted Average Shares", "Basic Average Shares"])
+            _nd = _first(balance, ["Net Debt"])
+            if _nd is None:
+                _td = _first(balance, ["Total Debt"]); _ca = _first(balance, ["Cash And Cash Equivalents"])
+                if _td is not None: _nd = _td - (_ca or 0)
+            if price and _eb and _eb > 0 and _sh and _sh > 0:
+                _m = (price * _sh + (_nd or 0)) / _eb
+                if 0 < _m < 100: ev_ebitda = round(_m, 3)
         eps        = safe(info.get("trailingEps"))
         week52h    = safe(info.get("fiftyTwoWeekHigh"))
         week52l    = safe(info.get("fiftyTwoWeekLow"))
