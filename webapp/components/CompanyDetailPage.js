@@ -1470,7 +1470,7 @@ export default function CompanyDetailPage(props) {
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
     peTrailing, peForward, evEbitda, eps, payout, mktCap, priceToBook,
-    divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, originWHT, peHistory, evHistory,
+    divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, originWHT, peHistory, evHistory, evCurrent,
     paysDividend, noDividendAt,
     healthPanel, moat, dcf, projection, dgiScore, scoreHistory, insights, roicData, badges, buybacks, ma200,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
@@ -1796,9 +1796,9 @@ export default function CompanyDetailPage(props) {
               note="Calculado con el precio de cierre de cada ejercicio fiscal y el BPA de ese año."
               gateHint="Evolución del PER por ejercicio frente al PER actual y su media histórica." />
             {isPremium && <ValuationHistoryChart
-              history={evHistory} current={evEbitda}
+              history={evHistory} current={evCurrent}
               isPremium title="Historial EV/EBITDA" noun="EV/EBITDA" showGate={false}
-              note="EV (capitalización + deuda neta) de cada cierre fiscal entre el EBITDA de ese año." />}
+              note="EV (capitalización + deuda neta) entre EBITDA, con la misma fórmula en todos los años; el punto «Hoy» usa el precio actual sobre el EBITDA del último ejercicio." />}
           </div>
         )}
 

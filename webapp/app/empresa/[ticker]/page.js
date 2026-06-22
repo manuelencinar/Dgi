@@ -180,18 +180,27 @@ async function buildPeHistory(detail, supabase, ticker) {
 
 // EV/EBITDA por ejercicio = (precio·acciones + deuda neta) / EBITDA, reconstruido
 // con los mismos datos que el PER (precio de cierre fiscal + estados anuales).
-async function buildEvEbitdaHistory(detail, supabase, ticker) {
+// Devuelve { history, current }: el punto "Hoy" se calcula con la MISMA fórmula
+// (precio en vivo × acciones + deuda neta del último ejercicio / EBITDA de ese año)
+// para que sea coherente con la serie, en vez del escalar ev_ebitda almacenado.
+async function buildEvEbitdaHistory(detail, supabase, ticker, livePrice = null) {
+  const empty = { history: [], current: null }
   const isa = detail?.income_statement_annual
   const bsa = detail?.balance_sheet_annual
   const cols = isa?.columns
-  if (!Array.isArray(cols) || !cols.length) return []
+  if (!Array.isArray(cols) || !cols.length) return empty
   const ebRow   = stmtRowArr(isa, 'EBITDA', 'Normalized EBITDA')
   const shRow   = stmtRowArr(isa, 'Acciones Medias Diluidas', 'Diluted Average Shares', 'Acciones Medias Básicas', 'Basic Average Shares')
   const ndRow   = stmtRowArr(bsa, 'Net Debt', 'Deuda Neta')
   const debtRow = stmtRowArr(bsa, 'Total Debt', 'Deuda Total')
   const cashRow = stmtRowArr(bsa, 'Cash And Cash Equivalents', 'Caja y Equivalentes', 'Efectivo y Equivalentes')
-  if (!ebRow || !shRow) return []
+  if (!ebRow || !shRow) return empty
   const n = Math.min(cols.length, 4)
+  const netDebtAt = i => {
+    if (ndRow?.[i] != null) return parseFloat(ndRow[i])
+    if (debtRow?.[i] != null) return parseFloat(debtRow[i]) - (cashRow?.[i] != null ? parseFloat(cashRow[i]) : 0)
+    return null
+  }
 
   const closes = await Promise.all(
     Array.from({ length: n }, (_, i) => {
@@ -203,20 +212,23 @@ async function buildEvEbitdaHistory(detail, supabase, ticker) {
     })
   )
 
+  const evMultiple = (price, i) => {
+    const ebitda = ebRow?.[i] != null ? parseFloat(ebRow[i]) : null
+    const sh = shRow?.[i] != null ? parseFloat(shRow[i]) : null
+    const nd = netDebtAt(i)
+    if (price == null || sh == null || sh <= 0 || ebitda == null || ebitda <= 0) return null
+    const m = (price * sh + (nd != null ? nd : 0)) / ebitda
+    return (m > 0 && m < 100) ? Math.round(m * 10) / 10 : null
+  }
+
   const out = []
   for (let i = 0; i < n; i++) {
-    const close = closes[i]
-    const ebitda = ebRow?.[i] != null ? parseFloat(ebRow[i]) : null
-    const sh     = shRow?.[i] != null ? parseFloat(shRow[i]) : null
-    let nd = ndRow?.[i] != null ? parseFloat(ndRow[i]) : null
-    if (nd == null && debtRow?.[i] != null) nd = parseFloat(debtRow[i]) - (cashRow?.[i] != null ? parseFloat(cashRow[i]) : 0)
-    if (close != null && sh != null && sh > 0 && ebitda != null && ebitda > 0) {
-      const ev = close * sh + (nd != null ? nd : 0)
-      const m = ev / ebitda
-      if (m > 0 && m < 100) out.push({ year: String(cols[i]).slice(0, 4), val: Math.round(m * 10) / 10 })
-    }
+    const m = evMultiple(closes[i], i)
+    if (m != null) out.push({ year: String(cols[i]).slice(0, 4), val: m })
   }
-  return out.reverse()
+  // Punto "Hoy": precio en vivo sobre los fundamentales del último ejercicio (i=0).
+  const current = livePrice != null ? evMultiple(livePrice, 0) : null
+  return { history: out.reverse(), current }
 }
 
 async function getUserPlan() {
@@ -416,7 +428,7 @@ export default async function EmpresaPage({ params, searchParams }) {
   const payoutEps  = detail?.payout_eps ?? null
   const priceToBook = detail?.price_to_book ?? null
   const peHistory  = detail ? await buildPeHistory(detail, supabase, t) : []
-  const evHistory  = detail ? await buildEvEbitdaHistory(detail, supabase, t) : []
+  const evData     = detail ? await buildEvEbitdaHistory(detail, supabase, t, price) : { history: [], current: null }
   const manualImport = detail ? {
     active: !!(detail.manual_fields && typeof detail.manual_fields === 'object' && Object.values(detail.manual_fields).some(v => v === true)),
     date: detail.last_manual_import ?? null,
@@ -439,7 +451,8 @@ export default async function EmpresaPage({ params, searchParams }) {
   const dgiScorePub = isPremium ? dgiScore : null
   const roicPub   = isPremium ? roicData : null
   const peHistPub = isPremium ? peHistory : []
-  const evHistPub = isPremium ? evHistory : []
+  const evHistPub = isPremium ? evData.history : []
+  const evCurrentPub = isPremium ? evData.current : null
   const scoreHistPub = isPremium ? scoreHistory : []
   const healthPub = isPremium ? healthPanel
     : (healthPanel ? { ...healthPanel, cards: (healthPanel.cards || []).map(() => ({})) } : null)
@@ -509,6 +522,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         noDividendAt={noDividendAt}
         peHistory={peHistPub}
         evHistory={evHistPub}
+        evCurrent={evCurrentPub}
         manualImport={manualImport}
         finScalars={finScalars}
         healthPanel={healthPub}
