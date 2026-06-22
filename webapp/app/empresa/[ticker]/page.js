@@ -17,7 +17,8 @@ import { resolveDestWHT } from '@/lib/fiscal-es'
 import { yieldReversionValue, twoStageDDM, peRelativeValue, epvValue, impliedGrowth } from '@/lib/valuation-methods'
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
-import { isCreditRiskFinancial } from '@/lib/dgi-score'
+import { isCreditRiskFinancial, detectSectorType } from '@/lib/dgi-score'
+import { dividendSafety } from '@/lib/dividend-safety'
 import { buildReitMetrics } from '@/lib/reit-metrics'
 import { computeOilBreakeven } from '@/lib/energy-breakeven'
 import {
@@ -423,6 +424,7 @@ export default async function EmpresaPage({ params, searchParams }) {
   const dcf        = computeValuation(detail, moat?.width ?? 'none', type, currency)
   const projection = computeProjection(divHistory, cagr)
   const dgiScore   = computeDGIScore(detail, streak, cagr, dcf, type, paysDividend, bankMetrics, insurerMetrics, reitMetrics)
+  const divSafety  = (detail && paysDividend) ? dividendSafety(detail, detectSectorType(type, detail.sector, detail.industry)) : null
   const insights   = buildInsights(detail, streak, cagr, dcf, price)
   const rdIntensity = isHealthcare(detail) ? computeRDIntensity(detail) : null
   const badges     = computeBadges(detail, streak, cagr, moat, price)
@@ -484,6 +486,7 @@ export default async function EmpresaPage({ params, searchParams }) {
   const dcfPub    = isPremium ? dcf : { mos: dcf?.mos ?? null }
   const insightsPub = isPremium ? insights : (insights || []).filter(i => STRONG_INS.includes(i.type)).slice(0, 3)
   const dgiScorePub = isPremium ? dgiScore : null
+  const divSafetyPub = isPremium ? divSafety : null
   const roicPub   = isPremium ? roicData : null
   const peHistPub = isPremium ? peHistory : []
   const evHistPub = isPremium ? evData.history : []
@@ -568,6 +571,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         dcf={dcfPub}
         projection={projection}
         dgiScore={dgiScorePub}
+        dividendSafety={divSafetyPub}
         scoreHistory={scoreHistPub}
         ma200={detail?.ma200 ?? null}
         crossListings={crossListings}

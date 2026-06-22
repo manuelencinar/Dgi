@@ -1115,6 +1115,47 @@ function CategoryBars({ categories }) {
   )
 }
 
+// Seguridad del dividendo (0–100): riesgo de recorte ANTES de que pase. Complementa
+// al Score DGI (calidad) y al detector de recortes (reactivo).
+function SafetyCard({ safety, isPremium }) {
+  if (!isPremium) return <PremiumGate label="Seguridad del dividendo (Premium)" hint="Nota 0–100 del riesgo de recorte: payout, balance, historial y tendencia del dividendo." />
+  if (!safety?.available) return null
+  const { score, grade, color, factors } = safety
+  return (
+    <Card>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <SectionTitle>Seguridad del dividendo</SectionTitle>
+        <div style={{ textAlign: 'right' }}>
+          <span style={{ fontSize: 36, fontWeight: 900, color, lineHeight: 1 }}>{score}</span>
+          <span style={{ fontSize: 14, color: '#4a5270', fontWeight: 700 }}>/100</span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color, background: color + '1f', padding: '2px 10px', borderRadius: 20 }}>{grade}</span>
+      </div>
+      <p style={{ fontSize: 11.5, color: '#5a6480', lineHeight: 1.55, marginBottom: 14 }}>
+        Estima el <strong style={{ color: '#8090a8' }}>riesgo de recorte</strong> del dividendo de forma anticipada, ponderando payout, solidez del balance, historial y tendencia (con umbrales por sector).
+        <span style={{ color: '#3a4260' }}> Verde ≥70 · amarillo 50–70 · rojo &lt;50.</span>
+      </p>
+      <div style={{ display: 'grid', gap: 11 }}>
+        {factors.map(f => (
+          <div key={f.label}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: '#c8d0e0' }}>{f.label} <span style={{ color: '#3a4260', fontWeight: 500 }}>· {Math.round(f.weight * 100)}%</span></span>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: safetyBarColor(f.score) }}>{f.score}</span>
+            </div>
+            <div style={{ height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+              <div style={{ width: `${f.score}%`, height: '100%', background: safetyBarColor(f.score), borderRadius: 3 }} />
+            </div>
+            <p style={{ fontSize: 10, color: '#4a5270', marginTop: 3 }}>{f.detail}</p>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+function safetyBarColor(s) { return s >= 70 ? '#34d399' : s >= 50 ? '#fbbf24' : '#f87171' }
+
 function DGIScoreCard({ dgiScore, isPremium, compact, scoreHistory }) {
   if (!isPremium) return <PremiumGate label="Score DGI (Premium)" hint="Nota 0–10 con desglose completo por categoría y métrica." />
   if (!dgiScore) return null
@@ -1530,7 +1571,7 @@ export default function CompanyDetailPage(props) {
     peTrailing, peForward, evEbitda, eps, payout, mktCap, priceToBook,
     divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, originWHT, peHistory, evHistory, evCurrent, valuationMethods,
     paysDividend, noDividendAt,
-    healthPanel, moat, dcf, projection, dgiScore, scoreHistory, insights, roicData, badges, buybacks, ma200,
+    healthPanel, moat, dcf, projection, dgiScore, dividendSafety, scoreHistory, insights, roicData, badges, buybacks, ma200,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
     manualImport, finScalars, initialTab,
   } = props
@@ -1868,6 +1909,7 @@ export default function CompanyDetailPage(props) {
             <MoatSection moat={moat} isPremium={isPremium} />
             <InsightsSection insights={insights} isPremium={isPremium} />
             <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} scoreHistory={scoreHistory} />
+            {paysDividend && <SafetyCard safety={dividendSafety} isPremium={isPremium} />}
             {isBank ? <BankMetricsCard m={bankMetrics} /> : isInsurer ? <InsurerMetricsCard m={insurerMetrics} /> : isReit ? <ReitMetricsCard m={reitMetrics} currency={currency} /> : <RoicCard roicData={roicData} isPremium={isPremium} />}
             {rdIntensity && <RDCard rd={rdIntensity} isPremium={isPremium} />}
             {oilBreakeven && <EnergyBreakevenCard be={oilBreakeven} />}
