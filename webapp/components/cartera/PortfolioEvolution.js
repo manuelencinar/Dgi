@@ -40,7 +40,7 @@ export default function PortfolioEvolution({ isPremium, summary }) {
 
   const chartData = useMemo(() => {
     if (!data?.months) return []
-    return data.months.map(mo => {
+    const rows = data.months.map(mo => {
       const mv = mo.marketValue
       const inv = mo.investedCapital
       const has = mv != null && inv != null && !mo.noData
@@ -57,7 +57,25 @@ export default function PortfolioEvolution({ isPremium, summary }) {
         positive: has ? mv >= inv : true, noData: !has,
       }
     })
-  }, [data])
+    // Año en curso: el último punto con datos usa el VALOR EN VIVO (coherente con el
+    // resumen y las KPIs), no el cierre de mes del API.
+    if (year === nowYear && summary?.totalValueEUR != null) {
+      for (let i = rows.length - 1; i >= 0; i--) {
+        if (rows[i].noData) continue
+        const mv = Math.round(summary.totalValueEUR), inv = rows[i].inv
+        rows[i] = {
+          ...rows[i], mv,
+          bandBase: inv != null ? Math.min(mv, inv) : null,
+          gain: inv != null ? Math.max(mv - inv, 0) : 0,
+          loss: inv != null ? Math.max(inv - mv, 0) : 0,
+          retPct: inv > 0 ? (mv - inv) / inv * 100 : 0,
+          positive: inv != null ? mv >= inv : true,
+        }
+        break
+      }
+    }
+    return rows
+  }, [data, year, nowYear, summary])
 
   const hasDivs = data?.flags?.hasDividends
   const hasRealized = data?.flags?.hasRealized
@@ -72,6 +90,12 @@ export default function PortfolioEvolution({ isPremium, summary }) {
   const kInvested     = useLive && summary.totalCostEUR != null ? summary.totalCostEUR : k?.investedTotal
   const kLatent       = useLive ? summary.gainEUR : k?.latentGain
   const kLatentPct    = useLive ? summary.gainPct : k?.latentPct
+  // Rentabilidad TOTAL = ganancia latente (precio) + plusvalías realizadas + dividendos
+  // cobrados. Recalculada con el latente en vivo para que cuadre con las KPIs.
+  const kDividends    = k?.dividendsAllTime ?? 0
+  const kRealized     = k?.realizedYear ?? 0
+  const kTotalEUR     = (kLatent ?? 0) + kRealized + kDividends
+  const kTotalPct     = kInvested > 0 ? kTotalEUR / kInvested * 100 : (useLive ? null : k?.totalReturnPct)
 
   return (
     <div style={{ ...CARD, marginBottom: 16 }}>
@@ -97,13 +121,16 @@ export default function PortfolioEvolution({ isPremium, summary }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
           <Kpi label="Valor actual" value={fmtEUR(kCurrentValue)} sub={k.contributedYear ? `Aportado en ${year}: ${k.contributedYear >= 0 ? '+' : ''}${fmtEUR(k.contributedYear)}` : null} subCol="#8090a8" col="#e0e8f0" />
           <Kpi label="Capital invertido" value={fmtEUR(kInvested)} sub="Coste medio ponderado" col="#c8d0e0" />
-          <Kpi label="Ganancia latente" value={(kLatent >= 0 ? '+' : '') + fmtEUR(kLatent)} sub={fmtPct(kLatentPct)} subCol={kLatent >= 0 ? GREEN : RED} col={kLatent >= 0 ? GREEN : RED} />
+          <Kpi label="Ganancia latente" value={(kLatent >= 0 ? '+' : '') + fmtEUR(kLatent)} sub={`Precio · ${fmtPct(kLatentPct)}`} subCol={kLatent >= 0 ? GREEN : RED} col={kLatent >= 0 ? GREEN : RED} />
+          {isPremium && kDividends > 0 && (
+            <Kpi label="Dividendos cobrados" value={`+${fmtEUR(kDividends)}`} sub="Renta acumulada" col={GREEN} />
+          )}
           {isPremium && hasRealized && (
-            <Kpi label={`Resultado realizado ${year}`} value={(k.realizedYear >= 0 ? '+' : '') + fmtEUR(k.realizedYear)} sub="Ventas del ejercicio" col={k.realizedYear >= 0 ? TEAL : RED} />
+            <Kpi label={`Plusvalías realizadas ${year}`} value={(kRealized >= 0 ? '+' : '') + fmtEUR(kRealized)} sub="Ventas del ejercicio" col={kRealized >= 0 ? TEAL : RED} />
           )}
           {isPremium && (
-            <Kpi label="Rentabilidad total" value={fmtPct(k.totalReturnPct)} col={k.totalReturnPct >= 0 ? GREEN : RED}
-              badge={k.beatsSP500 ? '🏆 Superas al S&P 500' : null} sub={k.sp500Pct != null ? `S&P 500: ${fmtPct(k.sp500Pct)}` : 'Incluye realizadas y dividendos'} />
+            <Kpi label="Rentabilidad total" value={fmtPct(kTotalPct)} col={kTotalPct >= 0 ? GREEN : RED}
+              badge={k.beatsSP500 ? '🏆 Superas al S&P 500' : null} sub={k.sp500Pct != null ? `S&P 500: ${fmtPct(k.sp500Pct)}` : 'Precio + dividendos + ventas'} />
           )}
         </div>
       )}
