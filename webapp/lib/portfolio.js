@@ -424,6 +424,22 @@ export function calcFiscal(enriched, whtOverrides = null, destWHT = 19) {
     })
 }
 
+// ── Crecimiento del dividendo de la cartera ─────────────────────────────────
+// Ponderado por la renta que aporta cada posición (no por valor): mide cuánto
+// crece la renta de la cartera. g5y = media ponderada del CAGR del dividendo a 5
+// años; g1y = media ponderada del último crecimiento anual real (de div_history).
+// Excluye ETFs/fondos (sin CAGR de dividendo por acción comparable).
+export function calcDividendGrowth(enriched) {
+  let w5 = 0, s5 = 0, w1 = 0, s1 = 0
+  for (const p of enriched) {
+    const inc = p.annualIncomeEUR ?? 0
+    if (inc <= 0 || p.isFund || p.type === 'fund') continue
+    if (p.div_cagr5 != null && !isNaN(p.div_cagr5)) { s5 += Number(p.div_cagr5) * inc; w5 += inc }
+    if (p.divG1y != null && !isNaN(p.divG1y))       { s1 += Number(p.divG1y) * inc;   w1 += inc }
+  }
+  return { g5y: w5 > 0 ? s5 / w5 : null, g1y: w1 > 0 ? s1 / w1 : null }
+}
+
 // ── Weighted avg cost ─────────────────────────────────────────────────────
 
 export function weightedAvgCost(existingShares, existingCost, newShares, newPrice) {
