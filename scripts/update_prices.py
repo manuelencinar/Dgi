@@ -39,6 +39,12 @@ FX_PAIRS = [
     "TWD","INR","ZAR","SAR","AED","PLN","CZK","HUF"
 ]
 
+# Índices de referencia (benchmark). NO están en company_fundamentals/funds, así
+# que hay que añadirlos a mano a la descarga o dejarían de actualizarse en
+# daily_prices (los usa el overlay de benchmark del fondo y la comparación
+# "Rentabilidad total vs S&P 500" de la cartera).
+BENCHMARK_TICKERS = ["^GSPC", "^STOXX", "URTH", "^NDX", "^FTSE", "^GDAXI", "^N225"]
+
 
 # ══════════════════════════════════════════════════════════════════════════
 # SUPABASE helpers
@@ -419,6 +425,9 @@ def main():
         if not tickers:
             log.warning("No hay tickers para procesar")
             return
+
+        # Añadir los índices de referencia (no viven en las tablas de tickers)
+        tickers = list(dict.fromkeys(tickers + BENCHMARK_TICKERS))
 
         # Excluir tickers de divisas si están mezclados
         tickers = [t for t in tickers if "=X" not in t]
