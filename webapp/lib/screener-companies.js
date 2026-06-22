@@ -62,6 +62,7 @@ export async function buildScreenerCompanies(destWHT, baseDict) {
       roic: roicVal,
       roicNA: ROIC_NA_TYPES.has(t),
       roicWarn: roicVal != null && roicVal > 60,
+      roe:  f.roe != null ? Number(f.roe) : null,
       streak: f.div_streak != null ? Number(f.div_streak) : null,
       cagr:   rawCagr != null ? Math.min(rawCagr, 50) : null,
       cagrWarn: rawCagr != null && rawCagr > 50,

@@ -168,20 +168,32 @@ const SECTOR_KEY = { banco: 'banco', aseguradora: 'aseguradora', reit: 'reit', b
 // Devuelve { pass, moat, stable, capital, finances, price } (cada regla true/false).
 export function goldenRules(co) {
   if (!co) return { pass: false }
+  // Banca/seguros/REIT/BDC: no se valoran con ROIC ni con deuda/EBITDA (sus depósitos
+  // o apalancamiento regulado no son "deuda" comparable) → se usa el ROE.
+  const fin = !!co.roicNA
   // 1. ¿Foso económico real? (ancho o estrecho, no "sin foso")
   const moat = co.moat === 'wide' || co.moat === 'narrow'
   // 2. ¿Foso estable, no erosionándose?
   const stable = !co.ero
-  // 3. Dirección / asignación de capital: ni sobre-distribuye ni financia el
-  //    dividendo con deuda (payout contenido y deuda no excesiva).
-  const capital = (co.payout == null || co.payout < 80) && (co.debt == null || co.debt < 3.5)
-  // 4. Finanzas sólidas: ROIC alto y sostenido (≥12%), deuda manejable y el
-  //    beneficio se convierte en caja (payout sobre FCF razonable).
-  const finances = !co.roicNA && co.roic != null && co.roic >= 12 &&
-    (co.debt == null || co.debt < 3) && (co.payout == null || co.payout < 90)
+  // 3. Dirección / asignación de capital: payout contenido (en REITs el reparto alto
+  //    es obligatorio, no penaliza) y, fuera de financieras, deuda no excesiva.
+  const payoutOk = co.tp === 'reit' ? true : (co.payout == null || co.payout < 85)
+  const debtOk   = fin ? true : (co.debt == null || co.debt < 3.5)
+  const capital  = payoutOk && debtOk
+  // 4. Finanzas sólidas: rentabilidad alta y sostenida. ROIC ≥12% en negocios
+  //    normales; ROE en financieras (≥10%) y REITs (≥6%, estructuralmente menor),
+  //    más deuda manejable donde aplica.
+  const profit = fin
+    ? (co.roe != null && co.roe >= (co.tp === 'reit' ? 6 : 10))
+    : (co.roic != null && co.roic >= 12)
+  const finances = profit && (fin ? true : (co.debt == null || co.debt < 3))
   // 5. Precio razonable con margen de seguridad (no ganga extrema, pero sin sobrepagar)
   const price = co.mos != null && co.mos > 0 && !co.mosUnreliable
-  const pass = moat && stable && capital && finances && price && co.pays !== false
+  // Suelo de calidad DGI: el Score agrega señales que las 5 reglas no capturan
+  // (recortes/congelación del dividendo, ingresos en declive). Evita que cuele un
+  // negocio que cumple las reglas pero arrastra una bandera roja DGI.
+  const quality = co.sc != null && co.sc >= 6.5
+  const pass = moat && stable && capital && finances && price && quality && co.pays !== false
   return { pass, moat, stable, capital, finances, price }
 }
 

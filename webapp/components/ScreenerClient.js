@@ -185,7 +185,9 @@ function CompanyCard({ co, rank, destWHT, whtOverrides, sortKey, following, isAu
 
         {co.y != null && <DM label="Yield" val={co.y.toFixed(1) + '%'} />}
         <DM label="CAGR" val={co.cagr == null ? '—' : co.cagrWarn ? 'atíp.' : co.cagr.toFixed(0) + '%'} color={co.cagrWarn ? '#fb923c' : undefined} title={co.cagrWarn ? 'CAGR no fiable (>50%) — neutralizado en el Score' : undefined} />
-        <DM label="ROIC" val={co.roicNA ? 'N/A' : co.roic == null ? '—' : (co.roicWarn ? '⚠' : '') + co.roic.toFixed(0) + '%'} color={co.roicWarn ? '#fb923c' : undefined} title={co.roicNA ? 'No aplica en banca/seguros/REITs — se usa ROE' : co.roicWarn ? 'ROIC muy elevado — comparar con peers' : undefined} />
+        {co.roicNA
+          ? <DM label="ROE" val={co.roe == null ? '—' : co.roe.toFixed(0) + '%'} title="En banca/seguros/REITs/BDC el ROIC no aplica — se usa el ROE (rentabilidad sobre fondos propios), la métrica de rentabilidad clave del sector." />
+          : <DM label="ROIC" val={co.roic == null ? '—' : (co.roicWarn ? '⚠' : '') + co.roic.toFixed(0) + '%'} color={co.roicWarn ? '#fb923c' : undefined} title={co.roicWarn ? 'ROIC muy elevado — comparar con peers' : 'Retorno sobre el capital invertido'} />}
         {co.isPharma && co.rd != null && <DM label="I+D" val={co.rd.toFixed(0) + '%'} color={co.rd >= 12 ? '#34d399' : co.rd < 8 ? '#fbbf24' : undefined} title="I+D / Ingresos — inversión en pipeline futuro (farmacéuticas). >15% indica compromiso con la innovación." />}
         <DM label="Payout" val={co.payout == null ? '—' : co.payout.toFixed(0) + '%'} />
         <DM label="Deuda" val={co.debt == null ? '—' : debtEbitdaIsArtifact(co.debt) ? 'EBITDA≈0' : co.debt.toFixed(1) + 'x'} title={debtEbitdaIsArtifact(co.debt) ? 'EBITDA cercano a cero — el ratio deuda/EBITDA no es representativo' : 'Deuda neta / EBITDA'} />
@@ -409,7 +411,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
         {filters.golden && (
           <p style={{ fontSize: 11.5, color: '#8090a8', marginTop: 8, lineHeight: 1.6, maxWidth: 720 }}>
             Solo empresas que cumplen <b style={{ color: '#fbbf24' }}>las 5 reglas de Pat Dorsey</b>:
-            (1) <b>foso económico real</b> · (2) <b>foso estable</b>, no erosionándose · (3) <b>capital bien asignado</b> (payout contenido, sin financiar el dividendo con deuda) · (4) <b>finanzas sólidas</b> (ROIC ≥12%, deuda manejable, el beneficio se convierte en caja) · (5) <b>precio razonable</b> con margen de seguridad. Un filtro exigente: aparecerán pocas, pero de gran calidad.
+            (1) <b>foso económico real</b> · (2) <b>foso estable</b>, no erosionándose · (3) <b>capital bien asignado</b> (payout contenido, sin financiar el dividendo con deuda) · (4) <b>finanzas sólidas</b> (ROIC ≥12% — o ROE en banca/seguros/REITs, donde el ROIC no aplica —, deuda manejable, el beneficio se convierte en caja) · (5) <b>precio razonable</b> con margen de seguridad. Un filtro exigente: aparecerán pocas, pero de gran calidad.
           </p>
         )}
       </div>
