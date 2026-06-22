@@ -10,6 +10,28 @@
 import { getWHT, effectiveDivTax } from '@/lib/screener'
 
 export const MONTHS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+export const MONTHS_ES_LONG = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
+// Calendario del UNIVERSO: meses (1-12) en los que una empresa suele repartir,
+// derivados de las fechas ex-dividendo recientes (~últimos 30 meses). [] si no hay.
+export function payMonthsFromEvents(events) {
+  if (!Array.isArray(events) || !events.length) return []
+  const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - 30)
+  const months = new Set()
+  for (const e of events) {
+    if (!e?.ex_date) continue
+    const d = new Date(e.ex_date)
+    if (!isNaN(d) && d >= cutoff) months.add(d.getMonth() + 1)
+  }
+  if (!months.size) {  // sin eventos recientes → últimos 4 registrados (patrón histórico)
+    for (const e of events.slice(-4)) {
+      if (!e?.ex_date) continue
+      const d = new Date(e.ex_date)
+      if (!isNaN(d)) months.add(d.getMonth() + 1)
+    }
+  }
+  return [...months].sort((a, b) => a - b)
+}
 
 // ── fechas ──────────────────────────────────────────────────────────────────
 function addBusinessDays(date, n) {

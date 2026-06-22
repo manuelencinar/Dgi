@@ -16,6 +16,7 @@ const PRIMARY = [
 // Secundarios — accesibles desde sus flujos; en móvil aparecen apagados
 const SECONDARY = [
   { href: '/construir-cartera', label: 'Construir cartera' },
+  { href: '/calendario-dividendos', label: 'Calendario dividendos' },
   { href: '/etfs',       label: 'ETFs y Fondos' },
 ]
 
