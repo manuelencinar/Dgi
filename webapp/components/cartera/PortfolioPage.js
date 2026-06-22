@@ -226,6 +226,72 @@ function SummarySection({ summary }) {
   )
 }
 
+// ── Meta de renta pasiva (estrella polar) ──────────────────────────────────
+// Renta anual actual vs objetivo, progreso y ETA solo con el crecimiento del
+// dividendo (sin nuevas aportaciones → estimación conservadora).
+function IncomeGoalCard({ currentIncome, goal, growthPct, onSave }) {
+  const [editing, setEditing] = useState(false)
+  const [val, setVal] = useState(goal ?? '')
+  useEffect(() => { setVal(goal ?? '') }, [goal])
+
+  const save = () => {
+    const n = Number(val)
+    onSave(!isNaN(n) && n > 0 ? n : null)
+    setEditing(false)
+  }
+
+  if (!goal && !editing) {
+    return (
+      <div style={{ ...CARD, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0' }}>🎯 Fija tu meta de renta pasiva</p>
+          <p style={{ fontSize: 11.5, color: '#6b7693', marginTop: 2 }}>Define cuántos dividendos quieres cobrar al año y sigue tu progreso.</p>
+        </div>
+        <button onClick={() => setEditing(true)} style={{ padding: '8px 16px', background: 'rgba(99,102,241,0.85)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>Fijar meta</button>
+      </div>
+    )
+  }
+
+  const pct = goal > 0 ? Math.min(100, currentIncome / goal * 100) : 0
+  const reached = currentIncome >= goal
+  const g = (growthPct ?? 0) / 100
+  // ETA solo con crecimiento orgánico del dividendo (sin aportaciones nuevas).
+  let etaYears = null
+  if (!reached && currentIncome > 0 && g > 0.001) etaYears = Math.log(goal / currentIncome) / Math.log(1 + g)
+  const barCol = reached ? '#34d399' : pct >= 50 ? '#60a5fa' : '#818cf8'
+
+  return (
+    <div style={{ ...CARD, marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>🎯 Meta de renta pasiva</p>
+        {editing ? (
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <input type="number" step="any" value={val} onChange={e => setVal(e.target.value)} placeholder="€/año" style={{ ...INPUT, width: 110, padding: '6px 10px' }} />
+            <button onClick={save} style={{ padding: '6px 12px', background: 'rgba(99,102,241,0.85)', border: 'none', borderRadius: 7, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Guardar</button>
+          </div>
+        ) : (
+          <button onClick={() => setEditing(true)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, padding: '5px 12px', color: '#8090a8', fontSize: 11.5, cursor: 'pointer' }}>Editar meta</button>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+        <span style={{ fontSize: 24, fontWeight: 900, color: '#e0e8f0' }}>{fmtEUR(currentIncome)}<span style={{ fontSize: 13, color: '#4a5270', fontWeight: 700 }}> / {fmtEUR(goal)} al año</span></span>
+        <span style={{ fontSize: 18, fontWeight: 800, color: barCol }}>{pct.toFixed(0)}%</span>
+      </div>
+      <div style={{ height: 10, background: 'rgba(255,255,255,0.06)', borderRadius: 6, overflow: 'hidden', marginBottom: 10 }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: barCol, borderRadius: 6, transition: 'width .4s' }} />
+      </div>
+      <p style={{ fontSize: 12, color: '#8090a8', lineHeight: 1.5 }}>
+        {reached
+          ? '🎉 ¡Meta alcanzada! Tu cartera ya genera la renta que te marcaste.'
+          : etaYears != null
+            ? <>Te faltan <strong style={{ color: '#c8d0e0' }}>{fmtEUR(goal - currentIncome)}</strong>. Solo con el crecimiento del dividendo (~{growthPct.toFixed(1)}%/año, sin nuevas aportaciones) la alcanzarías en <strong style={{ color: '#60a5fa' }}>~{etaYears < 1 ? '<1' : Math.round(etaYears)} {etaYears < 1 || Math.round(etaYears) === 1 ? 'año' : 'años'}</strong>.</>
+            : <>Te faltan <strong style={{ color: '#c8d0e0' }}>{fmtEUR(goal - currentIncome)}</strong>. Aporta y reinvierte para acelerar el objetivo.</>}
+      </p>
+    </div>
+  )
+}
+
 // ── Section 2: Positions table ─────────────────────────────────────────────
 function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
   const FREE_LIMIT = 10
@@ -727,6 +793,7 @@ export default function PortfolioPage({ isPremium }) {
   const [profile, setProfile] = useState(DEFAULT_PROFILE)
   const [taxSettings, setTaxSettings] = useState(null)
   const [whtOverrides, setWhtOverrides] = useState(null)
+  const [incomeGoal, setIncomeGoal] = useState(null)
   useEffect(() => {
     let cancel = false
     fetch('/api/ajustes').then(r => r.ok ? r.json() : null).then(d => {
@@ -735,9 +802,17 @@ export default function PortfolioPage({ isPremium }) {
       if (p && INVESTOR_PROFILES[p]) setProfile(p)
       if (d?.settings) setTaxSettings(d.settings)
       if (d?.settings?.wht_overrides && typeof d.settings.wht_overrides === 'object') setWhtOverrides(d.settings.wht_overrides)
+      if (d?.settings?.income_goal != null) setIncomeGoal(Number(d.settings.income_goal))
     }).catch(() => {})
     return () => { cancel = true }
   }, [])
+  const saveGoal = (g) => {
+    setIncomeGoal(g)   // optimista
+    fetch('/api/ajustes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ income_goal: g }),
+    }).catch(() => {})
+  }
   const changeProfile = (k) => {
     if (!INVESTOR_PROFILES[k]) return
     setProfile(k)   // optimista
@@ -748,6 +823,7 @@ export default function PortfolioPage({ isPremium }) {
   }
 
   const summary       = useMemo(() => calcSummary(enriched), [enriched])
+  const dividendGrowth = useMemo(() => calcDividendGrowth(enriched), [enriched])
   // Tipo efectivo del ahorro español: en modo "por ingresos" se calcula con la
   // renta del ahorro real del usuario (= sus dividendos anuales). 0 si está exento.
   const destWHT       = useMemo(() => resolveDestWHT(taxSettings, summary.totalIncomeEUR), [taxSettings, summary.totalIncomeEUR])
@@ -798,6 +874,9 @@ export default function PortfolioPage({ isPremium }) {
 
       {/* Section 1: Summary */}
       {enriched.length > 0 && <SummarySection summary={summary} />}
+
+      {/* Meta de renta pasiva — estrella polar */}
+      {enriched.length > 0 && <IncomeGoalCard currentIncome={summary.totalIncomeEUR} goal={incomeGoal} growthPct={dividendGrowth?.g5y ?? 0} onSave={saveGoal} />}
 
       {enriched.length > 0 && <IncomeProjectionCard enriched={enriched} taxRate={destWHT} isPremium={isPremium} />}
 
