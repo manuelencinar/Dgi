@@ -14,7 +14,7 @@ import { sectorInfo, SUPERSECTORS } from '@/lib/supersectors'
 import { industryEs } from '@/lib/taxonomy'
 import { getProfile } from '@/data/profiles'
 import { resolveDestWHT } from '@/lib/fiscal-es'
-import { yieldReversionValue, twoStageDDM, peRelativeValue, epvValue, impliedGrowth, chowder } from '@/lib/valuation-methods'
+import { yieldReversionValue, twoStageDDM, peRelativeValue, epvValue, impliedGrowth } from '@/lib/valuation-methods'
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
 import { isCreditRiskFinancial } from '@/lib/dgi-score'
@@ -462,7 +462,6 @@ export default async function EmpresaPage({ params, searchParams }) {
     valuationMethods = {
       methods, implied,
       histRevG: dcf?.revCagr ?? null, histFcfG: dcf?.fcfCagr ?? null,
-      chowder: chowder(yldPct, detail.div_cagr5 != null ? Number(detail.div_cagr5) : null, type === 'reit' ? 'reit' : null),
     }
   }
   const manualImport = detail ? {

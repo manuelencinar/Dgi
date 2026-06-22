@@ -63,13 +63,3 @@ export function impliedGrowth(params, price) {
   }
   return { impliedG: (lo + hi) / 2 }
 }
-
-// 6. Regla Chowder: yield + CAGR del dividendo ≥ umbral (más exigente en low-yield).
-//    Filtro DGI clásico de "renta + crecimiento" suficiente.
-export function chowder(yieldPct, cagrPct, sectorType) {
-  if (yieldPct == null || cagrPct == null) return null
-  const sum = yieldPct + cagrPct
-  // Utilities/REITs (alto yield, bajo crecimiento) → umbral 8; resto → 12.
-  const threshold = (sectorType === 'utilities' || sectorType === 'reit' || yieldPct >= 4) ? 8 : 12
-  return { sum: Math.round(sum * 10) / 10, threshold, pass: sum >= threshold }
-}

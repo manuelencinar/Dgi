@@ -944,11 +944,6 @@ function ValuationMethodsPanel({ vm, currency, price, isPremium }) {
             {!ig.floor && !ig.ceil && (ig.impliedG * 100 > histG + 2 ? ' Expectativas exigentes.' : ig.impliedG * 100 < histG - 2 ? ' Expectativas conservadoras — margen si el crecimiento se mantiene.' : ' Expectativas en línea con su historia.')}
           </p>
         )}
-        {vm.chowder && (
-          <p style={{ fontSize: 12, marginTop: 6 }}>
-            <b style={{ color: '#c8d0e0' }}>Regla Chowder:</b> yield + crecimiento del dividendo = <b style={{ color: vm.chowder.pass ? '#34d399' : '#f87171' }}>{vm.chowder.sum}</b> (umbral {vm.chowder.threshold}) — {vm.chowder.pass ? '✓ cumple el mínimo DGI de renta + crecimiento.' : '✗ por debajo del mínimo DGI.'}
-          </p>
-        )}
       </div>
       <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10 }}>Estimaciones orientativas; ningún método sustituye al análisis del negocio. El DCF y EPV no aplican a banca/seguros/REITs.</p>
     </Card>
