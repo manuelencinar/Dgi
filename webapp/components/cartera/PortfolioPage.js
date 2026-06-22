@@ -24,7 +24,9 @@ import PricesFreshnessIndicator from '@/components/PricesFreshnessIndicator'
 import WatchlistMini from '@/components/cartera/WatchlistMini'
 
 // ── Design tokens ──────────────────────────────────────────────────────────
-const CARD   = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
+// padding como variable CSS → en móvil se reduce vía media query (ver cdp-root) sin
+// tocar cada ficha (el inline no se puede sobreescribir con CSS normal, pero una var sí).
+const CARD   = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 'var(--cdp-pad, 20px)' }
 const COLORS = ['#818cf8','#34d399','#fbbf24','#f87171','#60a5fa','#a78bfa','#fb923c','#4ade80','#f472b6','#38bdf8']
 const INPUT  = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', color: '#c8d0e0', fontSize: 13, outline: 'none', width: '100%', boxSizing: 'border-box' }
 
@@ -736,7 +738,12 @@ export default function PortfolioPage({ isPremium }) {
   }
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px 64px' }}>
+    <div className="cdp-root" style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px 64px' }}>
+      {/* Compactar en móvil: menos padding interno y menos separación entre fichas. */}
+      <style>{`@media(max-width:640px){
+        .cdp-root{--cdp-pad:13px;}
+        .cdp-root>div{margin-bottom:10px!important;}
+      }`}</style>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0' }}>Mi cartera</h1>
