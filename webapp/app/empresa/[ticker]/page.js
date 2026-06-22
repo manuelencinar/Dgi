@@ -28,6 +28,8 @@ import {
   buildInsights,
   computeBadges,
   computeBuybacks,
+  computeRDIntensity,
+  isHealthcare,
 } from '@/lib/company-detail'
 
 export const dynamic = 'force-dynamic'
@@ -355,6 +357,7 @@ export default async function EmpresaPage({ params, searchParams }) {
   const projection = computeProjection(divHistory, cagr)
   const dgiScore   = computeDGIScore(detail, streak, cagr, dcf, type, paysDividend, bankMetrics, insurerMetrics, reitMetrics)
   const insights   = buildInsights(detail, streak, cagr, dcf, price)
+  const rdIntensity = isHealthcare(detail) ? computeRDIntensity(detail) : null
   const badges     = computeBadges(detail, streak, cagr, moat, price)
   const buybacks   = computeBuybacks(detail)
   const healthPanel = buildHealthPanel(detail, type, paysDividend)
@@ -418,6 +421,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         subsector={subsector}
         classification={classification}
         profile={getProfile(t) || detail?.business_summary || null}
+        rdIntensity={rdIntensity}
         isBank={isBank}
         bankMetrics={bankMetrics}
         isInsurer={isInsurer}

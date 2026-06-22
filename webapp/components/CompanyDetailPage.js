@@ -960,6 +960,43 @@ function StrengthsRisks({ insights, onSeeAll }) {
   )
 }
 
+// ── Inversión en I+D (farmacéuticas / salud) ────────────────────────────────
+const RD_VERDICT = {
+  desarrollo: 'Inversión muy alta', excelente: 'Fuerte inversión', solida: 'Inversión sólida',
+  moderada: 'Inversión moderada', baja: 'Inversión baja',
+}
+function RDCard({ rd, isPremium }) {
+  if (!rd) return null
+  if (!isPremium) return <PremiumGate label="Inversión en I+D (Premium)" hint="Qué % de los ingresos destina a I+D y si renueva su pipeline." />
+  const trendTxt = rd.trend === 'up' ? '↑ creciente' : rd.trend === 'down' ? '↓ decreciente' : rd.trend === 'flat' ? '→ estable' : null
+  const maxBar = Math.max(...rd.ratios, 25)
+  return (
+    <Card>
+      <SectionTitle>Inversión en I+D · pipeline futuro</SectionTitle>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+        <span style={{ fontSize: 30, fontWeight: 900, color: rd.color, lineHeight: 1 }}>{rd.latest.toFixed(1)}%</span>
+        <span style={{ fontSize: 12, color: '#8090a8' }}>de los ingresos</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: rd.color, background: `${rd.color}1a`, padding: '2px 8px', borderRadius: 5 }}>{RD_VERDICT[rd.verdict]}</span>
+      </div>
+      <p style={{ fontSize: 13, color: '#8090a8', lineHeight: 1.55, marginBottom: 12 }}>{rd.phrase.charAt(0).toUpperCase() + rd.phrase.slice(1)}</p>
+      <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12, color: '#8090a8', marginBottom: rd.ratios.length > 1 ? 14 : 0 }}>
+        {rd.years >= 2 && <span>Media {rd.years} años: <b style={{ color: '#c8d0e0' }}>{rd.avg.toFixed(1)}%</b></span>}
+        {trendTxt && <span>Tendencia: <b style={{ color: '#c8d0e0' }}>{trendTxt}</b></span>}
+      </div>
+      {rd.ratios.length > 1 && (
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 56 }}>
+          {[...rd.ratios].reverse().map((v, i) => (
+            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: '100%', maxWidth: 34, height: `${Math.max(6, v / maxBar * 44)}px`, background: i === rd.ratios.length - 1 ? rd.color : 'rgba(255,255,255,0.12)', borderRadius: 3 }} title={`${v.toFixed(1)}%`} />
+              <span style={{ fontSize: 9, color: '#4a5270' }}>{v.toFixed(0)}%</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  )
+}
+
 // ── DGI score card ─────────────────────────────────────────────────────────
 
 function MetricRow({ m }) {
@@ -1409,7 +1446,7 @@ const TAB_IDS = TABS.map(t => t.id)
 
 export default function CompanyDetailPage(props) {
   const {
-    ticker, name, country, currency, sector, subsector, type, classification, profile, isBank, bankMetrics, isInsurer, insurerMetrics, isReit, reitMetrics, oilBreakeven, crossListings,
+    ticker, name, country, currency, sector, subsector, type, classification, profile, rdIntensity, isBank, bankMetrics, isInsurer, insurerMetrics, isReit, reitMetrics, oilBreakeven, crossListings,
     isPremium, hasData, isAuthed, watchEntry,
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
@@ -1747,6 +1784,7 @@ export default function CompanyDetailPage(props) {
             <InsightsSection insights={insights} isPremium={isPremium} />
             <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} scoreHistory={scoreHistory} />
             {isBank ? <BankMetricsCard m={bankMetrics} /> : isInsurer ? <InsurerMetricsCard m={insurerMetrics} /> : isReit ? <ReitMetricsCard m={reitMetrics} currency={currency} /> : <RoicCard roicData={roicData} isPremium={isPremium} />}
+            {rdIntensity && <RDCard rd={rdIntensity} isPremium={isPremium} />}
             {oilBreakeven && <EnergyBreakevenCard be={oilBreakeven} />}
             <InsiderCard ticker={ticker} isPremium={isPremium} />
           </div>

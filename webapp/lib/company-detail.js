@@ -47,6 +47,48 @@ function findStmtRow(stmtData, ...keys) {
   return null
 }
 
+// ── Intensidad de I+D (¿hace los deberes para el futuro?) ───────────────────
+// % de los ingresos destinado a I+D. Clave para farmacéuticas/biotec/salud: una
+// que invierte poco exprime patentes que caducarán; una que invierte mucho renueva
+// su pipeline. Devuelve latest/media/tendencia + veredicto, o null si no aplica.
+const RD_PHRASE = {
+  desarrollo: 'inversión muy alta, propia de una biotech en fase de desarrollo.',
+  excelente:  'fuerte apuesta por renovar su pipeline de cara al futuro.',
+  solida:     'inversión sólida en su pipeline futuro.',
+  moderada:   'inversión moderada en I+D para el sector.',
+  baja:       'gasto bajo en I+D — riesgo para su pipeline a largo plazo.',
+}
+export function computeRDIntensity(data) {
+  const is = data?.income_statement_annual?.data
+  if (!is) return null
+  const rd  = findStmtRow(is, 'I+D', 'Research Development', 'Research And Development', 'Investigación y Desarrollo')
+  const rev = findStmtRow(is, 'Total Revenue', 'Ingresos Totales', 'Ingresos', 'Revenue')
+  if (!Array.isArray(rd) || !Array.isArray(rev)) return null
+  const ratios = []
+  for (let i = 0; i < Math.min(rd.length, rev.length, 5); i++) {
+    const r = rd[i], v = rev[i]
+    if (r != null && v != null && v > 0 && r >= 0) ratios.push(r / v * 100)
+  }
+  if (!ratios.length) return null
+  const latest = ratios[0]
+  const avg = ratios.reduce((a, b) => a + b, 0) / ratios.length
+  const oldest = ratios[ratios.length - 1]
+  const trend = ratios.length >= 3 ? (latest > oldest + 2 ? 'up' : latest < oldest - 2 ? 'down' : 'flat') : null
+  let verdict, color
+  if      (latest >= 60) { verdict = 'desarrollo'; color = '#60a5fa' }
+  else if (latest >= 18) { verdict = 'excelente';  color = '#34d399' }
+  else if (latest >= 12) { verdict = 'solida';     color = '#34d399' }
+  else if (latest >= 7)  { verdict = 'moderada';   color = '#fbbf24' }
+  else                   { verdict = 'baja';       color = '#f87171' }
+  return { latest, avg, years: ratios.length, ratios, trend, verdict, color, phrase: RD_PHRASE[verdict] }
+}
+
+// ¿Es una empresa de salud (sector healthcare)? Donde la intensidad de I+D es clave.
+export function isHealthcare(data) {
+  const s = (data?.sector || '').toLowerCase()
+  return s === 'healthcare' || s === 'salud'
+}
+
 // ── Detección de crecimiento vía adquisiciones ─────────────────────────────
 // Activa cuando ≥2 de: adquisiciones recurrentes, goodwill creció >30%,
 // goodwill >40% de activos, deuda neta creció con los ingresos.
@@ -538,6 +580,16 @@ export function buildInsights(data, streak, cagr, dcf, livePrice = null) {
   }
 
   if (opM != null && opM < 5 && opM >= 0) add('mercado', 'negative', `Margen operativo del ${opM.toFixed(1)}% — muy estrecho, vulnerable a shocks de costes.`)
+
+  // I+D en empresas de salud: ¿invierte en su pipeline futuro?
+  if (isHealthcare(data)) {
+    const rd = computeRDIntensity(data)
+    if (rd) {
+      const t = (rd.verdict === 'excelente' || rd.verdict === 'solida' || rd.verdict === 'desarrollo') ? 'positive' : rd.verdict === 'moderada' ? 'neutral' : 'negative'
+      const avgTxt = rd.years >= 3 ? ` (media del ${rd.avg.toFixed(0)}% a ${rd.years} años)` : ''
+      add('mercado', t, `Destina el ${rd.latest.toFixed(0)}% de sus ingresos a I+D${avgTxt} — ${rd.phrase}`)
+    }
+  }
 
   if (fcfPos === false) add('mercado', 'negative', 'Flujo de caja libre negativo — el dividendo podría no estar cubierto por generación de caja.')
   if (fcfCagr != null && fcfCagr > 12) add('mercado', 'positive', `FCF creciendo al ${fcfCagr.toFixed(1)}% anual — la capacidad de generar caja se acelera.`)
