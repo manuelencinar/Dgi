@@ -22,6 +22,7 @@ import FxRatesWidget from '@/components/cartera/FxRatesWidget'
 import CurrencyAnalysis from '@/components/cartera/CurrencyAnalysis'
 import PricesFreshnessIndicator from '@/components/PricesFreshnessIndicator'
 import WatchlistMini from '@/components/cartera/WatchlistMini'
+import UpcomingDividends from '@/components/cartera/UpcomingDividends'
 
 // ── Design tokens ──────────────────────────────────────────────────────────
 // padding como variable CSS → en móvil se reduce vía media query (ver cdp-root) sin
@@ -896,6 +897,9 @@ export default function PortfolioPage({ isPremium }) {
         onDividend={setDivPos}
         onDelete={setDeleteId}
       />
+
+      {/* Próximos cobros de dividendo */}
+      {enriched.length > 0 && <UpcomingDividends />}
 
       {/* Mini watchlist — empresas seguidas más próximas a su objetivo */}
       <WatchlistMini />
