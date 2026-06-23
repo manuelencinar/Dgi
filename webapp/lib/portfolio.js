@@ -126,7 +126,7 @@ export function enrichPositions(rawPositions, fundamentalsMap, fundsMap = {}) {
 
     return {
       ...pos, assetType: 'stock',
-      name, countryCode, sector, currency, zone, type,
+      name, countryCode, sector, industry: fund.industry ?? null, currency, zone, type,
       currentPrice, dps,
       valueEUR, costEUR, gainEUR, gainPct,
       annualIncomeEUR, yieldOnCost, currentYield,
@@ -373,29 +373,65 @@ export function calcDiversificationScore(enriched, profileKey = DEFAULT_PROFILE)
 
 // ── Dividend risks ────────────────────────────────────────────────────────
 
+// Clasificación de sector (coarse) para que las señales de riesgo sean sector-aware:
+// el FCF, la deuda/EBITDA y la cobertura clásica NO aplican igual en banca/seguros,
+// REITs/BDC (su caja no es FCF; se miden por AFFO/NII) ni en utilities (capex regulado).
+function riskSector(p) {
+  const t = (p.type || '').toLowerCase()
+  const s = (p.sector || '').toLowerCase()
+  const i = (p.industry || '').toLowerCase()
+  if (t === 'reit' || t === 'bdc') return 'reit'
+  if (t === 'aseguradora') return 'insurer'
+  if (t === 'banco' || (/financial services|servicios financieros/.test(s) && /bank|banca|mortgage|hipotec/.test(i))) return 'bank'
+  if (t === 'utilities' || s === 'utilities') return 'utilities'
+  if (s === 'energy' || s === 'energía' || s === 'basic materials' || s === 'materiales básicos') return 'energy'
+  return 'general'
+}
+
 export function calcDividendRisks(enriched, totalIncomeEUR) {
   return enriched
     .map(p => {
+      const st = riskSector(p)
+      const fin = st === 'bank' || st === 'insurer'   // FCF/deuda-EBITDA/cobertura clásica no aplican
+      const reit = st === 'reit'                        // REIT/BDC: se miden por AFFO/NII, no por FCF
       const risks = []
-      if (p.payoutFCF != null && p.payoutFCF > 90)
+
+      // Payout sobre FCF: solo sectores donde el FCF es la fuente real del dividendo.
+      if (!fin && !reit && st !== 'utilities' && p.payoutFCF != null && p.payoutFCF > 90)
         risks.push({ label: 'Payout FCF elevado', level: p.payoutFCF > 110 ? 'alto' : 'medio',
           value: `${p.payoutFCF.toFixed(0)}%`,
           detail: `Reparte en dividendos el ${p.payoutFCF.toFixed(0)}% de su flujo de caja libre. Saludable por debajo del 70%; por encima del 90% deja poco margen y por encima del 110% se financia con deuda o caja.` })
-      if (p.debtEbitda != null && p.debtEbitda > 4)
-        risks.push({ label: 'Deuda elevada', level: p.debtEbitda > 5 ? 'alto' : 'medio',
-          value: `${p.debtEbitda.toFixed(1)}×`,
-          detail: `Deuda neta de ${p.debtEbitda.toFixed(1)}× su EBITDA. Cómodo por debajo de 2,5×; por encima de 4× el dividendo compite con el pago de la deuda y suele recortarse primero.` })
-      if (p.interestCoverage != null && p.interestCoverage < 3)
-        risks.push({ label: 'Cobertura de intereses baja', level: p.interestCoverage < 2 ? 'alto' : 'medio',
-          value: `${p.interestCoverage.toFixed(1)}×`,
-          detail: `El beneficio operativo cubre solo ${p.interestCoverage.toFixed(1)}× los intereses de la deuda. Holgado por encima de 6×; por debajo de 3× los acreedores van antes que el accionista.` })
-      if (p.fcfCagr5 != null && p.fcfCagr5 < -5)
-        risks.push({ label: 'FCF en descenso', level: p.fcfCagr5 < -15 ? 'alto' : 'medio',
-          value: `${p.fcfCagr5.toFixed(0)}%/a`,
-          detail: `Su flujo de caja libre cae un ${Math.abs(p.fcfCagr5).toFixed(0)}% anual (media de 5 años). El dividendo se paga con esa caja: si sigue estrechándose, peligra.` })
+
+      // Deuda neta / EBITDA: no aplica a banca/seguros/REIT/BDC. En utilities el umbral es más alto (deuda regulada).
+      if (!fin && !reit && p.debtEbitda != null) {
+        const [warn, high, comfort] = st === 'utilities' ? [6, 7, '5×'] : [4, 5, '2,5×']
+        if (p.debtEbitda > warn)
+          risks.push({ label: 'Deuda elevada', level: p.debtEbitda > high ? 'alto' : 'medio',
+            value: `${p.debtEbitda.toFixed(1)}×`,
+            detail: `Deuda neta de ${p.debtEbitda.toFixed(1)}× su EBITDA. Cómodo por debajo de ${comfort} para su sector; por encima de ${warn}× el dividendo compite con el pago de la deuda.` })
+      }
+
+      // Cobertura de intereses: aplica a casi todos salvo banca/seguros. REIT/utilities con umbral más laxo (apalancamiento estructural).
+      if (!fin && p.interestCoverage != null) {
+        const [warn, crit] = (reit || st === 'utilities') ? [2, 1.5] : [3, 2]
+        if (p.interestCoverage < warn)
+          risks.push({ label: 'Cobertura de intereses baja', level: p.interestCoverage < crit ? 'alto' : 'medio',
+            value: `${p.interestCoverage.toFixed(1)}×`,
+            detail: `El beneficio operativo cubre solo ${p.interestCoverage.toFixed(1)}× los intereses de la deuda. Por debajo de ${warn}× los acreedores van antes que el accionista.` })
+      }
+
+      // FCF en descenso: no aplica a banca/seguros/REIT/BDC. En cíclicas (energía/materiales) solo si es severo.
+      if (!fin && !reit && p.fcfCagr5 != null) {
+        const thr = st === 'energy' ? -25 : -5
+        if (p.fcfCagr5 < thr)
+          risks.push({ label: 'FCF en descenso', level: p.fcfCagr5 < (st === 'energy' ? -40 : -15) ? 'alto' : 'medio',
+            value: `${p.fcfCagr5.toFixed(0)}%/a`,
+            detail: `Su flujo de caja libre cae un ${Math.abs(p.fcfCagr5).toFixed(0)}% anual (media de 5 años). El dividendo se paga con esa caja: si sigue estrechándose, peligra.` })
+      }
+
       const incPct = totalIncomeEUR > 0 ? (p.annualIncomeEUR ?? 0) / totalIncomeEUR * 100 : 0
       const worst = risks.some(r => r.level === 'alto') ? 'alto' : 'medio'
-      return { ...p, risks, incPct, worst }
+      return { ...p, risks, incPct, worst, sectorType: st }
     })
     .filter(p => p.risks.length > 0)
     .sort((a, b) => (a.worst === b.worst ? b.incPct - a.incPct : a.worst === 'alto' ? -1 : 1))

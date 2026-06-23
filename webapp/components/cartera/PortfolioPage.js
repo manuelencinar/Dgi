@@ -500,6 +500,9 @@ function DividendRiskSection({ risks, totalIncomeEUR, isPremium }) {
           <p style={{ fontSize: 11.5, color: riskPct >= 25 ? '#f87171' : '#fbbf24' }}>
             El <strong>{riskPct.toFixed(0)}%</strong> de tu renta anual proviene de empresas con señales de alerta.
           </p>
+          <p style={{ fontSize: 10.5, color: '#3a4260', marginTop: 8, lineHeight: 1.45 }}>
+            Señales sector-aware: REITs y BDC se miden por AFFO/NII, y banca y aseguradoras por capital y payout sobre beneficio —no por FCF ni deuda/EBITDA, que no les aplican. Su seguridad del dividendo se evalúa en la ficha de cada empresa.
+          </p>
         </>
       )}
     </div>
