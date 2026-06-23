@@ -378,17 +378,27 @@ export function calcDividendRisks(enriched, totalIncomeEUR) {
     .map(p => {
       const risks = []
       if (p.payoutFCF != null && p.payoutFCF > 90)
-        risks.push({ label: 'Payout FCF elevado', level: p.payoutFCF > 110 ? 'alto' : 'medio' })
+        risks.push({ label: 'Payout FCF elevado', level: p.payoutFCF > 110 ? 'alto' : 'medio',
+          value: `${p.payoutFCF.toFixed(0)}%`,
+          detail: `Reparte en dividendos el ${p.payoutFCF.toFixed(0)}% de su flujo de caja libre. Saludable por debajo del 70%; por encima del 90% deja poco margen y por encima del 110% se financia con deuda o caja.` })
       if (p.debtEbitda != null && p.debtEbitda > 4)
-        risks.push({ label: 'Deuda elevada', level: p.debtEbitda > 5 ? 'alto' : 'medio' })
+        risks.push({ label: 'Deuda elevada', level: p.debtEbitda > 5 ? 'alto' : 'medio',
+          value: `${p.debtEbitda.toFixed(1)}×`,
+          detail: `Deuda neta de ${p.debtEbitda.toFixed(1)}× su EBITDA. Cómodo por debajo de 2,5×; por encima de 4× el dividendo compite con el pago de la deuda y suele recortarse primero.` })
       if (p.interestCoverage != null && p.interestCoverage < 3)
-        risks.push({ label: 'Cobertura de intereses baja', level: p.interestCoverage < 2 ? 'alto' : 'medio' })
+        risks.push({ label: 'Cobertura de intereses baja', level: p.interestCoverage < 2 ? 'alto' : 'medio',
+          value: `${p.interestCoverage.toFixed(1)}×`,
+          detail: `El beneficio operativo cubre solo ${p.interestCoverage.toFixed(1)}× los intereses de la deuda. Holgado por encima de 6×; por debajo de 3× los acreedores van antes que el accionista.` })
       if (p.fcfCagr5 != null && p.fcfCagr5 < -5)
-        risks.push({ label: 'FCF en descenso', level: 'medio' })
+        risks.push({ label: 'FCF en descenso', level: p.fcfCagr5 < -15 ? 'alto' : 'medio',
+          value: `${p.fcfCagr5.toFixed(0)}%/a`,
+          detail: `Su flujo de caja libre cae un ${Math.abs(p.fcfCagr5).toFixed(0)}% anual (media de 5 años). El dividendo se paga con esa caja: si sigue estrechándose, peligra.` })
       const incPct = totalIncomeEUR > 0 ? (p.annualIncomeEUR ?? 0) / totalIncomeEUR * 100 : 0
-      return { ...p, risks, incPct }
+      const worst = risks.some(r => r.level === 'alto') ? 'alto' : 'medio'
+      return { ...p, risks, incPct, worst }
     })
     .filter(p => p.risks.length > 0)
+    .sort((a, b) => (a.worst === b.worst ? b.incPct - a.incPct : a.worst === 'alto' ? -1 : 1))
 }
 
 // ── Fiscal ────────────────────────────────────────────────────────────────

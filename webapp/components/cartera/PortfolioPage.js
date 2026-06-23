@@ -471,25 +471,34 @@ function DividendRiskSection({ risks, totalIncomeEUR, isPremium }) {
         <p style={{ fontSize: 13, color: '#34d399' }}>✓ No se detectan señales de riesgo en los dividendos de tu cartera.</p>
       ) : (
         <>
+          <p style={{ fontSize: 11.5, color: '#6b7693', lineHeight: 1.5, marginBottom: 12 }}>
+            Empresas con señales que suelen <strong style={{ color: '#8090a8' }}>anticipar un recorte</strong> (payout, deuda, cobertura de intereses, caída del FCF). No es una predicción: es <strong style={{ color: '#8090a8' }}>dónde vigilar</strong>, y cuánta de tu renta depende de cada una.
+          </p>
           <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
             {risks.map((p, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, flexWrap: 'wrap', gap: 8 }}>
-                <div>
+              <div key={i} style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, borderLeft: `3px solid ${p.worst === 'alto' ? '#f87171' : '#fbbf24'}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                   <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0' }}>{p.name} <span style={{ fontSize: 10, color: '#4a5270' }}>{p.ticker}</span></p>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
-                    {p.risks.map((r, j) => (
-                      <span key={j} style={{ fontSize: 10, fontWeight: 700, color: r.level === 'alto' ? '#f87171' : '#fbbf24', background: r.level === 'alto' ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)', padding: '2px 7px', borderRadius: 5 }}>
-                        {r.label}
-                      </span>
-                    ))}
-                  </div>
+                  <p style={{ fontSize: 11, color: '#8090a8', flexShrink: 0 }}>{p.incPct.toFixed(1)}% de tu renta</p>
                 </div>
-                <p style={{ fontSize: 11, color: '#4a5270', flexShrink: 0 }}>{p.incPct.toFixed(1)}% de la renta</p>
+                <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
+                  {p.risks.map((r, j) => {
+                    const col = r.level === 'alto' ? '#f87171' : '#fbbf24'
+                    return (
+                      <div key={j}>
+                        <span style={{ fontSize: 10.5, fontWeight: 700, color: col, background: r.level === 'alto' ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)', padding: '2px 7px', borderRadius: 5 }}>
+                          {r.label}: {r.value} · {r.level === 'alto' ? 'riesgo alto' : 'a vigilar'}
+                        </span>
+                        <p style={{ fontSize: 11, color: '#6b7693', lineHeight: 1.45, marginTop: 4 }}>{r.detail}</p>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             ))}
           </div>
-          <p style={{ fontSize: 11, color: '#fbbf24' }}>
-            El {riskPct.toFixed(0)}% de tu renta anual proviene de empresas con señales de alerta.
+          <p style={{ fontSize: 11.5, color: riskPct >= 25 ? '#f87171' : '#fbbf24' }}>
+            El <strong>{riskPct.toFixed(0)}%</strong> de tu renta anual proviene de empresas con señales de alerta.
           </p>
         </>
       )}
