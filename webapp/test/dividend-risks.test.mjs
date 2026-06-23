@@ -4,11 +4,27 @@ import { calcDividendRisks } from '../lib/portfolio.js'
 
 const base = { annualIncomeEUR: 50 }
 
-test('BDC/REIT — no se marca por FCF/deuda-EBITDA/FCF (no aplican)', () => {
+test('BDC — no se marca por FCF/deuda-EBITDA/FCF (no aplican)', () => {
   // Main Street Capital (BDC): payout FCF 124%, deuda 6×, FCF cayendo → NO debe saltar.
   const bdc = { ...base, type: 'bdc', sector: 'Financial Services', payoutFCF: 124, debtEbitda: 6, fcfCagr5: -20 }
-  const r = calcDividendRisks([bdc], 100)
-  assert.equal(r.length, 0)
+  assert.equal(calcDividendRisks([bdc], 100).length, 0)
+})
+
+test('BDC — se evalúa por payout sobre beneficio (≈NII), no por FCF', () => {
+  // MAIN real: payout_eps ~90% → cubierto, no salta.
+  const ok = { ...base, type: 'bdc', sector: 'Financial Services', payoutEPS: 90, payoutFCF: null }
+  assert.equal(calcDividendRisks([ok], 100).length, 0)
+  // Distribución muy por encima del beneficio → sí salta.
+  const over = { ...base, type: 'bdc', sector: 'Financial Services', payoutEPS: 130 }
+  const r = calcDividendRisks([over], 100)
+  assert.equal(r.length, 1)
+  assert.equal(r[0].risks[0].label, 'Distribución por encima del beneficio')
+  assert.equal(r[0].risks[0].level, 'alto')
+})
+
+test('REIT — payout no se evalúa por BPA (necesita AFFO) → no falso positivo', () => {
+  const reit = { ...base, type: 'reit', sector: 'Real Estate', payoutEPS: 180, payoutFCF: 150 }
+  assert.equal(calcDividendRisks([reit], 100).length, 0)
 })
 
 test('Banca — FCF/deuda/cobertura no aplican → no se marca', () => {

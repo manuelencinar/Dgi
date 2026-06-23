@@ -726,7 +726,7 @@ export default function PortfolioPage({ isPremium }) {
 
     const [{ data: funds }, { data: fundsData }] = await Promise.all([
       stockTickers.length ? sb.from('company_fundamentals')
-        .select('ticker, current_price, dps, payout_fcf, debt_ebitda, interest_coverage, fcf_cagr5, div_cagr5, div_history, sector, industry, country')
+        .select('ticker, current_price, dps, payout_fcf, payout_eps, debt_ebitda, interest_coverage, fcf_cagr5, div_cagr5, div_history, sector, industry, country')
         .in('ticker', stockTickers) : Promise.resolve({ data: [] }),
       fundTickers.length ? sb.from('funds').select('*').in('ticker', fundTickers) : Promise.resolve({ data: [] }),
     ])

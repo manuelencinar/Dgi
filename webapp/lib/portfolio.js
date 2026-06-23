@@ -133,6 +133,7 @@ export function enrichPositions(rawPositions, fundamentalsMap, fundsMap = {}) {
       isFund: false,
       companyCountry: fund.country ?? null,
       payoutFCF:          fund.payout_fcf         ?? null,
+      payoutEPS:          fund.payout_eps          ?? null,
       debtEbitda:         fund.debt_ebitda         ?? null,
       interestCoverage:   fund.interest_coverage   ?? null,
       fcfCagr5:           fund.fcf_cagr5           ?? null,
@@ -380,7 +381,8 @@ function riskSector(p) {
   const t = (p.type || '').toLowerCase()
   const s = (p.sector || '').toLowerCase()
   const i = (p.industry || '').toLowerCase()
-  if (t === 'reit' || t === 'bdc') return 'reit'
+  if (t === 'bdc') return 'bdc'
+  if (t === 'reit') return 'reit'
   if (t === 'aseguradora') return 'insurer'
   if (t === 'banco' || (/financial services|servicios financieros/.test(s) && /bank|banca|mortgage|hipotec/.test(i))) return 'bank'
   if (t === 'utilities' || s === 'utilities') return 'utilities'
@@ -393,17 +395,28 @@ export function calcDividendRisks(enriched, totalIncomeEUR) {
     .map(p => {
       const st = riskSector(p)
       const fin = st === 'bank' || st === 'insurer'   // FCF/deuda-EBITDA/cobertura clásica no aplican
-      const reit = st === 'reit'                        // REIT/BDC: se miden por AFFO/NII, no por FCF
+      const reit = st === 'reit'                        // REIT: se mide por AFFO (no cargado) → payout no evaluado aquí
+      const bdc = st === 'bdc'                           // BDC: se mide por cobertura del beneficio (≈NII)
+      const noFcf = fin || reit || bdc                   // sectores donde el FCF no es la fuente del dividendo
       const risks = []
 
+      // BDC: el dividendo sale del beneficio recurrente (≈NII), no del FCF. Usamos
+      // payout sobre BPA como cobertura. Un BDC reparte casi todo su beneficio, así
+      // que solo preocupa muy por encima del 100% (umbral alto para evitar ruido del
+      // BPA, que en BDC incluye plusvalías valorativas).
+      if (bdc && p.payoutEPS != null && p.payoutEPS > 100)
+        risks.push({ label: 'Distribución por encima del beneficio', level: p.payoutEPS > 120 ? 'alto' : 'medio',
+          value: `${p.payoutEPS.toFixed(0)}%`,
+          detail: `Reparte el ${p.payoutEPS.toFixed(0)}% de su beneficio por acción (en un BDC, ≈ su capacidad de generación recurrente). Lo normal es repartir casi todo; de forma sostenida por encima del 100-120% la distribución no está cubierta.` })
+
       // Payout sobre FCF: solo sectores donde el FCF es la fuente real del dividendo.
-      if (!fin && !reit && st !== 'utilities' && p.payoutFCF != null && p.payoutFCF > 90)
+      if (!noFcf && st !== 'utilities' && p.payoutFCF != null && p.payoutFCF > 90)
         risks.push({ label: 'Payout FCF elevado', level: p.payoutFCF > 110 ? 'alto' : 'medio',
           value: `${p.payoutFCF.toFixed(0)}%`,
           detail: `Reparte en dividendos el ${p.payoutFCF.toFixed(0)}% de su flujo de caja libre. Saludable por debajo del 70%; por encima del 90% deja poco margen y por encima del 110% se financia con deuda o caja.` })
 
       // Deuda neta / EBITDA: no aplica a banca/seguros/REIT/BDC. En utilities el umbral es más alto (deuda regulada).
-      if (!fin && !reit && p.debtEbitda != null) {
+      if (!noFcf && p.debtEbitda != null) {
         const [warn, high, comfort] = st === 'utilities' ? [6, 7, '5×'] : [4, 5, '2,5×']
         if (p.debtEbitda > warn)
           risks.push({ label: 'Deuda elevada', level: p.debtEbitda > high ? 'alto' : 'medio',
@@ -411,9 +424,9 @@ export function calcDividendRisks(enriched, totalIncomeEUR) {
             detail: `Deuda neta de ${p.debtEbitda.toFixed(1)}× su EBITDA. Cómodo por debajo de ${comfort} para su sector; por encima de ${warn}× el dividendo compite con el pago de la deuda.` })
       }
 
-      // Cobertura de intereses: aplica a casi todos salvo banca/seguros. REIT/utilities con umbral más laxo (apalancamiento estructural).
+      // Cobertura de intereses: aplica a casi todos salvo banca/seguros. REIT/BDC/utilities con umbral más laxo (apalancamiento estructural).
       if (!fin && p.interestCoverage != null) {
-        const [warn, crit] = (reit || st === 'utilities') ? [2, 1.5] : [3, 2]
+        const [warn, crit] = (reit || bdc || st === 'utilities') ? [2, 1.5] : [3, 2]
         if (p.interestCoverage < warn)
           risks.push({ label: 'Cobertura de intereses baja', level: p.interestCoverage < crit ? 'alto' : 'medio',
             value: `${p.interestCoverage.toFixed(1)}×`,
@@ -421,7 +434,7 @@ export function calcDividendRisks(enriched, totalIncomeEUR) {
       }
 
       // FCF en descenso: no aplica a banca/seguros/REIT/BDC. En cíclicas (energía/materiales) solo si es severo.
-      if (!fin && !reit && p.fcfCagr5 != null) {
+      if (!noFcf && p.fcfCagr5 != null) {
         const thr = st === 'energy' ? -25 : -5
         if (p.fcfCagr5 < thr)
           risks.push({ label: 'FCF en descenso', level: p.fcfCagr5 < (st === 'energy' ? -40 : -15) ? 'alto' : 'medio',
