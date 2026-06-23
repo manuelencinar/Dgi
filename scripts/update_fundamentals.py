@@ -1658,6 +1658,40 @@ def apply_manual_protection(sb, ticker, data):
     return skipped
 
 
+def compute_report_date(sb, ticker, data):
+    """Fecha de presentación de resultados para la página de Novedades.
+    Señal: cuando aparece un trimestre NUEVO respecto al guardado, marcamos
+    last_report_date = hoy (granularidad del run semanal → "esta semana"). La
+    primera vez se estima (cierre de trimestre + ~35 días, tope hoy)."""
+    q = data.get("income_statement_quarterly") or {}
+    cols = q.get("columns") or []
+    new_period = cols[0] if cols else None
+    if not new_period:
+        return
+    data["last_report_period"] = new_period
+    today = datetime.now(timezone.utc).date()
+    prev_period = prev_date = None
+    try:
+        r = (sb.table("company_fundamentals")
+             .select("last_report_period, last_report_date")
+             .eq("ticker", ticker).maybe_single().execute())
+        if r and r.data:
+            prev_period = r.data.get("last_report_period")
+            prev_date = r.data.get("last_report_date")
+    except Exception:
+        pass
+    if not prev_period:
+        try:
+            qend = datetime.strptime(new_period, "%Y-%m-%d").date()
+            data["last_report_date"] = min(today, qend + timedelta(days=35)).isoformat()
+        except Exception:
+            data["last_report_date"] = today.isoformat()
+    elif new_period != prev_period:
+        data["last_report_date"] = today.isoformat()   # trimestre nuevo detectado este run
+    else:
+        data["last_report_date"] = prev_date            # sin cambios → preservar
+
+
 def upsert_company(sb, ticker, ttl_days, force):
     if not force and is_fresh(sb, ticker, ttl_days):
         print(f"  [{ticker}] omitido (datos recientes)")
@@ -1670,6 +1704,8 @@ def upsert_company(sb, ticker, ttl_days, force):
 
     # Respetar datos manuales (prioridad permanente sobre yfinance)
     skipped = apply_manual_protection(sb, ticker, data)
+    # Fecha de presentación de resultados (Novedades)
+    compute_report_date(sb, ticker, data)
 
     try:
         sb.table("company_fundamentals").upsert(data, on_conflict="ticker").execute()

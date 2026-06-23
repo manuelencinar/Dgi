@@ -19,6 +19,21 @@ export function daysSince(dateStr) {
   return isNaN(d) ? null : Math.floor((Date.now() - d.getTime()) / 86400000)
 }
 
+// Fecha de publicación efectiva: usa last_report_date (real, detectada por el
+// script) si existe; si no, estima cierre_trimestre + ~35 días (los resultados se
+// publican ~5 semanas tras el cierre), acotada a hoy. Así Novedades funciona igual
+// antes y después de poblar la columna.
+export function effectiveReportDate(lastReportDate, quarterEnd, now = Date.now()) {
+  if (lastReportDate) return String(lastReportDate).slice(0, 10)
+  if (!quarterEnd) return null
+  const d = new Date(quarterEnd + 'T00:00:00Z')
+  if (isNaN(d)) return null
+  d.setUTCDate(d.getUTCDate() + 35)
+  const iso = d.toISOString().slice(0, 10)
+  const today = new Date(now).toISOString().slice(0, 10)
+  return iso > today ? today : iso
+}
+
 // Parsea el estado trimestral → { latestDate, revYoY, incYoY, revSeries }.
 // columns[0] / data[k][0] = trimestre más reciente. YoY compara contra el mismo
 // trimestre de hace un año (índice 4).

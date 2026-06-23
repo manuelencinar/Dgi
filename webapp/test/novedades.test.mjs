@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseQuarterlyNews, daysSince, splitFeatured } from '../lib/novedades.js'
+import { parseQuarterlyNews, daysSince, splitFeatured, effectiveReportDate } from '../lib/novedades.js'
 
 test('parseQuarterlyNews — YoY contra el mismo trimestre del año anterior', () => {
   const q = {
@@ -44,6 +44,25 @@ test('splitFeatured — mitad EE.UU. / mitad país del usuario', () => {
   assert.equal(r.length, 6)
   assert.equal(r.filter(x => x.cc === 'US').length, 3)   // mitad EE.UU.
   assert.ok(r.filter(x => x.cc === 'ES').length >= 3)     // resto del país del usuario
+})
+
+test('effectiveReportDate — usa la fecha real si existe', () => {
+  assert.equal(effectiveReportDate('2026-05-02', '2026-03-31'), '2026-05-02')
+})
+
+test('effectiveReportDate — estima cierre + 35 días si no hay fecha real', () => {
+  // 2025-03-31 + 35d = 2025-05-05; "ahora" muy posterior → no se acota
+  assert.equal(effectiveReportDate(null, '2025-03-31', Date.parse('2026-01-01')), '2025-05-05')
+})
+
+test('effectiveReportDate — acota a hoy si la estimación es futura', () => {
+  const now = Date.parse('2026-04-10')
+  // 2026-03-31 + 35d = 2026-05-05 (futuro) → se acota a hoy
+  assert.equal(effectiveReportDate(null, '2026-03-31', now), '2026-04-10')
+})
+
+test('effectiveReportDate — sin datos → null', () => {
+  assert.equal(effectiveReportDate(null, null), null)
 })
 
 test('splitFeatured — usuario de EE.UU. → solo top por capitalización', () => {

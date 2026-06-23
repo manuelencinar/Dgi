@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/PublicNav'
 import NovedadesClient from '@/components/NovedadesClient'
 import { DICT } from '@/data/dict'
-import { parseQuarterlyNews, daysSince, splitFeatured } from '@/lib/novedades'
+import { parseQuarterlyNews, daysSince, splitFeatured, effectiveReportDate } from '@/lib/novedades'
 
 export const dynamic = 'force-dynamic'
 export const metadata = {
@@ -11,7 +11,7 @@ export const metadata = {
   description: 'Resultados recientes de las empresas, cambios destacados y eventos de tu cartera.',
 }
 
-const REPORT_WINDOW_DAYS = 100  // un trimestre se publica ~30-45 días tras su cierre
+const REPORT_WINDOW_DAYS = 35  // ventana de "resultados recientes" sobre la fecha de publicación
 function svc() { return svcClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY) }
 const slim = arr => arr.map(r => ({ t: r.t, name: r.name, cc: r.cc, sector: r.sector, revYoY: r.revYoY, incYoY: r.incYoY, revSeries: r.revSeries, latestDate: r.latestDate, age: r.age }))
 
@@ -54,18 +54,21 @@ export default async function NovedadesPage() {
   const ctk = candidates.map(c => c.t)
   for (let i = 0; i < ctk.length; i += 150) {
     const { data } = await sb.from('company_fundamentals')
-      .select('ticker, income_statement_quarterly').in('ticker', ctk.slice(i, i + 150))
+      .select('ticker, income_statement_quarterly, last_report_date').in('ticker', ctk.slice(i, i + 150))
     ;(data || []).forEach(r => { qMap[r.ticker] = r })
   }
 
-  // 4. Reporteros recientes (último trimestre dentro de la ventana).
+  // 4. Reporteros recientes: por FECHA DE PUBLICACIÓN (last_report_date real del
+  //    script, o estimación cierre+35d como respaldo) dentro de la ventana.
   const reporters = []
   for (const c of candidates) {
-    const parsed = parseQuarterlyNews(qMap[c.t]?.income_statement_quarterly)
+    const row = qMap[c.t]
+    const parsed = parseQuarterlyNews(row?.income_statement_quarterly)
     if (!parsed) continue
-    const age = daysSince(parsed.latestDate)
+    const reportDate = effectiveReportDate(row?.last_report_date, parsed.latestDate)
+    const age = daysSince(reportDate)
     if (age == null || age > REPORT_WINDOW_DAYS) continue
-    reporters.push({ ...c, ...parsed, age })
+    reporters.push({ ...c, ...parsed, age, reportDate })
   }
   reporters.sort((a, b) => b.mcap - a.mcap)   // por capitalización (para el reparto)
 
