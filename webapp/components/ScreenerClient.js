@@ -14,6 +14,7 @@ const YIELD_OPTS  = [{ v: 0, l: 'Todas' }, { v: 1, l: '>1%' }, { v: 2, l: '>2%' 
 const STREAK_OPTS = [{ v: 0, l: 'Todas' }, { v: 5, l: '>5a' }, { v: 10, l: '>10a' }, { v: 25, l: '>25a' }, { v: 35, l: '>35a' }]
 const CAGR_OPTS   = [{ v: 0, l: 'Todas' }, { v: 3, l: '>3%' }, { v: 5, l: '>5%' }, { v: 7, l: '>7%' }, { v: 10, l: '>10%' }, { v: 12, l: '>12%' }]
 const PAYOUT_OPTS = [{ v: 999, l: 'Todas' }, { v: 50, l: '<50%' }, { v: 70, l: '<70%' }, { v: 90, l: '<90%' }]
+const SAFETY_OPTS = [{ v: 0, l: 'Todas' }, { v: 50, l: '≥50' }, { v: 70, l: '≥70 (seguro)' }, { v: 85, l: '≥85 (muy seguro)' }]
 const ROIC_OPTS   = [{ v: 0, l: 'Todas' }, { v: 10, l: '>10%' }, { v: 15, l: '>15%' }, { v: 20, l: '>20%' }]
 const OPM_OPTS    = [{ v: 0, l: 'Todas' }, { v: 10, l: '>10%' }, { v: 20, l: '>20%' }, { v: 30, l: '>30%' }]
 const REV_OPTS    = [{ v: 'all', l: 'Todas' }, { v: 'pos', l: 'Positivo' }, { v: '5', l: '>5%' }, { v: '10', l: '>10%' }]
@@ -28,7 +29,7 @@ const IMPROVING_OPTS = [{ v: 'any', l: 'Cualquier mejora' }, { v: 'roic', l: 'RO
 
 const INIT = {
   score: 0, zona: 'all', sector: 'all', cur: 'all',
-  yield: 0, streak: 0, cagr: 0, rule1010: false, payout: 999,
+  yield: 0, streak: 0, cagr: 0, rule1010: false, payout: 999, safety: 0,
   roic: 0, opm: 0, rev: 'all', moat: 'all',
   debt: 99, icov: 0,
   mos: -999, pe: 999, ev: 999, cap: 'all',
@@ -190,6 +191,7 @@ function CompanyCard({ co, rank, destWHT, whtOverrides, sortKey, following, isAu
           : <DM label="ROIC" val={co.roic == null ? '—' : (co.roicWarn ? '⚠' : '') + co.roic.toFixed(0) + '%'} color={co.roicWarn ? '#fb923c' : undefined} title={co.roicWarn ? 'ROIC muy elevado — comparar con peers' : 'Retorno sobre el capital invertido'} />}
         {co.isPharma && co.rd != null && <DM label="I+D" val={co.rd.toFixed(0) + '%'} color={co.rd >= 12 ? '#34d399' : co.rd < 8 ? '#fbbf24' : undefined} title="I+D / Ingresos — inversión en pipeline futuro (farmacéuticas). >15% indica compromiso con la innovación." />}
         <DM label="Payout" val={co.payout == null ? '—' : co.payout.toFixed(0) + '%'} />
+        {co.safety != null && <DM label="Seguridad" val={String(co.safety)} color={co.safety >= 70 ? '#34d399' : co.safety >= 50 ? '#fbbf24' : '#f87171'} title="Seguridad del dividendo (0–100): riesgo de recorte según payout, balance, historial y tendencia. Verde ≥70, rojo <50." />}
         <DM label="Deuda" val={co.debt == null ? '—' : debtEbitdaIsArtifact(co.debt) ? 'EBITDA≈0' : co.debt.toFixed(1) + 'x'} title={debtEbitdaIsArtifact(co.debt) ? 'EBITDA cercano a cero — el ratio deuda/EBITDA no es representativo' : 'Deuda neta / EBITDA'} />
         <DM label="MoS" val={co.mosUnreliable ? 'n/f' : co.mos == null ? '—' : (co.mos >= 0 ? '+' : '') + co.mos.toFixed(0) + '%'} color={!co.mosUnreliable && co.mos != null ? (co.mos >= 0 ? '#34d399' : '#f87171') : undefined} title={co.mosUnreliable ? 'Valor intrínseco no fiable para este tipo de activo' : 'Margen de seguridad sobre el valor intrínseco'} />
 
@@ -251,13 +253,14 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       if (filters.sector !== 'all' && co.s !== filters.sector) return false
       // Si hay cualquier filtro de dividendo activo, excluir las empresas que no
       // reparten dividendo (aparecen en el screener, pero no en búsquedas por dividendo).
-      const divFilterActive = filters.yield > 0 || filters.streak > 0 || filters.cagr > 0 || filters.rule1010 || filters.payout < 999
+      const divFilterActive = filters.yield > 0 || filters.streak > 0 || filters.cagr > 0 || filters.rule1010 || filters.payout < 999 || filters.safety > 0
       if (divFilterActive && co.pays === false) return false
       if (filters.yield > 0 && (co.y == null || co.y < filters.yield)) return false
       if (filters.streak > 0 && (co.streak == null || co.streak < filters.streak)) return false
       if (filters.cagr > 0 && (co.cagr == null || co.cagr < filters.cagr)) return false
       if (filters.rule1010 && !co.r1010) return false
       if (filters.payout < 999 && (co.payout == null || co.payout >= filters.payout)) return false
+      if (filters.safety > 0 && (co.safety == null || co.safety < filters.safety)) return false
       if (filters.roic > 0 && (co.roic == null || co.roic < filters.roic)) return false
       if (filters.opm > 0 && (co.opm == null || co.opm < filters.opm)) return false
       if (filters.rev === 'pos' && (co.rev == null || co.rev <= 0)) return false
@@ -471,6 +474,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
             <Chips label="Racha" opts={STREAK_OPTS} value={filters.streak} onChange={v => set('streak', v)} locked={lock} />
             <Chips label="CAGR div" opts={CAGR_OPTS} value={filters.cagr} onChange={v => set('cagr', v)} locked={lock} />
             <Chips label="Payout FCF" opts={PAYOUT_OPTS} value={filters.payout} onChange={v => set('payout', v)} locked={lock} />
+            <Chips label="Seguridad div." opts={SAFETY_OPTS} value={filters.safety} onChange={v => set('safety', v)} locked={lock} />
             <Toggle label="Regla 10/10" value={filters.rule1010} onChange={v => set('rule1010', v)} locked={lock} />
           </div>
 
