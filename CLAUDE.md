@@ -24,7 +24,7 @@ URL del repositorio: https://github.com/manuelencinar/Dgi
 ```
 
 ## Páginas construidas y funcionando
-- Landing page pública — presenta la app y los planes de precio; testimonios sustituidos por **métricas reales** (nº mercados, empresas, etc.). Secciones (en `app/page.js`): Hero → **ForWhom** ("¿Es para ti?", #9) → **CompanyShowcase** (mockup de la ficha de empresa con Score/salud/insights, #11) → Benefits → **DualRanking** → **UseCase** (mockup del screener filtrado, #8) → HowItWorks → Markets → PlatformMetrics → Pricing → FAQ. (La sección de noticias `LandingNews` se quitó de la landing — daba sensación de incompleta cuando NewsAPI no responde; el componente sigue existiendo.) FAQ ampliado (`LandingFaq.js`): cómo se calcula el Score, datos no en tiempo real, diferencias vs competidores, uso desde España/brókers.
+- Landing page pública — presenta la app y los planes de precio; testimonios sustituidos por **métricas reales** (nº mercados, empresas, etc.). Secciones (en `app/page.js`): Hero → **ForWhom** ("¿Es para ti?", #9) → **CompanyShowcase** (mockup de la ficha de empresa con Score/salud/insights, #11) → Benefits → **DualRanking** → **UseCase** (mockup del screener filtrado, #8) → HowItWorks → Markets → PlatformMetrics → Pricing → FAQ. (La sección de noticias se quitó de la landing y el subsistema de noticias `LandingNews`/`CompanyNews` + `/api/news/*` se **eliminó** del repo —dependía de NewsAPI y no estaba montado.) FAQ ampliado (`LandingFaq.js`): cómo se calcula el Score, datos no en tiempo real, diferencias vs competidores, uso desde España/brókers.
 - Página de mercados — lista de 43 mercados globales con tarjetas resumen
 - Página de cada mercado individual — empresas del índice con análisis DGI
 - Screener avanzado rediseñado (`/screener`) — tarjetas, filtros free+premium, proyección €1k, comparador — ver "Screener rediseñado"
@@ -40,6 +40,7 @@ URL del repositorio: https://github.com/manuelencinar/Dgi
 - Onboarding (`/onboarding`) — 3 pasos tras registro — ver "Onboarding"
 - Cancelación con retención (`/cancelar`) — pausa/descuento/feedback — ver "Flujo de cancelación"
 - Panel de administración (`/dashboard`) — solo admin — ver sección "Panel de administración"
+- **Novedades (`/novedades`)** — home de los usuarios REGISTRADOS (el proxy redirige `/`→`/novedades` si hay sesión; el visitante anónimo ve la landing) — ver "Novedades"
 
 ## Módulo de cartera (app/cartera/)
 Implementado en tres partes. Páginas:
@@ -53,6 +54,23 @@ Implementado en tres partes. Páginas:
 
 Lógica en `lib/portfolio.js`, `lib/portfolio-calc.js`, `lib/dgi-score.js`, `lib/valuation.js`.
 Navegación entre secciones en `components/cartera/CarteraNav.js`.
+
+### Página `/cartera` (PortfolioPage) — orden y bloques (rediseño escritorio)
+Orden actual: **Posiciones arriba del todo** (lo clave) → FX (tarjeta estrecha ≤~20% en escritorio) → **Resumen** (4 tarjetas compactas en UNA fila vía `.summary-grid`: Valor total · Rentabilidad · **Renta anual NETA** [vía `calcFiscal`] · YoC medio) → **Meta de renta pasiva** (`IncomeGoalCard`) → Score DGI cartera → Empresas que encajan → proyección/evolución → Próximos cobros → watchlist mini → resto.
+- **Columna "Coste neto"** en la tabla de posiciones: coste de compra − dividendos netos cobrados (de `dividends_received`), con el **YoC real** debajo (renta anual / coste neto); "✓ recuperada" si los dividendos superan el coste. También columna "Cobrado".
+- **Meta de renta pasiva** (`income_goal` en user_settings vía `/api/ajustes`): objetivo €/año, barra de progreso y ETA solo con el crecimiento orgánico del dividendo (g5y). SQL: `income_goal.sql`.
+- **Próximos cobros** (`components/cartera/UpcomingDividends.js`): widget que reutiliza `buildDividendCalendar` y muestra los próximos 5 cobros (fecha, empresa, importe neto, confirmado/estimado).
+- **Score DGI de la cartera** (`PortfolioDGIScore`): compacto — solo el ponderado por valor a la izquierda + las 4 categorías a su derecha en pequeño (misma altura); benchmark plegado en `<details>`.
+- Eliminado el bloque "Simular un recorte de dividendo" de `/cartera` (el simulador completo sigue en `/cartera/simulador`).
+
+### Dividendos en riesgo — SECTOR-AWARE (`calcDividendRisks` en lib/portfolio.js)
+Cada señal muestra el **valor, el umbral y el porqué** (no solo una etiqueta). Las señales son sector-aware (`riskSector` local):
+- **General/tech/consumo/salud**: payout FCF (>90/110%), deuda/EBITDA (>4/5×), cobertura de intereses (<3/2×), FCF en descenso (<−5/−15%).
+- **REITs**: NO FCF/deuda-EBITDA; **payout sobre AFFO** (`payout_affo`, >95/110%). AFFO = FFO − capex de mantenimiento por sub-tipo (reutiliza `reit_manual` del dashboard).
+- **BDC**: **payout sobre NII** (`payout_nii` = ingresos de inversión − gastos op.; respaldo a BPA), >100/120%.
+- **Banca/seguros**: ninguna señal de FCF/deuda (no aplican; se evalúan en su ficha).
+- **Utilities**: umbral de deuda más alto (>6/7×), sin FCF. **Energía/materiales**: FCF en descenso solo si severo (<−25%).
+- Columnas `payout_affo`/`payout_nii` en company_fundamentals (SQL `payout_affo_nii.sql`): NII lo calcula `update_fundamentals.py` (semanal); AFFO lo calcula `scripts/recalc_payout_affo_nii.mjs` (reutiliza `lib/reit-metrics` → sin drift; re-ejecutar tras editar sub-tipos o nuevas cuentas). La cartera tolera que las columnas no existan (fallback en el select).
 
 ### Diversificación por supersectores (Morningstar) + perfil de inversor
 - **Taxonomía de 3 niveles** (`lib/supersectors.js` + `lib/taxonomy.js`): Supersector (Cíclico/Sensible/Defensivo + Otros para ETFs/sin dato) → Sector (los 11 de Yahoo) → Industria (lista detallada, inglés Yahoo + español). El **sector** (de `company_fundamentals.sector`) determina el supersector; la **industria** se almacena pero NO entra en el gráfico. `sectorInfo(sector)` mapea sector→{sup, es}.
@@ -165,6 +183,7 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - Lógica: `lib/watchlist.js` (helpers puros: `FREE_WATCHLIST_LIMIT=10`, `priceProximity`, `priceForYield`), `lib/watchlist-enrich.js` (`buildWatchlistRows` server-side: combina watchlist + DICT + fundamentales + daily_prices → precio, score, yield, proximidad; `sortByProximity`).
 - APIs: `/api/watchlist` (GET/POST/PUT/DELETE, RLS, aplica límite freemium en POST), `/api/watchlist/enriched` (GET, para la mini), `/api/notifications` (GET lista+nº no leídas, POST marca leídas).
 - Cron `/api/check-watchlist-alerts` (service_role, en `vercel.json`: `30 16` y `30 22` L-V, 30 min tras cada cierre). Comprueba alertas activas, crea notificación in-app siempre y envía email (Resend) solo a premium. Anti-spam: no repite hasta que el precio/yield sale de zona y vuelve a entrar. CRON_SECRET opcional.
+- **Alerta "avísame cuando sea COMPRA"** (`alert_buyzone_active`/`_triggered`, SQL `watchlist_buyzone.sql`): toggle en el modal de seguir; sin precio manual, avisa cuando entra en zona de compra por **Score DGI ≥ 6,5 Y margen de seguridad ≥ 20%** (el cron lee el último Score de `score_history` + `intrinsic_value`). Notificación `watchlist_buyzone` (🟢) in-app + email premium.
 - **Freemium**: gratuito hasta 10 empresas, sin alertas por email (pero sí notificación in-app); premium ilimitado + email.
 - También genera notificación `recurring` al ejecutarse una aportación periódica (en `/api/procesar-aportaciones`).
 - **Detector de cambios de dividendo** (`/api/check-dividend-changes`, cron lunes 8:00 UTC en `vercel.json`): en una pasada detecta **recortes** (último año completo con crecimiento<0, `lastYear>=año-2` → `dividend_cut`) y **subidas** (crecimiento>0,5%, `lastYear>=año-1` → `dividend_increase`, el evento que celebra el DGI: "tu YoC sube"). Avisa a quien la TIENE (positions) o la SIGUE (watchlist). In-app siempre + email (Resend) solo premium. Dedup: 1 aviso por usuario+ticker+tipo al año. Iconos en `NotificationsClient`/`NotificationBell` (⚠️ recorte, 📈 subida). CRON_SECRET opcional.
@@ -192,6 +211,7 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - **Explicación del Score DGI** en la ficha: intro en la `DGIScoreCard` detallada (0–10, ponderado por sector, 4 dimensiones, penalizaciones/bonificaciones, leyenda de colores).
 - **Preview sin sesión** (#1): `components/LoggedOutPreview.js` — `/watchlist` y `/cartera` muestran un mock difuminado con datos de ejemplo + CTA "Empezar gratis" en vez de redirigir directo al login. (El middleware no bloquea estas rutas a no-autenticados; solo `/app` y `/dashboard`.)
 - **Freemium del screener — muestra de 50 empresas** (CAMBIO de modelo): el usuario free SOLO recibe 50 empresas en el payload (el resto NO se carga, requiere suscripción) y tiene TODOS los filtros y datos sobre ellas (el límite del plan es el nº de empresas, no los filtros: `lock=false`, sin el corte `if(!isPremium) return true`). Selección DETERMINISTA (siempre las mismas) con reparto por índice: 1 IBEX 35, 1 DAX, 1 CAC 40, 1 FTSE 100, 5 S&P 500 y 41 del resto del mundo (orden pseudo-aleatorio estable por hash del ticker). `selectFreeSample()` en `lib/screener-companies.js` usando `getIndexConstituents` de `lib/index-constituents.js`; `app/screener/page.js` aplica la muestra si `plan!=='premium'`. Banner/cabecera: "muestra de 50 · N con Premium". El patrón "premium revela cuáles" sigue en el radar de mercados (`MarketDetail.js`).
+- **Seguridad del dividendo (0–100)** en la tarjeta del screener + **filtro premium** "Seguridad div." (≥50/≥70/≥85): calculada server-side en `buildScreenerCompanies` con `dividendSafety` (solo el número viaja al cliente como `co.safety`). Ver "Seguridad del dividendo".
 - **Gating premium SIN CSS-blur** (seguridad): difuminar no basta (se quita por DevTools o se lee el payload). Regla: el componente server NO envía datos premium a usuarios free (anula/reduce las props), y el `PremiumGate` renderiza un esqueleto FICTICIO, nunca los `children` reales. Aplicado a: ficha de empresa (`app/empresa/[ticker]/page.js` + `CompanyDetailPage.js`, `empresa/HealthPanel.js`, `empresa/FinanzasSections.js`), radar de mercados (`app/mercados/[symbol]/page.js` reduce `dgiMetrics` a solo el conteo + teasers), analytics de cartera (`PortfolioDGIScore`, `CurrencyAnalysis`, `PortfolioPage`). El wizard "construir cartera" calcula el plan en el SERVER (`/api/construir-cartera`) y solo manda el plan (free: 5 + conteo). Comparador (limita nº) y screener (muestra de 50) no exponían datos tras blur.
 
 ## Construir cartera desde cero (#11) — wizard
@@ -274,6 +294,34 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - Items principales: Mercados, Screener, **Rankings** (Aristócratas/Caníbales/Compounding), Watchlist, **Comparador**, Cartera. Construir cartera y ETFs como secundarios. (Comparador subido a primario para hacerlo descubrible.)
 - **Empresas del mercado clicables**: `ConstituentRow` (`MarketDetail.js`) es un `Link` a la ficha. **Recuento de mercados consistente**: la landing usa `getEffectiveMarkets()` (activos, igual que /mercados) — antes mostraba los 48 de `MARKETS` crudo (incl. desactivados como Dow Jones Global Titans) descuadrando con el "43" de la copy. **MoS/payout saneados** también en el screener (`buildScreenerCompanies` usa `mosUnreliable(f)` y `sanePayout(f)`, no cálculos en línea). Campana de notificaciones (`NotificationBell`) junto a Ajustes cuando hay sesión. Se eliminó el botón "Mi Índice" (no aportaba). CarteraNav incluye "ETFs y Fondos".
 
+## Seguridad del dividendo (0–100) — `lib/dividend-safety.js`
+Nota PREDICTIVA del riesgo de recorte (complementa al detector reactivo y al Score DGI). Pura, testeada. `dividendSafety(data, sectorType)` → `{available, score, grade, color, factors[]}`. Ponderación: payout 35% (bandas por sector: REIT/utility toleran más), solidez del balance 25% (deuda/EBITDA + cobertura), historial 15% (racha), tendencia 25% (subidas suman; recortes/congelación restan). Grado Muy seguro/Seguro/Vigilar/En riesgo/Peligro (`safetyGrade`). Se usa en: **ficha** (tarjeta "Seguridad del dividendo", premium, solo si paga dividendo) y **screener** (columna + filtro, `co.safety`).
+
+## Novedades (`/novedades`) — home de registrados
+- `app/novedades/page.js` (server) → `components/NovedadesClient.js`. El **proxy** redirige `/`→`/novedades` para usuarios con sesión (el anónimo ve la landing). `/novedades` está en `ONBOARD_ROUTES`.
+- **Resultados recientes**: empresas cuya última publicación de resultados cae en los últimos 35 días, por **fecha de publicación real** (`last_report_date`) con respaldo a estimación (cierre de trimestre + 35d). Bloque destacado con mini-gráfico de ingresos por trimestre + cambio YoY de ingresos y beneficio; reparto **mitad 🇺🇸 / mitad país del usuario** (`country_residence`), priorizado por capitalización (`splitFeatured`). Listado del resto.
+- **En tu cartera y watchlist**: notificaciones recientes (recortes/subidas/zona de compra).
+- Lógica pura en `lib/novedades.js` (`parseQuarterlyNews`, `splitFeatured`, `daysSince`, `effectiveReportDate`). Detección de "ha presentado resultados": `update_fundamentals.py` (`compute_report_date`) marca `last_report_date=hoy` al aparecer un trimestre NUEVO (granularidad del run semanal); columnas `last_report_period`/`last_report_date` (SQL `report_dates.sql`), backfill `scripts/backfill_report_dates.mjs`.
+
+## Analítica de producto — PostHog (`components/Analytics.js` + `lib/analytics.js`)
+Snippet oficial de PostHog cargado SOLO si existe `NEXT_PUBLIC_POSTHOG_KEY` (no-op total si falta → no rompe local/preview). Autocapture (pageviews + clics). `track(event, props)`/`identify` para eventos clave; se marca `upgrade_click` en el inicio de checkout (`PricingClient`). Host EU por defecto (`NEXT_PUBLIC_POSTHOG_HOST`). Montado en `app/layout.js`. PENDIENTE: poner la key en Vercel.
+
+## PWA / instalable
+`app/manifest.js` (Next sirve `/manifest.webmanifest` y enlaza solo) + iconos SVG de marca: `app/icon.svg` (favicon), `public/icon.svg` + `public/icon-maskable.svg` (manifest), `app/apple-icon.svg`. "Añadir a pantalla de inicio" con arranque propio.
+
+## Error boundaries + SEO
+- `app/error.js` y `app/global-error.js` (Client Components; prop `unstable_retry` de Next 16, fallback a `reset`) → un throw ya no deja pantalla en blanco. `app/not-found.js` (404 con marca). Loguean a consola (placeholder de Sentry/PostHog).
+- `app/sitemap.js` (~2000 fichas sin secundarias + índices + páginas públicas) y `app/robots.js` (bloquea `/api` y páginas privadas/de app). `generateMetadata` en `/mercados/[symbol]`.
+
+## Tests + CI — runner nativo de Node (cero dependencias)
+`npm test` → `node --import ./test/register-alias.mjs --test "test/**/*.test.mjs"`. `test/alias-resolver.mjs` mapea el alias `@/` e imports relativos sin extensión para cargar los `lib/` sin Next. Cubre la lógica financiera crítica: `fiscal-es` (tramos/exención/resolveDestWHT), `screener.effectiveDivTax` (doble imposición 15%), `helpers` (tiers/dividendTrend), `metrics.calculateROIC`, `dividend-safety`, `novedades`, `portfolio.calcDividendRisks` (sector-aware). CI en `.github/workflows/test.yml`.
+
+## Healthcheck de frescura de datos (Dashboard → Sistema)
+`/api/admin/data-health` + tarjeta "Salud de los datos": comprueba cada fuente y **cada benchmark por separado** (el indicador global no detectaba una serie congelada — caso ^GSPC parado 13 meses). Verde/ámbar/rojo por antigüedad según cadencia. NOTA: los índices benchmark (`^GSPC`…) se reincorporaron a `update_prices.py` (`BENCHMARK_TICKERS`) — `get_all_tickers()` no los incluía y dejaron de actualizarse.
+
+## Limpieza de código muerto / seguridad
+Se eliminó el shell legacy NO montado: `DgiApp`+`IndexTab`+`CarteraTab`+`SettingsPage`+`UpgradeModal`, y los endpoints `/api/settings` (POST hacía `upsert` de user_settings SIN whitelist → riesgo de escalada; solo lo salvaba la RLS sin policy UPDATE), `/api/portfolio` (sin uso) y `/api/news/*` + componentes de noticias. Toda escritura de ajustes pasa por `/api/ajustes` (service_role + whitelist).
+
 ## Infraestructura / despliegue
 - Repo GitHub: rama por defecto **master** (la app vive ahí); `main` es el proyecto HTML original + funds.json de GitHub Pages (historiales independientes).
 - Deploy: Vercel proyecto `invest-dgi`, dominio https://invest-dgi.vercel.app. Deploy con `cd webapp && vercel --prod --yes`.
@@ -283,7 +331,7 @@ Navegación entre secciones en `components/cartera/CarteraNav.js`.
 - NOTA: `update_fundamentals.py` NO tiene flag `--half` (asumirlo rompió update_all.yml en el pasado; ya corregido).
 
 ## SQL pendiente de ejecutar en Supabase (todos los ficheros en webapp/sql/)
-Estado: el usuario ya ejecutó admin.sql, valuation_columns.sql, roic_columns.sql, cartera_parte3.sql, funds.sql, recurring.sql, fx_and_settings.sql, daily_prices.sql, `investor_profile.sql` (columna investor_profile en user_settings) y `taxonomy_locked.sql` (columna taxonomy_locked en company_fundamentals).
+Estado: el usuario ya ejecutó admin.sql, valuation_columns.sql, roic_columns.sql, cartera_parte3.sql, funds.sql, recurring.sql, fx_and_settings.sql, daily_prices.sql, `investor_profile.sql`, `taxonomy_locked.sql`, y (esta sesión) `watchlist_buyzone.sql`, `income_goal.sql`, `report_dates.sql` y `payout_affo_nii.sql` (estos 4 confirmados ejecutados + backfills corridos).
 Ficheros que el usuario PUEDE tener aún pendientes de ejecutar (confirmar en entorno nuevo):
 `roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), `yield_avg.sql` (columnas yield_avg + yield_avg_years), `ma200.sql` (columna MM200), `score_history.sql` (tabla de histórico del Score DGI), `canibales.sql` (columnas shares_reduced_pct + shares_base_year), `compounders.sql` (columna capex_cfo_pct), `bank_metrics.sql` (tabla bank_metrics_manual — NPL/overrides bancarios por trimestre), y el ALTER de `premium_until` en user_settings.
 Si se monta un entorno nuevo, ejecutar en orden todos los ficheros de webapp/sql/.
@@ -326,7 +374,8 @@ Si se monta un entorno nuevo, ejecutar en orden todos los ficheros de webapp/sql
 - Tablas de cancelaciones/feedback (`webapp/sql/cancellations.sql`)
 
 ## Tabla company_fundamentals — campos principales
-precio, dps, div_streak, div_cagr5, div_history, payout_fcf, payout_eps,
+precio, dps, div_streak, div_cagr5, div_history, payout_fcf, payout_eps, payout_nii (BDC), payout_affo (REIT),
+last_report_period, last_report_date (fecha de publicación de resultados → Novedades),
 fcf_per_share, fcf_cagr5, debt_ebitda, net_debt, net_debt_ebitda,
 interest_coverage, roic (legacy), roic_reported, roic_tangible, roic_display, roic_warning,
 nopat, invested_capital, invested_capital_tangible, tax_rate_effective,
@@ -343,7 +392,10 @@ updated_at
   - **Dividendo / dps** (fuente del yield): `dps` = **dividendo del último año COMPLETO de `div_history`** (no `isPartial`), porque está en la MISMA unidad que el precio (p.ej. peniques en las `.L`) y es el reparto real. `info.dividendRate` solo como respaldo si no hay año completo: en muchas `.L` viene en libras (×100 de desajuste → yield 0,02%) o incluye specials/timing (p.ej. Ageas 4,5 vs 3,5 → 6,7% en vez de 5,2%). NUNCA `lastDividendValue`. `pays_dividend=false` y `dps=None` si no repartió el año anterior ni en curso. Backfill: `scripts/fix_dps_from_history.mjs` (1133 empresas). Anti-artefacto: yield >40% se descarta (`scripts/fix_bad_yield.mjs`). Diagnóstico de salud: comparar `dps/price` contra `yield_avg`.
   - **Yield histórico medio** (`compute_yield_avg`): calcula `yield_avg`/`yield_avg_years` desde `div_history` + `tk.history(period="6y", auto_adjust=False)` (media de hasta 5 años completos). Es la **fuente autoritativa** (cobertura total, divisa consistente con los dividendos). Alimenta la señal "zona de compra" del screener. ⚠️ requiere `yield_avg.sql` ejecutado antes del próximo run (si no, los upserts fallan).
   - **MM200** (`compute_ma200`): media de los últimos 200 cierres del mismo `tk.history`. Columna `ma200` (requiere `ma200.sql`). El backfill inmediato/total es `backfill_yield_avg_yahoo.py` (calcula yield_avg + MM200 a la vez para todas las empresas).
-- `update_prices.py` — daily_prices + exchange_rates + benchmarks (Yahoo).
+  - **payout_nii** (BDC): `dividendo / NII`, NII ≈ ingresos de inversión − gastos operativos (solo sector Financial Services). **last_report_date/period** (`compute_report_date`): marca la fecha al detectar un trimestre nuevo (Novedades).
+- `update_prices.py` — daily_prices + exchange_rates + **benchmarks** (`BENCHMARK_TICKERS = ^GSPC,^STOXX,URTH,^NDX,^FTSE,^GDAXI,^N225`, reincorporados: `get_all_tickers()` no los incluía).
+- `recalc_payout_affo_nii.mjs` (Node) — calcula `payout_affo` (REITs, reutilizando `lib/reit-metrics` → sin drift) y `payout_nii` (BDC) desde los estados ya guardados. `--write`. Re-ejecutar tras editar sub-tipos de REIT o nuevas cuentas. Ya ejecutado (104 REITs + 13 BDC).
+- `backfill_report_dates.mjs` (Node) — pobla `last_report_period`/`last_report_date` desde los trimestres ya guardados (estimación cierre+35d). `--write`. Ya ejecutado.
 - `recalc_roic.mjs` (Node) — recalcula ROIC en BD desde los estados ya guardados (sin yfinance). `--write` para persistir.
 - `recalc_streak.mjs` (Node) — recalcula `div_streak` en BD desde `div_history` con la regla `growth > 0` (un congelamiento rompe la racha). `--write`. Ya ejecutado (561 empresas).
 - `recalc_shares.mjs` (Node) — calcula `shares_reduced_pct`/`shares_base_year` (ranking de Caníbales) desde los estados ya guardados (Diluted Average Shares), sin yfinance. Descarta artefactos (|>50%| = split). `--write`. SQL: `webapp/sql/canibales.sql`. La fuente autoritativa ongoing es `update_fundamentals.py` (`compute_shares_reduction`).
@@ -382,6 +434,7 @@ updated_at
 - Email admin: vayaebookk@gmail.com
 - Los commits terminan con: `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`
 - webapp/AGENTS.md: esta versión de Next.js (16) tiene breaking changes; consultar `node_modules/next/dist/docs/` antes de escribir código de framework
+- **Hay tests** (`cd webapp && npm test`, runner nativo de Node, cero deps). Al tocar lógica pura de `lib/` (fiscalidad, scoring, valoración, riesgos, seguridad del dividendo) añadir/actualizar el test correspondiente en `webapp/test/`. CI los corre en cada push (`.github/workflows/test.yml`).
 
 ## Ficheros lib clave
-`lib/metrics.js` (ROIC), `lib/valuation.js`, `lib/screener.js`, `lib/screener-companies.js` (motor + `selectFreeSample`), `lib/comparador.js`, `lib/currency.js` (FX), `lib/prices.js`, `lib/company-chart.js`, `lib/portfolio.js`, `lib/portfolio-calc.js`, `lib/dgi-score.js`, `lib/bank-metrics.js` (métricas y scoring de banca), `lib/supersectors.js` (3 supersectores + perfiles), `lib/taxonomy.js` (3 niveles sector/industria), `lib/build-plan.js`, `lib/index-constituents.js`, `lib/fund-fetch.js`, `lib/recurring.js`, `lib/admin.js`, `lib/admin-stats.js`, `lib/email.js`.
+`lib/metrics.js` (ROIC), `lib/valuation.js`, `lib/screener.js`, `lib/screener-companies.js` (motor + `selectFreeSample`), `lib/comparador.js`, `lib/currency.js` (FX), `lib/prices.js`, `lib/company-chart.js`, `lib/portfolio.js`, `lib/portfolio-calc.js`, `lib/dgi-score.js`, `lib/bank-metrics.js` (métricas y scoring de banca), `lib/supersectors.js` (3 supersectores + perfiles), `lib/taxonomy.js` (3 niveles sector/industria), `lib/build-plan.js`, `lib/index-constituents.js`, `lib/fund-fetch.js`, `lib/recurring.js`, `lib/admin.js`, `lib/admin-stats.js`, `lib/email.js`, `lib/dividend-safety.js` (seguridad 0–100), `lib/reit-metrics.js` (FFO/AFFO/payout), `lib/novedades.js`, `lib/analytics.js` (PostHog).
