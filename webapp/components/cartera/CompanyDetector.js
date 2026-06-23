@@ -46,50 +46,38 @@ function RecCard({ rec }) {
     setBusy(false)
   }
 
+  const fit = rec.reason || rec.whyFit
   return (
-    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 10, padding: '12px 14px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 15 }}>{rec.flag}</span>
-            <span style={{ fontSize: 13.5, fontWeight: 700, color: '#e6ebf5' }}>{rec.name}</span>
-            <span style={{ fontSize: 10.5, color: '#7a85a0', fontWeight: 600 }}>{rec.ticker}</span>
-          </div>
-          <p style={{ fontSize: 11.5, color: '#8090a8', marginTop: 3 }}>{rec.sectorEs}{rec.supersectorLabel ? ` · ${rec.supersectorLabel}` : ''}</p>
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 9, padding: '8px 11px' }}>
+      {/* Línea 1: empresa + Score/Yield */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <span style={{ fontSize: 14, flexShrink: 0 }}>{rec.flag}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#e6ebf5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rec.name}</span>
+          <span style={{ fontSize: 10, color: '#7a85a0', fontWeight: 600, flexShrink: 0 }}>{rec.ticker}</span>
         </div>
-        <div style={{ display: 'flex', gap: 14, textAlign: 'right', flexShrink: 0 }}>
-          <div>
-            <p style={{ fontSize: 9.5, color: '#5a647e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score</p>
-            <p style={{ fontSize: 14, fontWeight: 800, color: '#34d399' }}>{rec.score != null ? rec.score.toFixed(1) : '—'}</p>
-          </div>
-          <div>
-            <p style={{ fontSize: 9.5, color: '#5a647e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Yield</p>
-            <p style={{ fontSize: 14, fontWeight: 800, color: '#fbbf24' }}>{rec.yield != null ? `${rec.yield.toFixed(1)}%` : '—'}</p>
-          </div>
+        <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+          <span style={{ fontSize: 12.5, fontWeight: 800, color: '#34d399' }}>{rec.score != null ? rec.score.toFixed(1) : '—'}<span style={{ fontSize: 9, color: '#5a647e', fontWeight: 600 }}> Sc</span></span>
+          <span style={{ fontSize: 12.5, fontWeight: 800, color: '#fbbf24' }}>{rec.yield != null ? `${rec.yield.toFixed(1)}%` : '—'}<span style={{ fontSize: 9, color: '#5a647e', fontWeight: 600 }}> Yld</span></span>
         </div>
       </div>
-
-      {rec.reason && (
-        <p style={{ fontSize: 11.5, color: '#34d399', marginTop: 8 }}>✓ {rec.reason}</p>
-      )}
-      <p style={{ fontSize: 11.5, color: '#8090a8', marginTop: 4 }}>Encaje: {rec.whyFit}.</p>
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 11.5, color: '#7a85a0' }}>{fmtPrice(rec.price, rec.currency)}</span>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={follow} disabled={following} style={{
-            fontSize: 11.5, fontWeight: 700, padding: '6px 12px', borderRadius: 8, cursor: following ? 'default' : 'pointer',
+      {/* Línea 2: encaje + acciones */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 5 }}>
+        <span title={fit} style={{ fontSize: 11, color: '#34d399', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>✓ {fit}</span>
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          <button onClick={follow} disabled={following} title={following ? 'Siguiendo' : 'Seguir'} style={{
+            fontSize: 11, fontWeight: 700, padding: '4px 9px', borderRadius: 7, cursor: following ? 'default' : 'pointer',
             color: following ? '#34d399' : '#818cf8',
             background: following ? 'rgba(52,211,153,0.12)' : 'rgba(99,102,241,0.12)',
             border: `1px solid ${following ? 'rgba(52,211,153,0.3)' : 'rgba(99,102,241,0.3)'}`,
           }}>
-            {following ? '✓ Siguiendo' : '👁 Seguir'}
+            {following ? '✓' : '👁'}
           </button>
           <Link href={`/empresa/${rec.ticker}`} style={{
-            fontSize: 11.5, fontWeight: 700, padding: '6px 12px', borderRadius: 8, textDecoration: 'none',
+            fontSize: 11, fontWeight: 700, padding: '4px 9px', borderRadius: 7, textDecoration: 'none',
             color: '#c8d0e0', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
           }}>
-            Ver ficha →
+            Ver →
           </Link>
         </div>
       </div>
@@ -142,28 +130,22 @@ export default function CompanyDetector({ enriched, isPremium }) {
   }
 
   return (
-    <div style={{ marginBottom: 16, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 12, padding: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Empresas que encajan · recomendación semanal</p>
+    <div style={{ marginBottom: 16, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 12, padding: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.1em' }} title="5 empresas de calidad en zona de compra que cubren sectores, divisas y países poco presentes en tu cartera.">Empresas que encajan · semanal</p>
         {daysLeft != null && (
           <span style={{ fontSize: 11, color: '#5a647e' }}>Se renueva en {daysLeft} {daysLeft === 1 ? 'día' : 'días'}</span>
         )}
       </div>
-      <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 14 }}>
-        5 empresas de calidad <strong style={{ color: '#34d399' }}>en zona de compra</strong> que cubren sectores, divisas y países poco presentes en tu cartera.
-      </p>
 
       {loading ? (
         <p style={{ fontSize: 12, color: '#4a5270' }}>Analizando tu cartera y buscando oportunidades…</p>
       ) : error ? (
         <p style={{ fontSize: 12, color: '#f87171' }}>No se pudieron generar recomendaciones. Inténtalo más tarde.</p>
       ) : recs.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '16px 0' }}>
-          <p style={{ fontSize: 13.5, color: '#34d399', marginBottom: 4 }}>✓ Sin huecos claros esta semana</p>
-          <p style={{ fontSize: 12, color: '#4a5270' }}>No hay empresas de calidad en zona de compra que refuercen tus sectores, divisas o países infraponderados ahora mismo. Vuelve la semana que viene.</p>
-        </div>
+        <p style={{ fontSize: 12.5, color: '#34d399', padding: '4px 0' }}>✓ Sin huecos claros esta semana — vuelve la semana que viene.</p>
       ) : (
-        <div style={{ display: 'grid', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 8 }}>
           {recs.map(rec => <RecCard key={rec.ticker} rec={rec} />)}
         </div>
       )}

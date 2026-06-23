@@ -16,7 +16,6 @@ import InvestorProfile from '@/components/cartera/InvestorProfile'
 import PortfolioDGIScore from '@/components/cartera/PortfolioDGIScore'
 import PortfolioEvolution from '@/components/cartera/PortfolioEvolution'
 import CompanyDetector from '@/components/cartera/CompanyDetector'
-import DividendCutSimulator from '@/components/cartera/DividendCutSimulator'
 import RecurringSection from '@/components/cartera/RecurringSection'
 import FxRatesWidget from '@/components/cartera/FxRatesWidget'
 import CurrencyAnalysis from '@/components/cartera/CurrencyAnalysis'
@@ -206,21 +205,21 @@ function IncomeProjectionCard({ enriched, taxRate, isPremium }) {
 }
 
 // ── Section 1: Summary ─────────────────────────────────────────────────────
-function SummarySection({ summary }) {
+function SummarySection({ summary, netIncomeEUR }) {
   const items = [
     { label: 'Valor total', value: fmtEUR(summary.totalValueEUR), sub: null },
     { label: 'Rentabilidad', value: fmtEUR(summary.gainEUR), sub: fmtPct(summary.gainPct), col: gainCol(summary.gainPct) },
-    { label: 'Renta anual estimada', value: fmtEUR(summary.totalIncomeEUR), sub: null },
-    { label: 'Yield on cost medio', value: summary.yieldOnCost != null ? summary.yieldOnCost.toFixed(2) + '%' : '—', sub: null },
+    { label: 'Renta anual neta', value: fmtEUR(netIncomeEUR ?? summary.totalIncomeEUR), sub: null },
+    { label: 'YoC medio', value: summary.yieldOnCost != null ? summary.yieldOnCost.toFixed(2) + '%' : '—', sub: null },
   ]
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginBottom: 16 }}>
+    <div className="summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, marginBottom: 16 }}>
       <style>{`@media(min-width:600px){.summary-grid{grid-template-columns:repeat(4,1fr)!important}}`}</style>
       {items.map(it => (
-        <div key={it.label} style={{ ...CARD, padding: '14px 16px' }}>
-          <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 4 }}>{it.label}</p>
-          <p style={{ fontSize: 20, fontWeight: 800, color: it.col || '#c8d0e0' }}>{it.value}</p>
-          {it.sub && <p style={{ fontSize: 12, fontWeight: 700, color: it.col, marginTop: 2 }}>{it.sub}</p>}
+        <div key={it.label} style={{ ...CARD, padding: '8px 11px' }}>
+          <p style={{ fontSize: 9.5, color: '#4a5270', marginBottom: 2 }}>{it.label}</p>
+          <p style={{ fontSize: 17, fontWeight: 800, color: it.col || '#c8d0e0', lineHeight: 1.15 }}>{it.value}</p>
+          {it.sub && <p style={{ fontSize: 11, fontWeight: 700, color: it.col, marginTop: 1 }}>{it.sub}</p>}
         </div>
       ))}
     </div>
@@ -836,6 +835,7 @@ export default function PortfolioPage({ isPremium }) {
   const divScore      = useMemo(() => calcDiversificationScore(enriched, profile), [enriched, profile])
   const divRisks      = useMemo(() => calcDividendRisks(enriched, summary.totalIncomeEUR), [enriched, summary])
   const fiscal        = useMemo(() => calcFiscal(enriched, whtOverrides, destWHT), [enriched, whtOverrides, destWHT])
+  const netIncomeEUR  = useMemo(() => (fiscal || []).reduce((s, r) => s + (r.net || 0), 0), [fiscal])
 
   if (loading) {
     return (
@@ -868,13 +868,21 @@ export default function PortfolioPage({ isPremium }) {
         </div>
       </div>
 
+      {/* Posiciones — lo más importante, arriba del todo */}
+      <PositionsTable
+        enriched={enriched} isPremium={isPremium}
+        onEdit={setEditPos}
+        onDividend={setDivPos}
+        onDelete={setDeleteId}
+      />
+
       {/* FX rates widget — only when portfolio has non-EUR currencies */}
       {enriched.length > 0 && (
         <FxRatesWidget currencies={[...new Set(enriched.map(p => p.currency).filter(Boolean))]} />
       )}
 
       {/* Section 1: Summary */}
-      {enriched.length > 0 && <SummarySection summary={summary} />}
+      {enriched.length > 0 && <SummarySection summary={summary} netIncomeEUR={netIncomeEUR} />}
 
       {/* Meta de renta pasiva — estrella polar */}
       {enriched.length > 0 && <IncomeGoalCard currentIncome={summary.totalIncomeEUR} goal={incomeGoal} growthPct={dividendGrowth?.g5y ?? 0} onSave={saveGoal} />}
@@ -889,14 +897,6 @@ export default function PortfolioPage({ isPremium }) {
 
       {/* Module 2: Detector de empresas que encajan */}
       {enriched.length > 0 && <CompanyDetector enriched={enriched} isPremium={isPremium} />}
-
-      {/* Section 2: Positions */}
-      <PositionsTable
-        enriched={enriched} isPremium={isPremium}
-        onEdit={setEditPos}
-        onDividend={setDivPos}
-        onDelete={setDeleteId}
-      />
 
       {/* Próximos cobros de dividendo */}
       {enriched.length > 0 && <UpcomingDividends />}
@@ -920,9 +920,6 @@ export default function PortfolioPage({ isPremium }) {
 
           {/* Section 5: Dividend risk */}
           <DividendRiskSection risks={divRisks} totalIncomeEUR={summary.totalIncomeEUR} isPremium={isPremium} />
-
-          {/* What-if: simular un recorte de dividendo (antes en /cartera/simulador) */}
-          <DividendCutSimulator enriched={enriched} summary={summary} isPremium={isPremium} />
 
           {/* Section 6: Fiscal */}
           <FiscalSection fiscal={fiscal} country={fiscalCountry} onCountryChange={setFiscal} isPremium={isPremium} exempt={isExemptUser(taxSettings)} incomeMode={taxSettings?.tax_mode === 'income'} />

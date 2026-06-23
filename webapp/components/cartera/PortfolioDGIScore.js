@@ -136,8 +136,8 @@ export default function PortfolioDGIScore({ enriched, isPremium }) {
   }
 
   const inner = (
-    <div style={{ ...CARD, marginBottom: 16 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>Score DGI de la cartera</p>
+    <div style={{ ...CARD, padding: 14, marginBottom: 16 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Score DGI de la cartera</p>
 
       {loading ? (
         <p style={{ fontSize: 12, color: '#4a5270' }}>Calculando scores…</p>
@@ -145,43 +145,29 @@ export default function PortfolioDGIScore({ enriched, isPremium }) {
         <p style={{ fontSize: 12, color: '#4a5270' }}>Insuficientes datos de fundamentales para calcular el score.</p>
       ) : (
         <>
-          {/* Scores */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-            <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '16px', textAlign: 'center' }}>
-              <ScoreGauge value={data.eqScore} label="Equiponderado" size="lg" />
-              <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 4 }}>Cada empresa pesa igual</p>
+          {/* Ponderado por valor (izquierda) + 4 categorías en pequeño (derecha), misma altura */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, alignItems: 'stretch' }}>
+            <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '8px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 32, fontWeight: 900, color: scoreColor(data.capScore), lineHeight: 1 }}>{data.capScore?.toFixed(1) ?? '—'}</span>
+              <span style={{ fontSize: 10, color: '#4a5270', marginTop: 3, textAlign: 'center' }}>Ponderado por valor</span>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '16px', textAlign: 'center' }}>
-              <ScoreGauge value={data.capScore} label="Ponderado por valor" size="lg" />
-              <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 4 }}>Ponderado por peso en cartera</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+              {Object.entries(CAT_LABELS).map(([key, label]) => {
+                const s = data.catScores[key]
+                return (
+                  <div key={key} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 8, padding: '6px 3px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: scoreColor(s) }}>{s?.toFixed(1) ?? '—'}</span>
+                    <span style={{ fontSize: 8.5, color: '#4a5270', marginTop: 2, textAlign: 'center', lineHeight: 1.1 }}>{label}</span>
+                  </div>
+                )
+              })}
             </div>
           </div>
 
-          {/* Difference warning */}
-          {data.eqScore != null && data.capScore != null && Math.abs(data.eqScore - data.capScore) > 0.8 && (
-            <div style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 8, padding: '8px 12px', marginBottom: 16, display: 'flex', gap: 8 }}>
-              <span style={{ color: '#fbbf24' }}>⚠</span>
-              <p style={{ fontSize: 11, color: '#fbbf24' }}>Diferencia significativa entre versiones — las empresas con mayor peso tienen un perfil DGI diferente al de las de menor peso.</p>
-            </div>
-          )}
-
-          {/* Category breakdown */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 20 }}>
-            {Object.entries(CAT_LABELS).map(([key, label]) => {
-              const s = data.catScores[key]
-              return (
-                <div key={key} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 8, padding: '10px', textAlign: 'center' }}>
-                  <p style={{ fontSize: 16, fontWeight: 800, color: scoreColor(s) }}>{s?.toFixed(1) ?? '—'}</p>
-                  <p style={{ fontSize: 10, color: '#4a5270', marginTop: 2 }}>{label}</p>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Benchmark comparison */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270' }}>Comparativa con benchmark</p>
+          {/* Benchmark comparison (plegable, para no agrandar la tarjeta) */}
+          <details style={{ marginTop: 12 }}>
+            <summary style={{ cursor: 'pointer', fontSize: 11, fontWeight: 700, color: '#4a5270', marginBottom: 10 }}>Comparativa con benchmark</summary>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
               <select value={selBench} onChange={e => setSelBench(e.target.value)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#c8d0e0', fontSize: 11, padding: '4px 8px' }}>
                 {BENCHMARKS.map(b => <option key={b.key} value={b.key}>{b.label}</option>)}
               </select>
@@ -219,7 +205,7 @@ export default function PortfolioDGIScore({ enriched, isPremium }) {
                 </table>
               )
             })()}
-          </div>
+          </details>
         </>
       )}
     </div>
