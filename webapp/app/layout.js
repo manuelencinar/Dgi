@@ -1,4 +1,5 @@
 import { Figtree } from 'next/font/google'
+import Analytics from '@/components/Analytics'
 
 const figtree = Figtree({
   subsets: ['latin'],
@@ -27,6 +28,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className={figtree.className} style={{background:"#080b14",color:"#c8d0e0",margin:0,padding:0,WebkitFontSmoothing:"antialiased"}} suppressHydrationWarning>
         {children}
+        <Analytics />
       </body>
     </html>
   )

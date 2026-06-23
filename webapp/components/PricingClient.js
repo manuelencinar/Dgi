@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { track } from '@/lib/analytics'
 
 const FREE_FEATURES = [
   'Mercados globales con Score DGI',
@@ -49,6 +50,7 @@ export default function PricingClient({
   const [loading, setLoading] = useState(null) // 'monthly' | 'annual' | 'portal'
 
   async function startCheckout(priceId, key) {
+    track('upgrade_click', { plan: key, loggedIn: !!isLoggedIn })
     if (!isLoggedIn) { window.location.href = '/register'; return }
     setLoading(key)
     try {
