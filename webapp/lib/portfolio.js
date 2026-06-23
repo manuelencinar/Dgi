@@ -134,6 +134,8 @@ export function enrichPositions(rawPositions, fundamentalsMap, fundsMap = {}) {
       companyCountry: fund.country ?? null,
       payoutFCF:          fund.payout_fcf         ?? null,
       payoutEPS:          fund.payout_eps          ?? null,
+      payoutAffo:         fund.payout_affo         ?? null,
+      payoutNII:          fund.payout_nii          ?? null,
       debtEbitda:         fund.debt_ebitda         ?? null,
       interestCoverage:   fund.interest_coverage   ?? null,
       fcfCagr5:           fund.fcf_cagr5           ?? null,
@@ -400,14 +402,25 @@ export function calcDividendRisks(enriched, totalIncomeEUR) {
       const noFcf = fin || reit || bdc                   // sectores donde el FCF no es la fuente del dividendo
       const risks = []
 
-      // BDC: el dividendo sale del beneficio recurrente (≈NII), no del FCF. Usamos
-      // payout sobre BPA como cobertura. Un BDC reparte casi todo su beneficio, así
-      // que solo preocupa muy por encima del 100% (umbral alto para evitar ruido del
-      // BPA, que en BDC incluye plusvalías valorativas).
-      if (bdc && p.payoutEPS != null && p.payoutEPS > 100)
-        risks.push({ label: 'Distribución por encima del beneficio', level: p.payoutEPS > 120 ? 'alto' : 'medio',
-          value: `${p.payoutEPS.toFixed(0)}%`,
-          detail: `Reparte el ${p.payoutEPS.toFixed(0)}% de su beneficio por acción (en un BDC, ≈ su capacidad de generación recurrente). Lo normal es repartir casi todo; de forma sostenida por encima del 100-120% la distribución no está cubierta.` })
+      // BDC: el dividendo sale del NII (beneficio recurrente), no del FCF. Preferimos
+      // payout sobre NII (ingresos de inversión − gastos op.); si no está cargado, BPA
+      // como respaldo. Un BDC reparte casi todo el NII, así que solo preocupa muy por
+      // encima del 100% de forma sostenida.
+      if (bdc) {
+        const pNii = p.payoutNII != null ? p.payoutNII : (p.payoutEPS != null ? p.payoutEPS : null)
+        const onNii = p.payoutNII != null
+        if (pNii != null && pNii > 100)
+          risks.push({ label: onNii ? 'Distribución por encima del NII' : 'Distribución por encima del beneficio', level: pNii > 120 ? 'alto' : 'medio',
+            value: `${pNii.toFixed(0)}%`,
+            detail: `Reparte el ${pNii.toFixed(0)}% de su ${onNii ? 'NII (beneficio de inversión recurrente: ingresos de inversión menos gastos operativos)' : 'beneficio por acción'}. Un BDC reparte casi todo el NII; de forma sostenida por encima del 100-120% la distribución no está cubierta.` })
+      }
+
+      // REIT: el dividendo se mide sobre AFFO (la amortización inmobiliaria hace inútil
+      // el payout sobre beneficio). AFFO = FFO − capex de mantenimiento (por sub-tipo).
+      if (reit && p.payoutAffo != null && p.payoutAffo > 95)
+        risks.push({ label: 'Payout AFFO elevado', level: p.payoutAffo > 110 ? 'alto' : 'medio',
+          value: `${p.payoutAffo.toFixed(0)}%`,
+          detail: `Reparte el ${p.payoutAffo.toFixed(0)}% de su AFFO (flujo de caja real tras el capex de mantenimiento). Saludable por debajo del 90%; por encima del 100% el dividendo no lo cubre la caja del negocio.` })
 
       // Payout sobre FCF: solo sectores donde el FCF es la fuente real del dividendo.
       if (!noFcf && st !== 'utilities' && p.payoutFCF != null && p.payoutFCF > 90)

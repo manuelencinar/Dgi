@@ -724,10 +724,17 @@ export default function PortfolioPage({ isPremium }) {
     const stockTickers = [...new Set(positions.filter(p => (p.asset_type || 'stock') === 'stock').map(p => p.ticker))]
     const fundTickers  = [...new Set(positions.filter(p => (p.asset_type || 'stock') !== 'stock').map(p => p.ticker))]
 
-    const [{ data: funds }, { data: fundsData }] = await Promise.all([
-      stockTickers.length ? sb.from('company_fundamentals')
-        .select('ticker, current_price, dps, payout_fcf, payout_eps, debt_ebitda, interest_coverage, fcf_cagr5, div_cagr5, div_history, sector, industry, country')
-        .in('ticker', stockTickers) : Promise.resolve({ data: [] }),
+    // Tolerante a columnas que aún no existan en BD (payout_affo/payout_nii): si el
+    // select falla, reintenta sin ellas. Así no rompe antes de ejecutar el SQL.
+    const BASE_COLS = 'ticker, current_price, dps, payout_fcf, payout_eps, debt_ebitda, interest_coverage, fcf_cagr5, div_cagr5, div_history, sector, industry, country'
+    const loadStockFunds = async () => {
+      if (!stockTickers.length) return []
+      let res = await sb.from('company_fundamentals').select(`${BASE_COLS}, payout_affo, payout_nii`).in('ticker', stockTickers)
+      if (res.error) res = await sb.from('company_fundamentals').select(BASE_COLS).in('ticker', stockTickers)
+      return res.data || []
+    }
+    const [funds, { data: fundsData }] = await Promise.all([
+      loadStockFunds(),
       fundTickers.length ? sb.from('funds').select('*').in('ticker', fundTickers) : Promise.resolve({ data: [] }),
     ])
 

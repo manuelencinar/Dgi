@@ -1324,6 +1324,25 @@ def fetch_ticker(sym):
         if payout_fcf is not None and (payout_fcf < 0 or payout_fcf > 300):
             payout_fcf = None
 
+        # payout_nii (BDC): dividendo / NII. NII ≈ ingresos de inversión − gastos
+        # operativos (beneficio recurrente, sin plusvalías valorativas). Solo es
+        # significativo en BDC; el resto de sectores no lo usa. (payout_affo de los
+        # REITs lo calcula scripts/recalc_payout_affo_nii.mjs, que reutiliza la
+        # lógica AFFO de lib/reit-metrics.)
+        payout_nii = None
+        try:
+            _opr = _first(income, ["Operating Revenue", "Total Revenue", "Ingresos Totales"])
+            _ope = _first(income, ["Operating Expense"])
+            _shn = _first(income, ["Diluted Average Shares", "Basic Average Shares"])
+            if (info.get("sector") or "") == "Financial Services" and _opr is not None and _ope is not None and _shn and _shn > 0 and dps:
+                _nii = _opr - _ope
+                if _nii > 0:
+                    _pn = dps * _shn / _nii * 100
+                    if 0 < _pn < 1000:
+                        payout_nii = round(_pn, 2)
+        except Exception:
+            payout_nii = None
+
         # ── Deuda ─────────────────────────────────────────────────────────
         net_debt = debt_ebitda = net_debt_eb = int_cov = None
 
@@ -1435,6 +1454,7 @@ def fetch_ticker(sym):
             "next_pay_date":    next_pay_date,
             "payout_fcf":       payout_fcf,
             "payout_eps":       payout_eps,
+            "payout_nii":       payout_nii,
             "fcf_per_share":    fcf_ps,
             "fcf_cagr5":        fcf_cagr5,
             "debt_ebitda":      debt_ebitda,
