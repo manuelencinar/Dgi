@@ -65,7 +65,7 @@ export async function proxy(request) {
 
   // Onboarding: si el usuario autenticado entra a una ruta de app y aún no lo
   // ha completado, redirigir a /onboarding (nunca bloquea: hay botón saltar).
-  const ONBOARD_ROUTES = ['/app', '/cartera', '/mercados', '/screener', '/comparador', '/etfs', '/empresa', '/fondo', '/watchlist']
+  const ONBOARD_ROUTES = ['/app', '/cartera', '/mercados', '/screener', '/comparador', '/etfs', '/empresa', '/fondo', '/watchlist', '/novedades']
   if (user && ONBOARD_ROUTES.some(r => pathname.startsWith(r)) && pathname !== '/onboarding') {
     try {
       const { data } = await supabase.from('user_settings').select('onboarding_completed').eq('user_id', user.id).maybeSingle()
@@ -75,6 +75,14 @@ export async function proxy(request) {
         return NextResponse.redirect(url)
       }
     } catch {}
+  }
+
+  // Usuario registrado en la home → directo a sus Novedades (resultados recientes
+  // + eventos de su cartera). El visitante no autenticado ve la landing.
+  if (user && pathname === '/') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/novedades'
+    return NextResponse.redirect(url)
   }
 
   return supabaseResponse
