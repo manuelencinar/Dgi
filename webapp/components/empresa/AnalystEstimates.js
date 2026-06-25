@@ -8,13 +8,14 @@ import {
 const CARD = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
 const C = { rev: '#60a5fa', revEst: '#818cf8', eps: '#34d399' }
 
-// Ingresos en la divisa de reporte (valores absolutos) → B / M.
+// Ingresos en la divisa de reporte (valores absolutos). En millones (M) / miles (K),
+// como en el resto de la app (evita el "billion" americano, ambiguo en español).
 function fmtRevenue(v, currency) {
   if (v == null || isNaN(v)) return '—'
   const a = Math.abs(v)
   const cur = currency ? ` ${currency}` : ''
-  if (a >= 1e9) return (v / 1e9).toLocaleString('es-ES', { maximumFractionDigits: 2 }) + ' B' + cur
   if (a >= 1e6) return (v / 1e6).toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' M' + cur
+  if (a >= 1e3) return (v / 1e3).toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' K' + cur
   return v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + cur
 }
 function fmtEps(v) {
@@ -27,11 +28,11 @@ function fmtGrowth(v) {
 }
 const growthCol = v => v == null ? '#4a5270' : v >= 0 ? '#34d399' : '#f87171'
 
-// Unidad coherente para el eje de ingresos (no mezcla M y B).
+// Unidad coherente para el eje de ingresos (millones / miles, como en el resto de la app).
 function revUnit(values) {
   const max = Math.max(0, ...values.filter(v => v != null).map(Math.abs))
-  if (max >= 1e9) return { div: 1e9, suffix: ' B' }
   if (max >= 1e6) return { div: 1e6, suffix: ' M' }
+  if (max >= 1e3) return { div: 1e3, suffix: ' K' }
   return { div: 1, suffix: '' }
 }
 
