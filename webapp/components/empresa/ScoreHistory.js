@@ -2,7 +2,7 @@
 // data: [{ date: 'YYYY-MM-DD', score: number }] ascendente. SVG puro (sin estado).
 function color(s) {
   if (s == null) return 'var(--text-faintest)'
-  if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return '#86efac'
+  if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return 'var(--positive-soft)'
   if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)'
 }
 function fmtDate(d) {

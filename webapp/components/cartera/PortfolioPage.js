@@ -27,7 +27,7 @@ import UpcomingDividends from '@/components/cartera/UpcomingDividends'
 // padding como variable CSS → en móvil se reduce vía media query (ver cdp-root) sin
 // tocar cada ficha (el inline no se puede sobreescribir con CSS normal, pero una var sí).
 const CARD   = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 'var(--cdp-pad, 20px)' }
-const COLORS = ['var(--accent)','var(--positive)','var(--warning)','var(--negative)','#60a5fa','#a78bfa','#fb923c','#4ade80','#f472b6','#38bdf8']
+const COLORS = ['var(--accent)','var(--positive)','var(--warning)','var(--negative)','#60a5fa','#a78bfa','#fb923c','var(--positive-soft)','#f472b6','#38bdf8']
 const INPUT  = { background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '8px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', width: '100%', boxSizing: 'border-box' }
 
 function fmt(v, d = 2) {

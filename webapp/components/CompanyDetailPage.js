@@ -1358,7 +1358,7 @@ function BankMetricsCard({ m }) {
     { label: 'ROTE', value: fp(m.rote), hint: 'Retorno sobre capital tangible = Beneficio neto / (Patrimonio − fondo de comercio − intangibles).', chg: c.rote },
     { label: 'Eficiencia', value: fp(m.efficiency), color: effColor, hint: 'Costes operativos / ingresos netos bancarios. Menor es mejor (por debajo del 50% es excelente).', chg: c.efficiency, lowerBetter: true },
     { label: 'NPL (morosidad)', value: m.npl != null ? fp(m.npl) : '–', sub: m.npl != null ? m.nplPeriod : 'manual — pendiente', color: m.npl != null ? (m.npl < 3 ? 'var(--positive)' : m.npl < 6 ? 'var(--warning)' : 'var(--negative)') : 'var(--text-faint)', chg: m.npl != null ? c.npl : null, lowerBetter: true },
-    { label: 'CET1', value: m.cet1 != null ? fp(m.cet1) : '–', sub: m.cet1 != null ? m.cet1Period : 'manual — pendiente', color: m.cet1 == null ? 'var(--text-faint)' : m.cet1 >= 14 ? 'var(--positive)' : m.cet1 >= 12 ? '#86efac' : m.cet1 >= 10 ? 'var(--warning)' : 'var(--negative)', chg: m.cet1 != null ? c.cet1 : null, hint: 'Capital de máxima calidad / activos ponderados por riesgo. Mínimo saludable >12%. Manual.' },
+    { label: 'CET1', value: m.cet1 != null ? fp(m.cet1) : '–', sub: m.cet1 != null ? m.cet1Period : 'manual — pendiente', color: m.cet1 == null ? 'var(--text-faint)' : m.cet1 >= 14 ? 'var(--positive)' : m.cet1 >= 12 ? 'var(--positive-soft)' : m.cet1 >= 10 ? 'var(--warning)' : 'var(--negative)', chg: m.cet1 != null ? c.cet1 : null, hint: 'Capital de máxima calidad / activos ponderados por riesgo. Mínimo saludable >12%. Manual.' },
   ]
   return (
     <Card>
@@ -1729,7 +1729,7 @@ export default function CompanyDetailPage(props) {
             <button key={t.id} onClick={() => goTab(t.id)} style={{
               flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer',
               padding: '13px 14px', fontSize: 13, fontWeight: 700,
-              color: active ? '#fff' : 'var(--text-faint)',
+              color: active ? 'var(--text-strong)' : 'var(--text-faint)',
               borderBottom: active ? '2px solid var(--accent)' : '2px solid transparent',
               whiteSpace: 'nowrap', transition: 'color 0.15s',
             }}>{t.label}</button>

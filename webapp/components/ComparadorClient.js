@@ -7,7 +7,7 @@ import { getCountry, streakBadge, debtEbitdaIsArtifact } from '@/lib/helpers'
 
 const CC = ['var(--positive)', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6']
 
-function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return '#86efac'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
+function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return 'var(--positive-soft)'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
 function fmtEUR0(v) { return v == null ? '—' : Math.round(v).toLocaleString('es-ES') + ' €' }
 function pct(v, d = 1) { return v == null ? '—' : v.toFixed(d) + '%' }
 function x(v, d = 1) { return v == null ? '—' : v.toFixed(d) + 'x' }
@@ -506,7 +506,7 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
                         <ProjChart rows={p.rows} investAmt={investAmt} color={CC[i]} />
                         <div style={{ display: 'flex', gap: 12, marginTop: 6, flexWrap: 'wrap' }}>
                           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Año 1: <strong style={{ color: 'var(--positive)' }}>{fmtEUR0(p.y1)}</strong></span>
-                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>10 años: <strong style={{ color: '#86efac' }}>{fmtEUR0(p.cum10)}</strong></span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>10 años: <strong style={{ color: 'var(--positive-soft)' }}>{fmtEUR0(p.cum10)}</strong></span>
                           <span style={{ fontSize: 11, color: p.payback && p.payback <= 10 ? 'var(--warning)' : 'var(--text-faint)' }}>{p.payback && p.payback <= 10 ? `Recuperación en año ${p.payback}` : 'No se recupera en 10 años'}</span>
                         </div>
                       </>
@@ -539,7 +539,7 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-                  {moatBadge(co.moat) && <span style={{ fontSize: 10, color: '#86efac', background: 'rgba(52,211,153,0.1)', padding: '2px 7px', borderRadius: 5 }}>{moatBadge(co.moat)}</span>}
+                  {moatBadge(co.moat) && <span style={{ fontSize: 10, color: 'var(--positive-soft)', background: 'rgba(52,211,153,0.1)', padding: '2px 7px', borderRadius: 5 }}>{moatBadge(co.moat)}</span>}
                   {streakBadge(co.streak) && <span style={{ fontSize: 10, color: 'var(--warning)', background: 'rgba(251,191,36,0.1)', padding: '2px 7px', borderRadius: 5 }}>{streakBadge(co.streak)} {co.streak}a</span>}
                 </div>
                 <Link href={`/empresa/${encodeURIComponent(co.ticker)}`} style={{ fontSize: 12, fontWeight: 700, color: CC[i], textDecoration: 'none' }}>Ver ficha completa →</Link>

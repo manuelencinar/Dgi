@@ -20,7 +20,7 @@ const ZONA_OPTS = [
 
 const FREE_PREVIEW = 5
 
-function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return '#86efac'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
+function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return 'var(--positive-soft)'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
 function streakIcon(n) { return dividendTierInfo(n)?.emoji || '' }
 
 // Estilos responsive. Móvil: una SOLA línea compacta — bandera · nombre (… si

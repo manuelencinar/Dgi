@@ -12,7 +12,7 @@ function fmtPx(v, cur) {
   const n = Number(v).toLocaleString('es-ES', { maximumFractionDigits: 2 })
   return cur === 'EUR' ? `${n} ${s}` : `${s}${n}`
 }
-function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return '#86efac'; if (s >= 5) return 'var(--warning)'; return '#f97316' }
+function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return 'var(--positive-soft)'; if (s >= 5) return 'var(--warning)'; return '#f97316' }
 
 const MONTHLY_OPTS = [100, 300, 500, 1000]
 const YIELD_OPTS   = [2, 3, 4, 5]
@@ -228,7 +228,7 @@ function Result({ result, isPremium, isAuthed, onRestart }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginBottom: 18 }}>
         <MetaCard label="Aportación" value={meta.monthly ? `${meta.monthly} €/mes` : '—'} />
         <MetaCard label="Yield medio" value={`${meta.avgYield.toFixed(1)}%`} color="var(--positive)" />
-        <MetaCard label="Yield neto" value={`${meta.avgYieldNet.toFixed(1)}%`} color="#86efac" />
+        <MetaCard label="Yield neto" value={`${meta.avgYieldNet.toFixed(1)}%`} color="var(--positive-soft)" />
         <MetaCard label="Sectores" value={meta.sectors} />
       </div>
 
@@ -295,7 +295,7 @@ function PlanRow({ p }) {
           </p>
         </Link>
         {p.entryNow
-          ? <p style={{ fontSize: 10.5, color: 'var(--positive)', display: 'flex', gap: 5, marginTop: 1 }}><span>●</span><span style={{ color: '#86efac' }}>Entrar ahora: {p.reason}</span></p>
+          ? <p style={{ fontSize: 10.5, color: 'var(--positive)', display: 'flex', gap: 5, marginTop: 1 }}><span>●</span><span style={{ color: 'var(--positive-soft)' }}>Entrar ahora: {p.reason}</span></p>
           : <p style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 1 }}>Acumular — esperar mejor precio</p>}
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0 }}>

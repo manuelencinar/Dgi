@@ -10,8 +10,8 @@ const ZONA_OPTS = [
 ]
 const FREE_PREVIEW = 25
 
-function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return '#86efac'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
-function roicColor(r) { if (r >= 30) return 'var(--positive)'; if (r >= 22) return '#86efac'; return 'var(--warning)' }
+function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return 'var(--positive-soft)'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
+function roicColor(r) { if (r >= 30) return 'var(--positive)'; if (r >= 22) return 'var(--positive-soft)'; return 'var(--warning)' }
 
 const ROW_CSS = `
 .cmp-row{display:flex;align-items:center;gap:8px;padding:5px 11px;background:var(--surface);border-radius:8px;margin-bottom:2px}
@@ -44,7 +44,7 @@ function Row({ co, rank }) {
         </div>
         <div className="cmp-m" title="CapEx sobre flujo de caja operativo — cuanto más bajo, menos capital necesita el negocio">
           <span className="cmp-mlabel">CapEx/CFO</span>
-          <span className="cmp-mval" style={{ color: co.capex <= 10 ? 'var(--positive)' : '#86efac' }}>{co.capex.toFixed(0)}%</span>
+          <span className="cmp-mval" style={{ color: co.capex <= 10 ? 'var(--positive)' : 'var(--positive-soft)' }}>{co.capex.toFixed(0)}%</span>
         </div>
         <div className="cmp-m" title="Crecimiento de ingresos (CAGR 5 años)">
           <span className="cmp-mlabel">Ingresos 5a</span>

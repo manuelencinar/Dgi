@@ -6,7 +6,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 // (tono del mismo color de su supersector).
 
 const TT = { background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 11 }
-const PALETTE = ['var(--accent)', 'var(--positive)', 'var(--warning)', 'var(--negative)', '#60a5fa', '#a78bfa', '#fb923c', '#4ade80', '#f472b6', '#38bdf8', '#facc15', '#22d3ee']
+const PALETTE = ['var(--accent)', 'var(--positive)', 'var(--warning)', 'var(--negative)', '#60a5fa', '#a78bfa', '#fb923c', 'var(--positive-soft)', '#f472b6', '#38bdf8', '#facc15', '#22d3ee']
 
 // Diversificación de un nivel (zona, divisa…) con el MISMO estilo que el de
 // sectores: donut a la izquierda + leyenda de barras a la derecha.

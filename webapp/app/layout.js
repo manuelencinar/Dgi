@@ -35,7 +35,7 @@ export default function RootLayout({ children }) {
             --border:rgba(255,255,255,0.07);--border-strong:rgba(255,255,255,0.10);
             --text-strong:#e0e8f0;--text:#c8d0e0;--text-muted:#8090a8;--text-faint:#4a5270;--text-faintest:#2e3a55;
             --accent:#818cf8;--accent-bg:rgba(99,102,241,0.12);
-            --positive:#34d399;--negative:#f87171;--warning:#fbbf24;
+            --positive:#34d399;--positive-soft:#86efac;--negative:#f87171;--warning:#fbbf24;
             --nav-bg:rgba(8,11,20,0.92);--scrollbar:#1a2035;
           }
           [data-theme="light"]{
@@ -44,7 +44,7 @@ export default function RootLayout({ children }) {
             --border:rgba(15,23,42,0.10);--border-strong:rgba(15,23,42,0.16);
             --text-strong:#0b1220;--text:#1f2a3d;--text-muted:#51607a;--text-faint:#76839a;--text-faintest:#9aa6ba;
             --accent:#4f46e5;--accent-bg:rgba(79,70,229,0.10);
-            --positive:#059669;--negative:#dc2626;--warning:#b45309;
+            --positive:#059669;--positive-soft:#15803d;--negative:#dc2626;--warning:#b45309;
             --nav-bg:rgba(255,255,255,0.85);--scrollbar:#c7d0dd;
           }
           .recharts-wrapper:focus,.recharts-wrapper:focus-visible,

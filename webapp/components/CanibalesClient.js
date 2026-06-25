@@ -10,8 +10,8 @@ const ZONA_OPTS = [
 ]
 const FREE_PREVIEW = 25
 
-function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return '#86efac'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
-function redColor(p) { if (p >= 20) return 'var(--positive)'; if (p >= 10) return '#86efac'; if (p >= 4) return 'var(--warning)'; return 'var(--text-muted)' }
+function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return 'var(--positive-soft)'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
+function redColor(p) { if (p >= 20) return 'var(--positive)'; if (p >= 10) return 'var(--positive-soft)'; if (p >= 4) return 'var(--warning)'; return 'var(--text-muted)' }
 
 const ROW_CSS = `
 .can-row{display:flex;align-items:center;gap:8px;padding:5px 11px;background:var(--surface);border-radius:8px;margin-bottom:2px}

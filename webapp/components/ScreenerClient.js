@@ -38,7 +38,7 @@ const INIT = {
 
 const PAGE = 50
 
-function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return '#86efac'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
+function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return 'var(--positive-soft)'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
 
 // Dos modos de ranking: "Calidad DGI" (Score) y "Renta DGI" (yield + recuperación).
 const SORTS_CALIDAD = [
@@ -206,7 +206,7 @@ function CompanyCard({ co, rank, destWHT, whtOverrides, sortKey, following, isAu
       {buyReason && (
         <div className="scr-buyline" style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
           <span style={{ color: 'var(--positive)', flexShrink: 0 }}>●</span>
-          <span style={{ color: '#86efac' }}><span style={{ fontWeight: 700, color: 'var(--positive)' }}>Zona de compra:</span> {buyReason}</span>
+          <span style={{ color: 'var(--positive-soft)' }}><span style={{ fontWeight: 700, color: 'var(--positive)' }}>Zona de compra:</span> {buyReason}</span>
         </div>
       )}
     </div>

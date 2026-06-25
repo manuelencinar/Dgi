@@ -259,7 +259,7 @@ const MOCKUP_SCREENER = [
   { flag: '🇺🇸', name: 'PepsiCo',          t: 'PEP',  score: 8.1, yield: 3.4, reason: '36% por debajo de su valor intrínseco' },
 ]
 
-function scColor(s) { return s >= 8 ? 'var(--positive)' : s >= 6.5 ? '#86efac' : 'var(--warning)' }
+function scColor(s) { return s >= 8 ? 'var(--positive)' : s >= 6.5 ? 'var(--positive-soft)' : 'var(--warning)' }
 
 function UseCase() {
   return (
@@ -316,7 +316,7 @@ function UseCase() {
                 <span style={{ fontSize: 15, fontWeight: 900, color: scColor(c.score), minWidth: 26, textAlign: 'right' }}>{c.score.toFixed(1)}</span>
               </div>
               <p style={{ fontSize: 9.5, color: 'var(--positive)', marginTop: 3, display: 'flex', gap: 5 }}>
-                <span>●</span><span style={{ color: '#86efac' }}>Zona de compra: {c.reason}</span>
+                <span>●</span><span style={{ color: 'var(--positive-soft)' }}>Zona de compra: {c.reason}</span>
               </p>
             </div>
           ))}

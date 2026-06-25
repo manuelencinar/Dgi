@@ -163,7 +163,7 @@ export default function ProyeccionPage({ isPremium }) {
   if (rentaObjetivo > 0 && proj) {
     const idx = proj.base.findIndex(b => b.income >= rentaObjetivo)
     if (idx >= 0) {
-      headline = { accent: true, big: <>Alcanzarás tu objetivo de <span style={{ color: '#4ade80' }}>{fmtEUR(rentaObjetivo)}/año</span> en el año {idx + 1}</>, sub: `Escenario base · Renta actual: ${fmtEUR(summary?.totalIncomeEUR)}/año · ${reinvestText}` }
+      headline = { accent: true, big: <>Alcanzarás tu objetivo de <span style={{ color: 'var(--positive-soft)' }}>{fmtEUR(rentaObjetivo)}/año</span> en el año {idx + 1}</>, sub: `Escenario base · Renta actual: ${fmtEUR(summary?.totalIncomeEUR)}/año · ${reinvestText}` }
     } else {
       const pct = rentaObjetivo > 0 ? baseAtHorizon / rentaObjetivo * 100 : 0
       const g = proj.base[horizon - 1] && proj.base[horizon - 2] && proj.base[horizon - 2].income > 0

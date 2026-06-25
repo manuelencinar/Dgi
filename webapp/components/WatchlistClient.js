@@ -12,7 +12,7 @@ function fmtPx(v, cur) {
   const n = Number(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   return cur === 'EUR' ? `${n} ${s}` : `${s}${n}`
 }
-function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return '#86efac'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
+function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return 'var(--positive-soft)'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
 
 const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }
 const INPUT = { background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', width: '100%', boxSizing: 'border-box' }
@@ -122,7 +122,7 @@ function Row({ it, onEdit, onDelete }) {
           <p style={{ fontSize: 10, color: 'var(--text-faint)' }}>{it.ticker}{it.sector ? ` · ${it.sector}` : ''}</p>
         </Link>
         {prox?.inZone && <span style={{ display: 'inline-block', marginTop: 4, fontSize: 10, fontWeight: 700, color: 'var(--positive)', background: 'rgba(52,211,153,0.15)', padding: '2px 7px', borderRadius: 5 }}>🎯 En zona de compra</span>}
-        {prox?.near && !prox?.inZone && <span style={{ display: 'inline-block', marginTop: 4, fontSize: 10, fontWeight: 700, color: '#86efac' }}>Cerca del objetivo</span>}
+        {prox?.near && !prox?.inZone && <span style={{ display: 'inline-block', marginTop: 4, fontSize: 10, fontWeight: 700, color: 'var(--positive-soft)' }}>Cerca del objetivo</span>}
       </td>
       <td style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text)', borderBottom: '1px solid var(--surface-2)', fontVariantNumeric: 'tabular-nums' }}>{fmtPx(it.currentPrice, it.currency)}</td>
       <td style={{ padding: '10px 8px', textAlign: 'right', borderBottom: '1px solid var(--surface-2)', fontWeight: 700, color: it.changePct == null ? 'var(--text-faint)' : it.changePct >= 0 ? 'var(--positive)' : 'var(--negative)' }}>
