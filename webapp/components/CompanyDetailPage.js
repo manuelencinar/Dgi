@@ -10,6 +10,7 @@ import FinanzasDeepDive, { FinanzasKpis } from '@/components/empresa/FinanzasSec
 import FollowButton from '@/components/watchlist/FollowButton'
 import ScoreHistory from '@/components/empresa/ScoreHistory'
 import AnalystEstimates from '@/components/empresa/AnalystEstimates'
+import IncomeSankey from '@/components/empresa/IncomeSankey'
 import CompanyLogo from '@/components/CompanyLogo'
 import LocalPrice from '@/components/LocalPrice'
 import HealthTwoLevel, { Semaforo } from '@/components/empresa/HealthPanel'
@@ -1834,6 +1835,7 @@ export default function CompanyDetailPage(props) {
                 bankNpl={isBank ? (bankMetrics?.nplHistory || []) : undefined}
               />
             </Card>
+            <IncomeSankey income={financials?.income_statement_annual} currency={currency} />
             <AnalystEstimates ticker={ticker} />
             {isBank ? (
               <BankMetricsCard m={bankMetrics} />
