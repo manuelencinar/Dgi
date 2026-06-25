@@ -1835,7 +1835,7 @@ export default function CompanyDetailPage(props) {
                 bankNpl={isBank ? (bankMetrics?.nplHistory || []) : undefined}
               />
             </Card>
-            <IncomeSankey income={financials?.income_statement_annual} currency={currency} />
+            <IncomeSankey income={financials?.income_statement_annual} incomeQuarterly={financials?.income_statement_quarterly} currency={currency} />
             <AnalystEstimates ticker={ticker} />
             {isBank ? (
               <BankMetricsCard m={bankMetrics} />

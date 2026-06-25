@@ -1,30 +1,26 @@
 'use client'
-import { ResponsiveContainer, Sankey, Tooltip, Layer, Rectangle } from 'recharts'
+import { useState, useMemo } from 'react'
 
-// Diagrama de Sankey del estado de resultados: cómo fluye el dinero desde los
-// Ingresos hasta el Beneficio neto, pasando por el coste de ventas y los gastos.
-// Solo para empresas con estructura clásica (ingresos→coste→bruto→neto); banca,
-// seguros y REITs no la tienen → no se muestra.
+// Diagrama de Sankey del estado de resultados (SVG propio, layout determinista).
+// Estructura fija: Ingresos → Coste de ventas + Beneficio bruto → Beneficio neto +
+// Gastos → I+D / Ventas y marketing / G&A / Impuestos y otros. El orden es siempre
+// "beneficio arriba, coste/gasto abajo" en todas las columnas → los flujos NO se
+// cruzan. Selector de periodo arriba (años; trimestres si hay datos trimestrales).
+// Solo para empresas con estructura clásica y beneficio positivo.
 
-const COL = {
-  revenue: '#3b82f6',   // azul
-  gross: '#2dd4bf',     // turquesa
-  net: '#34d399',       // verde
-  cost: '#fb923c',      // naranja
-  expense: '#f59e0b',   // ámbar
-}
+const COL = { revenue: '#3b82f6', gross: '#2dd4bf', net: '#34d399', cost: '#fb923c' }
+const CHILD_COLORS = ['#f59e0b', '#fbbf24', '#fb923c', '#d97706', '#eab308']
 
-function readLatest(stmt, ...labels) {
+function readAt(stmt, idx, ...labels) {
   const d = stmt?.data
   if (!d) return null
   for (const l of labels) {
     const arr = d[l]
-    if (Array.isArray(arr)) { for (const v of arr) { if (v != null && !isNaN(v)) return Number(v) } }
+    if (Array.isArray(arr) && arr[idx] != null && !isNaN(arr[idx])) return Number(arr[idx])
   }
   return null
 }
 
-// Importes en millones (M), como el resto de la app.
 function fmtVal(v, currency) {
   if (v == null || isNaN(v)) return '—'
   const cur = currency ? ` ${currency}` : ''
@@ -33,105 +29,168 @@ function fmtVal(v, currency) {
   return v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + cur
 }
 
-function buildData(isa) {
-  const revenue = readLatest(isa, 'Ingresos Totales', 'Total Revenue', 'Operating Revenue')
-  const gross   = readLatest(isa, 'Beneficio Bruto', 'Gross Profit')
-  const net     = readLatest(isa, 'Beneficio Neto', 'Net Income', 'Net Income Common Stockholders')
-  // Solo tiene sentido con la estructura clásica y resultado positivo.
+// Modelo del Sankey para una columna (idx) de un estado {columns,data}.
+function buildModel(isa, idx) {
+  const revenue = readAt(isa, idx, 'Ingresos Totales', 'Total Revenue', 'Operating Revenue')
+  const gross   = readAt(isa, idx, 'Beneficio Bruto', 'Gross Profit')
+  const net     = readAt(isa, idx, 'Beneficio Neto', 'Net Income', 'Net Income Common Stockholders')
   if (!(revenue > 0) || !(gross > 0) || gross >= revenue || !(net > 0) || net > gross) return null
 
-  const cost = revenue - gross            // coste de ventas (garantiza Ingresos = coste + bruto)
-  const expenses = gross - net            // todo lo que hay entre bruto y neto
+  const cost = revenue - gross
+  const expenses = gross - net
   if (!(expenses > 0)) return null
 
-  const rnd = readLatest(isa, 'Research And Development', 'I+D', 'Investigación y Desarrollo')
-  const sm  = readLatest(isa, 'Selling And Marketing Expense', 'Gastos de Venta y Marketing')
-  const ga  = readLatest(isa, 'General And Administrative Expense', 'Gastos Generales y Admin.')
-  const sga = readLatest(isa, 'Selling General And Administration', 'Gastos Generales y de Administración')
+  const rnd = readAt(isa, idx, 'Research And Development', 'I+D', 'Investigación y Desarrollo')
+  const sm  = readAt(isa, idx, 'Selling And Marketing Expense', 'Gastos de Venta y Marketing')
+  const ga  = readAt(isa, idx, 'General And Administrative Expense', 'Gastos Generales y Admin.')
+  const sga = readAt(isa, idx, 'Selling General And Administration', 'Gastos Generales y de Administración')
 
-  // Hijos de "Gastos" (cada uno > 0 y que no se pase del total).
-  const children = []
+  let children = []
   const add = (name, value) => { if (value > 0 && value < expenses * 1.05) children.push({ name, value }) }
   if (rnd) add('I+D', rnd)
   if (sm && ga) { add('Ventas y marketing', sm); add('Generales y admin.', ga) }
-  else if (sga) add('Generales y comerciales', sga)
+  else if (sga) add('Gen. y comerciales', sga)
   const known = children.reduce((s, c) => s + c.value, 0)
   const residual = expenses - known
   if (residual > expenses * 0.02) children.push({ name: 'Impuestos y otros', value: residual })
-  // Si los conocidos se pasan del total (datos raros) → un único nodo de gastos.
-  const expChildren = known <= expenses * 1.05 && children.length ? children : [{ name: 'Gastos operativos', value: expenses }]
+  if (!children.length || known > expenses * 1.05) children = [{ name: 'Gastos', value: expenses }]
 
-  // Nodos: 0 Ingresos · 1 Coste · 2 Bruto · 3 Neto · 4 Gastos · 5+ hijos
-  const nodes = [
-    { name: 'Ingresos', color: COL.revenue },
-    { name: 'Coste de ventas', color: COL.cost },
-    { name: 'Beneficio bruto', color: COL.gross },
-    { name: 'Beneficio neto', color: COL.net },
-    { name: 'Gastos', color: COL.expense },
-    ...expChildren.map(c => ({ name: c.name, color: COL.expense })),
-  ]
-  const links = [
-    { source: 0, target: 1, value: cost },
-    { source: 0, target: 2, value: gross },
-    { source: 2, target: 3, value: net },
-    { source: 2, target: 4, value: expenses },
-    ...expChildren.map((c, i) => ({ source: 4, target: 5 + i, value: c.value })),
-  ]
-  return { nodes, links }
+  return { revenue, gross, net, cost, expenses, children }
 }
 
-function makeNode(currency) {
-  return function Node({ x, y, width, height, index, payload, containerWidth }) {
-    const cw = containerWidth || 720
-    const leftHalf = x < cw / 2
-    const lx = leftHalf ? x + width + 8 : x - 8
-    const anchor = leftHalf ? 'start' : 'end'
-    const name = payload.name?.length > 20 ? payload.name.slice(0, 19) + '…' : payload.name
+function periodLabel(col, type) {
+  const s = String(col)
+  if (type === 'annual') return s.slice(0, 4)
+  const yy = s.slice(2, 4), mm = parseInt(s.slice(5, 7), 10)
+  const q = mm ? Math.ceil(mm / 3) : '?'
+  return `T${q} '${yy}`
+}
+
+// Lista de periodos con modelo válido a partir de un estado.
+function validPeriods(isa, type) {
+  const cols = isa?.columns
+  if (!Array.isArray(cols)) return []
+  const out = []
+  cols.forEach((c, idx) => {
+    const model = buildModel(isa, idx)
+    if (model) out.push({ key: `${type}-${idx}`, label: periodLabel(c, type), type, model })
+  })
+  return out
+}
+
+function SankeyChart({ model, currency }) {
+  const { revenue, gross, net, cost, expenses, children } = model
+  const W = 820, TOP = 46, CH = 290, BW = 13, GAP = 12
+  const X0 = 120, X1 = 330, X2 = 510, X3 = 690
+  const scale = CH / revenue
+  const h = v => Math.max(v * scale, 1.5)
+
+  const nIng   = { x: X0, y: TOP, h: h(revenue), color: COL.revenue }
+  const nGross = { x: X1, y: TOP, h: h(gross), color: COL.gross }
+  const nCost  = { x: X1, y: TOP + h(gross) + GAP, h: h(cost), color: COL.cost }
+  const nNet   = { x: X2, y: TOP, h: h(net), color: COL.net }
+  const nExp   = { x: X2, y: TOP + h(net) + GAP, h: h(expenses), color: COL.cost }
+  let cy = nExp.y
+  const childNodes = children.map((c, i) => {
+    const node = { x: X3, y: cy, h: h(c.value), color: CHILD_COLORS[i % CHILD_COLORS.length], name: c.name, value: c.value }
+    cy += node.h + GAP
+    return node
+  })
+  const H = Math.max(TOP + CH + 24, cy + 10)
+
+  const ribbon = (xL, xR, ys0, ys1, yt0, yt1, color, key) => {
+    const xm = (xL + xR) / 2
+    const d = `M${xL},${ys0} C${xm},${ys0} ${xm},${yt0} ${xR},${yt0} L${xR},${yt1} C${xm},${yt1} ${xm},${ys1} ${xL},${ys1} Z`
+    return <path key={key} d={d} fill={color} fillOpacity={0.32} />
+  }
+
+  const ribbons = []
+  ribbons.push(ribbon(nIng.x + BW, nGross.x, nIng.y, nIng.y + h(gross), nGross.y, nGross.y + nGross.h, COL.gross, 'i-g'))
+  ribbons.push(ribbon(nIng.x + BW, nCost.x, nIng.y + h(gross), nIng.y + nIng.h, nCost.y, nCost.y + nCost.h, COL.cost, 'i-c'))
+  ribbons.push(ribbon(nGross.x + BW, nNet.x, nGross.y, nGross.y + h(net), nNet.y, nNet.y + nNet.h, COL.net, 'g-n'))
+  ribbons.push(ribbon(nGross.x + BW, nExp.x, nGross.y + h(net), nGross.y + nGross.h, nExp.y, nExp.y + nExp.h, COL.cost, 'g-e'))
+  let off = nExp.y
+  childNodes.forEach((cn, i) => {
+    ribbons.push(ribbon(nExp.x + BW, cn.x, off, off + cn.h, cn.y, cn.y + cn.h, cn.color, `e-${i}`))
+    off += cn.h
+  })
+
+  const Rect = ({ n }) => <rect x={n.x} y={n.y} width={BW} height={n.h} fill={n.color} rx={2} />
+  const Chip = ({ n, label, value }) => {
+    const cx = n.x + BW / 2
+    const w = Math.max(label.length * 6.2 + 12, 40)
     return (
-      <Layer key={`node-${index}`}>
-        <Rectangle x={x} y={y} width={width} height={height} fill={payload.color || '#818cf8'} radius={2} />
-        <text x={lx} y={y + height / 2 - 3} textAnchor={anchor} fontSize="11" fontWeight="700" fill="var(--text-strong)" fontFamily="Figtree,sans-serif">{name}</text>
-        <text x={lx} y={y + height / 2 + 11} textAnchor={anchor} fontSize="10" fill="var(--text-muted)" fontFamily="Figtree,sans-serif">{fmtVal(payload.value, currency)}</text>
-      </Layer>
+      <g>
+        <rect x={cx - w / 2} y={n.y - 30} width={w} height={17} rx={5} fill={n.color} fillOpacity={0.16} stroke={n.color} strokeOpacity={0.4} />
+        <text x={cx} y={n.y - 18.5} textAnchor="middle" fontSize="10.5" fontWeight="700" fill={n.color} fontFamily="Figtree,sans-serif">{label}</text>
+        <text x={cx} y={n.y - 1} textAnchor="middle" fontSize="10" fill="var(--text-muted)" fontFamily="Figtree,sans-serif">{fmtVal(value, currency)}</text>
+      </g>
     )
   }
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', minWidth: 560, height: 'auto', display: 'block' }}>
+      {ribbons}
+      <Rect n={nIng} /><Rect n={nGross} /><Rect n={nCost} /><Rect n={nNet} /><Rect n={nExp} />
+      {childNodes.map((cn, i) => <Rect key={i} n={cn} />)}
+      <text x={nIng.x - 9} y={nIng.y + nIng.h / 2 - 2} textAnchor="end" fontSize="11" fontWeight="700" fill="var(--text-strong)" fontFamily="Figtree,sans-serif">Ingresos</text>
+      <text x={nIng.x - 9} y={nIng.y + nIng.h / 2 + 12} textAnchor="end" fontSize="10" fill="var(--text-muted)" fontFamily="Figtree,sans-serif">{fmtVal(revenue, currency)}</text>
+      <Chip n={nGross} label="Beneficio bruto" value={gross} />
+      <Chip n={nCost} label="Coste de ventas" value={cost} />
+      <Chip n={nNet} label="Beneficio neto" value={net} />
+      <Chip n={nExp} label="Gastos" value={expenses} />
+      {childNodes.map((cn, i) => (
+        <g key={i}>
+          <text x={cn.x + BW + 8} y={cn.y + cn.h / 2 - 2} textAnchor="start" fontSize="10.5" fontWeight="700" fill="var(--text-strong)" fontFamily="Figtree,sans-serif">{cn.name}</text>
+          <text x={cn.x + BW + 8} y={cn.y + cn.h / 2 + 11} textAnchor="start" fontSize="10" fill="var(--text-muted)" fontFamily="Figtree,sans-serif">{fmtVal(cn.value, currency)}</text>
+        </g>
+      ))}
+    </svg>
+  )
 }
 
-function LinkShape({ sourceX, sourceY, sourceControlX, targetControlX, targetX, targetY, linkWidth, index, payload }) {
-  const color = payload?.target?.color || '#8090a8'
-  const d = `M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`
-  return <path d={d} fill="none" stroke={color} strokeWidth={Math.max(1, linkWidth)} strokeOpacity={0.3} key={`link-${index}`} />
-}
+export default function IncomeSankey({ income, incomeQuarterly, currency }) {
+  const annual = useMemo(() => validPeriods(income, 'annual'), [income])
+  const quarterly = useMemo(() => validPeriods(incomeQuarterly, 'quarterly'), [incomeQuarterly])
+  const all = useMemo(() => [...annual, ...quarterly], [annual, quarterly])
 
-export default function IncomeSankey({ income, currency }) {
-  const data = buildData(income)
-  if (!data) return null
+  // Por defecto, el año más reciente válido.
+  const [sel, setSel] = useState(annual[0]?.key || quarterly[0]?.key || null)
+  const current = all.find(p => p.key === sel) || annual[0] || quarterly[0] || null
+
+  if (!annual.length && !quarterly.length) return null   // banca/seguros/REIT/pérdidas → no aplica
+
+  const Chip = ({ p }) => (
+    <button onClick={() => setSel(p.key)} style={{
+      fontSize: 11.5, fontWeight: sel === p.key ? 700 : 600, padding: '4px 11px', borderRadius: 7,
+      border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+      color: sel === p.key ? 'var(--accent)' : 'var(--text-faint)',
+      background: sel === p.key ? 'var(--accent-bg)' : 'transparent',
+    }}>{p.label}</button>
+  )
 
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>
-        ¿A dónde va el dinero?
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          ¿A dónde va el dinero?
+        </p>
+      </div>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10, lineHeight: 1.5 }}>
+        Flujo del periodo: de los ingresos al beneficio neto, pasando por el coste de ventas y los gastos.
       </p>
-      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.5 }}>
-        Flujo del último ejercicio: de los ingresos al beneficio neto, pasando por el coste de ventas y los gastos.
-      </p>
-      <div style={{ width: '100%', height: 340 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <Sankey
-            data={data}
-            node={makeNode(currency)}
-            link={<LinkShape />}
-            nodePadding={26}
-            nodeWidth={12}
-            margin={{ top: 10, right: 120, bottom: 10, left: 90 }}
-          >
-            <Tooltip
-              formatter={(v) => fmtVal(v, currency)}
-              contentStyle={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12 }}
-              labelStyle={{ color: 'var(--text)' }}
-            />
-          </Sankey>
-        </ResponsiveContainer>
+
+      {/* Selector de periodo: años y (si hay) trimestres */}
+      <div style={{ display: 'flex', gap: 4, overflowX: 'auto', borderBottom: '1px solid var(--border)', paddingBottom: 8, marginBottom: 12, alignItems: 'center' }}>
+        {annual.map(p => <Chip key={p.key} p={p} />)}
+        {quarterly.length > 0 && <span style={{ width: 1, height: 16, background: 'var(--border-strong)', margin: '0 4px', flexShrink: 0 }} />}
+        {quarterly.map(p => <Chip key={p.key} p={p} />)}
+      </div>
+
+      <div style={{ width: '100%', overflowX: 'auto' }}>
+        {current ? <SankeyChart model={current.model} currency={currency} /> : (
+          <p style={{ fontSize: 12, color: 'var(--text-faint)', padding: '20px 0' }}>Sin datos para este periodo.</p>
+        )}
       </div>
     </div>
   )
