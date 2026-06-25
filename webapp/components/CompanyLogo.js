@@ -4,9 +4,10 @@ import { useState } from 'react'
 // Logos auto-alojados en Supabase Storage (bucket público 'company-logos', poblado
 // por scripts/fetch_logos.mjs). Si una empresa no tiene logo, cae a un monograma
 // circular con las iniciales y un color derivado del nombre (nunca un icono roto).
-const BASE = process.env.NEXT_PUBLIC_SUPABASE_URL
-  ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/company-logos`
-  : ''
+// Nota: la env var puede traer espacios al final (caso real en Vercel) → .trim()
+// para no generar una URL rota tipo "…supabase.co  /storage/…".
+const SUPA_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/+$/, '')
+const BASE = SUPA_URL ? `${SUPA_URL}/storage/v1/object/public/company-logos` : ''
 
 function colorFromName(s) {
   let h = 0
