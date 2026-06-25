@@ -22,15 +22,30 @@ export async function GET(request, { params }) {
   try {
     // Histórico REAL desde nuestros estados ya almacenados + divisa desde el DICT.
     const supabase = await createClient()
-    const [{ data: row }, entry] = await Promise.all([
-      supabase.from('company_fundamentals').select('income_statement_annual').eq('ticker', t).maybeSingle(),
-      findDictEntry(t),
-    ])
+    // Las estimaciones se precargan por lotes en BD (script + workflow diario). Se
+    // intentan leer de ahí; si las columnas aún no existen (SQL sin ejecutar), se
+    // cae a un select mínimo.
+    const sel = supabase.from('company_fundamentals')
+      .select('income_statement_annual, analyst_estimates, analyst_estimates_status').eq('ticker', t).maybeSingle()
+    const [selRes, entry] = await Promise.all([sel, findDictEntry(t)])
+    let row = selRes.data
+    if (selRes.error) {
+      const { data } = await supabase.from('company_fundamentals').select('income_statement_annual').eq('ticker', t).maybeSingle()
+      row = data
+    }
     const realRows = extractRealHistory(row?.income_statement_annual)
     const currency = entry?.[3] || null
 
-    // Estimaciones futuras de FMP (símbolo convertido al formato FMP).
-    const estRows = await fetchFmpEstimates(toFmpSymbol(t))
+    // Estimaciones: preferimos las precargadas en BD (sin gastar llamada). Solo si la
+    // empresa todavía no se ha procesado (status null) se consulta a FMP en vivo.
+    let estRows
+    if (row?.analyst_estimates_status === 'ok' && Array.isArray(row.analyst_estimates)) {
+      estRows = row.analyst_estimates
+    } else if (row?.analyst_estimates_status === 'none') {
+      estRows = null                                  // sin cobertura confirmada → no llamar
+    } else {
+      estRows = await fetchFmpEstimates(toFmpSymbol(t))   // aún sin procesar → fallback en vivo
+    }
 
     if ((realRows && realRows.length) || (estRows && estRows.length)) {
       const rows = buildEstimateSeries(realRows, estRows)

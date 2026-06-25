@@ -177,7 +177,7 @@ export default function AnalystEstimates({ ticker }) {
       </table>
 
       <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 12 }}>
-        Fuente de las estimaciones: Financial Modeling Prep. Las proyecciones de analistas son consensos orientativos, no una garantía de resultados.
+        Las proyecciones de analistas son consensos orientativos, no una garantía de resultados.
       </p>
     </div>
   )

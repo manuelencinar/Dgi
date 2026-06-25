@@ -1,0 +1,41 @@
+name: Estimaciones de analistas (FMP)
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # Cada día a las 7:00 UTC
+  workflow_dispatch:        # Ejecución manual desde GitHub
+    inputs:
+      limit:
+        description: 'Máximo de llamadas a FMP en esta ejecución'
+        default: '200'
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+
+      - name: Instalar dependencias (webapp)
+        run: npm ci
+        working-directory: webapp
+
+      - name: Precargar estimaciones
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+        run: node scripts/fetch_analyst_estimates.mjs --write --limit ${{ github.event.inputs.limit || '200' }}
+
+      - name: Notificar fallo
+        if: failure()
+        run: echo "::error::fetch_analyst_estimates.mjs ha fallado. Revisa los logs del job."

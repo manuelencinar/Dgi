@@ -39,25 +39,41 @@ const num = v => (typeof v === 'number' && isFinite(v)) ? v : (v != null && !isN
 // Llama a FMP y devuelve las estimaciones normalizadas [{year, revenue, eps, analysts}]
 // (incluye años pasados y futuros tal cual los da FMP; el merge filtra después).
 // Devuelve null si no hay API key, el símbolo no tiene cobertura o falla la petición.
-export async function fetchFmpEstimates(fmpSymbol) {
-  const key = process.env.FMP_API_KEY
-  if (!key || !fmpSymbol) return null
-  const url = `${FMP_BASE}/analyst-estimates?symbol=${encodeURIComponent(fmpSymbol)}&period=annual&apikey=${encodeURIComponent(key)}`
-  let json
-  try {
-    const res = await fetch(url, { cache: 'no-store' })
-    if (!res.ok) return null
-    json = await res.json()
-  } catch { return null }
-  if (!Array.isArray(json) || !json.length) return null   // {} de error (legacy/sin acceso) o sin datos
-  const out = json.map(e => ({
+// Normaliza el array crudo de FMP → [{year, revenue, eps, analysts}].
+function normalizeFmp(json) {
+  return json.map(e => ({
     year: e?.date ? parseInt(String(e.date).slice(0, 4)) : null,
     // API stable: revenueAvg/epsAvg; se aceptan también los nombres legacy por si acaso.
     revenue: num(e?.revenueAvg) ?? num(e?.estimatedRevenueAvg),
     eps: num(e?.epsAvg) ?? num(e?.estimatedEpsAvg),
     analysts: num(e?.numAnalystsEps) ?? num(e?.numAnalystsRevenue) ?? num(e?.numberAnalystsEstimatedEps),
   })).filter(e => e.year && (e.revenue != null || e.eps != null))
-  return out.length ? out : null
+}
+
+// Petición a FMP con el RESULTADO discriminado, para el script de backfill:
+//   { status: 'ok',          rows }       → 200; rows puede venir vacío (US sin estimaciones).
+//   { status: 'unsupported', rows: null } → 402: símbolo no cubierto por el plan (p.ej.
+//     casi todo lo no-US en el plan free) o inexistente → permanente, NO reconsultar.
+//   { status: 'error',       rows: null } → fallo transitorio (sin key, red, 429, 5xx,
+//     respuesta no-array) → NO marcar nada, reintentar otro día.
+export async function fetchFmpEstimatesResult(fmpSymbol) {
+  const key = process.env.FMP_API_KEY
+  if (!key || !fmpSymbol) return { status: 'error', rows: null }
+  const url = `${FMP_BASE}/analyst-estimates?symbol=${encodeURIComponent(fmpSymbol)}&period=annual&apikey=${encodeURIComponent(key)}`
+  let res
+  try { res = await fetch(url, { cache: 'no-store' }) } catch { return { status: 'error', rows: null } }
+  if (res.status === 402) return { status: 'unsupported', rows: null }   // fuera del plan / símbolo no cubierto
+  if (!res.ok) return { status: 'error', rows: null }                    // 429, 5xx… → transitorio
+  let json
+  try { json = await res.json() } catch { return { status: 'error', rows: null } }
+  if (!Array.isArray(json)) return { status: 'error', rows: null }       // {Error Message:…}
+  return { status: 'ok', rows: normalizeFmp(json) }
+}
+
+// Versión simple para la ruta: devuelve el array o null (sin distinguir el motivo).
+export async function fetchFmpEstimates(fmpSymbol) {
+  const r = await fetchFmpEstimatesResult(fmpSymbol)
+  return (r.status === 'ok' && r.rows && r.rows.length) ? r.rows : null
 }
 
 // Extrae el histórico real {year, revenue, eps} desde income_statement_annual
