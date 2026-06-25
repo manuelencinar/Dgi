@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
+import CompanyLogo from '@/components/CompanyLogo'
 import { superSectorOf } from '@/lib/supersectors'
 
 // ── Pesos de la cartera (cliente) ────────────────────────────────────────────
@@ -52,6 +53,7 @@ function RecCard({ rec }) {
       {/* Línea 1: empresa + Score/Yield */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <CompanyLogo ticker={rec.ticker} name={rec.name} size={22} />
           <span style={{ fontSize: 14, flexShrink: 0 }}>{rec.flag}</span>
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-strong)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rec.name}</span>
           <span style={{ fontSize: 10, color: '#7a85a0', fontWeight: 600, flexShrink: 0 }}>{rec.ticker}</span>

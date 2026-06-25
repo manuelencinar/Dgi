@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, LabelList } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
+import CompanyLogo from '@/components/CompanyLogo'
 import {
   enrichPositions, calcSummary, calcConcentration, calcAlerts,
   calcDiversificationScore, calcDividendRisks, calcFiscal, calcSectorBreakdown, calcGeoBreakdown, calcProfileFit, calcDividendGrowth,
@@ -333,14 +334,17 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
               {enriched.map((p, i) => (
                 <tr key={p.id} style={{ background: i % 2 ? 'var(--surface)' : 'transparent' }}>
                   <td style={{ padding: '8px', borderBottom: '1px solid var(--surface-2)' }}>
-                    <Link href={p.isFund ? `/fondo/${encodeURIComponent(p.ticker)}` : `/empresa/${encodeURIComponent(p.ticker)}`} style={{ textDecoration: 'none' }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {p.name}
-                        {p.assetType === 'etf' && <span style={{ fontSize: 9, fontWeight: 700, color: '#60a5fa', background: 'rgba(96,165,250,0.14)', padding: '1px 5px', borderRadius: 4 }}>ETF</span>}
-                        {p.assetType === 'fund' && <span style={{ fontSize: 9, fontWeight: 700, color: '#a78bfa', background: 'rgba(167,139,250,0.14)', padding: '1px 5px', borderRadius: 4 }}>Fondo</span>}
-                      </p>
-                      <p style={{ fontSize: 10, color: 'var(--text-faint)' }}>{p.ticker} · {p.currency}{p.isFund && p.ter != null ? ` · TER ${p.ter}%` : ''}</p>
-                    </Link>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 0 }}>
+                      <CompanyLogo ticker={p.ticker} name={p.name} size={28} rounded={!p.isFund} />
+                      <Link href={p.isFund ? `/fondo/${encodeURIComponent(p.ticker)}` : `/empresa/${encodeURIComponent(p.ticker)}`} style={{ textDecoration: 'none', minWidth: 0 }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {p.name}
+                          {p.assetType === 'etf' && <span style={{ fontSize: 9, fontWeight: 700, color: '#60a5fa', background: 'rgba(96,165,250,0.14)', padding: '1px 5px', borderRadius: 4 }}>ETF</span>}
+                          {p.assetType === 'fund' && <span style={{ fontSize: 9, fontWeight: 700, color: '#a78bfa', background: 'rgba(167,139,250,0.14)', padding: '1px 5px', borderRadius: 4 }}>Fondo</span>}
+                        </p>
+                        <p style={{ fontSize: 10, color: 'var(--text-faint)' }}>{p.ticker} · {p.currency}{p.isFund && p.ter != null ? ` · TER ${p.ter}%` : ''}</p>
+                      </Link>
+                    </div>
                   </td>
                   <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text-muted)', borderBottom: '1px solid var(--surface-2)' }}>{fmt(p.shares, 4)}</td>
                   <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text-muted)', borderBottom: '1px solid var(--surface-2)' }}>{fmt(p.avg_cost)}</td>

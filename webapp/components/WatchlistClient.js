@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import CompanyLogo from '@/components/CompanyLogo'
 import { getCountry } from '@/lib/helpers'
 import { priceProximity, priceForYield, FREE_WATCHLIST_LIMIT } from '@/lib/watchlist'
 
@@ -115,12 +116,15 @@ function Row({ it, onEdit, onDelete }) {
   return (
     <tr style={{ background: rowBg }}>
       <td style={{ padding: '10px 8px', borderBottom: '1px solid var(--surface-2)' }}>
-        <Link href={`/empresa/${encodeURIComponent(it.ticker)}`} style={{ textDecoration: 'none' }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 14 }}>{ct?.flag || '🌐'}</span>{it.name}
-          </p>
-          <p style={{ fontSize: 10, color: 'var(--text-faint)' }}>{it.ticker}{it.sector ? ` · ${it.sector}` : ''}</p>
-        </Link>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 0 }}>
+          <CompanyLogo ticker={it.ticker} name={it.name} size={28} />
+          <Link href={`/empresa/${encodeURIComponent(it.ticker)}`} style={{ textDecoration: 'none', minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 14 }}>{ct?.flag || '🌐'}</span>{it.name}
+            </p>
+            <p style={{ fontSize: 10, color: 'var(--text-faint)' }}>{it.ticker}{it.sector ? ` · ${it.sector}` : ''}</p>
+          </Link>
+        </div>
         {prox?.inZone && <span style={{ display: 'inline-block', marginTop: 4, fontSize: 10, fontWeight: 700, color: 'var(--positive)', background: 'rgba(52,211,153,0.15)', padding: '2px 7px', borderRadius: 5 }}>🎯 En zona de compra</span>}
         {prox?.near && !prox?.inZone && <span style={{ display: 'inline-block', marginTop: 4, fontSize: 10, fontWeight: 700, color: 'var(--positive-soft)' }}>Cerca del objetivo</span>}
       </td>
