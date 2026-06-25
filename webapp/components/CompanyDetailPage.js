@@ -10,6 +10,7 @@ import FinanzasDeepDive, { FinanzasKpis } from '@/components/empresa/FinanzasSec
 import FollowButton from '@/components/watchlist/FollowButton'
 import ScoreHistory from '@/components/empresa/ScoreHistory'
 import AnalystEstimates from '@/components/empresa/AnalystEstimates'
+import CompanyLogo from '@/components/CompanyLogo'
 import LocalPrice from '@/components/LocalPrice'
 import HealthTwoLevel, { Semaforo } from '@/components/empresa/HealthPanel'
 import InsiderCard from '@/components/empresa/InsiderCard'
@@ -1631,7 +1632,9 @@ export default function CompanyDetailPage(props) {
       <Card style={{ marginBottom: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, padding: '16px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           {/* Identidad */}
-          <div style={{ minWidth: 200, flex: 1 }}>
+          <div style={{ minWidth: 200, flex: 1, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <CompanyLogo ticker={ticker} name={name} size={46} />
+            <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
               <h1 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text-strong)', lineHeight: 1.1 }}>{name}</h1>
               <span style={{ fontSize: 12, color: 'var(--text-faint)', fontWeight: 600 }}>{ticker}</span>
@@ -1671,6 +1674,7 @@ export default function CompanyDetailPage(props) {
                 ))}
               </div>
             )}
+            </div>
           </div>
 
           {/* Precio */}
