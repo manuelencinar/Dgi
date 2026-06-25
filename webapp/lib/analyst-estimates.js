@@ -8,7 +8,10 @@
 // en su mayoría los MISMOS sufijos de mercado que Yahoo, pero algunos difieren →
 // toFmpSymbol() los remapea. La API key vive en la env var FMP_API_KEY.
 
-const FMP_BASE = 'https://financialmodelingprep.com/api/v3'
+// API "stable" de FMP. El endpoint legacy v3 (/api/v3/analyst-estimates/{symbol})
+// dejó de servirse a cuentas creadas después del 31-ago-2025 (devuelve 403
+// "Legacy Endpoint"); la API actual usa /stable/ con el símbolo como query param.
+const FMP_BASE = 'https://financialmodelingprep.com/stable'
 
 // Remapeo de sufijos Yahoo → FMP SOLO para los que difieren. La mayoría coinciden
 // (.DE Xetra, .PA París, .L Londres, .MC Madrid, .AS Ámsterdam, .MI Milán,
@@ -39,20 +42,20 @@ const num = v => (typeof v === 'number' && isFinite(v)) ? v : (v != null && !isN
 export async function fetchFmpEstimates(fmpSymbol) {
   const key = process.env.FMP_API_KEY
   if (!key || !fmpSymbol) return null
-  const url = `${FMP_BASE}/analyst-estimates/${encodeURIComponent(fmpSymbol)}?apikey=${encodeURIComponent(key)}`
+  const url = `${FMP_BASE}/analyst-estimates?symbol=${encodeURIComponent(fmpSymbol)}&period=annual&apikey=${encodeURIComponent(key)}`
   let json
   try {
     const res = await fetch(url, { cache: 'no-store' })
     if (!res.ok) return null
     json = await res.json()
   } catch { return null }
-  if (!Array.isArray(json) || !json.length) return null   // {} de error o sin datos
+  if (!Array.isArray(json) || !json.length) return null   // {} de error (legacy/sin acceso) o sin datos
   const out = json.map(e => ({
     year: e?.date ? parseInt(String(e.date).slice(0, 4)) : null,
-    revenue: num(e?.estimatedRevenueAvg),
-    eps: num(e?.estimatedEpsAvg),
-    // El nombre del campo del nº de analistas varía entre versiones de FMP.
-    analysts: num(e?.numberAnalystsEstimatedEps) ?? num(e?.numberAnalystEstimatedEps) ?? num(e?.numberAnalystEstimatedRevenue),
+    // API stable: revenueAvg/epsAvg; se aceptan también los nombres legacy por si acaso.
+    revenue: num(e?.revenueAvg) ?? num(e?.estimatedRevenueAvg),
+    eps: num(e?.epsAvg) ?? num(e?.estimatedEpsAvg),
+    analysts: num(e?.numAnalystsEps) ?? num(e?.numAnalystsRevenue) ?? num(e?.numberAnalystsEstimatedEps),
   })).filter(e => e.year && (e.revenue != null || e.eps != null))
   return out.length ? out : null
 }
