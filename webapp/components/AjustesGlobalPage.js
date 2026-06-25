@@ -304,7 +304,7 @@ export default function AjustesGlobalPage() {
           value={themePref.theme === 'light'}
           onChange={v => themePref.setTheme(v ? 'light' : 'dark')}
           label="Modo claro"
-          description="Alterna entre el tema oscuro (por defecto) y el claro. También está en el icono ☀ / 🌙 del menú superior."
+          description="Alterna entre el tema oscuro (por defecto) y el claro."
         />
       </div>
 

@@ -3,7 +3,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import NotificationBell from '@/components/NotificationBell'
 import GlobalSearch from '@/components/GlobalSearch'
-import ThemeToggle from '@/components/ThemeToggle'
 
 // Menú principal
 const PRIMARY = [
@@ -63,7 +62,6 @@ export default function NavMenu({ active, sessionUser }) {
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <GlobalSearch />
-          <ThemeToggle />
           {sessionUser ? (
             <>
               <NotificationBell />
