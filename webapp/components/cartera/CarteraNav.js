@@ -16,7 +16,7 @@ export default function CarteraNav() {
   return (
     <div style={{
       position: 'sticky', top: 52, zIndex: 40,
-      background: 'rgba(8,11,20,0.96)', backdropFilter: 'blur(12px)',
+      background: 'var(--nav-bg)', backdropFilter: 'blur(12px)',
       borderBottom: '1px solid var(--border)',
       padding: '0 16px',
     }}>

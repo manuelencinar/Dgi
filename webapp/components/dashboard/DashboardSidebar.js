@@ -58,7 +58,7 @@ export default function DashboardSidebar() {
       <div className="dash-mobile-bar" style={{
         display: 'none', alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 16px', borderBottom: '1px solid var(--border)',
-        position: 'sticky', top: 0, background: 'rgba(8,11,20,0.95)', backdropFilter: 'blur(12px)', zIndex: 60,
+        position: 'sticky', top: 0, background: 'var(--nav-bg)', backdropFilter: 'blur(12px)', zIndex: 60,
       }}>
         <p style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-strong)' }}>Admin · Mi Índice DGI</p>
         <button onClick={() => setOpen(o => !o)} style={{ background: 'none', border: 'none', color: 'var(--text)', fontSize: 22, cursor: 'pointer' }}>≡</button>

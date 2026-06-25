@@ -19,7 +19,7 @@ export default function RankingsTabs({ active }) {
             padding: '8px 16px', borderRadius: 9,
             border: '1px solid ' + (on ? 'rgba(129,140,248,0.5)' : 'var(--surface-3)'),
             background: on ? 'rgba(99,102,241,0.16)' : 'transparent',
-            color: on ? '#a5b4fc' : 'var(--text-muted)',
+            color: on ? 'var(--accent)' : 'var(--text-muted)',
           }}>{t.label}</Link>
         )
       })}

@@ -47,7 +47,7 @@ export default function DatosTabs({ companies, sectors, countries, funds, market
           return (
             <button key={id} onClick={() => setTab(id)} style={{
               flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: '10px 14px',
-              fontSize: 13, fontWeight: 700, color: active ? '#fff' : 'var(--text-faint)',
+              fontSize: 13, fontWeight: 700, color: active ? 'var(--text-strong)' : 'var(--text-faint)',
               borderBottom: active ? '2px solid var(--accent)' : '2px solid transparent', whiteSpace: 'nowrap',
             }}>{label}</button>
           )
