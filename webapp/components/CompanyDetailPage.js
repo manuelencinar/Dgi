@@ -9,6 +9,7 @@ import StatementCharts from '@/components/empresa/StatementCharts'
 import FinanzasDeepDive, { FinanzasKpis } from '@/components/empresa/FinanzasSections'
 import FollowButton from '@/components/watchlist/FollowButton'
 import ScoreHistory from '@/components/empresa/ScoreHistory'
+import AnalystEstimates from '@/components/empresa/AnalystEstimates'
 import LocalPrice from '@/components/LocalPrice'
 import HealthTwoLevel, { Semaforo } from '@/components/empresa/HealthPanel'
 import InsiderCard from '@/components/empresa/InsiderCard'
@@ -1829,6 +1830,7 @@ export default function CompanyDetailPage(props) {
                 bankNpl={isBank ? (bankMetrics?.nplHistory || []) : undefined}
               />
             </Card>
+            <AnalystEstimates ticker={ticker} />
             {isBank ? (
               <BankMetricsCard m={bankMetrics} />
             ) : isInsurer ? (
