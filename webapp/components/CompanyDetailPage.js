@@ -1901,6 +1901,29 @@ export default function CompanyDetailPage(props) {
               history={evHistory} current={evCurrent}
               isPremium title="Historial EV/EBITDA" noun="EV/EBITDA" showGate={false}
               note="EV (capitalización + deuda neta) entre EBITDA, con la misma fórmula en todos los años; el punto «Hoy» usa el precio actual sobre el EBITDA del último ejercicio." />}
+
+            {/* Por qué NO mostramos el precio objetivo de los analistas */}
+            <Card style={{ background: 'var(--surface-2)' }}>
+              <SectionTitle>¿Y el precio objetivo de los analistas?</SectionTitle>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                A propósito no incluimos el «precio objetivo» de consenso de los analistas. Es una cifra a
+                <b style={{ color: 'var(--text)' }}> 12 meses</b>, pensada para el corto plazo, que choca con el enfoque de esta
+                herramienta: comprar buenos negocios que aumentan su dividendo y mantenerlos durante años.
+              </p>
+              <ul style={{ margin: '10px 0 0', paddingLeft: 18, display: 'grid', gap: 6 }}>
+                {[
+                  'Tiende a anclarse al precio actual y a moverse en manada: cuando la acción sube, los objetivos suben detrás (y viceversa).',
+                  'Se revisa con frecuencia justo después del movimiento, así que rara vez anticipa nada.',
+                  'Mezcla incentivos del lado vendedor (banca de inversión, relaciones comerciales) que no siempre miran por el inversor a largo plazo.',
+                ].map((t, i) => (
+                  <li key={i} style={{ fontSize: 12.5, color: 'var(--text-muted)', lineHeight: 1.55 }}>{t}</li>
+                ))}
+              </ul>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginTop: 10 }}>
+                Preferimos darte las herramientas para juzgar tú mismo: <b style={{ color: 'var(--text)' }}>valor intrínseco</b> con
+                su margen de seguridad, múltiplos frente a su propia historia y la calidad y sostenibilidad del dividendo.
+              </p>
+            </Card>
           </div>
         )}
 
