@@ -21,6 +21,7 @@ export default async function UsuariosPage() {
       id: u.id, email: u.email,
       created_at: u.created_at, last_sign_in_at: u.last_sign_in_at,
       plan: isPremium ? 'premium' : 'free',
+      premium_until: s?.premium_until || null,
       confirmed: !!u.email_confirmed_at,
     }
   })

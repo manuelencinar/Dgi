@@ -10,14 +10,15 @@ export default function UsuariosClient({ metrics, retention, onboarding, users }
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [detail, setDetail] = useState(null)
+  const [rows, setRows] = useState(users)
 
   const filtered = useMemo(() => {
-    let rows = [...users].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    if (filter !== 'all') rows = rows.filter(u => u.plan === filter)
+    let list = [...rows].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    if (filter !== 'all') list = list.filter(u => u.plan === filter)
     const q = search.trim().toLowerCase()
-    if (q) rows = rows.filter(u => u.email?.toLowerCase().includes(q))
-    return rows
-  }, [users, filter, search])
+    if (q) list = list.filter(u => u.email?.toLowerCase().includes(q))
+    return list
+  }, [rows, filter, search])
 
   const totalPages = Math.ceil(filtered.length / PAGE)
   const slice = filtered.slice((page - 1) * PAGE, page * PAGE)
@@ -175,30 +176,116 @@ export default function UsuariosClient({ metrics, retention, onboarding, users }
 
       {/* Modal detalle */}
       {detail && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setDetail(null)}>
-          <Card style={{ width: '90%', maxWidth: 440 }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#c8d0e0' }}>Detalle de usuario</p>
-              <button onClick={() => setDetail(null)} style={{ background: 'none', border: 'none', color: '#4a5270', fontSize: 20, cursor: 'pointer' }}>×</button>
-            </div>
-            <div style={{ display: 'grid', gap: 10, fontSize: 13 }}>
-              {[
-                ['Email', detail.email],
-                ['Plan', detail.plan === 'premium' ? 'Premium' : 'Free'],
-                ['Estado', detail.confirmed ? 'Verificado' : 'Pendiente de verificar'],
-                ['Registro', fmtDateTime(detail.created_at)],
-                ['Último acceso', detail.last_sign_in_at ? fmtDateTime(detail.last_sign_in_at) : 'Nunca'],
-                ['ID', detail.id],
-              ].map(([k, v]) => (
-                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <span style={{ color: '#4a5270' }}>{k}</span>
-                  <span style={{ color: '#c8d0e0', textAlign: 'right', wordBreak: 'break-all', fontSize: k === 'ID' ? 10 : 13 }}>{v}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
+        <UserDetailModal
+          detail={detail}
+          onClose={() => setDetail(null)}
+          onUpdated={updated => {
+            setRows(rs => rs.map(u => u.id === updated.id ? { ...u, ...updated } : u))
+            setDetail(d => d && d.id === updated.id ? { ...d, ...updated } : d)
+          }}
+        />
       )}
+    </div>
+  )
+}
+
+function UserDetailModal({ detail, onClose, onUpdated }) {
+  // Valor por defecto del datepicker: el premium_until actual o 1 año desde hoy
+  const defaultDate = () => {
+    if (detail.premium_until) return new Date(detail.premium_until).toISOString().slice(0, 10)
+    const d = new Date(); d.setFullYear(d.getFullYear() + 1)
+    return d.toISOString().slice(0, 10)
+  }
+  const [until, setUntil] = useState(defaultDate())
+  const [noExpiry, setNoExpiry] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState(null)
+
+  async function call(body, okText) {
+    setBusy(true); setMsg(null)
+    try {
+      const res = await fetch('/api/admin/grant-premium', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: detail.email, ...body }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Error')
+      onUpdated({
+        id: detail.id,
+        plan: json.plan,
+        premium_until: json.premium_until || null,
+      })
+      setMsg({ ok: true, text: okText })
+    } catch (e) {
+      setMsg({ ok: false, text: e.message })
+    } finally { setBusy(false) }
+  }
+
+  const grant = () => call({ premiumUntil: noExpiry ? null : new Date(until + 'T23:59:59Z').toISOString() }, 'Premium concedido')
+  const revoke = () => call({ revoke: true }, 'Premium revocado')
+
+  const isPremium = detail.plan === 'premium'
+  const expiryLabel = detail.premium_until
+    ? `Caduca el ${fmtDate(detail.premium_until)}`
+    : (isPremium ? 'Sin fecha de caducidad' : '—')
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={onClose}>
+      <Card style={{ width: '90%', maxWidth: 440, maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#c8d0e0' }}>Detalle de usuario</p>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#4a5270', fontSize: 20, cursor: 'pointer' }}>×</button>
+        </div>
+        <div style={{ display: 'grid', gap: 10, fontSize: 13 }}>
+          {[
+            ['Email', detail.email],
+            ['Plan', isPremium ? 'Premium' : 'Free'],
+            ['Premium', expiryLabel],
+            ['Estado', detail.confirmed ? 'Verificado' : 'Pendiente de verificar'],
+            ['Registro', fmtDateTime(detail.created_at)],
+            ['Último acceso', detail.last_sign_in_at ? fmtDateTime(detail.last_sign_in_at) : 'Nunca'],
+            ['ID', detail.id],
+          ].map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ color: '#4a5270' }}>{k}</span>
+              <span style={{ color: '#c8d0e0', textAlign: 'right', wordBreak: 'break-all', fontSize: k === 'ID' ? 10 : 13 }}>{v}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Gestión de premium */}
+        <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#fbbf24', marginBottom: 12 }}>Gestionar premium</p>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#8090a8', marginBottom: 10, cursor: 'pointer' }}>
+            <input type="checkbox" checked={noExpiry} onChange={e => setNoExpiry(e.target.checked)} />
+            Sin fecha de caducidad (premium permanente)
+          </label>
+
+          {!noExpiry && (
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: 'block', fontSize: 11, color: '#4a5270', marginBottom: 5 }}>Premium hasta (incluido)</label>
+              <input type="date" value={until} min={new Date().toISOString().slice(0, 10)} onChange={e => setUntil(e.target.value)}
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '7px 12px', color: '#c8d0e0', fontSize: 13, outline: 'none', width: '100%', colorScheme: 'dark' }} />
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={grant} disabled={busy} style={{ flex: 1, minWidth: 140, padding: '9px 14px', borderRadius: 8, border: 'none', background: busy ? 'rgba(251,191,36,0.4)' : '#fbbf24', color: '#1a1205', fontSize: 13, fontWeight: 700, cursor: busy ? 'default' : 'pointer' }}>
+              {isPremium ? 'Actualizar premium' : 'Conceder premium'}
+            </button>
+            {isPremium && (
+              <button onClick={revoke} disabled={busy} style={{ padding: '9px 14px', borderRadius: 8, border: '1px solid rgba(248,113,113,0.4)', background: 'transparent', color: '#f87171', fontSize: 13, fontWeight: 600, cursor: busy ? 'default' : 'pointer' }}>
+                Revocar
+              </button>
+            )}
+          </div>
+
+          {msg && (
+            <p style={{ fontSize: 12, marginTop: 10, color: msg.ok ? '#34d399' : '#f87171' }}>{msg.ok ? '✓ ' : '⚠ '}{msg.text}</p>
+          )}
+        </div>
+      </Card>
     </div>
   )
 }
