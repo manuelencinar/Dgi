@@ -88,7 +88,7 @@ export default async function NovedadesPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav active="/novedades" />
       <NovedadesClient featured={slim(featured)} rest={slim(rest)} events={events} userCC={userCC} hasUser={!!user} />
     </div>

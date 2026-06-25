@@ -2,7 +2,7 @@
 
 export default function DividendBars({ history }) {
   if (!history?.length) {
-    return <p style={{ fontSize: 13, color: '#4a5270', textAlign: 'center', padding: '24px 0' }}>Sin historial de dividendos disponible.</p>
+    return <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', padding: '24px 0' }}>Sin historial de dividendos disponible.</p>
   }
 
   const maxDps = Math.max(...history.map(h => h.dps))
@@ -26,10 +26,10 @@ export default function DividendBars({ history }) {
           const flat = h.growth != null && h.growth === 0
           const barColor = h.isPartial
             ? 'rgba(99,102,241,0.5)'
-            : grew ? '#34d399'
-            : flat ? '#fbbf24'
-            : h.growth == null ? 'rgba(255,255,255,0.12)'
-            : '#f87171'
+            : grew ? 'var(--positive)'
+            : flat ? 'var(--warning)'
+            : h.growth == null ? 'var(--border-strong)'
+            : 'var(--negative)'
 
           return (
             <div
@@ -39,7 +39,7 @@ export default function DividendBars({ history }) {
               {h.growth != null && !h.isPartial && (
                 <span style={{
                   fontSize: 9,
-                  color: grew ? '#34d399' : h.growth === 0 ? '#fbbf24' : '#f87171',
+                  color: grew ? 'var(--positive)' : h.growth === 0 ? 'var(--warning)' : 'var(--negative)',
                   fontWeight: 600,
                   height: 14,
                   lineHeight: '14px',
@@ -57,17 +57,17 @@ export default function DividendBars({ history }) {
                 transition: 'height 0.4s ease',
               }} />
 
-              <span style={{ fontSize: 10, color: '#4a5270', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 10, color: 'var(--text-faint)', whiteSpace: 'nowrap' }}>
                 {h.year}{h.isPartial ? '*' : ''}
               </span>
-              <span style={{ fontSize: 10, color: '#c8d0e0', fontWeight: 600 }}>
+              <span style={{ fontSize: 10, color: 'var(--text)', fontWeight: 600 }}>
                 {h.dps.toFixed(2)}
               </span>
             </div>
           )
         })}
       </div>
-      <p style={{ fontSize: 10, color: '#4a5270', marginTop: 8, textAlign: 'right' }}>
+      <p style={{ fontSize: 10, color: 'var(--text-faint)', marginTop: 8, textAlign: 'right' }}>
         * año en curso (parcial)
       </p>
     </div>

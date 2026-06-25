@@ -6,7 +6,7 @@ import { FX } from '@/lib/portfolio'
 import { FREQ_LABEL, monthlyEquivalent } from '@/lib/recurring'
 import { RecurringModal } from '@/components/cartera/RecurringButton'
 
-const CARD = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
+const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }
 function fmtEUR(v) { return v == null ? '—' : v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—' }
 
@@ -56,14 +56,14 @@ export default function RecurringSection() {
   return (
     <div style={{ ...CARD, marginBottom: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Aportaciones periódicas activas</p>
-        {rows.length > 0 && <span style={{ fontSize: 12, color: '#818cf8', fontWeight: 700 }}>{fmtEUR(monthlyTotal)}/mes comprometido</span>}
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Aportaciones periódicas activas</p>
+        {rows.length > 0 && <span style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 700 }}>{fmtEUR(monthlyTotal)}/mes comprometido</span>}
       </div>
 
       {rows.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '28px 0' }}>
-          <p style={{ fontSize: 13, color: '#4a5270', marginBottom: 14 }}>No tienes aportaciones periódicas configuradas.</p>
-          <Link href="/etfs" style={{ padding: '9px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-faint)', marginBottom: 14 }}>No tienes aportaciones periódicas configuradas.</p>
+          <Link href="/etfs" style={{ padding: '9px 18px', background: 'var(--accent)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
             Configurar primera aportación periódica
           </Link>
         </div>
@@ -73,7 +73,7 @@ export default function RecurringSection() {
             <thead>
               <tr>
                 {['Fondo', 'Importe', 'Frecuencia', 'Próxima', 'Part. est.', 'Hechas', 'Total aportado', ''].map(h => (
-                  <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Fondo' ? 'left' : 'right', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                  <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Fondo' ? 'left' : 'right', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -84,22 +84,22 @@ export default function RecurringSection() {
                 const estShares = priceEur ? c.amount_eur / priceEur : null
                 const s = stats[c.ticker] || { count: 0, total: 0 }
                 return (
-                  <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', opacity: c.active ? 1 : 0.5 }}>
+                  <tr key={c.id} style={{ borderBottom: '1px solid var(--surface-2)', opacity: c.active ? 1 : 0.5 }}>
                     <td style={{ padding: '8px' }}>
-                      <Link href={`/fondo/${encodeURIComponent(c.ticker)}`} style={{ color: '#c8d0e0', textDecoration: 'none', fontWeight: 600 }}>{f?.name || c.ticker}</Link>
-                      {!c.active && <span style={{ fontSize: 9, fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', padding: '1px 6px', borderRadius: 4, marginLeft: 6 }}>PAUSADA</span>}
-                      {c.notes && <p style={{ fontSize: 10, color: '#2e3a55' }}>{c.notes}</p>}
+                      <Link href={`/fondo/${encodeURIComponent(c.ticker)}`} style={{ color: 'var(--text)', textDecoration: 'none', fontWeight: 600 }}>{f?.name || c.ticker}</Link>
+                      {!c.active && <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--warning)', background: 'rgba(251,191,36,0.12)', padding: '1px 6px', borderRadius: 4, marginLeft: 6 }}>PAUSADA</span>}
+                      {c.notes && <p style={{ fontSize: 10, color: 'var(--text-faintest)' }}>{c.notes}</p>}
                     </td>
-                    <td style={{ padding: '8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 700 }}>{fmtEUR(c.amount_eur)}</td>
-                    <td style={{ padding: '8px', textAlign: 'right', color: '#8090a8' }}>{FREQ_LABEL[c.frequency]}</td>
-                    <td style={{ padding: '8px', textAlign: 'right', color: '#818cf8' }}>{fmtDate(c.next_date)}</td>
-                    <td style={{ padding: '8px', textAlign: 'right', color: '#8090a8' }}>{estShares != null ? estShares.toFixed(3) : '—'}</td>
-                    <td style={{ padding: '8px', textAlign: 'right', color: '#8090a8' }}>{s.count}</td>
-                    <td style={{ padding: '8px', textAlign: 'right', color: '#34d399', fontWeight: 600 }}>{fmtEUR(s.total)}</td>
+                    <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text)', fontWeight: 700 }}>{fmtEUR(c.amount_eur)}</td>
+                    <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text-muted)' }}>{FREQ_LABEL[c.frequency]}</td>
+                    <td style={{ padding: '8px', textAlign: 'right', color: 'var(--accent)' }}>{fmtDate(c.next_date)}</td>
+                    <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text-muted)' }}>{estShares != null ? estShares.toFixed(3) : '—'}</td>
+                    <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text-muted)' }}>{s.count}</td>
+                    <td style={{ padding: '8px', textAlign: 'right', color: 'var(--positive)', fontWeight: 600 }}>{fmtEUR(s.total)}</td>
                     <td style={{ padding: '8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <button onClick={() => setEditing(c)} title="Editar" style={btn('#818cf8')}>✏</button>
-                      <button onClick={() => togglePause(c)} title={c.active ? 'Pausar' : 'Reactivar'} style={btn('#fbbf24')}>{c.active ? '⏸' : '▶'}</button>
-                      <button onClick={() => remove(c)} title="Eliminar" style={btn('#f87171')}>🗑</button>
+                      <button onClick={() => setEditing(c)} title="Editar" style={btn('var(--accent)')}>✏</button>
+                      <button onClick={() => togglePause(c)} title={c.active ? 'Pausar' : 'Reactivar'} style={btn('var(--warning)')}>{c.active ? '⏸' : '▶'}</button>
+                      <button onClick={() => remove(c)} title="Eliminar" style={btn('var(--negative)')}>🗑</button>
                     </td>
                   </tr>
                 )

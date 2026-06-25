@@ -45,8 +45,8 @@ function fmtDate(ts, range) {
 }
 
 function pctColor(v) {
-  if (v == null) return '#4a5270'
-  return v >= 0 ? '#34d399' : '#f87171'
+  if (v == null) return 'var(--text-faint)'
+  return v >= 0 ? 'var(--positive)' : 'var(--negative)'
 }
 
 // ── SVG Chart ──────────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ function Chart({ data, range }) {
   const { timestamps: ts, closes } = data || {}
   if (!closes?.length) return (
     <div style={{ height: H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#3a4260', fontSize: 12 }}>Sin datos</p>
+      <p style={{ color: 'var(--text-faintest)', fontSize: 12 }}>Sin datos</p>
     </div>
   )
 
@@ -78,7 +78,7 @@ function Chart({ data, range }) {
   const areaPath = `${linePath} L ${xOf(closes.length - 1).toFixed(1)} ${(PAD.top + IH).toFixed(1)} L ${PAD.left.toFixed(1)} ${(PAD.top + IH).toFixed(1)} Z`
 
   const netUp = closes[closes.length - 1] >= closes[0]
-  const lineColor = netUp ? '#34d399' : '#f87171'
+  const lineColor = netUp ? 'var(--positive)' : 'var(--negative)'
 
   const labelCount = 5
   const xLabels = Array.from({ length: labelCount }, (_, i) => {
@@ -107,11 +107,11 @@ function Chart({ data, range }) {
           position: 'absolute', top: 4,
           left: hover.x / W * 100 + '%',
           transform: hover.idx > closes.length * 0.65 ? 'translateX(-110%)' : 'translateX(8px)',
-          background: '#0f1221', border: '1px solid rgba(255,255,255,0.1)',
+          background: 'var(--bg-elev)', border: '1px solid var(--border-strong)',
           borderRadius: 8, padding: '6px 10px', pointerEvents: 'none', zIndex: 10, whiteSpace: 'nowrap',
         }}>
-          <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>{fmtDate(hover.ts, range)}</p>
-          <p style={{ fontSize: 14, fontWeight: 800, color: '#e0e8f0', fontVariantNumeric: 'tabular-nums' }}>{fmtPrice(hover.price)}</p>
+          <p style={{ fontSize: 10, color: 'var(--text-faint)', marginBottom: 2 }}>{fmtDate(hover.ts, range)}</p>
+          <p style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-strong)', fontVariantNumeric: 'tabular-nums' }}>{fmtPrice(hover.price)}</p>
         </div>
       )}
       <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block', cursor: 'crosshair' }}
@@ -124,20 +124,20 @@ function Chart({ data, range }) {
         </defs>
         {yLabels.map((l, i) => (
           <g key={i}>
-            <line x1={PAD.left} x2={W - PAD.right} y1={l.y} y2={l.y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-            <text x={PAD.left - 6} y={l.y + 4} textAnchor="end" fontSize="9" fill="#2a3045" fontFamily="inherit">{l.label}</text>
+            <line x1={PAD.left} x2={W - PAD.right} y1={l.y} y2={l.y} stroke="var(--surface-3)" strokeWidth="1" />
+            <text x={PAD.left - 6} y={l.y + 4} textAnchor="end" fontSize="9" fill="var(--text-faintest)" fontFamily="inherit">{l.label}</text>
           </g>
         ))}
         <path d={areaPath} fill="url(#g)" />
         <path d={linePath} stroke={lineColor} strokeWidth="1.5" fill="none" strokeLinejoin="round" />
         {hover && (
           <>
-            <line x1={hover.x} x2={hover.x} y1={PAD.top} y2={PAD.top + IH} stroke="rgba(255,255,255,0.18)" strokeWidth="1" strokeDasharray="4 3" />
-            <circle cx={hover.x} cy={hover.y} r="4" fill={lineColor} stroke="#080b14" strokeWidth="2" />
+            <line x1={hover.x} x2={hover.x} y1={PAD.top} y2={PAD.top + IH} stroke="var(--border-strong)" strokeWidth="1" strokeDasharray="4 3" />
+            <circle cx={hover.x} cy={hover.y} r="4" fill={lineColor} stroke="var(--bg)" strokeWidth="2" />
           </>
         )}
         {xLabels.map((l, i) => (
-          <text key={i} x={l.x} y={H - 6} textAnchor="middle" fontSize="9" fill="#2a3045" fontFamily="inherit">{l.label}</text>
+          <text key={i} x={l.x} y={H - 6} textAnchor="middle" fontSize="9" fill="var(--text-faintest)" fontFamily="inherit">{l.label}</text>
         ))}
       </svg>
     </div>
@@ -172,7 +172,7 @@ function fmtCompanyPrice(v, cur) {
 
 function ConstituentRow({ company, quote }) {
   const up     = quote?.pct != null ? quote.pct >= 0 : null
-  const col    = up === null ? '#4a5270' : up ? '#34d399' : '#f87171'
+  const col    = up === null ? 'var(--text-faint)' : up ? 'var(--positive)' : 'var(--negative)'
   const sign   = quote?.pct != null && quote.pct >= 0 ? '+' : ''
   const pctStr = quote?.pct != null
     ? sign + quote.pct.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%'
@@ -182,16 +182,16 @@ function ConstituentRow({ company, quote }) {
   return (
     <Link href={`/empresa/${encodeURIComponent(company.ticker)}`} className="mkt-constituent" style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '6px 6px', margin: '0 -6px', borderRadius: 6, borderBottom: '1px solid rgba(255,255,255,0.04)',
+      padding: '6px 6px', margin: '0 -6px', borderRadius: 6, borderBottom: '1px solid var(--surface-2)',
       gap: 8, textDecoration: 'none',
     }}>
       <p style={{
-        fontSize: 12, fontWeight: 600, color: '#c8d4e4',
+        fontSize: 12, fontWeight: 600, color: 'var(--text)',
         flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
       }}>
         {company.name}
       </p>
-      <p style={{ fontSize: 10, color: '#2e3a55', flexShrink: 0, width: 70, textAlign: 'right' }}>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', flexShrink: 0, width: 70, textAlign: 'right' }}>
         {company.ticker}
       </p>
       <p style={{
@@ -200,7 +200,7 @@ function ConstituentRow({ company, quote }) {
       }}>
         {fmtCompanyPrice(quote?.price, cur)}
         {quote?.price != null && cur && (
-          <span style={{ fontSize: 9, color: '#2e3a55', marginLeft: 2 }}>{cur}</span>
+          <span style={{ fontSize: 9, color: 'var(--text-faintest)', marginLeft: 2 }}>{cur}</span>
         )}
       </p>
       <p style={{
@@ -227,12 +227,12 @@ function ConstituentsList({ constituents, quotes }) {
       <style>{`.mkt-constituent:hover{background:rgba(99,102,241,0.08)}`}</style>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
         <p style={{
-          fontSize: 10, fontWeight: 700, color: '#4a5270',
+          fontSize: 10, fontWeight: 700, color: 'var(--text-faint)',
           letterSpacing: '0.08em', textTransform: 'uppercase',
         }}>
           Empresas del índice
         </p>
-        <p style={{ fontSize: 10, color: '#2a3248' }}>
+        <p style={{ fontSize: 10, color: 'var(--text-faintest)' }}>
           {constituents.length} empresas · precios locales · act. diaria
         </p>
       </div>
@@ -240,13 +240,13 @@ function ConstituentsList({ constituents, quotes }) {
       {/* Column headers */}
       <div style={{
         display: 'flex', justifyContent: 'space-between',
-        padding: '3px 0 5px', borderBottom: '1px solid rgba(255,255,255,0.08)',
+        padding: '3px 0 5px', borderBottom: '1px solid var(--surface-3)',
         gap: 8,
       }}>
-        <p style={{ fontSize: 9, color: '#2e3a55', flex: 1 }}>Nombre</p>
-        <p style={{ fontSize: 9, color: '#2e3a55', width: 70, textAlign: 'right' }}>Ticker</p>
-        <p style={{ fontSize: 9, color: '#2e3a55', width: 80, textAlign: 'right' }}>Precio</p>
-        <p style={{ fontSize: 9, color: '#2e3a55', width: 62, textAlign: 'right' }}>Var. día</p>
+        <p style={{ fontSize: 9, color: 'var(--text-faintest)', flex: 1 }}>Nombre</p>
+        <p style={{ fontSize: 9, color: 'var(--text-faintest)', width: 70, textAlign: 'right' }}>Ticker</p>
+        <p style={{ fontSize: 9, color: 'var(--text-faintest)', width: 80, textAlign: 'right' }}>Precio</p>
+        <p style={{ fontSize: 9, color: 'var(--text-faintest)', width: 62, textAlign: 'right' }}>Var. día</p>
       </div>
 
       <div>
@@ -260,7 +260,7 @@ function ConstituentsList({ constituents, quotes }) {
           onClick={() => setExpanded(e => !e)}
           style={{
             marginTop: 8, fontSize: 11, fontWeight: 600,
-            color: '#818cf8', background: 'transparent', border: 'none',
+            color: 'var(--accent)', background: 'transparent', border: 'none',
             cursor: 'pointer', padding: 0, fontFamily: 'inherit',
           }}
         >
@@ -277,10 +277,10 @@ function ConstituentsList({ constituents, quotes }) {
 
 function Stat({ label, value, color, sub }) {
   return (
-    <div style={{ padding: '12px 14px', background: 'rgba(255,255,255,0.025)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
-      <p style={{ fontSize: 10, color: '#3a4260', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{label}</p>
-      <p style={{ fontSize: 18, fontWeight: 800, color: color || '#e0e8f0', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{value}</p>
-      {sub && <p style={{ fontSize: 10, color: '#3a4260', marginTop: 4 }}>{sub}</p>}
+    <div style={{ padding: '12px 14px', background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)' }}>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{label}</p>
+      <p style={{ fontSize: 18, fontWeight: 800, color: color || 'var(--text-strong)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{value}</p>
+      {sub && <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 4 }}>{sub}</p>}
     </div>
   )
 }
@@ -290,7 +290,7 @@ function Stat({ label, value, color, sub }) {
 function SectionTitle({ children }) {
   return (
     <p style={{
-      fontSize: 10, fontWeight: 700, color: '#4a5270',
+      fontSize: 10, fontWeight: 700, color: 'var(--text-faint)',
       letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10,
     }}>
       {children}
@@ -299,7 +299,7 @@ function SectionTitle({ children }) {
 }
 
 function scoreColor(s) {
-  return s >= 7 ? '#34d399' : s >= 4 ? '#fbbf24' : '#f87171'
+  return s >= 7 ? 'var(--positive)' : s >= 4 ? 'var(--warning)' : 'var(--negative)'
 }
 
 function DGIScoreAndRanking({ score, ranking, currentSymbol }) {
@@ -313,28 +313,28 @@ function DGIScoreAndRanking({ score, ranking, currentSymbol }) {
 
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.02)',
-      border: '1px solid rgba(255,255,255,0.06)',
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
       borderRadius: 12, overflow: 'hidden', marginBottom: 12,
     }}>
       {/* Score header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 20,
         padding: '16px 20px', flexWrap: 'wrap',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        borderBottom: '1px solid var(--border)',
       }}>
         <div style={{ textAlign: 'center', minWidth: 64 }}>
           <p style={{ fontSize: 44, fontWeight: 900, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
             {score.toFixed(1)}
           </p>
-          <p style={{ fontSize: 10, color: '#3a4260', marginTop: 2 }}>de 10</p>
+          <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 2 }}>de 10</p>
         </div>
         <div style={{ flex: 1, minWidth: 160 }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d4e4', marginBottom: 6 }}>Score DGI del índice</p>
-          <div style={{ height: 8, background: 'rgba(255,255,255,0.07)', borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Score DGI del índice</p>
+          <div style={{ height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
             <div style={{ width: (score / 10 * 100) + '%', height: '100%', background: color, borderRadius: 4 }} />
           </div>
-          <p style={{ fontSize: 10, color: '#3a4260' }}>
+          <p style={{ fontSize: 10, color: 'var(--text-faintest)' }}>
             {rank > 0 && `Posición #${rank} de ${ranking.length} mercados · `}
             {score >= 7 ? 'Sólidas características DGI' : score >= 4 ? 'Potencial DGI moderado' : 'Escasas características DGI'}
           </p>
@@ -343,7 +343,7 @@ function DGIScoreAndRanking({ score, ranking, currentSymbol }) {
 
       {/* Ranking table */}
       <div style={{ padding: '10px 0' }}>
-        <p style={{ fontSize: 9, fontWeight: 700, color: '#2e3a55', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 16px 6px' }}>
+        <p style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-faintest)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 16px 6px' }}>
           Ranking DGI — {ranking.length} mercados analizados
         </p>
         {visible.map((m, i) => {
@@ -356,14 +356,14 @@ function DGIScoreAndRanking({ score, ranking, currentSymbol }) {
               background: isCurrent ? 'rgba(99,102,241,0.08)' : 'transparent',
               borderLeft: isCurrent ? '2px solid rgba(99,102,241,0.5)' : '2px solid transparent',
             }}>
-              <p style={{ fontSize: 10, color: '#2e3a55', width: 20, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+              <p style={{ fontSize: 10, color: 'var(--text-faintest)', width: 20, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
                 {i + 1}
               </p>
               <span style={{ fontSize: 13 }}>{m.flag}</span>
-              <p style={{ flex: 1, fontSize: 11, fontWeight: isCurrent ? 700 : 400, color: isCurrent ? '#c8d4e4' : '#8090a8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <p style={{ flex: 1, fontSize: 11, fontWeight: isCurrent ? 700 : 400, color: isCurrent ? 'var(--text)' : 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {m.name}
               </p>
-              <div style={{ width: 60, height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden', flexShrink: 0 }}>
+              <div style={{ width: 60, height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden', flexShrink: 0 }}>
                 <div style={{ width: (m.score / 10 * 100) + '%', height: '100%', background: c, borderRadius: 2 }} />
               </div>
               <p style={{ fontSize: 11, fontWeight: 700, color: c, fontVariantNumeric: 'tabular-nums', width: 28, textAlign: 'right', flexShrink: 0 }}>
@@ -375,7 +375,7 @@ function DGIScoreAndRanking({ score, ranking, currentSymbol }) {
         {ranking.length > PREVIEW && (
           <button onClick={() => setExpanded(e => !e)} style={{
             margin: '6px 16px 4px', fontSize: 11, fontWeight: 600,
-            color: '#818cf8', background: 'transparent', border: 'none',
+            color: 'var(--accent)', background: 'transparent', border: 'none',
             cursor: 'pointer', padding: 0, fontFamily: 'inherit', display: 'block',
           }}>
             {expanded ? '↑ Mostrar menos' : `↓ Ver los ${ranking.length - PREVIEW} restantes`}
@@ -390,19 +390,19 @@ function ThermometerSimple({ thermometer }) {
   if (!thermometer) return null
   const { dgiInvestable, total } = thermometer
   const pct   = total > 0 ? Math.round(dgiInvestable / total * 100) : 0
-  const color  = pct >= 30 ? '#34d399' : pct >= 15 ? '#fbbf24' : '#f87171'
+  const color  = pct >= 30 ? 'var(--positive)' : pct >= 15 ? 'var(--warning)' : 'var(--negative)'
   return (
     <div style={{
       padding: '12px 16px', borderRadius: 10,
-      background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)',
+      background: 'var(--surface)', border: '1px solid var(--border)',
     }}>
-      <p style={{ fontSize: 10, color: '#3a4260', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5 }}>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5 }}>
         Termómetro DGI
       </p>
       <p style={{ fontSize: 22, fontWeight: 900, color, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
         {pct}%
       </p>
-      <p style={{ fontSize: 10, color: '#3a4260', marginTop: 4 }}>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 4 }}>
         {dgiInvestable} de {total} empresas son aptas para DGI
       </p>
     </div>
@@ -415,24 +415,24 @@ function YieldSimple({ avgYield, bondRate }) {
   const bPct  = (bondRate * 100).toFixed(2)
   const spread = avgYield - bondRate
   const pos   = spread >= 0
-  const col   = pos ? '#34d399' : '#f87171'
+  const col   = pos ? 'var(--positive)' : 'var(--negative)'
   return (
     <div style={{
       padding: '12px 16px', borderRadius: 10,
-      background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)',
+      background: 'var(--surface)', border: '1px solid var(--border)',
     }}>
-      <p style={{ fontSize: 10, color: '#3a4260', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
         Yield real del índice
       </p>
       <div style={{ display: 'flex', gap: 16, marginBottom: 8 }}>
         <div>
-          <p style={{ fontSize: 18, fontWeight: 900, color: '#34d399', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{yPct}%</p>
-          <p style={{ fontSize: 9, color: '#3a4260', marginTop: 2 }}>Yield índice</p>
+          <p style={{ fontSize: 18, fontWeight: 900, color: 'var(--positive)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{yPct}%</p>
+          <p style={{ fontSize: 9, color: 'var(--text-faintest)', marginTop: 2 }}>Yield índice</p>
         </div>
-        <div style={{ width: 1, background: 'rgba(255,255,255,0.07)' }} />
+        <div style={{ width: 1, background: 'var(--border)' }} />
         <div>
-          <p style={{ fontSize: 18, fontWeight: 900, color: '#fbbf24', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{bPct}%</p>
-          <p style={{ fontSize: 9, color: '#3a4260', marginTop: 2 }}>Bono 10A</p>
+          <p style={{ fontSize: 18, fontWeight: 900, color: 'var(--warning)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{bPct}%</p>
+          <p style={{ fontSize: 9, color: 'var(--text-faintest)', marginTop: 2 }}>Bono 10A</p>
         </div>
       </div>
       <p style={{ fontSize: 10, color: col }}>
@@ -454,19 +454,19 @@ function PremiumGate({ isPremium, children, title = 'Contenido Premium' }) {
   if (isPremium) return children
   return (
     <div style={{ position: 'relative', marginBottom: 12 }}>
-      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', padding: '14px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }} aria-hidden="true">
-        <div style={{ height: 11, width: '45%', background: 'rgba(255,255,255,0.10)', borderRadius: 5, marginBottom: 14 }} />
+      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }} aria-hidden="true">
+        <div style={{ height: 11, width: '45%', background: 'var(--border-strong)', borderRadius: 5, marginBottom: 14 }} />
         <div style={{ display: 'grid', gap: 9 }}>
           {[90, 70, 95, 62, 78].map((w, i) => (
-            <div key={i} style={{ height: 9, width: `${w}%`, background: 'rgba(255,255,255,0.06)', borderRadius: 4 }} />
+            <div key={i} style={{ height: 9, width: `${w}%`, background: 'var(--border)', borderRadius: 4 }} />
           ))}
         </div>
       </div>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(8,11,20,0.55)' }}>
-        <p style={{ fontSize: 13, fontWeight: 700, color: '#818cf8' }}>{title}</p>
+        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>{title}</p>
         <Link href="/pricing" style={{
           fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none',
-          padding: '7px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8,
+          padding: '7px 18px', background: 'var(--accent)', borderRadius: 8,
         }}>
           Activar Premium — desde 4,99€/mes →
         </Link>
@@ -478,10 +478,10 @@ function PremiumGate({ isPremium, children, title = 'Contenido Premium' }) {
 // ── Premium analytics components ───────────────────────────────────────────
 
 const HEALTH_COLORS = {
-  green:  { bg: 'rgba(52,211,153,0.15)',  border: 'rgba(52,211,153,0.3)',  text: '#34d399', dot: '#34d399'  },
-  yellow: { bg: 'rgba(251,191,36,0.12)',  border: 'rgba(251,191,36,0.25)', text: '#fbbf24', dot: '#fbbf24'  },
-  red:    { bg: 'rgba(248,113,113,0.12)', border: 'rgba(248,113,113,0.25)',text: '#f87171', dot: '#f87171'  },
-  gray:   { bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.08)',text: '#4a5270', dot: '#2e3a55'  },
+  green:  { bg: 'rgba(52,211,153,0.15)',  border: 'rgba(52,211,153,0.3)',  text: 'var(--positive)', dot: 'var(--positive)'  },
+  yellow: { bg: 'rgba(251,191,36,0.12)',  border: 'rgba(251,191,36,0.25)', text: 'var(--warning)', dot: 'var(--warning)'  },
+  red:    { bg: 'rgba(248,113,113,0.12)', border: 'rgba(248,113,113,0.25)',text: 'var(--negative)', dot: 'var(--negative)'  },
+  gray:   { bg: 'var(--surface-2)', border: 'var(--surface-3)',text: 'var(--text-faint)', dot: 'var(--text-faintest)'  },
 }
 
 function HealthMapGrid({ healthMap }) {
@@ -499,9 +499,9 @@ function HealthMapGrid({ healthMap }) {
   ]
 
   return (
-    <div style={{ padding: '14px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
-      <p style={{ fontSize: 12, fontWeight: 700, color: '#c8d4e4', marginBottom: 4 }}>Mapa de salud financiera</p>
-      <p style={{ fontSize: 10, color: '#3a4260', marginBottom: 12 }}>Clasificación DGI de cada empresa del índice</p>
+    <div style={{ padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>Mapa de salud financiera</p>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginBottom: 12 }}>Clasificación DGI de cada empresa del índice</p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         {counts.map(c => {
           const s = HEALTH_COLORS[c.key]
@@ -526,7 +526,7 @@ function HealthMapGrid({ healthMap }) {
         })}
       </div>
       {healthMap.companies.length > PREVIEW && (
-        <button onClick={() => setExpanded(e => !e)} style={{ marginTop: 10, fontSize: 11, fontWeight: 600, color: '#818cf8', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+        <button onClick={() => setExpanded(e => !e)} style={{ marginTop: 10, fontSize: 11, fontWeight: 600, color: 'var(--accent)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
           {expanded ? '↑ Mostrar menos' : `↓ Ver las ${healthMap.companies.length - PREVIEW} restantes`}
         </button>
       )}
@@ -537,22 +537,22 @@ function HealthMapGrid({ healthMap }) {
 function OpportunityRadar({ opportunities }) {
   if (!opportunities?.length) return null
   return (
-    <div style={{ padding: '14px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
-      <p style={{ fontSize: 12, fontWeight: 700, color: '#c8d4e4', marginBottom: 4 }}>Radar de oportunidades</p>
-      <p style={{ fontSize: 10, color: '#3a4260', marginBottom: 12 }}>Las mejores candidatas DGI del índice según yield, payout y valoración</p>
+    <div style={{ padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>Radar de oportunidades</p>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginBottom: 12 }}>Las mejores candidatas DGI del índice según yield, payout y valoración</p>
       {opportunities.map((c, i) => (
-        <div key={c.ticker} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < opportunities.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+        <div key={c.ticker} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < opportunities.length - 1 ? '1px solid var(--surface-2)' : 'none' }}>
           <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 10, fontWeight: 800, color: '#818cf8' }}>{i + 1}</span>
+            <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--accent)' }}>{i + 1}</span>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 12, fontWeight: 600, color: '#c8d4e4', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</p>
-            <p style={{ fontSize: 10, color: '#3a4260', marginTop: 1 }}>{c.ticker}</p>
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</p>
+            <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 1 }}>{c.ticker}</p>
           </div>
           <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
-            {c.yield != null && <div style={{ textAlign: 'right' }}><p style={{ fontSize: 9, color: '#3a4260' }}>Yield</p><p style={{ fontSize: 12, fontWeight: 700, color: '#34d399', fontVariantNumeric: 'tabular-nums' }}>{(c.yield * 100).toFixed(2)}%</p></div>}
-            {c.payout != null && <div style={{ textAlign: 'right' }}><p style={{ fontSize: 9, color: '#3a4260' }}>Payout</p><p style={{ fontSize: 12, fontWeight: 700, color: '#fbbf24', fontVariantNumeric: 'tabular-nums' }}>{(c.payout * 100).toFixed(0)}%</p></div>}
-            {c.pe != null && <div style={{ textAlign: 'right' }}><p style={{ fontSize: 9, color: '#3a4260' }}>PER</p><p style={{ fontSize: 12, fontWeight: 700, color: '#8090a8', fontVariantNumeric: 'tabular-nums' }}>{c.pe.toFixed(1)}x</p></div>}
+            {c.yield != null && <div style={{ textAlign: 'right' }}><p style={{ fontSize: 9, color: 'var(--text-faintest)' }}>Yield</p><p style={{ fontSize: 12, fontWeight: 700, color: 'var(--positive)', fontVariantNumeric: 'tabular-nums' }}>{(c.yield * 100).toFixed(2)}%</p></div>}
+            {c.payout != null && <div style={{ textAlign: 'right' }}><p style={{ fontSize: 9, color: 'var(--text-faintest)' }}>Payout</p><p style={{ fontSize: 12, fontWeight: 700, color: 'var(--warning)', fontVariantNumeric: 'tabular-nums' }}>{(c.payout * 100).toFixed(0)}%</p></div>}
+            {c.pe != null && <div style={{ textAlign: 'right' }}><p style={{ fontSize: 9, color: 'var(--text-faintest)' }}>PER</p><p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{c.pe.toFixed(1)}x</p></div>}
           </div>
         </div>
       ))}
@@ -564,29 +564,29 @@ function ScoreBreakdown({ breakdown }) {
   if (!breakdown?.length) return null
   const total = breakdown.reduce((s, b) => s + b.max, 0)
   return (
-    <div style={{ padding: '14px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
-      <p style={{ fontSize: 12, fontWeight: 700, color: '#c8d4e4', marginBottom: 4 }}>Desglose del Score DGI</p>
-      <p style={{ fontSize: 10, color: '#3a4260', marginBottom: 14 }}>Qué está impulsando o penalizando la nota del índice</p>
+    <div style={{ padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>Desglose del Score DGI</p>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginBottom: 14 }}>Qué está impulsando o penalizando la nota del índice</p>
       {breakdown.map(b => {
-        const col = b.pts === 0 ? '#f87171' : b.pts >= b.max * 0.67 ? '#34d399' : '#fbbf24'
+        const col = b.pts === 0 ? 'var(--negative)' : b.pts >= b.max * 0.67 ? 'var(--positive)' : 'var(--warning)'
         return (
           <div key={b.key} style={{ marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-              <span style={{ fontSize: 11, color: '#8090a8' }}>{b.label}</span>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{b.label}</span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                <span style={{ fontSize: 10, color: '#3a4260' }}>{b.detail}</span>
+                <span style={{ fontSize: 10, color: 'var(--text-faintest)' }}>{b.detail}</span>
                 <span style={{ fontSize: 12, fontWeight: 800, color: col, fontVariantNumeric: 'tabular-nums' }}>
                   {b.pts}/{b.max} pts
                 </span>
               </div>
             </div>
-            <div style={{ height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ height: 5, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
               <div style={{ width: (b.pts / b.max * 100) + '%', height: '100%', background: col, borderRadius: 3 }} />
             </div>
           </div>
         )
       })}
-      <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 4, textAlign: 'right' }}>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 4, textAlign: 'right' }}>
         Total: {breakdown.reduce((s, b) => s + b.pts, 0)}/{total} puntos
       </p>
     </div>
@@ -595,13 +595,13 @@ function ScoreBreakdown({ breakdown }) {
 
 function PremiumPlaceholder({ title, description }) {
   return (
-    <div style={{ padding: '16px', background: 'rgba(255,255,255,0.015)', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 14 }}>
+    <div style={{ padding: '16px', background: 'var(--surface)', border: '1px dashed var(--surface-3)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 14 }}>
       <p style={{ fontSize: 20 }}>🔒</p>
       <div>
-        <p style={{ fontSize: 12, fontWeight: 600, color: '#4a5270' }}>{title}</p>
-        <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 2 }}>{description}</p>
+        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-faint)' }}>{title}</p>
+        <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 2 }}>{description}</p>
       </div>
-      <Link href="/pricing" style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, color: '#818cf8', textDecoration: 'none', flexShrink: 0 }}>Premium →</Link>
+      <Link href="/pricing" style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, color: 'var(--accent)', textDecoration: 'none', flexShrink: 0 }}>Premium →</Link>
     </div>
   )
 }
@@ -628,14 +628,14 @@ export default function MarketDetail({ market, quote, initialChartData, stats, r
   }
 
   const up   = quote?.pct != null ? quote.pct >= 0 : null
-  const col  = up === null ? '#8090a8' : up ? '#34d399' : '#f87171'
+  const col  = up === null ? 'var(--text-muted)' : up ? 'var(--positive)' : 'var(--negative)'
   const sign = quote?.pct != null && quote.pct >= 0 ? '+' : ''
 
   return (
     <div style={{ maxWidth: 860, margin: '0 auto', padding: '20px 16px 60px' }}>
 
       {/* Back */}
-      <Link href="/" style={{ fontSize: 12, color: '#4a5270', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 20 }}>
+      <Link href="/" style={{ fontSize: 12, color: 'var(--text-faint)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 20 }}>
         ← Mercados
       </Link>
 
@@ -644,12 +644,12 @@ export default function MarketDetail({ market, quote, initialChartData, stats, r
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <Flag emoji={market.flag} size={36} />
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', lineHeight: 1.1 }}>{market.name}</h1>
-            <p style={{ fontSize: 12, color: '#3a4260', marginTop: 3 }}>{market.country} · {market.symbol}</p>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)', lineHeight: 1.1 }}>{market.name}</h1>
+            <p style={{ fontSize: 12, color: 'var(--text-faintest)', marginTop: 3 }}>{market.country} · {market.symbol}</p>
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <p style={{ fontSize: 30, fontWeight: 900, color: '#e0e8f0', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+          <p style={{ fontSize: 30, fontWeight: 900, color: 'var(--text-strong)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
             {fmtPrice(quote?.price)}
           </p>
           <p style={{ fontSize: 15, fontWeight: 700, color: col, fontVariantNumeric: 'tabular-nums', marginTop: 5 }}>
@@ -664,25 +664,25 @@ export default function MarketDetail({ market, quote, initialChartData, stats, r
       </div>
 
       {/* Chart */}
-      <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '14px 16px 8px', marginBottom: 20 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px 8px', marginBottom: 20 }}>
         <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
           {RANGES.map(r => {
             const active = r.id === range
             return (
               <button key={r.id} onClick={() => handleRange(r.id)} style={{
                 fontSize: 11, fontWeight: active ? 700 : 400, padding: '4px 12px', borderRadius: 6,
-                border: '1px solid ' + (active ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.08)'),
+                border: '1px solid ' + (active ? 'rgba(99,102,241,0.5)' : 'var(--surface-3)'),
                 background: active ? 'rgba(99,102,241,0.2)' : 'transparent',
-                color: active ? '#818cf8' : '#4a5270', cursor: 'pointer', fontFamily: 'inherit',
+                color: active ? 'var(--accent)' : 'var(--text-faint)', cursor: 'pointer', fontFamily: 'inherit',
               }}>{r.label}</button>
             )
           })}
-          {loading && <span style={{ fontSize: 11, color: '#3a4260', alignSelf: 'center', marginLeft: 4 }}>cargando…</span>}
+          {loading && <span style={{ fontSize: 11, color: 'var(--text-faintest)', alignSelf: 'center', marginLeft: 4 }}>cargando…</span>}
         </div>
         {chartData
           ? <Chart data={chartData} range={range} />
           : <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <p style={{ color: '#3a4260', fontSize: 12 }}>{loading ? 'Cargando…' : 'Sin datos de gráfico'}</p>
+              <p style={{ color: 'var(--text-faintest)', fontSize: 12 }}>{loading ? 'Cargando…' : 'Sin datos de gráfico'}</p>
             </div>
         }
       </div>
@@ -717,10 +717,10 @@ export default function MarketDetail({ market, quote, initialChartData, stats, r
 
             {!isPremium && dgiMetrics.opportunities?.length > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: 10, padding: '12px 16px' }}>
-                <p style={{ fontSize: 13, color: '#c8d0e0', lineHeight: 1.5 }}>
-                  <span style={{ fontWeight: 800, color: '#34d399' }}>{dgiMetrics.opportunities.length}</span> {dgiMetrics.opportunities.length === 1 ? 'empresa' : 'empresas'} de este índice en <span style={{ fontWeight: 700 }}>zona de compra</span> ahora mismo. Estás viendo <span style={{ fontWeight: 700, color: '#f87171' }}>0</span> — Premium revela cuáles.
+                <p style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5 }}>
+                  <span style={{ fontWeight: 800, color: 'var(--positive)' }}>{dgiMetrics.opportunities.length}</span> {dgiMetrics.opportunities.length === 1 ? 'empresa' : 'empresas'} de este índice en <span style={{ fontWeight: 700 }}>zona de compra</span> ahora mismo. Estás viendo <span style={{ fontWeight: 700, color: 'var(--negative)' }}>0</span> — Premium revela cuáles.
                 </p>
-                <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '8px 14px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>Revelar →</Link>
+                <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'var(--accent)', padding: '8px 14px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>Revelar →</Link>
               </div>
             )}
 
@@ -748,7 +748,7 @@ export default function MarketDetail({ market, quote, initialChartData, stats, r
 
       {/* ── FREE: Rentabilidades ── */}
       <div style={{ marginBottom: 20 }}>
-        <p style={{ fontSize: 10, fontWeight: 700, color: '#4a5270', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Rentabilidad del índice</p>
+        <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Rentabilidad del índice</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8 }}>
           <Stat label="YTD"    value={fmtPct(returns.ytd)} color={pctColor(returns.ytd)} />
           <Stat label="1 Año"  value={fmtPct(returns.y1)}  color={pctColor(returns.y1)}  />
@@ -759,17 +759,17 @@ export default function MarketDetail({ market, quote, initialChartData, stats, r
 
       {/* ── FREE: Valoración ── */}
       <div style={{ marginBottom: 24 }}>
-        <p style={{ fontSize: 10, fontWeight: 700, color: '#4a5270', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Valoración y dividendo</p>
+        <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Valoración y dividendo</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8 }}>
           <Stat label="PER"        value={stats?.pe       != null ? stats.pe.toFixed(1) + 'x'  : 'N/D'} sub="precio / beneficio" />
           <Stat label="PER Forward" value={stats?.forwardPe != null ? stats.forwardPe.toFixed(1) + 'x' : 'N/D'} sub="estimación próximo año" />
-          <Stat label="Yield medio" value={stats?.dividendYield != null ? stats.dividendYield.toFixed(2) + '%' : 'N/D'} color={stats?.dividendYield ? '#34d399' : undefined} sub="dividendo / precio" />
+          <Stat label="Yield medio" value={stats?.dividendYield != null ? stats.dividendYield.toFixed(2) + '%' : 'N/D'} color={stats?.dividendYield ? 'var(--positive)' : undefined} sub="dividendo / precio" />
           {stats?.week52Low  != null && <Stat label="Mín. 52 sem." value={fmtPrice(stats.week52Low)}  />}
           {stats?.week52High != null && <Stat label="Máx. 52 sem." value={fmtPrice(stats.week52High)} />}
           {stats?.beta       != null && <Stat label="Beta" value={stats.beta.toFixed(2)} sub="vs mercado global" />}
         </div>
         {(!stats || Object.values(stats).every(v => v == null)) && (
-          <p style={{ fontSize: 11, color: '#2a3045', marginTop: 8 }}>
+          <p style={{ fontSize: 11, color: 'var(--text-faintest)', marginTop: 8 }}>
             Yahoo Finance no expone estadísticas para este índice concreto.
           </p>
         )}
@@ -779,16 +779,16 @@ export default function MarketDetail({ market, quote, initialChartData, stats, r
       <div style={{ padding: '18px 20px', background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
           <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', marginBottom: 6 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', marginBottom: 6 }}>
               📊 Comparativa: tu cartera vs {market.name}
             </p>
-            <p style={{ fontSize: 12, color: '#3a4260', maxWidth: 440, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 12, color: 'var(--text-faintest)', maxWidth: 440, lineHeight: 1.6 }}>
               Registra tu cartera DGI para ver tu yield, CAGR de dividendo y rentabilidad total
               frente a este índice — el análisis que realmente te dice si estás batiendo al mercado.
             </p>
           </div>
           <Link href="/app" style={{
-            fontSize: 11, fontWeight: 700, color: '#818cf8',
+            fontSize: 11, fontWeight: 700, color: 'var(--accent)',
             background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
             borderRadius: 8, padding: '7px 14px', textDecoration: 'none', flexShrink: 0,
             alignSelf: 'center',

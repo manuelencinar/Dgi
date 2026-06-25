@@ -27,7 +27,7 @@ export default async function Page() {
   const ctx = await getContext()
   if (!ctx) redirect('/login')
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav active="/cartera" />
       <CarteraNav />
       <FiscalidadPage isPremium={ctx.isPremium} countryResidence={ctx.countryResidence} />

@@ -5,12 +5,12 @@ import { createClient } from '@/lib/supabase/client'
 import { computeDGIScore } from '@/lib/dgi-score'
 import { DICT } from '@/data/dict'
 
-const CARD  = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
+const CARD  = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }
 const CAT_LABELS = { quality: 'Calidad', dividend: 'Dividendo', financial: 'Solidez', valuation: 'Valoración' }
 
 function scoreColor(s) {
-  if (s == null) return '#4a5270'
-  return s >= 7.5 ? '#34d399' : s >= 5 ? '#fbbf24' : '#f87171'
+  if (s == null) return 'var(--text-faint)'
+  return s >= 7.5 ? 'var(--positive)' : s >= 5 ? 'var(--warning)' : 'var(--negative)'
 }
 
 function ScoreGauge({ value, label, size = 'sm' }) {
@@ -19,7 +19,7 @@ function ScoreGauge({ value, label, size = 'sm' }) {
   return (
     <div style={{ textAlign: 'center' }}>
       <p style={{ fontSize: big ? 42 : 28, fontWeight: 900, color: col, lineHeight: 1 }}>{value?.toFixed(1) ?? '—'}</p>
-      <p style={{ fontSize: 11, color: '#4a5270', marginTop: 4 }}>{label}</p>
+      <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 4 }}>{label}</p>
     </div>
   )
 }
@@ -30,18 +30,18 @@ function PremiumGate() {
   return (
     <div style={{ ...CARD, marginBottom: 16, position: 'relative', minHeight: 220 }}>
       <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }} aria-hidden="true">
-        <div style={{ height: 11, width: '40%', background: 'rgba(255,255,255,0.10)', borderRadius: 5, marginBottom: 18 }} />
+        <div style={{ height: 11, width: '40%', background: 'var(--border-strong)', borderRadius: 5, marginBottom: 18 }} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
-          <div style={{ height: 72, background: 'rgba(255,255,255,0.04)', borderRadius: 10 }} />
-          <div style={{ height: 72, background: 'rgba(255,255,255,0.04)', borderRadius: 10 }} />
+          <div style={{ height: 72, background: 'var(--surface-2)', borderRadius: 10 }} />
+          <div style={{ height: 72, background: 'var(--surface-2)', borderRadius: 10 }} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
-          {[0, 1, 2, 3].map(i => <div key={i} style={{ height: 48, background: 'rgba(255,255,255,0.04)', borderRadius: 8 }} />)}
+          {[0, 1, 2, 3].map(i => <div key={i} style={{ height: 48, background: 'var(--surface-2)', borderRadius: 8 }} />)}
         </div>
       </div>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(8,11,20,0.55)' }}>
-        <p style={{ fontSize: 13, fontWeight: 700, color: '#818cf8' }}>Score DGI de la cartera (Premium)</p>
-        <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '7px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8 }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>Score DGI de la cartera (Premium)</p>
+        <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '7px 18px', background: 'var(--accent)', borderRadius: 8 }}>
           Activar Premium →
         </Link>
       </div>
@@ -137,27 +137,27 @@ export default function PortfolioDGIScore({ enriched, isPremium }) {
 
   const inner = (
     <div style={{ ...CARD, padding: 14, marginBottom: 16 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Score DGI de la cartera</p>
+      <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Score DGI de la cartera</p>
 
       {loading ? (
-        <p style={{ fontSize: 12, color: '#4a5270' }}>Calculando scores…</p>
+        <p style={{ fontSize: 12, color: 'var(--text-faint)' }}>Calculando scores…</p>
       ) : !data ? (
-        <p style={{ fontSize: 12, color: '#4a5270' }}>Insuficientes datos de fundamentales para calcular el score.</p>
+        <p style={{ fontSize: 12, color: 'var(--text-faint)' }}>Insuficientes datos de fundamentales para calcular el score.</p>
       ) : (
         <>
           {/* Ponderado por valor (izquierda) + 4 categorías en pequeño (derecha), misma altura */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, alignItems: 'stretch' }}>
-            <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '8px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'var(--surface)', borderRadius: 10, padding: '8px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: 32, fontWeight: 900, color: scoreColor(data.capScore), lineHeight: 1 }}>{data.capScore?.toFixed(1) ?? '—'}</span>
-              <span style={{ fontSize: 10, color: '#4a5270', marginTop: 3, textAlign: 'center' }}>Ponderado por valor</span>
+              <span style={{ fontSize: 10, color: 'var(--text-faint)', marginTop: 3, textAlign: 'center' }}>Ponderado por valor</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
               {Object.entries(CAT_LABELS).map(([key, label]) => {
                 const s = data.catScores[key]
                 return (
-                  <div key={key} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 8, padding: '6px 3px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <div key={key} style={{ background: 'var(--surface)', borderRadius: 8, padding: '6px 3px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ fontSize: 14, fontWeight: 800, color: scoreColor(s) }}>{s?.toFixed(1) ?? '—'}</span>
-                    <span style={{ fontSize: 8.5, color: '#4a5270', marginTop: 2, textAlign: 'center', lineHeight: 1.1 }}>{label}</span>
+                    <span style={{ fontSize: 8.5, color: 'var(--text-faint)', marginTop: 2, textAlign: 'center', lineHeight: 1.1 }}>{label}</span>
                   </div>
                 )
               })}
@@ -166,9 +166,9 @@ export default function PortfolioDGIScore({ enriched, isPremium }) {
 
           {/* Benchmark comparison (plegable, para no agrandar la tarjeta) */}
           <details style={{ marginTop: 12 }}>
-            <summary style={{ cursor: 'pointer', fontSize: 11, fontWeight: 700, color: '#4a5270', marginBottom: 10 }}>Comparativa con benchmark</summary>
+            <summary style={{ cursor: 'pointer', fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', marginBottom: 10 }}>Comparativa con benchmark</summary>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-              <select value={selBench} onChange={e => setSelBench(e.target.value)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#c8d0e0', fontSize: 11, padding: '4px 8px' }}>
+              <select value={selBench} onChange={e => setSelBench(e.target.value)} style={{ background: 'var(--surface-3)', border: '1px solid var(--border-strong)', borderRadius: 6, color: 'var(--text)', fontSize: 11, padding: '4px 8px' }}>
                 {BENCHMARKS.map(b => <option key={b.key} value={b.key}>{b.label}</option>)}
               </select>
             </div>
@@ -184,19 +184,19 @@ export default function PortfolioDGIScore({ enriched, isPremium }) {
                   <thead>
                     <tr>
                       {['Métrica','Mi cartera',benchmark.label,''].map(h => (
-                        <th key={h} style={{ padding: '5px 8px', textAlign: h === 'Métrica' ? 'left' : 'right', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
+                        <th key={h} style={{ padding: '5px 8px', textAlign: h === 'Métrica' ? 'left' : 'right', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((r, i) => {
                       const beats = r.higherBetter ? r.portfolio > r.bench : r.portfolio < r.bench
-                      const col   = r.portfolio != null && r.bench != null ? (beats ? '#34d399' : '#f87171') : '#4a5270'
+                      const col   = r.portfolio != null && r.bench != null ? (beats ? 'var(--positive)' : 'var(--negative)') : 'var(--text-faint)'
                       return (
-                        <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                          <td style={{ padding: '6px 8px', color: '#8090a8' }}>{r.label}</td>
+                        <tr key={i} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                          <td style={{ padding: '6px 8px', color: 'var(--text-muted)' }}>{r.label}</td>
                           <td style={{ padding: '6px 8px', textAlign: 'right', color: col, fontWeight: 700 }}>{r.portfolio != null ? r.portfolio.toFixed(1) + (r.pct ? '%' : '×') : '—'}</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right', color: '#4a5270' }}>{r.bench != null ? r.bench.toFixed(1) + (r.pct ? '%' : '×') : '—'}</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-faint)' }}>{r.bench != null ? r.bench.toFixed(1) + (r.pct ? '%' : '×') : '—'}</td>
                           <td style={{ padding: '6px 8px', textAlign: 'right', color: col }}>{r.portfolio != null && r.bench != null ? (beats ? '↑' : '↓') : ''}</td>
                         </tr>
                       )

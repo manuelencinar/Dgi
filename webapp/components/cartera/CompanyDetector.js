@@ -48,26 +48,26 @@ function RecCard({ rec }) {
 
   const fit = rec.reason || rec.whyFit
   return (
-    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 9, padding: '8px 11px' }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 9, padding: '8px 11px' }}>
       {/* Línea 1: empresa + Score/Yield */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
           <span style={{ fontSize: 14, flexShrink: 0 }}>{rec.flag}</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#e6ebf5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rec.name}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-strong)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rec.name}</span>
           <span style={{ fontSize: 10, color: '#7a85a0', fontWeight: 600, flexShrink: 0 }}>{rec.ticker}</span>
         </div>
         <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
-          <span style={{ fontSize: 12.5, fontWeight: 800, color: '#34d399' }}>{rec.score != null ? rec.score.toFixed(1) : '—'}<span style={{ fontSize: 9, color: '#5a647e', fontWeight: 600 }}> Sc</span></span>
-          <span style={{ fontSize: 12.5, fontWeight: 800, color: '#fbbf24' }}>{rec.yield != null ? `${rec.yield.toFixed(1)}%` : '—'}<span style={{ fontSize: 9, color: '#5a647e', fontWeight: 600 }}> Yld</span></span>
+          <span style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--positive)' }}>{rec.score != null ? rec.score.toFixed(1) : '—'}<span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600 }}> Sc</span></span>
+          <span style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--warning)' }}>{rec.yield != null ? `${rec.yield.toFixed(1)}%` : '—'}<span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600 }}> Yld</span></span>
         </div>
       </div>
       {/* Línea 2: encaje + acciones */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 5 }}>
-        <span title={fit} style={{ fontSize: 11, color: '#34d399', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>✓ {fit}</span>
+        <span title={fit} style={{ fontSize: 11, color: 'var(--positive)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>✓ {fit}</span>
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           <button onClick={follow} disabled={following} title={following ? 'Siguiendo' : 'Seguir'} style={{
             fontSize: 11, fontWeight: 700, padding: '4px 9px', borderRadius: 7, cursor: following ? 'default' : 'pointer',
-            color: following ? '#34d399' : '#818cf8',
+            color: following ? 'var(--positive)' : 'var(--accent)',
             background: following ? 'rgba(52,211,153,0.12)' : 'rgba(99,102,241,0.12)',
             border: `1px solid ${following ? 'rgba(52,211,153,0.3)' : 'rgba(99,102,241,0.3)'}`,
           }}>
@@ -75,7 +75,7 @@ function RecCard({ rec }) {
           </button>
           <Link href={`/empresa/${rec.ticker}`} style={{
             fontSize: 11, fontWeight: 700, padding: '4px 9px', borderRadius: 7, textDecoration: 'none',
-            color: '#c8d0e0', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+            color: 'var(--text)', background: 'var(--surface-2)', border: '1px solid var(--surface-3)',
           }}>
             Ver →
           </Link>
@@ -119,10 +119,10 @@ export default function CompanyDetector({ enriched, isPremium }) {
     return (
       <div style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 12, padding: '14px 18px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0', marginBottom: 2 }}>Empresas que encajan en tu cartera</p>
-          <p style={{ fontSize: 12, color: '#4a5270' }}>Cada semana, 5 empresas de calidad en zona de compra que refuerzan tus huecos de sector, divisa y país.</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>Empresas que encajan en tu cartera</p>
+          <p style={{ fontSize: 12, color: 'var(--text-faint)' }}>Cada semana, 5 empresas de calidad en zona de compra que refuerzan tus huecos de sector, divisa y país.</p>
         </div>
-        <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '8px 16px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, flexShrink: 0 }}>
+        <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '8px 16px', background: 'var(--accent)', borderRadius: 8, flexShrink: 0 }}>
           Premium →
         </Link>
       </div>
@@ -130,20 +130,20 @@ export default function CompanyDetector({ enriched, isPremium }) {
   }
 
   return (
-    <div style={{ marginBottom: 16, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 12, padding: 12 }}>
+    <div style={{ marginBottom: 16, background: 'var(--surface)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 12, padding: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.1em' }} title="5 empresas de calidad en zona de compra que cubren sectores, divisas y países poco presentes en tu cartera.">Empresas que encajan · semanal</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.1em' }} title="5 empresas de calidad en zona de compra que cubren sectores, divisas y países poco presentes en tu cartera.">Empresas que encajan · semanal</p>
         {daysLeft != null && (
-          <span style={{ fontSize: 11, color: '#5a647e' }}>Se renueva en {daysLeft} {daysLeft === 1 ? 'día' : 'días'}</span>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Se renueva en {daysLeft} {daysLeft === 1 ? 'día' : 'días'}</span>
         )}
       </div>
 
       {loading ? (
-        <p style={{ fontSize: 12, color: '#4a5270' }}>Analizando tu cartera y buscando oportunidades…</p>
+        <p style={{ fontSize: 12, color: 'var(--text-faint)' }}>Analizando tu cartera y buscando oportunidades…</p>
       ) : error ? (
-        <p style={{ fontSize: 12, color: '#f87171' }}>No se pudieron generar recomendaciones. Inténtalo más tarde.</p>
+        <p style={{ fontSize: 12, color: 'var(--negative)' }}>No se pudieron generar recomendaciones. Inténtalo más tarde.</p>
       ) : recs.length === 0 ? (
-        <p style={{ fontSize: 12.5, color: '#34d399', padding: '4px 0' }}>✓ Sin huecos claros esta semana — vuelve la semana que viene.</p>
+        <p style={{ fontSize: 12.5, color: 'var(--positive)', padding: '4px 0' }}>✓ Sin huecos claros esta semana — vuelve la semana que viene.</p>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 8 }}>
           {recs.map(rec => <RecCard key={rec.ticker} rec={rec} />)}

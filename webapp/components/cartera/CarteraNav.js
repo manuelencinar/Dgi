@@ -17,7 +17,7 @@ export default function CarteraNav() {
     <div style={{
       position: 'sticky', top: 52, zIndex: 40,
       background: 'rgba(8,11,20,0.96)', backdropFilter: 'blur(12px)',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      borderBottom: '1px solid var(--border)',
       padding: '0 16px',
     }}>
       <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', gap: 2, height: 42, alignItems: 'center', overflowX: 'auto', scrollbarWidth: 'none' }}>
@@ -26,7 +26,7 @@ export default function CarteraNav() {
           return (
             <Link key={t.href} href={t.href} style={{
               fontSize: 13, fontWeight: active ? 700 : 500, padding: '5px 13px', borderRadius: 7,
-              textDecoration: 'none', color: active ? '#818cf8' : '#4a5270',
+              textDecoration: 'none', color: active ? 'var(--accent)' : 'var(--text-faint)',
               background: active ? 'rgba(99,102,241,0.12)' : 'transparent',
               whiteSpace: 'nowrap', flexShrink: 0,
             }}>

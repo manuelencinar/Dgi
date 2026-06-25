@@ -49,13 +49,13 @@ export default function NotificationBell() {
     <div ref={ref} style={{ position: 'relative' }}>
       <button onClick={() => setOpen(o => !o)} aria-label="Notificaciones" style={{
         position: 'relative', background: 'none', border: 'none', cursor: 'pointer',
-        fontSize: 16, color: '#4a5270', padding: '4px 6px', lineHeight: 1,
+        fontSize: 16, color: 'var(--text-faint)', padding: '4px 6px', lineHeight: 1,
       }}>
         🔔
         {unread > 0 && (
           <span style={{
             position: 'absolute', top: -2, right: -2, minWidth: 15, height: 15, padding: '0 3px',
-            background: '#f87171', color: '#fff', fontSize: 9, fontWeight: 800, borderRadius: 8,
+            background: 'var(--negative)', color: '#fff', fontSize: 9, fontWeight: 800, borderRadius: 8,
             display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
           }}>{unread > 9 ? '9+' : unread}</span>
         )}
@@ -64,35 +64,35 @@ export default function NotificationBell() {
       {open && (
         <div style={{
           position: 'absolute', top: 38, right: 0, width: 320, maxWidth: '90vw', zIndex: 100,
-          background: '#0d1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12,
+          background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 12,
           boxShadow: '0 8px 30px rgba(0,0,0,0.5)', overflow: 'hidden',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0' }}>Notificaciones</p>
-            {unread > 0 && <button onClick={markAll} style={{ background: 'none', border: 'none', color: '#818cf8', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>Marcar todas como leídas</button>}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Notificaciones</p>
+            {unread > 0 && <button onClick={markAll} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>Marcar todas como leídas</button>}
           </div>
 
           {items.length === 0 ? (
-            <p style={{ padding: '24px 14px', fontSize: 12, color: '#4a5270', textAlign: 'center' }}>No tienes notificaciones</p>
+            <p style={{ padding: '24px 14px', fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>No tienes notificaciones</p>
           ) : (
             <div>
               {items.map(n => (
                 <Link key={n.id} href={n.ticker ? `/empresa/${encodeURIComponent(n.ticker)}` : '/notificaciones'} onClick={() => setOpen(false)} style={{
                   display: 'flex', gap: 10, padding: '11px 14px', textDecoration: 'none',
-                  borderBottom: '1px solid rgba(255,255,255,0.04)',
+                  borderBottom: '1px solid var(--surface-2)',
                   background: n.read ? 'transparent' : 'rgba(99,102,241,0.06)',
                 }}>
                   <span style={{ fontSize: 15, flexShrink: 0 }}>{ICON[n.type] || '🔔'}</span>
                   <div style={{ minWidth: 0 }}>
-                    <p style={{ fontSize: 12, color: '#c8d0e0', lineHeight: 1.4 }}>{n.message}</p>
-                    <p style={{ fontSize: 10, color: '#4a5270', marginTop: 2 }}>{timeAgo(n.created_at)}</p>
+                    <p style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.4 }}>{n.message}</p>
+                    <p style={{ fontSize: 10, color: 'var(--text-faint)', marginTop: 2 }}>{timeAgo(n.created_at)}</p>
                   </div>
                 </Link>
               ))}
             </div>
           )}
 
-          <Link href="/notificaciones" onClick={() => setOpen(false)} style={{ display: 'block', padding: '11px 14px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#818cf8', textDecoration: 'none', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <Link href="/notificaciones" onClick={() => setOpen(false)} style={{ display: 'block', padding: '11px 14px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'var(--accent)', textDecoration: 'none', borderTop: '1px solid var(--border)' }}>
             Ver todas →
           </Link>
         </div>

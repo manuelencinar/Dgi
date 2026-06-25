@@ -6,7 +6,7 @@ import { enrichPositions } from '@/lib/portfolio'
 import { getLatestExchangeRate } from '@/lib/currency'
 import { buildDividendCalendar, MONTHS_ES } from '@/lib/dividend-calendar'
 
-const CARD = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 'var(--cdp-pad, 20px)', marginBottom: 16 }
+const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 'var(--cdp-pad, 20px)', marginBottom: 16 }
 const fmtEUR = v => v == null ? '—' : (Math.abs(v) >= 1000 ? v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) : v.toLocaleString('es-ES', { maximumFractionDigits: 2 })) + ' €'
 
 // Widget compacto: los próximos cobros de dividendo de la cartera (reutiliza
@@ -54,8 +54,8 @@ export default function UpcomingDividends() {
   return (
     <div style={CARD}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>📅 Próximos cobros</p>
-        <Link href="/cartera/calendario" style={{ fontSize: 11.5, color: '#818cf8', textDecoration: 'none' }}>Ver calendario →</Link>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>📅 Próximos cobros</p>
+        <Link href="/cartera/calendario" style={{ fontSize: 11.5, color: 'var(--accent)', textDecoration: 'none' }}>Ver calendario →</Link>
       </div>
       <div style={{ display: 'grid', gap: 8 }}>
         {items.map((e, i) => {
@@ -63,16 +63,16 @@ export default function UpcomingDividends() {
           return (
             <Link key={i} href={`/empresa/${encodeURIComponent(e.ticker)}`} style={{ textDecoration: 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12.5 }}>
-                <span style={{ width: 52, flexShrink: 0, color: '#8090a8', fontWeight: 700 }}>{d.getDate()} {MONTHS_ES[d.getMonth()]}</span>
-                <span style={{ flex: 1, color: '#c8d0e0', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</span>
-                <span style={{ fontSize: 9, fontWeight: 700, color: e.confirmed ? '#34d399' : '#4a5270', background: e.confirmed ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.04)', padding: '1px 6px', borderRadius: 4, flexShrink: 0 }}>{e.confirmed ? 'confirmado' : 'estimado'}</span>
-                <span style={{ color: '#34d399', fontWeight: 700, flexShrink: 0, minWidth: 60, textAlign: 'right' }}>+{fmtEUR(e.netEUR)}</span>
+                <span style={{ width: 52, flexShrink: 0, color: 'var(--text-muted)', fontWeight: 700 }}>{d.getDate()} {MONTHS_ES[d.getMonth()]}</span>
+                <span style={{ flex: 1, color: 'var(--text)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: e.confirmed ? 'var(--positive)' : 'var(--text-faint)', background: e.confirmed ? 'rgba(52,211,153,0.12)' : 'var(--surface-2)', padding: '1px 6px', borderRadius: 4, flexShrink: 0 }}>{e.confirmed ? 'confirmado' : 'estimado'}</span>
+                <span style={{ color: 'var(--positive)', fontWeight: 700, flexShrink: 0, minWidth: 60, textAlign: 'right' }}>+{fmtEUR(e.netEUR)}</span>
               </div>
             </Link>
           )
         })}
       </div>
-      <p style={{ fontSize: 10, color: '#3a4260', marginTop: 10 }}>Importe neto estimado tras retención. Las fechas estimadas se basan en el patrón histórico de pagos.</p>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 10 }}>Importe neto estimado tras retención. Las fechas estimadas se basan en el patrón histórico de pagos.</p>
     </div>
   )
 }

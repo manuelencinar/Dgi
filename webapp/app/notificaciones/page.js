@@ -17,7 +17,7 @@ export default async function NotificacionesPage() {
   const { data } = await supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(100)
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav />
       <NotificationsClient initialItems={data || []} />
     </div>

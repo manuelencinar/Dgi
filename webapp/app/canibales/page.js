@@ -76,7 +76,7 @@ export default async function CanibalesPage() {
   const companies = await buildCannibals()
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav active="/aristocratas" />
       <CanibalesClient companies={companies} isPremium={plan === 'premium'} isAuthed={isAuthed} />
     </div>

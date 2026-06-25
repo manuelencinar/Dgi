@@ -5,9 +5,9 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceL
 import { project10y, paybackYear, getWHT, RADAR_METRICS } from '@/lib/screener'
 import { getCountry, streakBadge, debtEbitdaIsArtifact } from '@/lib/helpers'
 
-const CC = ['#34d399', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6']
+const CC = ['var(--positive)', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6']
 
-function scoreColor(s) { if (s == null) return '#3a4260'; if (s >= 8) return '#34d399'; if (s >= 6.5) return '#86efac'; if (s >= 5) return '#fbbf24'; if (s >= 3) return '#f97316'; return '#f87171' }
+function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return '#86efac'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
 function fmtEUR0(v) { return v == null ? '—' : Math.round(v).toLocaleString('es-ES') + ' €' }
 function pct(v, d = 1) { return v == null ? '—' : v.toFixed(d) + '%' }
 function x(v, d = 1) { return v == null ? '—' : v.toFixed(d) + 'x' }
@@ -23,16 +23,16 @@ function MultiRadar({ companies, highlight, onHighlight }) {
     <div>
       <svg viewBox="0 0 280 260" style={{ width: '100%', display: 'block' }}>
         {[2, 4, 6, 8, 10].map(l => (
-          <polygon key={l} points={Array.from({ length: n }, (_, i) => pt(i, l / 10 * r).join(',')).join(' ')} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+          <polygon key={l} points={Array.from({ length: n }, (_, i) => pt(i, l / 10 * r).join(',')).join(' ')} fill="none" stroke="var(--surface-3)" strokeWidth="1" />
         ))}
-        {Array.from({ length: n }, (_, i) => { const [px, py] = pt(i, r); return <line key={i} x1={cx} y1={cy} x2={px} y2={py} stroke="rgba(255,255,255,0.06)" strokeWidth="1" /> })}
+        {Array.from({ length: n }, (_, i) => { const [px, py] = pt(i, r); return <line key={i} x1={cx} y1={cy} x2={px} y2={py} stroke="var(--border)" strokeWidth="1" /> })}
         {ms.map((m, i) => {
           const [px, py] = pt(i, r + 16)
           const active = highlight === m.id
-          return <text key={i} x={px} y={py} textAnchor="middle" dominantBaseline="middle" fontSize="8" fill={active ? '#818cf8' : '#4a5270'} fontWeight={active ? 700 : 400} fontFamily="Figtree,sans-serif" style={{ cursor: 'pointer' }} onClick={() => onHighlight(active ? null : m.id)}>{m.short}</text>
+          return <text key={i} x={px} y={py} textAnchor="middle" dominantBaseline="middle" fontSize="8" fill={active ? 'var(--accent)' : 'var(--text-faint)'} fontWeight={active ? 700 : 400} fontFamily="Figtree,sans-serif" style={{ cursor: 'pointer' }} onClick={() => onHighlight(active ? null : m.id)}>{m.short}</text>
         })}
         {companies.map((co, ci) => {
-          const col = CC[ci] || '#818cf8'
+          const col = CC[ci] || 'var(--accent)'
           const poly = ms.map((m, i) => { const [px, py] = pt(i, (co.radar[m.id] || 0) / 10 * r); return px + ',' + py }).join(' ')
           return (
             <g key={co.ticker}>
@@ -52,7 +52,7 @@ function MultiRadar({ companies, highlight, onHighlight }) {
       {/* Valores de la métrica resaltada */}
       {highlight && (
         <div style={{ marginTop: 10, padding: '10px 12px', background: 'rgba(99,102,241,0.06)', borderRadius: 8 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', marginBottom: 6 }}>{ms.find(m => m.id === highlight)?.short}</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', marginBottom: 6 }}>{ms.find(m => m.id === highlight)?.short}</p>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
             {companies.map((co, i) => (
               <span key={co.ticker} style={{ fontSize: 12, color: CC[i], fontWeight: 700 }}>{co.name}: {co.radar[highlight] != null ? co.radar[highlight] + '/10' : '—'}</span>
@@ -81,8 +81,8 @@ function ProjChart({ rows, investAmt, color }) {
           const y = PT + cH - (t / maxVal) * cH
           return (
             <g key={t}>
-              <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-              <text x={PL - 3} y={y + 3} textAnchor="end" fontSize="8" fill="#3a4260" fontFamily="Figtree,sans-serif">{t >= 1000 ? Math.round(t / 100) / 10 + 'k' : t}</text>
+              <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="var(--surface-3)" strokeWidth="1" />
+              <text x={PL - 3} y={y + 3} textAnchor="end" fontSize="8" fill="var(--text-faintest)" fontFamily="Figtree,sans-serif">{t >= 1000 ? Math.round(t / 100) / 10 + 'k' : t}</text>
             </g>
           )
         })}
@@ -93,19 +93,19 @@ function ProjChart({ rows, investAmt, color }) {
           const isPB = payback === i
           return (
             <g key={i}>
-              <rect x={xp} y={PT + cH - hGross} width={bW} height={hGross} fill="rgba(255,255,255,0.1)" rx="2" />
-              <rect x={xp} y={PT + cH - hNet} width={bW} height={hNet} fill={isPB ? '#fbbf24' : '#34d399'} opacity="0.8" rx="2" />
-              <text x={xp + bW / 2} y={H - PB + 9} textAnchor="middle" fontSize="7" fill={isPB ? '#fbbf24' : '#4a5270'} fontFamily="Figtree,sans-serif">{r.year}</text>
+              <rect x={xp} y={PT + cH - hGross} width={bW} height={hGross} fill="var(--border-strong)" rx="2" />
+              <rect x={xp} y={PT + cH - hNet} width={bW} height={hNet} fill={isPB ? 'var(--warning)' : 'var(--positive)'} opacity="0.8" rx="2" />
+              <text x={xp + bW / 2} y={H - PB + 9} textAnchor="middle" fontSize="7" fill={isPB ? 'var(--warning)' : 'var(--text-faint)'} fontFamily="Figtree,sans-serif">{r.year}</text>
             </g>
           )
         })}
-        <polyline points={rows.map((r, i) => { const xp = PL + gap + (bW + gap) * i + bW / 2, y = PT + cH - (r.cum / maxVal) * cH; return xp + ',' + y }).join(' ')} fill="none" stroke="#818cf8" strokeWidth="1.5" strokeDasharray="3 2" />
+        <polyline points={rows.map((r, i) => { const xp = PL + gap + (bW + gap) * i + bW / 2, y = PT + cH - (r.cum / maxVal) * cH; return xp + ',' + y }).join(' ')} fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeDasharray="3 2" />
       </svg>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 10, marginTop: 4 }}>
-        <Leg c="rgba(255,255,255,0.1)" l="Bruto" col="#6a7090" sq />
-        <Leg c="#34d399" l="Neto" col="#34d399" sq />
-        <Leg c="#818cf8" l="Acumulado neto" col="#818cf8" />
-        {investAmt && <Leg c="rgba(251,191,36,0.6)" l="Inversión inicial" col="#fbbf24" />}
+        <Leg c="var(--border-strong)" l="Bruto" col="var(--text-muted)" sq />
+        <Leg c="var(--positive)" l="Neto" col="var(--positive)" sq />
+        <Leg c="var(--accent)" l="Acumulado neto" col="var(--accent)" />
+        {investAmt && <Leg c="rgba(251,191,36,0.6)" l="Inversión inicial" col="var(--warning)" />}
       </div>
     </div>
   )
@@ -159,9 +159,9 @@ function MetricsTable({ companies }) {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 480 }}>
         <thead>
           <tr>
-            <th style={{ textAlign: 'left', padding: '8px', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.1)', position: 'sticky', left: 0, background: '#080b14' }}>Métrica</th>
+            <th style={{ textAlign: 'left', padding: '8px', color: 'var(--text-faint)', borderBottom: '1px solid var(--border-strong)', position: 'sticky', left: 0, background: 'var(--bg)' }}>Métrica</th>
             {companies.map((co, i) => (
-              <th key={co.ticker} style={{ textAlign: 'right', padding: '8px', color: CC[i], borderBottom: '1px solid rgba(255,255,255,0.1)', whiteSpace: 'nowrap' }}>
+              <th key={co.ticker} style={{ textAlign: 'right', padding: '8px', color: CC[i], borderBottom: '1px solid var(--border-strong)', whiteSpace: 'nowrap' }}>
                 {getCountry(co.country)?.flag} {co.ticker}
               </th>
             ))}
@@ -170,14 +170,14 @@ function MetricsTable({ companies }) {
         <tbody>
           {TABLE_GROUPS.map(g => (
             <Fragment key={g.group}>
-              <tr><td colSpan={companies.length + 1} style={{ padding: '7px 8px', fontSize: 10, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.08em', background: 'rgba(99,102,241,0.05)' }}>{g.group}</td></tr>
+              <tr><td colSpan={companies.length + 1} style={{ padding: '7px 8px', fontSize: 10, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em', background: 'rgba(99,102,241,0.05)' }}>{g.group}</td></tr>
               {g.rows.map(([label, get, better, fmt, big]) => {
                 const vals = companies.map(get).filter(v => v != null && !isNaN(v))
                 const best = better === 'high' ? Math.max(...vals) : better === 'low' ? Math.min(...vals) : null
                 const worst = better === 'high' ? Math.min(...vals) : better === 'low' ? Math.max(...vals) : null
                 return (
-                  <tr key={label} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '7px 8px', color: '#8090a8', position: 'sticky', left: 0, background: '#080b14' }}>{label}</td>
+                  <tr key={label} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                    <td style={{ padding: '7px 8px', color: 'var(--text-muted)', position: 'sticky', left: 0, background: 'var(--bg)' }}>{label}</td>
                     {companies.map((co, i) => {
                       const v = get(co)
                       const isBest = better && vals.length > 1 && v != null && v === best
@@ -187,7 +187,7 @@ function MetricsTable({ companies }) {
                           padding: '7px 8px', textAlign: 'right', fontVariantNumeric: 'tabular-nums',
                           fontWeight: big ? 800 : (isBest ? 700 : 600),
                           fontSize: big ? 16 : 12,
-                          color: big ? scoreColor(co.score) : isBest ? '#34d399' : isWorst ? '#f87171' : '#c8d0e0',
+                          color: big ? scoreColor(co.score) : isBest ? 'var(--positive)' : isWorst ? 'var(--negative)' : 'var(--text)',
                           background: isBest ? 'rgba(52,211,153,0.08)' : isWorst ? 'rgba(248,113,113,0.06)' : 'transparent',
                         }}>{fmt(co)}</td>
                       )
@@ -309,7 +309,9 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
     if (!captureRef.current) return
     try {
       const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(captureRef.current, { backgroundColor: '#080b14' })
+      // html2canvas no resuelve var(): leemos el valor real del tema activo.
+      const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#080b14'
+      const canvas = await html2canvas(captureRef.current, { backgroundColor: bg })
       const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = 'comparativa.png'; a.click()
     } catch { alert('La exportación a imagen no está disponible.') }
   }
@@ -317,22 +319,22 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px 80px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0' }}>Comparador de empresas</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)' }}>Comparador de empresas</h1>
         {companies.length > 0 && (
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={exportCSV} style={miniBtn}>↓ CSV</button>
             <button onClick={exportPNG} style={miniBtn}>↓ PNG</button>
-            <button onClick={clearAll} style={{ ...miniBtn, color: '#f87171' }}>✕ Limpiar</button>
+            <button onClick={clearAll} style={{ ...miniBtn, color: 'var(--negative)' }}>✕ Limpiar</button>
           </div>
         )}
       </div>
 
       {/* Selector */}
-      <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: companies.length ? 12 : 0 }}>
           {companies.map((co, i) => (
             <div key={co.ticker} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 20, border: `1px solid ${CC[i]}`, background: `${CC[i]}14` }}>
-              <span style={{ width: 18, height: 18, borderRadius: '50%', background: CC[i], color: '#08111a', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
+              <span style={{ width: 18, height: 18, borderRadius: '50%', background: CC[i], color: 'var(--bg-elev)', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
               <span style={{ fontSize: 12, fontWeight: 600, color: CC[i] }}>{co.ticker}</span>
               <button onClick={() => removeCompany(co.ticker)} style={{ background: 'none', border: 'none', color: CC[i], cursor: 'pointer', fontSize: 14, lineHeight: 1 }}>×</button>
             </div>
@@ -341,26 +343,26 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
         {companies.length < maxCompanies ? (
           <div style={{ position: 'relative' }}>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Buscar empresa para comparar (${companies.length}/${maxCompanies})…`}
-              style={{ width: '100%', padding: '10px 14px', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 9, color: '#e0e8f0', fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+              style={{ width: '100%', padding: '10px 14px', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 9, color: 'var(--text-strong)', fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
             {results.length > 0 && (
-              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, marginTop: 4, background: '#0f1221', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 10, overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, marginTop: 4, background: 'var(--bg-elev)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 10, overflow: 'hidden' }}>
                 {results.map(o => (
-                  <button key={o[1]} onClick={() => addCompany(o[1])} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', background: 'none', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', fontFamily: 'inherit' }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#e0e8f0' }}>{o[0]}</span>
-                    <span style={{ fontSize: 11, color: '#3a4260', marginLeft: 6 }}>{o[1]} · {o[2]}</span>
+                  <button key={o[1]} onClick={() => addCompany(o[1])} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', background: 'none', border: 'none', borderBottom: '1px solid var(--surface-2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-strong)' }}>{o[0]}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-faintest)', marginLeft: 6 }}>{o[1]} · {o[2]}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
         ) : (
-          <p style={{ fontSize: 12, color: '#4a5270' }}>{isPremium ? 'Máximo 5 empresas alcanzado.' : 'Límite gratuito de 2 empresas.'}</p>
+          <p style={{ fontSize: 12, color: 'var(--text-faint)' }}>{isPremium ? 'Máximo 5 empresas alcanzado.' : 'Límite gratuito de 2 empresas.'}</p>
         )}
 
         {/* Peers del sector — añadir de un clic */}
         {companies.length < maxCompanies && peers.length > 0 && (
           <div style={{ marginTop: 12 }}>
-            <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 6 }}>Compara con otras de su sector:</p>
+            <p style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 6 }}>Compara con otras de su sector:</p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {peers.map(o => (
                 <button key={o[1]} onClick={() => addCompany(o[1])} title={`${o[0]} · ${o[2]}`} style={{
@@ -374,27 +376,27 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
         )}
 
         {/* Explorador por sector / subsector */}
-        <div style={{ marginTop: 14, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
-          <button type="button" onClick={() => setBrowseOpen(v => !v)} style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+        <div style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+          <button type="button" onClick={() => setBrowseOpen(v => !v)} style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
             {browseOpen ? '▲ Ocultar' : '🔍 Explorar todas las empresas por sector'}
           </button>
           {browseOpen && (
             <div style={{ marginTop: 12 }}>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
                 <select value={browseSector} onChange={e => { setBrowseSector(e.target.value); setBrowseSub('') }}
-                  style={{ flex: '1 1 200px', padding: '9px 12px', background: '#0f1221', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 9, color: '#e0e8f0', fontSize: 13, fontFamily: 'inherit' }}>
+                  style={{ flex: '1 1 200px', padding: '9px 12px', background: 'var(--bg-elev)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 9, color: 'var(--text-strong)', fontSize: 13, fontFamily: 'inherit' }}>
                   <option value="">Elige un sector…</option>
                   {sectorList.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
                 <select value={browseSub} onChange={e => setBrowseSub(e.target.value)} disabled={!browseSector}
-                  style={{ flex: '1 1 200px', padding: '9px 12px', background: '#0f1221', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 9, color: browseSector ? '#e0e8f0' : '#3a4260', fontSize: 13, fontFamily: 'inherit' }}>
+                  style={{ flex: '1 1 200px', padding: '9px 12px', background: 'var(--bg-elev)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 9, color: browseSector ? 'var(--text-strong)' : 'var(--text-faintest)', fontSize: 13, fontFamily: 'inherit' }}>
                   <option value="">{browseSector ? 'Todos los subsectores' : '—'}</option>
                   {subList.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               {browseSector && (
                 <>
-                  <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 8 }}>
+                  <p style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 8 }}>
                     {browseCompanies.length} empresas {browseSub ? `en ${browseSub}` : `en ${browseSector}`} · pulsa para añadir (máx {maxCompanies})
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 6, maxHeight: 300, overflowY: 'auto' }}>
@@ -405,13 +407,13 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
                           style={{
                             display: 'flex', alignItems: 'center', gap: 6, textAlign: 'left', padding: '7px 10px', borderRadius: 8,
                             cursor: sel ? 'default' : 'pointer', fontFamily: 'inherit',
-                            border: `1px solid ${sel ? 'rgba(52,211,153,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                            background: sel ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.02)', opacity: sel ? 0.85 : 1,
+                            border: `1px solid ${sel ? 'rgba(52,211,153,0.4)' : 'var(--surface-3)'}`,
+                            background: sel ? 'rgba(52,211,153,0.08)' : 'var(--surface)', opacity: sel ? 0.85 : 1,
                           }}>
-                          <span style={{ fontSize: 13, color: sel ? '#34d399' : '#818cf8', fontWeight: 700, flexShrink: 0 }}>{sel ? '✓' : '+'}</span>
+                          <span style={{ fontSize: 13, color: sel ? 'var(--positive)' : 'var(--accent)', fontWeight: 700, flexShrink: 0 }}>{sel ? '✓' : '+'}</span>
                           <span style={{ minWidth: 0 }}>
-                            <span style={{ display: 'block', fontSize: 12, color: '#e0e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o[0]}</span>
-                            <span style={{ fontSize: 10, color: '#3a4260' }}>{o[1]}</span>
+                            <span style={{ display: 'block', fontSize: 12, color: 'var(--text-strong)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o[0]}</span>
+                            <span style={{ fontSize: 10, color: 'var(--text-faintest)' }}>{o[1]}</span>
                           </span>
                         </button>
                       )
@@ -425,18 +427,18 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
 
         {showUpgrade && !isPremium && (
           <div style={{ marginTop: 12, padding: '12px 16px', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <p style={{ fontSize: 12, color: '#c8d0e0' }}>Compara hasta 5 empresas con radar y proyecciones completas con Premium.</p>
-            <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '8px 16px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>Ver Premium →</Link>
+            <p style={{ fontSize: 12, color: 'var(--text)' }}>Compara hasta 5 empresas con radar y proyecciones completas con Premium.</p>
+            <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'var(--accent)', padding: '8px 16px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>Ver Premium →</Link>
           </div>
         )}
       </div>
 
-      {loading && <p style={{ fontSize: 13, color: '#4a5270', textAlign: 'center', padding: 20 }}>Cargando datos…</p>}
+      {loading && <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', padding: 20 }}>Cargando datos…</p>}
 
       {companies.length === 0 && !loading ? (
         <div style={{ textAlign: 'center', padding: '40px 20px 50px' }}>
-          <p style={{ fontSize: 14, color: '#8090a8', marginBottom: 4 }}>Busca empresas arriba para compararlas lado a lado…</p>
-          <p style={{ fontSize: 12.5, color: '#4a5270', marginBottom: 22 }}>o empieza por una de estas comparativas típicas:</p>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 4 }}>Busca empresas arriba para compararlas lado a lado…</p>
+          <p style={{ fontSize: 12.5, color: 'var(--text-faint)', marginBottom: 22 }}>o empieza por una de estas comparativas típicas:</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', maxWidth: 680, margin: '0 auto' }}>
             {[
               { label: '👑 Aristócratas defensivos', t: ['KO', 'PG', 'JNJ', 'PEP', 'CL'] },
@@ -447,12 +449,12 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
               { label: '💻 Tecnología con dividendo', t: ['MSFT', 'AAPL', 'TXN', 'AVGO', 'CSCO'] },
             ].map(p => (
               <button key={p.label} onClick={() => reload(p.t.slice(0, maxCompanies))} style={{
-                fontSize: 12.5, fontWeight: 700, color: '#c8d0e0', background: 'rgba(99,102,241,0.1)',
+                fontSize: 12.5, fontWeight: 700, color: 'var(--text)', background: 'rgba(99,102,241,0.1)',
                 border: '1px solid rgba(99,102,241,0.25)', borderRadius: 9, padding: '9px 14px', cursor: 'pointer',
               }}>{p.label}</button>
             ))}
           </div>
-          {!isPremium && <p style={{ fontSize: 11, color: '#4a5270', marginTop: 18 }}>En el plan gratuito se comparan 2 empresas; Premium permite hasta 5.</p>}
+          {!isPremium && <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 18 }}>En el plan gratuito se comparan 2 empresas; Premium permite hasta 5.</p>}
         </div>
       ) : companies.length > 0 && (
         <div ref={captureRef}>
@@ -466,16 +468,16 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <p style={{ ...cardTitle, marginBottom: 0 }}>Renta acumulada a 10 años</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 11, color: '#4a5270' }}>Inversión</span>
-                  <input type="number" value={investAmt} onChange={e => setInvestAmt(Math.max(0, parseInt(e.target.value) || 0))} style={{ width: 80, padding: '5px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#c8d0e0', fontSize: 12, outline: 'none' }} />
-                  <span style={{ fontSize: 11, color: '#4a5270' }}>€</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>Inversión</span>
+                  <input type="number" value={investAmt} onChange={e => setInvestAmt(Math.max(0, parseInt(e.target.value) || 0))} style={{ width: 80, padding: '5px 8px', background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 6, color: 'var(--text)', fontSize: 12, outline: 'none' }} />
+                  <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>€</span>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={230}>
                 <LineChart data={combinedData}>
-                  <XAxis dataKey="year" stroke="#4a5270" fontSize={10} />
-                  <YAxis stroke="#4a5270" fontSize={10} tickFormatter={v => v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v} />
-                  <Tooltip contentStyle={{ background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }} formatter={(v, n) => [fmtEUR0(v), n]} labelFormatter={l => `Año ${l}`} />
+                  <XAxis dataKey="year" stroke="var(--text-faint)" fontSize={10} />
+                  <YAxis stroke="var(--text-faint)" fontSize={10} tickFormatter={v => v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v} />
+                  <Tooltip contentStyle={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 11 }} formatter={(v, n) => [fmtEUR0(v), n]} labelFormatter={l => `Año ${l}`} />
                   <ReferenceLine y={investAmt} stroke="rgba(251,191,36,0.5)" strokeDasharray="4 3" />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   {companies.map((co, i) => <Line key={co.ticker} type="monotone" dataKey={co.ticker} name={co.name} stroke={CC[i]} strokeWidth={2} dot={false} />)}
@@ -503,12 +505,12 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
                       <>
                         <ProjChart rows={p.rows} investAmt={investAmt} color={CC[i]} />
                         <div style={{ display: 'flex', gap: 12, marginTop: 6, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 11, color: '#8090a8' }}>Año 1: <strong style={{ color: '#34d399' }}>{fmtEUR0(p.y1)}</strong></span>
-                          <span style={{ fontSize: 11, color: '#8090a8' }}>10 años: <strong style={{ color: '#86efac' }}>{fmtEUR0(p.cum10)}</strong></span>
-                          <span style={{ fontSize: 11, color: p.payback && p.payback <= 10 ? '#fbbf24' : '#4a5270' }}>{p.payback && p.payback <= 10 ? `Recuperación en año ${p.payback}` : 'No se recupera en 10 años'}</span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Año 1: <strong style={{ color: 'var(--positive)' }}>{fmtEUR0(p.y1)}</strong></span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>10 años: <strong style={{ color: '#86efac' }}>{fmtEUR0(p.cum10)}</strong></span>
+                          <span style={{ fontSize: 11, color: p.payback && p.payback <= 10 ? 'var(--warning)' : 'var(--text-faint)' }}>{p.payback && p.payback <= 10 ? `Recuperación en año ${p.payback}` : 'No se recupera en 10 años'}</span>
                         </div>
                       </>
-                    ) : <p style={{ fontSize: 12, color: '#3a4260', padding: '20px 0' }}>Datos insuficientes para proyección</p>}
+                    ) : <p style={{ fontSize: 12, color: 'var(--text-faintest)', padding: '20px 0' }}>Datos insuficientes para proyección</p>}
                   </div>
                 )
               })}
@@ -518,27 +520,27 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
           {/* Tarjetas por empresa */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
             {companies.map((co, i) => (
-              <div key={co.ticker} style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${CC[i]}`, borderRadius: 12, padding: 16 }}>
+              <div key={co.ticker} style={{ background: 'var(--surface)', border: `1px solid ${CC[i]}`, borderRadius: 12, padding: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                    <span style={{ width: 20, height: 20, borderRadius: '50%', background: CC[i], color: '#08111a', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ width: 20, height: 20, borderRadius: '50%', background: CC[i], color: 'var(--bg-elev)', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
                     <p style={{ fontSize: 14, fontWeight: 700, color: CC[i], overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{co.name}</p>
                   </div>
                   <span style={{ fontSize: 22, fontWeight: 900, color: scoreColor(co.score), flexShrink: 0 }}>{co.score != null ? co.score.toFixed(1) : '—'}</span>
                 </div>
                 {co.intrinsic != null && (
-                  <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 8 }}>Valor intrínseco {co.intrinsic.toLocaleString('es-ES', { maximumFractionDigits: 2 })} {co.currency}{co.mos != null && <span style={{ color: co.mos >= 0 ? '#34d399' : '#f87171', fontWeight: 700 }}> ({co.mos >= 0 ? '+' : ''}{co.mos.toFixed(0)}% MoS)</span>}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>Valor intrínseco {co.intrinsic.toLocaleString('es-ES', { maximumFractionDigits: 2 })} {co.currency}{co.mos != null && <span style={{ color: co.mos >= 0 ? 'var(--positive)' : 'var(--negative)', fontWeight: 700 }}> ({co.mos >= 0 ? '+' : ''}{co.mos.toFixed(0)}% MoS)</span>}</p>
                 )}
                 {co.insights.length > 0 && (
                   <div style={{ display: 'grid', gap: 4, marginBottom: 8 }}>
                     {co.insights.map((ins, j) => (
-                      <p key={j} style={{ fontSize: 11, color: '#8090a8', display: 'flex', gap: 6 }}><span style={{ color: ins.pos ? '#34d399' : '#f87171' }}>{ins.pos ? '+' : '−'}</span>{ins.v}</p>
+                      <p key={j} style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 6 }}><span style={{ color: ins.pos ? 'var(--positive)' : 'var(--negative)' }}>{ins.pos ? '+' : '−'}</span>{ins.v}</p>
                     ))}
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
                   {moatBadge(co.moat) && <span style={{ fontSize: 10, color: '#86efac', background: 'rgba(52,211,153,0.1)', padding: '2px 7px', borderRadius: 5 }}>{moatBadge(co.moat)}</span>}
-                  {streakBadge(co.streak) && <span style={{ fontSize: 10, color: '#fbbf24', background: 'rgba(251,191,36,0.1)', padding: '2px 7px', borderRadius: 5 }}>{streakBadge(co.streak)} {co.streak}a</span>}
+                  {streakBadge(co.streak) && <span style={{ fontSize: 10, color: 'var(--warning)', background: 'rgba(251,191,36,0.1)', padding: '2px 7px', borderRadius: 5 }}>{streakBadge(co.streak)} {co.streak}a</span>}
                 </div>
                 <Link href={`/empresa/${encodeURIComponent(co.ticker)}`} style={{ fontSize: 12, fontWeight: 700, color: CC[i], textDecoration: 'none' }}>Ver ficha completa →</Link>
               </div>
@@ -550,6 +552,6 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
   )
 }
 
-const card = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: 18 }
-const cardTitle = { fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }
-const miniBtn = { fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#8090a8', cursor: 'pointer', fontFamily: 'inherit' }
+const card = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 18 }
+const cardTitle = { fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }
+const miniBtn = { fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 8, border: '1px solid var(--border-strong)', background: 'var(--surface-2)', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }

@@ -27,11 +27,11 @@ function classify(row, tradeSigs, divIds) {
 }
 
 const STATUS_INFO = {
-  nuevo:      { label: 'Nuevo',         color: '#34d399' },
+  nuevo:      { label: 'Nuevo',         color: 'var(--positive)' },
   actualizar: { label: 'Se actualiza',  color: '#60a5fa' },
-  dup:        { label: 'Ya registrado', color: '#8090a8' },
-  sin:        { label: 'Sin ticker',    color: '#fbbf24' },
-  cero:       { label: 'Importe 0',     color: '#6b7693' },
+  dup:        { label: 'Ya registrado', color: 'var(--text-muted)' },
+  sin:        { label: 'Sin ticker',    color: 'var(--warning)' },
+  cero:       { label: 'Importe 0',     color: 'var(--text-muted)' },
 }
 const INCLUDE_DEFAULT = new Set(['nuevo', 'actualizar'])
 
@@ -179,10 +179,10 @@ export default function ImportPage() {
 
   return (
     <div style={{ maxWidth: 1040, margin: '0 auto', padding: '24px 16px 60px' }}>
-      <Link href="/cartera" style={{ fontSize: 12, color: '#818cf8', textDecoration: 'none' }}>← Volver a la cartera</Link>
-      <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e6ebf5', margin: '10px 0 4px' }}>Importar movimientos</h1>
-      <p style={{ fontSize: 13, color: '#8090a8', marginBottom: 20, lineHeight: 1.55 }}>
-        Sube el fichero de movimientos de <b style={{ color: '#c8d0e0' }}>ING</b> (Cartera → Movimientos → Exportar a Excel). Detectamos compras, ventas y dividendos, calculamos comisiones y retenciones, y no duplicamos lo que ya tengas registrado.
+      <Link href="/cartera" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}>← Volver a la cartera</Link>
+      <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)', margin: '10px 0 4px' }}>Importar movimientos</h1>
+      <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.55 }}>
+        Sube el fichero de movimientos de <b style={{ color: 'var(--text)' }}>ING</b> (Cartera → Movimientos → Exportar a Excel). Detectamos compras, ventas y dividendos, calculamos comisiones y retenciones, y no duplicamos lo que ya tengas registrado.
       </p>
 
       {(status === 'idle' || status === 'parsing') && (
@@ -192,30 +192,30 @@ export default function ImportPage() {
           onClick={() => fileRef.current?.click()}
           style={{ border: '1.5px dashed rgba(99,102,241,0.4)', borderRadius: 14, padding: '40px 20px', textAlign: 'center', cursor: 'pointer', background: 'rgba(99,102,241,0.04)' }}
         >
-          <p style={{ fontSize: 14, color: '#c8d0e0', fontWeight: 700 }}>{status === 'parsing' ? 'Leyendo fichero…' : 'Arrastra aquí tu fichero .xls de ING'}</p>
-          <p style={{ fontSize: 12, color: '#4a5270', marginTop: 6 }}>o haz clic para seleccionarlo (.xls / .xlsx)</p>
+          <p style={{ fontSize: 14, color: 'var(--text)', fontWeight: 700 }}>{status === 'parsing' ? 'Leyendo fichero…' : 'Arrastra aquí tu fichero .xls de ING'}</p>
+          <p style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 6 }}>o haz clic para seleccionarlo (.xls / .xlsx)</p>
           <input ref={fileRef} type="file" accept=".xls,.xlsx" style={{ display: 'none' }} onChange={e => handleFile(e.target.files?.[0])} />
         </div>
       )}
 
-      {error && <p style={{ fontSize: 13, color: '#f87171', marginTop: 14 }}>{error}</p>}
+      {error && <p style={{ fontSize: 13, color: 'var(--negative)', marginTop: 14 }}>{error}</p>}
 
       {status === 'preview' && (
         <>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', margin: '18px 0 12px', fontSize: 12 }}>
-            <span style={{ color: '#34d399' }}>● {counts.nuevo} nuevos</span>
+            <span style={{ color: 'var(--positive)' }}>● {counts.nuevo} nuevos</span>
             {counts.actualizar > 0 && <span style={{ color: '#60a5fa' }}>● {counts.actualizar} dividendos a actualizar</span>}
-            <span style={{ color: '#8090a8' }}>● {counts.dup} ya registrados</span>
-            {counts.sin > 0 && <span style={{ color: '#fbbf24' }}>● {counts.sin} sin ticker (asígnalos abajo)</span>}
-            {counts.cero > 0 && <span style={{ color: '#6b7693' }}>● {counts.cero} con importe 0 (se omiten)</span>}
+            <span style={{ color: 'var(--text-muted)' }}>● {counts.dup} ya registrados</span>
+            {counts.sin > 0 && <span style={{ color: 'var(--warning)' }}>● {counts.sin} sin ticker (asígnalos abajo)</span>}
+            {counts.cero > 0 && <span style={{ color: 'var(--text-muted)' }}>● {counts.cero} con importe 0 (se omiten)</span>}
           </div>
 
-          <div style={{ overflowX: 'auto', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 }}>
+          <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 10 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, minWidth: 820 }}>
               <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                <tr style={{ background: 'var(--surface-2)' }}>
                   {['', 'Fecha', 'Tipo', 'Valor (ING)', 'Ticker', 'Títulos', 'Precio / DPS', 'Comis. / Retenc.', 'Importe €', 'Estado'].map((h, i) => (
-                    <th key={i} style={{ padding: '8px', textAlign: i > 4 ? 'right' : 'left', color: '#4a5270', fontWeight: 600, whiteSpace: 'nowrap', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>{h}</th>
+                    <th key={i} style={{ padding: '8px', textAlign: i > 4 ? 'right' : 'left', color: 'var(--text-faint)', fontWeight: 600, whiteSpace: 'nowrap', borderBottom: '1px solid var(--border)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -225,30 +225,30 @@ export default function ImportPage() {
                   const canImport = r._status !== 'cero' && !!r.ticker
                   const isDiv = r.type === 'dividend'
                   return (
-                    <tr key={r.id} style={{ opacity: r._status === 'cero' || r._status === 'dup' ? 0.55 : 1, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <tr key={r.id} style={{ opacity: r._status === 'cero' || r._status === 'dup' ? 0.55 : 1, borderBottom: '1px solid var(--surface-2)' }}>
                       <td style={{ padding: '6px 8px' }}>
                         <input type="checkbox" checked={r.include} disabled={!canImport} onChange={() => toggle(r.id)} />
                       </td>
-                      <td style={{ padding: '6px 8px', color: '#8090a8', whiteSpace: 'nowrap' }}>{r.date}</td>
-                      <td style={{ padding: '6px 8px', color: r.type === 'sell' ? '#f87171' : isDiv ? '#fbbf24' : '#34d399' }}>{TYPE_ES[r.type]}</td>
-                      <td style={{ padding: '6px 8px', color: '#c8d0e0', maxWidth: 170, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${r.ingName} · ${r.market}`}>{r.ingName}</td>
+                      <td style={{ padding: '6px 8px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{r.date}</td>
+                      <td style={{ padding: '6px 8px', color: r.type === 'sell' ? 'var(--negative)' : isDiv ? 'var(--warning)' : 'var(--positive)' }}>{TYPE_ES[r.type]}</td>
+                      <td style={{ padding: '6px 8px', color: 'var(--text)', maxWidth: 170, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${r.ingName} · ${r.market}`}>{r.ingName}</td>
                       <td style={{ padding: '6px 8px' }}>
                         <input
                           value={r.ticker || ''} list="dict-tickers"
                           onChange={e => onTicker(r.id, e.target.value)}
                           placeholder="ticker"
-                          style={{ width: 86, background: '#0d1220', border: `1px solid ${r.ticker ? 'rgba(255,255,255,0.12)' : 'rgba(251,191,36,0.5)'}`, borderRadius: 6, color: r.ticker ? '#e2e8f5' : '#fbbf24', fontSize: 11.5, padding: '4px 6px' }}
+                          style={{ width: 86, background: 'var(--bg-elev)', border: `1px solid ${r.ticker ? 'var(--border-strong)' : 'rgba(251,191,36,0.5)'}`, borderRadius: 6, color: r.ticker ? 'var(--text)' : 'var(--warning)', fontSize: 11.5, padding: '4px 6px' }}
                         />
-                        {r.matchedName && <div style={{ fontSize: 9.5, color: '#4a5270', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.matchedName}>{r.matchedName}</div>}
+                        {r.matchedName && <div style={{ fontSize: 9.5, color: 'var(--text-faint)', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.matchedName}>{r.matchedName}</div>}
                       </td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', color: '#c8d0e0' }}>{fmt(r.shares, 0)}</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', color: '#c8d0e0', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text)' }}>{fmt(r.shares, 0)}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text)', whiteSpace: 'nowrap' }}>
                         {isDiv ? (r.dps != null ? `${fmt(r.dps, 3)} ${r.currency}` : '—') : `${fmt(r.price, 2)} ${r.currency}`}
                       </td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', color: '#8090a8', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                         {isDiv ? (r.whAmount != null ? `${fmt(r.whAmount)} (${fmt(r.whPct, 0)}%)` : '—') : (r.commission != null ? fmt(r.commission) : '—')}
                       </td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', color: '#c8d0e0' }}>{fmt(r.totalEur)}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text)' }}>{fmt(r.totalEur)}</td>
                       <td style={{ padding: '6px 8px', textAlign: 'right' }}><span style={{ color: si.color, fontSize: 10.5, fontWeight: 700 }}>{si.label}</span></td>
                     </tr>
                   )
@@ -258,30 +258,30 @@ export default function ImportPage() {
             <datalist id="dict-tickers">{DICT.slice(0, 4000).map(([, t]) => <option key={t} value={t} />)}</datalist>
           </div>
 
-          <p style={{ fontSize: 10.5, color: '#3a4260', marginTop: 10, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 10.5, color: 'var(--text-faintest)', marginTop: 10, lineHeight: 1.5 }}>
             En mercados en euros la comisión se deriva (compra: sumada al precio; venta: descontada) y la retención del dividendo se calcula (bruto − neto). En divisa extranjera el precio queda en su divisa y la retención va incluida en el cambio (no se desglosa).
           </p>
 
           <div style={{ display: 'flex', gap: 10, marginTop: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button onClick={doImport} disabled={!importable.length} style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: importable.length ? 'rgba(52,211,153,0.85)' : 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 9, padding: '10px 18px', cursor: importable.length ? 'pointer' : 'default' }}>
+            <button onClick={doImport} disabled={!importable.length} style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: importable.length ? 'rgba(52,211,153,0.85)' : 'var(--border)', border: 'none', borderRadius: 9, padding: '10px 18px', cursor: importable.length ? 'pointer' : 'default' }}>
               Importar {importable.length} movimiento{importable.length === 1 ? '' : 's'}
             </button>
-            <button onClick={() => { setRows([]); setStatus('idle'); setError(null) }} style={{ fontSize: 13, color: '#8090a8', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 9, padding: '10px 16px', cursor: 'pointer' }}>Cancelar</button>
+            <button onClick={() => { setRows([]); setStatus('idle'); setError(null) }} style={{ fontSize: 13, color: 'var(--text-muted)', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 9, padding: '10px 16px', cursor: 'pointer' }}>Cancelar</button>
           </div>
         </>
       )}
 
-      {status === 'importing' && <p style={{ fontSize: 14, color: '#818cf8', marginTop: 20 }}>Importando movimientos…</p>}
+      {status === 'importing' && <p style={{ fontSize: 14, color: 'var(--accent)', marginTop: 20 }}>Importando movimientos…</p>}
 
       {status === 'done' && result && (
         <div style={{ marginTop: 20, background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 12, padding: 20 }}>
-          <p style={{ fontSize: 15, fontWeight: 800, color: '#34d399', marginBottom: 6 }}>✓ Importación completada</p>
-          <p style={{ fontSize: 13, color: '#c8d0e0' }}>
+          <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--positive)', marginBottom: 6 }}>✓ Importación completada</p>
+          <p style={{ fontSize: 13, color: 'var(--text)' }}>
             {result.imported} importados{result.updated ? ` · ${result.updated} dividendos actualizados` : ''} · {result.skipped} omitidos (duplicados){result.errors ? ` · ${result.errors} con error` : ''}.
           </p>
           <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-            <Link href="/cartera" style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: 'rgba(99,102,241,0.85)', borderRadius: 9, padding: '10px 18px', textDecoration: 'none' }}>Ver mi cartera →</Link>
-            <button onClick={() => { setRows([]); setResult(null); setStatus('idle') }} style={{ fontSize: 13, color: '#8090a8', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 9, padding: '10px 16px', cursor: 'pointer' }}>Importar otro fichero</button>
+            <Link href="/cartera" style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: 'var(--accent)', borderRadius: 9, padding: '10px 18px', textDecoration: 'none' }}>Ver mi cartera →</Link>
+            <button onClick={() => { setRows([]); setResult(null); setStatus('idle') }} style={{ fontSize: 13, color: 'var(--text-muted)', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 9, padding: '10px 16px', cursor: 'pointer' }}>Importar otro fichero</button>
           </div>
         </div>
       )}

@@ -7,9 +7,9 @@ import { DICT } from '@/data/dict'
 import { countryCodeOf, fiscalWHT, nameOf, COUNTRY_NAMES } from '@/lib/fiscalidad'
 import { detectFreqMonths, monthLabel } from '@/lib/dividends'
 
-const CARD = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
-const INPUT = { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(129,140,248,0.4)', borderRadius: 6, padding: '5px 7px', color: '#e0e8f0', fontSize: 12, outline: 'none', width: '100%', fontFamily: 'inherit', boxSizing: 'border-box' }
-const GREEN = '#34d399', ORANGE = '#fb923c', BLUE = '#60a5fa'
+const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }
+const INPUT = { background: 'var(--border)', border: '1px solid rgba(129,140,248,0.4)', borderRadius: 6, padding: '5px 7px', color: 'var(--text-strong)', fontSize: 12, outline: 'none', width: '100%', fontFamily: 'inherit', boxSizing: 'border-box' }
+const GREEN = 'var(--positive)', ORANGE = '#fb923c', BLUE = '#60a5fa'
 
 const fmtEUR = (v, d = 2) => v == null || isNaN(v) ? '—' : Number(v).toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d }) + ' €'
 const fmtNum = (v, d = 4) => v == null || isNaN(v) ? '—' : Number(v).toLocaleString('es-ES', { maximumFractionDigits: d })
@@ -77,7 +77,7 @@ export default function DividendosPage({ isPremium }) {
     setLoading(false)
   }
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#4a5270' }}>Cargando dividendos…</div>
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-faint)' }}>Cargando dividendos…</div>
 
   const TABS = [['cobros', 'Cobros'], ['calendario', 'Calendario'], ['config', 'Configuración']]
 
@@ -85,19 +85,19 @@ export default function DividendosPage({ isPremium }) {
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px 64px' }}>
       {notice && (
         <div style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.35)', borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
-          <p style={{ fontSize: 12.5, color: '#34d399', lineHeight: 1.5, whiteSpace: 'pre-line' }}>{notice}</p>
+          <p style={{ fontSize: 12.5, color: 'var(--positive)', lineHeight: 1.5, whiteSpace: 'pre-line' }}>{notice}</p>
         </div>
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0' }}>Dividendos</h1>
-        <button onClick={recalc} style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 8, padding: '7px 12px', color: '#818cf8', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>↻ Actualizar</button>
+        <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)' }}>Dividendos</h1>
+        <button onClick={recalc} style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 8, padding: '7px 12px', color: 'var(--accent)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>↻ Actualizar</button>
       </div>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 18, flexWrap: 'wrap' }}>
         {TABS.map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} style={{
             padding: '7px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === k ? 700 : 500,
-            background: tab === k ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)', color: tab === k ? '#818cf8' : '#4a5270',
+            background: tab === k ? 'rgba(99,102,241,0.2)' : 'var(--surface-2)', color: tab === k ? 'var(--accent)' : 'var(--text-faint)',
           }}>{l}</button>
         ))}
       </div>
@@ -258,8 +258,8 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
-        <p style={{ fontSize: 16, fontWeight: 800, color: '#e0e8f0' }}>Dividendos {year}</p>
-        <select value={year} onChange={e => setYear(Number(e.target.value))} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 11px', color: '#c8d0e0', fontSize: 13, outline: 'none' }}>
+        <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-strong)' }}>Dividendos {year}</p>
+        <select value={year} onChange={e => setYear(Number(e.target.value))} style={{ background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 11px', color: 'var(--text)', fontSize: 13, outline: 'none' }}>
           {years.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
       </div>
@@ -274,19 +274,19 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
           <div style={{ display: 'flex', gap: 4 }}>
             {[['all', 'Todos'], ['received', 'Cobrados'], ['pending', 'Pendientes']].map(([k, l]) => (
-              <button key={k} onClick={() => setFilter(k)} style={{ padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11.5, background: filter === k ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)', color: filter === k ? '#818cf8' : '#4a5270', fontWeight: filter === k ? 700 : 400 }}>{l}</button>
+              <button key={k} onClick={() => setFilter(k)} style={{ padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11.5, background: filter === k ? 'rgba(99,102,241,0.2)' : 'var(--surface-2)', color: filter === k ? 'var(--accent)' : 'var(--text-faint)', fontWeight: filter === k ? 700 : 400 }}>{l}</button>
             ))}
           </div>
           <button onClick={() => setAdding(a => !a)} style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.3)', borderRadius: 7, padding: '6px 12px', color: GREEN, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>+ Añadir cobro</button>
         </div>
 
         {filtered.length === 0 && !adding ? (
-          <p style={{ fontSize: 13, color: '#4a5270', padding: '16px 0' }}>No hay dividendos para este filtro.</p>
+          <p style={{ fontSize: 13, color: 'var(--text-faint)', padding: '16px 0' }}>No hay dividendos para este filtro.</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 920 }}>
               <thead><tr>{['Empresa', 'Acciones', 'DPS', 'Bruto', 'Ret. origen', 'Ret. destino', 'Neto', 'Fecha pago', 'Estado', '', ''].map((h, i) => (
-                <th key={i} style={{ padding: '6px 8px', textAlign: i >= 1 && i <= 6 ? 'right' : 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                <th key={i} style={{ padding: '6px 8px', textAlign: i >= 1 && i <= 6 ? 'right' : 'left', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
               ))}</tr></thead>
               <tbody>
                 {filtered.map(r => {
@@ -300,15 +300,15 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
                   const net = editing ? amount - originW - destW : (r.amount_net != null ? num(r.amount_net) : amount - originW - destW)
                   return (
                     <Fragmentish key={r.id}>
-                      <tr style={{ borderBottom: confirmId === r.id ? 'none' : '1px solid rgba(255,255,255,0.04)' }}>
-                        <td style={{ padding: '7px 8px', color: '#c8d0e0', whiteSpace: 'nowrap' }}>{flag(code)} {nameOf(r.ticker)} <span style={{ color: '#3a4260', fontSize: 10 }}>{r.ticker}</span></td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="any" value={draft.shares} onChange={e => setDraft(d => ({ ...d, shares: e.target.value }))} /> : <span style={{ color: '#8090a8' }}>{fmtNum(r.shares)}</span>}</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="0.0001" value={draft.dps} onChange={e => setDraft(d => ({ ...d, dps: e.target.value }))} /> : <span style={{ color: '#8090a8' }}>{fmtNum(r.dps)}</span>}</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 600 }}>{fmtEUR(amount)}</td>
+                      <tr style={{ borderBottom: confirmId === r.id ? 'none' : '1px solid var(--surface-2)' }}>
+                        <td style={{ padding: '7px 8px', color: 'var(--text)', whiteSpace: 'nowrap' }}>{flag(code)} {nameOf(r.ticker)} <span style={{ color: 'var(--text-faintest)', fontSize: 10 }}>{r.ticker}</span></td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="any" value={draft.shares} onChange={e => setDraft(d => ({ ...d, shares: e.target.value }))} /> : <span style={{ color: 'var(--text-muted)' }}>{fmtNum(r.shares)}</span>}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="0.0001" value={draft.dps} onChange={e => setDraft(d => ({ ...d, dps: e.target.value }))} /> : <span style={{ color: 'var(--text-muted)' }}>{fmtNum(r.dps)}</span>}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--positive)', fontWeight: 600 }}>{fmtEUR(amount)}</td>
                         <td style={{ padding: '7px 8px', textAlign: 'right', color: ORANGE, whiteSpace: 'nowrap' }}>{editing ? <input style={{ ...INPUT, width: 46, display: 'inline-block' }} type="number" step="any" value={draft.pctO} onChange={e => setDraft(d => ({ ...d, pctO: e.target.value }))} /> : `${pctO || 0}%`} · {fmtEUR(originW)}</td>
                         <td style={{ padding: '7px 8px', textAlign: 'right', color: ORANGE, whiteSpace: 'nowrap' }}>{editing ? <input style={{ ...INPUT, width: 46, display: 'inline-block' }} type="number" step="any" value={draft.pctD} onChange={e => setDraft(d => ({ ...d, pctD: e.target.value }))} /> : `${pctD || 0}%`} · {fmtEUR(destW)}</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600 }}>{fmtEUR(net)}</td>
-                        <td style={{ padding: '7px 8px', color: '#8090a8', whiteSpace: 'nowrap' }}>{fmtDate(r.payment_date_estimated || r.date)}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text)', fontWeight: 600 }}>{fmtEUR(net)}</td>
+                        <td style={{ padding: '7px 8px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{fmtDate(r.payment_date_estimated || r.date)}</td>
                         <td style={{ padding: '7px 8px' }}>
                           {r.status === 'received'
                             ? <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, background: 'rgba(52,211,153,0.14)', padding: '2px 7px', borderRadius: 5, whiteSpace: 'nowrap' }}>✓ Cobrado</span>
@@ -317,48 +317,48 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
                         <td style={{ padding: '7px 8px', textAlign: 'center' }} title={r.source === 'auto' ? 'Generado automáticamente' : 'Introducido manualmente'}>{r.source === 'auto' ? '🤖' : '✏'}</td>
                         <td style={{ padding: '7px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                           {editing ? (
-                            <><button onClick={() => saveEdit(r)} style={mini(GREEN)} title="Guardar">💾</button><button onClick={() => setEditId(null)} style={mini('#8090a8')} title="Cancelar">✕</button></>
+                            <><button onClick={() => saveEdit(r)} style={mini(GREEN)} title="Guardar">💾</button><button onClick={() => setEditId(null)} style={mini('var(--text-muted)')} title="Cancelar">✕</button></>
                           ) : delId === r.id ? null : (
                             <>
                               {r.status === 'pending' && <button onClick={() => startConfirm(r)} style={{ ...mini(GREEN), fontSize: 16 }} title="Confirmar cobro">✓</button>}
-                              <button onClick={() => startEdit(r)} style={mini('#818cf8')} title="Editar">✏</button>
-                              <button onClick={() => setDelId(r.id)} style={mini('#f87171')} title="Eliminar">🗑</button>
+                              <button onClick={() => startEdit(r)} style={mini('var(--accent)')} title="Editar">✏</button>
+                              <button onClick={() => setDelId(r.id)} style={mini('var(--negative)')} title="Eliminar">🗑</button>
                             </>
                           )}
                         </td>
                       </tr>
                       {confirmId === r.id && (
-                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(52,211,153,0.04)' }}>
+                        <tr style={{ borderBottom: '1px solid var(--surface-2)', background: 'rgba(52,211,153,0.04)' }}>
                           <td colSpan={11} style={{ padding: '10px 12px' }}>
                             {confDraft.mode === 'stock' ? (
                               <div>
-                                <p style={{ fontSize: 12, fontWeight: 700, color: '#c8d0e0', marginBottom: 8 }}>📈 Confirmar dividendo en acciones de {nameOf(r.ticker)}</p>
+                                <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>📈 Confirmar dividendo en acciones de {nameOf(r.ticker)}</p>
                                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                                  <label style={{ fontSize: 10, color: '#8090a8' }}>Acciones recibidas<br /><input style={{ ...INPUT, width: 120 }} type="number" step="0.0001" value={confDraft.shares} onChange={e => setConfDraft(d => ({ ...d, shares: e.target.value, _touched: true }))} /></label>
-                                  <label style={{ fontSize: 10, color: '#8090a8' }}>Precio/acción (fecha pago)<br /><input style={{ ...INPUT, width: 120 }} type="number" step="any" value={confDraft.price} onChange={e => setConfDraft(d => ({ ...d, price: e.target.value, _touched: true }))} /></label>
-                                  <label style={{ fontSize: 10, color: '#8090a8' }}>Valor total recibido<br /><input style={{ ...INPUT, width: 120, opacity: 0.7 }} value={fmtEUR(num(confDraft.shares) * num(confDraft.price))} readOnly /></label>
-                                  <label style={{ fontSize: 10, color: '#8090a8' }}>Fecha de cobro<br /><input style={{ ...INPUT, width: 140 }} type="date" value={confDraft.date} onChange={e => setConfDraft(d => ({ ...d, date: e.target.value, _touched: true }))} /></label>
+                                  <label style={{ fontSize: 10, color: 'var(--text-muted)' }}>Acciones recibidas<br /><input style={{ ...INPUT, width: 120 }} type="number" step="0.0001" value={confDraft.shares} onChange={e => setConfDraft(d => ({ ...d, shares: e.target.value, _touched: true }))} /></label>
+                                  <label style={{ fontSize: 10, color: 'var(--text-muted)' }}>Precio/acción (fecha pago)<br /><input style={{ ...INPUT, width: 120 }} type="number" step="any" value={confDraft.price} onChange={e => setConfDraft(d => ({ ...d, price: e.target.value, _touched: true }))} /></label>
+                                  <label style={{ fontSize: 10, color: 'var(--text-muted)' }}>Valor total recibido<br /><input style={{ ...INPUT, width: 120, opacity: 0.7 }} value={fmtEUR(num(confDraft.shares) * num(confDraft.price))} readOnly /></label>
+                                  <label style={{ fontSize: 10, color: 'var(--text-muted)' }}>Fecha de cobro<br /><input style={{ ...INPUT, width: 140 }} type="date" value={confDraft.date} onChange={e => setConfDraft(d => ({ ...d, date: e.target.value, _touched: true }))} /></label>
                                 </div>
-                                <p style={{ fontSize: 10.5, color: '#6b7693', margin: '8px 0 10px', maxWidth: 560, lineHeight: 1.5 }}>Las acciones se añadirán automáticamente a tu cartera con precio de compra igual al valor de mercado en esta fecha — necesario para el cálculo fiscal correcto.</p>
+                                <p style={{ fontSize: 10.5, color: 'var(--text-muted)', margin: '8px 0 10px', maxWidth: 560, lineHeight: 1.5 }}>Las acciones se añadirán automáticamente a tu cartera con precio de compra igual al valor de mercado en esta fecha — necesario para el cálculo fiscal correcto.</p>
                                 <div style={{ display: 'flex', gap: 10 }}>
                                   <button onClick={() => doConfirm(r)} style={{ background: GREEN, border: 'none', borderRadius: 7, padding: '8px 16px', color: '#06281c', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>Confirmar y añadir acciones</button>
-                                  <button onClick={() => setConfirmId(null)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '8px 14px', color: '#8090a8', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+                                  <button onClick={() => setConfirmId(null)} style={{ background: 'none', border: '1px solid var(--border-strong)', borderRadius: 7, padding: '8px 14px', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
                                 </div>
                               </div>
                             ) : (
                               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                                <span style={{ fontSize: 12, fontWeight: 700, color: '#c8d0e0' }}>Confirmar cobro de {nameOf(r.ticker)}</span>
-                                <label style={{ fontSize: 10, color: '#8090a8' }}>Neto recibido<br /><input style={{ ...INPUT, width: 110 }} type="number" step="any" value={confDraft.amount_net} onChange={e => setConfDraft(d => ({ ...d, amount_net: e.target.value }))} /></label>
-                                <label style={{ fontSize: 10, color: '#8090a8' }}>Fecha de cobro<br /><input style={{ ...INPUT, width: 140 }} type="date" value={confDraft.date} onChange={e => setConfDraft(d => ({ ...d, date: e.target.value }))} /></label>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Confirmar cobro de {nameOf(r.ticker)}</span>
+                                <label style={{ fontSize: 10, color: 'var(--text-muted)' }}>Neto recibido<br /><input style={{ ...INPUT, width: 110 }} type="number" step="any" value={confDraft.amount_net} onChange={e => setConfDraft(d => ({ ...d, amount_net: e.target.value }))} /></label>
+                                <label style={{ fontSize: 10, color: 'var(--text-muted)' }}>Fecha de cobro<br /><input style={{ ...INPUT, width: 140 }} type="date" value={confDraft.date} onChange={e => setConfDraft(d => ({ ...d, date: e.target.value }))} /></label>
                                 <button onClick={() => doConfirm(r)} style={{ background: GREEN, border: 'none', borderRadius: 7, padding: '7px 16px', color: '#06281c', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>Confirmar</button>
-                                <button onClick={() => setConfirmId(null)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '7px 14px', color: '#8090a8', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+                                <button onClick={() => setConfirmId(null)} style={{ background: 'none', border: '1px solid var(--border-strong)', borderRadius: 7, padding: '7px 14px', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
                               </div>
                             )}
                           </td>
                         </tr>
                       )}
                       {delId === r.id && (
-                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(248,113,113,0.05)' }}>
+                        <tr style={{ borderBottom: '1px solid var(--surface-2)', background: 'rgba(248,113,113,0.05)' }}>
                           <td colSpan={11} style={{ padding: '10px 12px' }}>
                             <DeleteConfirm r={r} onDelete={del} onCancel={() => setDelId(null)} />
                           </td>
@@ -372,8 +372,8 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
                     <td style={{ padding: '7px 8px', position: 'relative' }}>
                       <input style={INPUT} placeholder="Empresa…" value={addDraft.query} onChange={e => setAddDraft(a => ({ ...a, query: e.target.value, ticker: '' }))} />
                       {!addDraft.ticker && addResults.length > 0 && (
-                        <div style={{ position: 'absolute', zIndex: 20, top: '100%', left: 0, right: 0, background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, marginTop: 2, maxHeight: 200, overflowY: 'auto' }}>
-                          {addResults.map(d => <button key={d[1]} onClick={() => pickAdd(d)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#c8d0e0', fontSize: 12 }}>{d[0]} <span style={{ color: '#4a5270' }}>{d[1]}</span></button>)}
+                        <div style={{ position: 'absolute', zIndex: 20, top: '100%', left: 0, right: 0, background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, marginTop: 2, maxHeight: 200, overflowY: 'auto' }}>
+                          {addResults.map(d => <button key={d[1]} onClick={() => pickAdd(d)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', fontSize: 12 }}>{d[0]} <span style={{ color: 'var(--text-faint)' }}>{d[1]}</span></button>)}
                         </div>
                       )}
                     </td>
@@ -382,12 +382,12 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
                     <td style={{ padding: '7px 8px', textAlign: 'right', color: GREEN }}>{fmtEUR(num(addDraft.shares) * num(addDraft.dps))}</td>
                     <td style={{ padding: '7px 8px' }}><input style={INPUT} type="number" step="any" placeholder="% orig." value={addDraft.pctO} onChange={e => setAddDraft(a => ({ ...a, pctO: e.target.value }))} /></td>
                     <td style={{ padding: '7px 8px' }}><input style={INPUT} type="number" step="any" placeholder="% dest." value={addDraft.pctD} onChange={e => setAddDraft(a => ({ ...a, pctD: e.target.value }))} /></td>
-                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0' }}>{fmtEUR(calcNet(num(addDraft.shares) * num(addDraft.dps), num(addDraft.pctO), num(addDraft.pctD)).net)}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text)' }}>{fmtEUR(calcNet(num(addDraft.shares) * num(addDraft.dps), num(addDraft.pctO), num(addDraft.pctD)).net)}</td>
                     <td style={{ padding: '7px 8px' }}><input style={INPUT} type="date" value={addDraft.date} onChange={e => setAddDraft(a => ({ ...a, date: e.target.value }))} /></td>
                     <td colSpan={2} />
                     <td style={{ padding: '7px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <button onClick={saveAdd} disabled={!addDraft.ticker} style={mini(GREEN)} title="Guardar">💾</button>
-                      <button onClick={() => { setAdding(false); setAddDraft({ query: '', ticker: '', shares: '', dps: '', pctO: '', pctD: '', date: todayStr() }) }} style={mini('#8090a8')} title="Cancelar">✕</button>
+                      <button onClick={() => { setAdding(false); setAddDraft({ query: '', ticker: '', shares: '', dps: '', pctO: '', pctD: '', date: todayStr() }) }} style={mini('var(--text-muted)')} title="Cancelar">✕</button>
                     </td>
                   </tr>
                 )}
@@ -404,14 +404,14 @@ function DeleteConfirm({ r, onDelete, onCancel }) {
   const [noRegen, setNoRegen] = useState(false)
   return (
     <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-      <span style={{ fontSize: 12, color: '#fbbf24' }}>¿Eliminar este registro?</span>
+      <span style={{ fontSize: 12, color: 'var(--warning)' }}>¿Eliminar este registro?</span>
       {r.source === 'auto' && (
-        <label style={{ fontSize: 11, color: '#8090a8', display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
+        <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
           <input type="checkbox" checked={noRegen} onChange={e => setNoRegen(e.target.checked)} /> No volver a generar automáticamente
         </label>
       )}
       <button onClick={() => onDelete(r, noRegen)} style={{ background: 'rgba(248,113,113,0.85)', border: 'none', borderRadius: 7, padding: '6px 14px', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Eliminar</button>
-      <button onClick={onCancel} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '6px 12px', color: '#8090a8', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+      <button onClick={onCancel} style={{ background: 'none', border: '1px solid var(--border-strong)', borderRadius: 7, padding: '6px 12px', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
     </div>
   )
 }
@@ -419,9 +419,9 @@ function Fragmentish({ children }) { return <>{children}</> }
 function Sum({ label, value, col, sub }) {
   return (
     <div style={{ ...CARD, padding: '16px 18px' }}>
-      <p style={{ fontSize: 10.5, color: '#4a5270', marginBottom: 6 }}>{label}</p>
+      <p style={{ fontSize: 10.5, color: 'var(--text-faint)', marginBottom: 6 }}>{label}</p>
       <p style={{ fontSize: 21, fontWeight: 900, color: col }}>{value}</p>
-      <p style={{ fontSize: 10, color: '#3a4260', marginTop: 4 }}>{sub}</p>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 4 }}>{sub}</p>
     </div>
   )
 }
@@ -452,8 +452,8 @@ function Calendario({ records, year, setYear }) {
   return (
     <div style={{ ...CARD }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Calendario {year}</p>
-        <select value={year} onChange={e => setYear(Number(e.target.value))} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 11px', color: '#c8d0e0', fontSize: 13, outline: 'none' }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Calendario {year}</p>
+        <select value={year} onChange={e => setYear(Number(e.target.value))} style={{ background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 11px', color: 'var(--text)', fontSize: 13, outline: 'none' }}>
           {years.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
       </div>
@@ -464,11 +464,11 @@ function Calendario({ records, year, setYear }) {
           const isReceived = mo.received > 0
           const col = mo.pending > 0 && mo.received === 0 ? ORANGE : isReceived && mo.pending === 0 ? GREEN : mo.received >= mo.pending ? GREEN : ORANGE
           return (
-            <div key={i} style={{ borderRadius: 10, padding: 12, background: total > 0 ? `rgba(52,211,153,${0.05 + (total / max) * 0.12})` : 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-              <p style={{ fontSize: 12, fontWeight: 700, color: '#c8d0e0' }}>{monthLabel(i + 1)} {year}</p>
-              <p style={{ fontSize: 17, fontWeight: 800, color: total > 0 ? col : '#2e3a55', marginTop: 4 }}>{total > 0 ? fmtEUR(total, 0) : '—'}</p>
+            <div key={i} style={{ borderRadius: 10, padding: 12, background: total > 0 ? `rgba(52,211,153,${0.05 + (total / max) * 0.12})` : 'var(--surface)', border: '1px solid var(--surface-2)' }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{monthLabel(i + 1)} {year}</p>
+              <p style={{ fontSize: 17, fontWeight: 800, color: total > 0 ? col : 'var(--text-faintest)', marginTop: 4 }}>{total > 0 ? fmtEUR(total, 0) : '—'}</p>
               {total > 0 && (
-                <p style={{ fontSize: 9.5, color: '#4a5270', marginTop: 2 }}>
+                <p style={{ fontSize: 9.5, color: 'var(--text-faint)', marginTop: 2 }}>
                   {mo.received > 0 && <span style={{ color: GREEN }}>{fmtEUR(mo.received, 0)} cobrado</span>}
                   {mo.received > 0 && mo.pending > 0 && ' · '}
                   {mo.pending > 0 && <span style={{ color: ORANGE }}>{fmtEUR(mo.pending, 0)} pendiente</span>}
@@ -478,7 +478,7 @@ function Calendario({ records, year, setYear }) {
           )
         })}
       </div>
-      <div style={{ display: 'flex', gap: 16, marginTop: 12, fontSize: 10.5, color: '#4a5270' }}>
+      <div style={{ display: 'flex', gap: 16, marginTop: 12, fontSize: 10.5, color: 'var(--text-faint)' }}>
         <span><span style={{ display: 'inline-block', width: 9, height: 9, background: GREEN, borderRadius: 2, marginRight: 5 }} />Cobrado</span>
         <span><span style={{ display: 'inline-block', width: 9, height: 9, background: ORANGE, borderRadius: 2, marginRight: 5 }} />Pendiente</span>
       </div>
@@ -515,11 +515,11 @@ function Configuracion({ sb, positions, setPositions, funds, config, setConfig, 
 
   return (
     <div style={{ ...CARD }}>
-      <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 14 }}>Ajusta la frecuencia y los meses de pago de cada empresa cuando la detección automática no acierte. Excluye las que prefieras gestionar a mano.</p>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 14 }}>Ajusta la frecuencia y los meses de pago de cada empresa cuando la detección automática no acierte. Excluye las que prefieras gestionar a mano.</p>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 640 }}>
           <thead><tr>{['Empresa', 'Frecuencia', 'Meses de pago', 'Método de cobro', 'Excluir prefill', ''].map((h, i) => (
-            <th key={i} style={{ padding: '6px 8px', textAlign: 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+            <th key={i} style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
           ))}</tr></thead>
           <tbody>
             {stocks.map(p => {
@@ -529,44 +529,44 @@ function Configuracion({ sb, positions, setPositions, funds, config, setConfig, 
               const months = (Array.isArray(cfg?.months) && cfg.months.length) ? cfg.months : det.months
               const editing = editId === p.ticker
               return (
-                <tr key={p.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <td style={{ padding: '8px', color: '#c8d0e0' }}>{nameOf(p.ticker)} <span style={{ color: '#3a4260', fontSize: 10 }}>{p.ticker}</span></td>
+                <tr key={p.ticker} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                  <td style={{ padding: '8px', color: 'var(--text)' }}>{nameOf(p.ticker)} <span style={{ color: 'var(--text-faintest)', fontSize: 10 }}>{p.ticker}</span></td>
                   <td style={{ padding: '8px' }}>
                     {editing ? (
                       <select value={draft.frequency} onChange={e => setDraft(d => ({ ...d, frequency: Number(e.target.value) }))} style={{ ...INPUT, width: 110 }}>
                         {[[12, 'Mensual'], [4, 'Trimestral'], [2, 'Semestral'], [1, 'Anual']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                       </select>
-                    ) : <span style={{ color: '#8090a8' }}>{FREQ_LABEL[freq] || `${freq}×`}</span>}
+                    ) : <span style={{ color: 'var(--text-muted)' }}>{FREQ_LABEL[freq] || `${freq}×`}</span>}
                   </td>
                   <td style={{ padding: '8px' }}>
                     {editing ? (
                       <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                          <button key={m} onClick={() => toggleMonth(m)} style={{ fontSize: 9.5, padding: '2px 5px', borderRadius: 4, border: 'none', cursor: 'pointer', background: draft.months.includes(m) ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.05)', color: draft.months.includes(m) ? '#818cf8' : '#4a5270' }}>{monthLabel(m)}</button>
+                          <button key={m} onClick={() => toggleMonth(m)} style={{ fontSize: 9.5, padding: '2px 5px', borderRadius: 4, border: 'none', cursor: 'pointer', background: draft.months.includes(m) ? 'rgba(99,102,241,0.3)' : 'var(--surface-3)', color: draft.months.includes(m) ? 'var(--accent)' : 'var(--text-faint)' }}>{monthLabel(m)}</button>
                         ))}
                       </div>
                     ) : (
-                      <span style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>{months.map(m => <span key={m} style={{ fontSize: 9.5, color: '#8090a8', background: 'rgba(255,255,255,0.05)', padding: '1px 6px', borderRadius: 4 }}>{monthLabel(m)}</span>)}</span>
+                      <span style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>{months.map(m => <span key={m} style={{ fontSize: 9.5, color: 'var(--text-muted)', background: 'var(--surface-3)', padding: '1px 6px', borderRadius: 4 }}>{monthLabel(m)}</span>)}</span>
                     )}
                   </td>
                   <td style={{ padding: '8px' }}>
                     {(() => { const method = p.dividend_payment_method || 'cash'; return (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        <button onClick={() => setMethod(p.ticker, 'cash')} title="En efectivo" style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: method === 'cash' ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.04)', color: method === 'cash' ? '#818cf8' : '#4a5270' }}>💵 Efectivo</button>
-                        <button onClick={() => setMethod(p.ticker, 'stock')} title="En acciones" style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: method === 'stock' ? 'rgba(52,211,153,0.22)' : 'rgba(255,255,255,0.04)', color: method === 'stock' ? '#34d399' : '#4a5270' }}>📈 Acciones</button>
-                        {methodSaved === p.ticker && <span style={{ color: '#34d399', fontSize: 13 }}>✓</span>}
+                        <button onClick={() => setMethod(p.ticker, 'cash')} title="En efectivo" style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: method === 'cash' ? 'rgba(99,102,241,0.25)' : 'var(--surface-2)', color: method === 'cash' ? 'var(--accent)' : 'var(--text-faint)' }}>💵 Efectivo</button>
+                        <button onClick={() => setMethod(p.ticker, 'stock')} title="En acciones" style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: method === 'stock' ? 'rgba(52,211,153,0.22)' : 'var(--surface-2)', color: method === 'stock' ? 'var(--positive)' : 'var(--text-faint)' }}>📈 Acciones</button>
+                        {methodSaved === p.ticker && <span style={{ color: 'var(--positive)', fontSize: 13 }}>✓</span>}
                       </span>
                     ) })()}
                   </td>
                   <td style={{ padding: '8px' }}>
-                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: 11, color: cfg?.excluded ? '#fbbf24' : '#4a5270' }}>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: 11, color: cfg?.excluded ? 'var(--warning)' : 'var(--text-faint)' }}>
                       <input type="checkbox" checked={!!cfg?.excluded} onChange={e => toggleExcl(p.ticker, e.target.checked)} /> {cfg?.excluded ? 'Excluida' : ''}
                     </label>
                   </td>
                   <td style={{ padding: '8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                     {editing ? (
-                      <><button onClick={() => saveEdit(p.ticker)} style={mini(GREEN)} title="Guardar">💾</button><button onClick={() => setEditId(null)} style={mini('#8090a8')} title="Cancelar">✕</button></>
-                    ) : <button onClick={() => startEdit(p.ticker, freq, months)} style={mini('#818cf8')} title="Editar">✏</button>}
+                      <><button onClick={() => saveEdit(p.ticker)} style={mini(GREEN)} title="Guardar">💾</button><button onClick={() => setEditId(null)} style={mini('var(--text-muted)')} title="Cancelar">✕</button></>
+                    ) : <button onClick={() => startEdit(p.ticker, freq, months)} style={mini('var(--accent)')} title="Editar">✏</button>}
                   </td>
                 </tr>
               )
@@ -574,7 +574,7 @@ function Configuracion({ sb, positions, setPositions, funds, config, setConfig, 
           </tbody>
         </table>
       </div>
-      {stocks.length === 0 && <p style={{ fontSize: 13, color: '#4a5270', padding: '12px 0' }}>Añade acciones a tu cartera para configurar sus dividendos.</p>}
+      {stocks.length === 0 && <p style={{ fontSize: 13, color: 'var(--text-faint)', padding: '12px 0' }}>Añade acciones a tu cartera para configurar sus dividendos.</p>}
     </div>
   )
 }

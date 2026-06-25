@@ -74,7 +74,7 @@ export default function NavMenu({ active, sessionUser }) {
           ) : (
             <>
               <Link href="/login" style={{ fontSize: 12, color: 'var(--text-faint)', textDecoration: 'none', padding: '6px 12px' }}>Acceder</Link>
-              <Link href="/register" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '6px 14px', background: 'rgba(99,102,241,0.8)', borderRadius: 8 }}>Registro gratis</Link>
+              <Link href="/register" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '6px 14px', background: 'var(--accent)', borderRadius: 8 }}>Registro gratis</Link>
             </>
           )}
           {/* Botón hamburguesa (solo móvil) */}

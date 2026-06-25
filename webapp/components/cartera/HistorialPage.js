@@ -8,9 +8,9 @@ import { DICT } from '@/data/dict'
 import { FX } from '@/lib/portfolio'
 import { FREQ_LABEL, monthlyEquivalent } from '@/lib/recurring'
 
-const CARD     = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
-const INPUT    = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', color: '#c8d0e0', fontSize: 13, outline: 'none', boxSizing: 'border-box' }
-const TT_STYLE = { background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }
+const CARD     = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }
+const INPUT    = { background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '8px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }
+const TT_STYLE = { background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 11 }
 
 function fmt(v, d = 2) { return v == null || isNaN(v) ? '—' : v.toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d }) }
 function fmtEUR(v) { return v == null ? '—' : v.toLocaleString('es-ES', { maximumFractionDigits: 2 }) + ' €' }
@@ -44,7 +44,7 @@ function downloadCSV(filename, rows) {
 }
 
 function PremiumBadge() {
-  return <span style={{ fontSize: 9, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.12)', padding: '1px 6px', borderRadius: 4, marginLeft: 6 }}>PREMIUM</span>
+  return <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--accent)', background: 'rgba(99,102,241,0.12)', padding: '1px 6px', borderRadius: 4, marginLeft: 6 }}>PREMIUM</span>
 }
 
 // ── Tab 1: Operaciones ─────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ function TabOperations({ transactions, dividends, isPremium, onDelete, fundTicke
 
   const RIGHT = { textAlign: 'right' }
   const TH = (label, right) => (
-    <th key={label} style={{ padding: '6px 8px', textAlign: right ? 'right' : 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</th>
+    <th key={label} style={{ padding: '6px 8px', textAlign: right ? 'right' : 'left', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</th>
   )
 
   return (
@@ -151,14 +151,14 @@ function TabOperations({ transactions, dividends, isPremium, onDelete, fundTicke
           </select>
         </div>
         {isPremium && (
-          <button onClick={exportCSV} style={{ ...INPUT, cursor: 'pointer', color: '#818cf8', fontWeight: 700, background: 'rgba(99,102,241,0.1)' }}>
+          <button onClick={exportCSV} style={{ ...INPUT, cursor: 'pointer', color: 'var(--accent)', fontWeight: 700, background: 'rgba(99,102,241,0.1)' }}>
             ↓ Exportar CSV
           </button>
         )}
       </div>
 
       {filtered.length === 0 ? (
-        <p style={{ fontSize: 13, color: '#4a5270', textAlign: 'center', padding: '30px 0' }}>No hay operaciones registradas.</p>
+        <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', padding: '30px 0' }}>No hay operaciones registradas.</p>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: hasFx ? 1020 : 780 }}>
@@ -184,30 +184,30 @@ function TabOperations({ transactions, dividends, isPremium, onDelete, fundTicke
                 const txCurrency = t.currency || currOf(t.ticker)
                 const isManualFx = t.exchange_rate != null && t.exchange_rate_date == null
                 return (
-                  <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '7px 8px', color: '#4a5270', whiteSpace: 'nowrap' }}>{new Date(t.date).toLocaleDateString('es-ES')}</td>
+                  <tr key={t.id} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                    <td style={{ padding: '7px 8px', color: 'var(--text-faint)', whiteSpace: 'nowrap' }}>{new Date(t.date).toLocaleDateString('es-ES')}</td>
                     <td style={{ padding: '7px 8px' }}>
-                      <Link href={hrefFor(t.ticker, fundTickers)} style={{ color: '#c8d0e0', textDecoration: 'none', fontWeight: 600 }}>{nameOf(t.ticker)}</Link>
+                      <Link href={hrefFor(t.ticker, fundTickers)} style={{ color: 'var(--text)', textDecoration: 'none', fontWeight: 600 }}>{nameOf(t.ticker)}</Link>
                     </td>
                     <td style={{ padding: '7px 8px' }}>
                       {t.type === 'stock_dividend' ? (
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.1)', padding: '2px 7px', borderRadius: 5, whiteSpace: 'nowrap' }}>📈 Dividendo en acciones</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--positive)', background: 'rgba(52,211,153,0.1)', padding: '2px 7px', borderRadius: 5, whiteSpace: 'nowrap' }}>📈 Dividendo en acciones</span>
                       ) : (
-                        <span style={{ fontSize: 11, fontWeight: 700, color: t.type === 'sell' ? '#f87171' : '#34d399', background: t.type === 'sell' ? 'rgba(248,113,113,0.1)' : 'rgba(52,211,153,0.1)', padding: '2px 7px', borderRadius: 5 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: t.type === 'sell' ? 'var(--negative)' : 'var(--positive)', background: t.type === 'sell' ? 'rgba(248,113,113,0.1)' : 'rgba(52,211,153,0.1)', padding: '2px 7px', borderRadius: 5 }}>
                           {t.type === 'sell' ? 'Venta' : t.type === 'buy_recurring' ? 'Aportación' : 'Compra'}
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: '7px 8px', ...RIGHT, color: '#8090a8' }}>{fmt(Number(t.shares), 4)}</td>
-                    <td style={{ padding: '7px 8px', ...RIGHT, color: '#8090a8' }}>{fmt(Number(t.price))} {txCurrency}</td>
-                    <td style={{ padding: '7px 8px', ...RIGHT, color: '#c8d0e0', fontWeight: 600 }}>
+                    <td style={{ padding: '7px 8px', ...RIGHT, color: 'var(--text-muted)' }}>{fmt(Number(t.shares), 4)}</td>
+                    <td style={{ padding: '7px 8px', ...RIGHT, color: 'var(--text-muted)' }}>{fmt(Number(t.price))} {txCurrency}</td>
+                    <td style={{ padding: '7px 8px', ...RIGHT, color: 'var(--text)', fontWeight: 600 }}>
                       {t.amount_original != null ? fmt(Number(t.amount_original)) : fmt(Number(t.shares) * Number(t.price))} {txCurrency}
                     </td>
-                    <td style={{ padding: '7px 8px', ...RIGHT, color: t.commission > 0 ? '#fbbf24' : '#4a5270', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '7px 8px', ...RIGHT, color: t.commission > 0 ? 'var(--warning)' : 'var(--text-faint)', whiteSpace: 'nowrap' }}>
                       {t.commission != null && t.commission > 0 ? `${fmt(Number(t.commission))} ${t.commission_currency || txCurrency}` : '—'}
                     </td>
                     {hasFx && (
-                      <td style={{ padding: '7px 8px', ...RIGHT, color: '#8090a8', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '7px 8px', ...RIGHT, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                         {t.exchange_rate != null && t.exchange_rate !== 1 ? (
                           <span title={isManualFx ? 'Tipo introducido manualmente' : `Fecha: ${t.exchange_rate_date}`}>
                             {Number(t.exchange_rate).toFixed(4)}
@@ -217,27 +217,27 @@ function TabOperations({ transactions, dividends, isPremium, onDelete, fundTicke
                       </td>
                     )}
                     {hasFx && (
-                      <td style={{ padding: '7px 8px', ...RIGHT, color: t.fx_commission_eur > 0 ? '#fbbf24' : '#4a5270' }}>
+                      <td style={{ padding: '7px 8px', ...RIGHT, color: t.fx_commission_eur > 0 ? 'var(--warning)' : 'var(--text-faint)' }}>
                         {t.fx_commission_eur != null && t.fx_commission_eur > 0 ? `${fmt(Number(t.fx_commission_eur))} €` : '—'}
                       </td>
                     )}
                     {hasFx && (
-                      <td style={{ padding: '7px 8px', ...RIGHT, color: '#34d399', fontWeight: 600 }}>
+                      <td style={{ padding: '7px 8px', ...RIGHT, color: 'var(--positive)', fontWeight: 600 }}>
                         {t.total_cost_base_currency != null ? `${fmt(Number(t.total_cost_base_currency))} €` : '—'}
                       </td>
                     )}
-                    <td style={{ padding: '7px 8px', ...RIGHT, color: '#c8d0e0', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '7px 8px', ...RIGHT, color: 'var(--text)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                       {t.total_cost != null ? `${fmt(Number(t.total_cost))} ${txCurrency}` : '—'}
                     </td>
-                    <td style={{ padding: '7px 8px', color: '#4a5270', fontSize: 11, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.notes || '—'}</td>
+                    <td style={{ padding: '7px 8px', color: 'var(--text-faint)', fontSize: 11, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.notes || '—'}</td>
                     <td style={{ padding: '7px 8px', whiteSpace: 'nowrap', textAlign: 'right' }}>
                       {confirmDel === t.id ? (
-                        <span style={{ fontSize: 10.5, color: '#fbbf24' }}>
-                          ¿Borrar? <button onClick={() => { onDelete(t); setConfirmDel(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontWeight: 700, padding: '0 3px' }}>Sí</button>
-                          <button onClick={() => setConfirmDel(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8090a8', padding: '0 3px' }}>No</button>
+                        <span style={{ fontSize: 10.5, color: 'var(--warning)' }}>
+                          ¿Borrar? <button onClick={() => { onDelete(t); setConfirmDel(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--negative)', fontWeight: 700, padding: '0 3px' }}>Sí</button>
+                          <button onClick={() => setConfirmDel(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '0 3px' }}>No</button>
                         </span>
                       ) : (
-                        <button onClick={() => setConfirmDel(t.id)} title="Borrar operación (recalcula la posición)" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontSize: 13, padding: '2px 4px' }}>🗑</button>
+                        <button onClick={() => setConfirmDel(t.id)} title="Borrar operación (recalcula la posición)" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--negative)', fontSize: 13, padding: '2px 4px' }}>🗑</button>
                       )}
                     </td>
                   </tr>
@@ -252,50 +252,50 @@ function TabOperations({ transactions, dividends, isPremium, onDelete, fundTicke
       {filtered.length > 0 && (commTotals.broker > 0 || commTotals.fx > 0) && (
         <div style={{ display: 'flex', gap: 22, marginTop: 14, padding: '12px 16px', background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.15)', borderRadius: 8, flexWrap: 'wrap' }}>
           <div>
-            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Comisiones de broker</p>
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#fbbf24' }}>{fmt(commTotals.broker)} €</p>
+            <p style={{ fontSize: 10, color: 'var(--text-faint)', marginBottom: 2 }}>Comisiones de broker</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--warning)' }}>{fmt(commTotals.broker)} €</p>
           </div>
           <div>
-            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Comisiones de cambio</p>
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#fbbf24' }}>{fmt(commTotals.fx)} €</p>
+            <p style={{ fontSize: 10, color: 'var(--text-faint)', marginBottom: 2 }}>Comisiones de cambio</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--warning)' }}>{fmt(commTotals.fx)} €</p>
           </div>
           <div>
-            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Total costes en comisiones</p>
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#f87171' }}>{fmt(commTotals.total)} €</p>
+            <p style={{ fontSize: 10, color: 'var(--text-faint)', marginBottom: 2 }}>Total costes en comisiones</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--negative)' }}>{fmt(commTotals.total)} €</p>
           </div>
           <div>
-            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Comisión media / operación</p>
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#c8d0e0' }}>{fmt(commTotals.avg)} €</p>
+            <p style={{ fontSize: 10, color: 'var(--text-faint)', marginBottom: 2 }}>Comisión media / operación</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{fmt(commTotals.avg)} €</p>
           </div>
           {fxTotals.avgPct != null && (
             <div>
-              <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 2 }}>Coste medio de cambio</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#fbbf24' }}>{fxTotals.avgPct.toFixed(3)}%</p>
+              <p style={{ fontSize: 10, color: 'var(--text-faint)', marginBottom: 2 }}>Coste medio de cambio</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--warning)' }}>{fxTotals.avgPct.toFixed(3)}%</p>
             </div>
           )}
-          <p style={{ fontSize: 9, color: '#2e3a55', width: '100%', marginTop: 2 }}>Comisiones en divisa extranjera convertidas a EUR con el tipo de cambio aproximado.</p>
+          <p style={{ fontSize: 9, color: 'var(--text-faintest)', width: '100%', marginTop: 2 }}>Comisiones en divisa extranjera convertidas a EUR con el tipo de cambio aproximado.</p>
         </div>
       )}
 
       {/* Resumen por ticker: precio medio + realizado */}
       {isPremium && tickers.length > 0 && (
         <div style={{ marginTop: 20 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Resumen por empresa</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Resumen por empresa</p>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
               <thead>
                 <tr>
                   {['Empresa', 'Precio medio ponderado', 'Rendimiento realizado'].map(h => (
-                    <th key={h} style={{ padding: '5px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
+                    <th key={h} style={{ padding: '5px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {tickers.map(tk => (
-                  <tr key={tk} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '6px 8px', color: '#c8d0e0' }}>{nameOf(tk)}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#8090a8' }}>{avgCostByTicker[tk] != null ? fmt(avgCostByTicker[tk]) + ' ' + currOf(tk) : '—'}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', color: realizedByTicker[tk] == null ? '#4a5270' : realizedByTicker[tk] >= 0 ? '#34d399' : '#f87171', fontWeight: 600 }}>
+                  <tr key={tk} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                    <td style={{ padding: '6px 8px', color: 'var(--text)' }}>{nameOf(tk)}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>{avgCostByTicker[tk] != null ? fmt(avgCostByTicker[tk]) + ' ' + currOf(tk) : '—'}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', color: realizedByTicker[tk] == null ? 'var(--text-faint)' : realizedByTicker[tk] >= 0 ? 'var(--positive)' : 'var(--negative)', fontWeight: 600 }}>
                       {realizedByTicker[tk] == null ? '— (sin ventas)' : (realizedByTicker[tk] >= 0 ? '+' : '') + fmt(realizedByTicker[tk]) + ' ' + currOf(tk)}
                     </td>
                   </tr>
@@ -303,13 +303,13 @@ function TabOperations({ transactions, dividends, isPremium, onDelete, fundTicke
               </tbody>
             </table>
           </div>
-          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8 }}>Rendimiento realizado = (precio venta − precio medio) × acciones + dividendos cobrados.</p>
+          <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 8 }}>Rendimiento realizado = (precio venta − precio medio) × acciones + dividendos cobrados.</p>
         </div>
       )}
 
       {!isPremium && transactions.length > 10 && (
         <div style={{ textAlign: 'center', marginTop: 16, padding: '12px', background: 'rgba(99,102,241,0.05)', borderRadius: 8 }}>
-          <Link href="/pricing" style={{ fontSize: 12, color: '#818cf8', fontWeight: 700 }}>Ver historial completo y exportar CSV con Premium →</Link>
+          <Link href="/pricing" style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 700 }}>Ver historial completo y exportar CSV con Premium →</Link>
         </div>
       )}
     </div>
@@ -348,8 +348,8 @@ function TabDividends({ dividends, isPremium }) {
 
   if (!isPremium) return (
     <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-      <p style={{ fontSize: 14, fontWeight: 700, color: '#818cf8', marginBottom: 8 }}>Dividendos cobrados — solo Premium</p>
-      <Link href="/pricing" style={{ padding: '9px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>Activar Premium →</Link>
+      <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', marginBottom: 8 }}>Dividendos cobrados — solo Premium</p>
+      <Link href="/pricing" style={{ padding: '9px 18px', background: 'var(--accent)', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>Activar Premium →</Link>
     </div>
   )
 
@@ -357,19 +357,19 @@ function TabDividends({ dividends, isPremium }) {
     <div>
       {/* Los dividendos se gestionan en la sección Dividendos — aquí solo lectura */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
-        <Link href="/cartera/dividendos" style={{ fontSize: 12, color: '#818cf8', fontWeight: 700, textDecoration: 'none' }}>Gestionar dividendos →</Link>
+        <Link href="/cartera/dividendos" style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>Gestionar dividendos →</Link>
       </div>
 
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 20 }}>
         {[
-          { label: 'Total acumulado', value: fmtEUR(totalAccum), col: '#34d399' },
-          { label: `Cobrado ${curYear}`, value: fmtEUR(thisYear), col: '#c8d0e0' },
-          { label: 'Crecim. vs año anterior', value: yoyGrowth != null ? (yoyGrowth >= 0 ? '+' : '') + yoyGrowth.toFixed(1) + '%' : '—', col: yoyGrowth >= 0 ? '#34d399' : '#f87171' },
-          { label: 'Media mensual (este año)', value: fmtEUR(avgThisYear), col: '#818cf8' },
+          { label: 'Total acumulado', value: fmtEUR(totalAccum), col: 'var(--positive)' },
+          { label: `Cobrado ${curYear}`, value: fmtEUR(thisYear), col: 'var(--text)' },
+          { label: 'Crecim. vs año anterior', value: yoyGrowth != null ? (yoyGrowth >= 0 ? '+' : '') + yoyGrowth.toFixed(1) + '%' : '—', col: yoyGrowth >= 0 ? 'var(--positive)' : 'var(--negative)' },
+          { label: 'Media mensual (este año)', value: fmtEUR(avgThisYear), col: 'var(--accent)' },
         ].map(it => (
-          <div key={it.label} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 8, padding: '12px' }}>
-            <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 4 }}>{it.label}</p>
+          <div key={it.label} style={{ background: 'var(--surface)', borderRadius: 8, padding: '12px' }}>
+            <p style={{ fontSize: 10, color: 'var(--text-faint)', marginBottom: 4 }}>{it.label}</p>
             <p style={{ fontSize: 17, fontWeight: 800, color: it.col }}>{it.value}</p>
           </div>
         ))}
@@ -378,14 +378,14 @@ function TabDividends({ dividends, isPremium }) {
       {/* Bar chart */}
       {byYear.length > 0 && (
         <div style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Renta cobrada por año</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Renta cobrada por año</p>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={byYear}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="year" stroke="#4a5270" fontSize={11} />
-              <YAxis stroke="#4a5270" fontSize={10} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-3)" />
+              <XAxis dataKey="year" stroke="var(--text-faint)" fontSize={11} />
+              <YAxis stroke="var(--text-faint)" fontSize={10} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
               <Tooltip contentStyle={TT_STYLE} formatter={v => [fmtEUR(v), 'Cobrado']} />
-              <Bar dataKey="total" fill="#34d399" radius={[4,4,0,0]} />
+              <Bar dataKey="total" fill="var(--positive)" radius={[4,4,0,0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -393,33 +393,33 @@ function TabDividends({ dividends, isPremium }) {
 
       {/* List */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Dividendos cobrados</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Dividendos cobrados</p>
         {received.length > 0 && (
-          <button onClick={exportCSV} style={{ ...INPUT, cursor: 'pointer', color: '#818cf8', fontWeight: 700, fontSize: 11, padding: '6px 12px' }}>↓ CSV</button>
+          <button onClick={exportCSV} style={{ ...INPUT, cursor: 'pointer', color: 'var(--accent)', fontWeight: 700, fontSize: 11, padding: '6px 12px' }}>↓ CSV</button>
         )}
       </div>
       {received.length === 0 ? (
-        <p style={{ fontSize: 13, color: '#4a5270', textAlign: 'center', padding: '20px 0' }}>Sin dividendos cobrados. Confírmalos en la sección <Link href="/cartera/dividendos" style={{ color: '#818cf8' }}>Dividendos</Link>.</p>
+        <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', padding: '20px 0' }}>Sin dividendos cobrados. Confírmalos en la sección <Link href="/cartera/dividendos" style={{ color: 'var(--accent)' }}>Dividendos</Link>.</p>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr>
                 {['Fecha', 'Empresa', 'Bruto', 'Neto'].map((h, i) => (
-                  <th key={i} style={{ padding: '6px 8px', textAlign: ['Bruto','Neto'].includes(h) ? 'right' : 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
+                  <th key={i} style={{ padding: '6px 8px', textAlign: ['Bruto','Neto'].includes(h) ? 'right' : 'left', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {[...received].sort((a, b) => new Date(b.date) - new Date(a.date)).map(d => (
-                <tr key={d.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <td style={{ padding: '7px 8px', color: '#4a5270' }}>{new Date(d.date).toLocaleDateString('es-ES')}</td>
-                  <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{nameOf(d.ticker)}</td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                <tr key={d.id} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                  <td style={{ padding: '7px 8px', color: 'var(--text-faint)' }}>{new Date(d.date).toLocaleDateString('es-ES')}</td>
+                  <td style={{ padding: '7px 8px', color: 'var(--text)' }}>{nameOf(d.ticker)}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--positive)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                     {fmt(Number(d.amount))}
                     {d.payment_method === 'stock' && <span title={`Dividendo cobrado en acciones — ${Number(d.shares_received || 0).toLocaleString('es-ES', { maximumFractionDigits: 4 })} acciones añadidas a la cartera`} style={{ marginLeft: 5 }}>📈</span>}
                   </td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{d.amount_net != null ? fmt(Number(d.amount_net)) : '—'}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>{d.amount_net != null ? fmt(Number(d.amount_net)) : '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -434,8 +434,8 @@ function TabDividends({ dividends, isPremium }) {
 function TabYieldOnCost({ positions, transactions, fundamentals, isPremium }) {
   if (!isPremium) return (
     <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-      <p style={{ fontSize: 14, fontWeight: 700, color: '#818cf8', marginBottom: 8 }}>Yield on cost histórico — solo Premium</p>
-      <Link href="/pricing" style={{ padding: '9px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>Activar Premium →</Link>
+      <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', marginBottom: 8 }}>Yield on cost histórico — solo Premium</p>
+      <Link href="/pricing" style={{ padding: '9px 18px', background: 'var(--accent)', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>Activar Premium →</Link>
     </div>
   )
 
@@ -472,7 +472,7 @@ function TabYieldOnCost({ positions, transactions, fundamentals, isPremium }) {
 
   return (
     <div>
-      <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 14 }}>
+      <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 14 }}>
         El yield on cost crece con el tiempo a medida que las empresas suben su dividendo. Las mejores inversiones aparecen arriba.
       </p>
       <div style={{ overflowX: 'auto' }}>
@@ -480,26 +480,26 @@ function TabYieldOnCost({ positions, transactions, fundamentals, isPremium }) {
           <thead>
             <tr>
               {['Empresa', '1ª compra', 'P. medio', 'DPS compra', 'YoC inicial', 'DPS actual', 'YoC actual', 'Crecim. YoC'].map(h => (
-                <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map(r => (
-              <tr key={r.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <tr key={r.ticker} style={{ borderBottom: '1px solid var(--surface-2)' }}>
                 <td style={{ padding: '7px 8px' }}>
-                  <Link href={hrefFor(r.ticker, fundSet)} style={{ color: '#c8d0e0', textDecoration: 'none', fontWeight: 600 }}>{r.name}</Link>
+                  <Link href={hrefFor(r.ticker, fundSet)} style={{ color: 'var(--text)', textDecoration: 'none', fontWeight: 600 }}>{r.name}</Link>
                   {r.yocCurrent != null && r.yocCurrent > 10 && (
-                    <span style={{ fontSize: 9, fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', padding: '1px 6px', borderRadius: 4, marginLeft: 6 }}>YoC 10%+</span>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--warning)', background: 'rgba(251,191,36,0.12)', padding: '1px 6px', borderRadius: 4, marginLeft: 6 }}>YoC 10%+</span>
                   )}
                 </td>
-                <td style={{ padding: '7px 8px', textAlign: 'right', color: '#4a5270', whiteSpace: 'nowrap' }}>{r.firstDate ? r.firstDate.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' }) : '—'}</td>
-                <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{fmt(r.avgCost)}</td>
-                <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{r.dpsAtPurchase != null ? fmt(r.dpsAtPurchase, 3) : '—'}</td>
-                <td style={{ padding: '7px 8px', textAlign: 'right', color: '#818cf8' }}>{r.yocInitial != null ? r.yocInitial.toFixed(2) + '%' : '—'}</td>
-                <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{r.dpsNow != null ? fmt(r.dpsNow, 3) : '—'}</td>
-                <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 700 }}>{r.yocCurrent != null ? r.yocCurrent.toFixed(2) + '%' : '—'}</td>
-                <td style={{ padding: '7px 8px', textAlign: 'right', color: r.yocGrowth == null ? '#4a5270' : r.yocGrowth >= 0 ? '#34d399' : '#f87171', fontWeight: 700 }}>
+                <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text-faint)', whiteSpace: 'nowrap' }}>{r.firstDate ? r.firstDate.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' }) : '—'}</td>
+                <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>{fmt(r.avgCost)}</td>
+                <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>{r.dpsAtPurchase != null ? fmt(r.dpsAtPurchase, 3) : '—'}</td>
+                <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--accent)' }}>{r.yocInitial != null ? r.yocInitial.toFixed(2) + '%' : '—'}</td>
+                <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>{r.dpsNow != null ? fmt(r.dpsNow, 3) : '—'}</td>
+                <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--positive)', fontWeight: 700 }}>{r.yocCurrent != null ? r.yocCurrent.toFixed(2) + '%' : '—'}</td>
+                <td style={{ padding: '7px 8px', textAlign: 'right', color: r.yocGrowth == null ? 'var(--text-faint)' : r.yocGrowth >= 0 ? 'var(--positive)' : 'var(--negative)', fontWeight: 700 }}>
                   {r.yocGrowth != null ? (r.yocGrowth >= 0 ? '+' : '') + r.yocGrowth.toFixed(0) + '%' : '—'}
                 </td>
               </tr>
@@ -535,26 +535,26 @@ function TabRecurring({ recurring, transactions, fundsMap }) {
     <div>
       {/* Subsección 1: configuradas */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Aportaciones configuradas</p>
-        <span style={{ fontSize: 12, color: '#818cf8', fontWeight: 700 }}>{fmtEUR(monthlyCommitted)}/mes comprometido</span>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Aportaciones configuradas</p>
+        <span style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 700 }}>{fmtEUR(monthlyCommitted)}/mes comprometido</span>
       </div>
       {recurring.length === 0 ? (
-        <p style={{ fontSize: 13, color: '#4a5270', padding: '12px 0' }}>No tienes aportaciones periódicas configuradas.</p>
+        <p style={{ fontSize: 13, color: 'var(--text-faint)', padding: '12px 0' }}>No tienes aportaciones periódicas configuradas.</p>
       ) : (
         <div style={{ overflowX: 'auto', marginBottom: 24 }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead><tr>{['Fondo', 'Importe', 'Frecuencia', 'Inicio', 'Fin', 'Estado'].map(h => (
-              <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Fondo' ? 'left' : 'right', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
+              <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Fondo' ? 'left' : 'right', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600 }}>{h}</th>
             ))}</tr></thead>
             <tbody>
               {recurring.map(c => (
-                <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{fundName(c.ticker)}</td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0' }}>{fmtEUR(c.amount_eur)}</td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{FREQ_LABEL[c.frequency]}</td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#4a5270' }}>{new Date(c.start_date).toLocaleDateString('es-ES')}</td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right', color: '#4a5270' }}>{c.end_date ? new Date(c.end_date).toLocaleDateString('es-ES') : '—'}</td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right', color: c.active ? '#34d399' : '#fbbf24' }}>{c.active ? 'Activa' : 'Pausada'}</td>
+                <tr key={c.id} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                  <td style={{ padding: '7px 8px', color: 'var(--text)' }}>{fundName(c.ticker)}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text)' }}>{fmtEUR(c.amount_eur)}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>{FREQ_LABEL[c.frequency]}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text-faint)' }}>{new Date(c.start_date).toLocaleDateString('es-ES')}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text-faint)' }}>{c.end_date ? new Date(c.end_date).toLocaleDateString('es-ES') : '—'}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right', color: c.active ? 'var(--positive)' : 'var(--warning)' }}>{c.active ? 'Activa' : 'Pausada'}</td>
                 </tr>
               ))}
             </tbody>
@@ -564,41 +564,41 @@ function TabRecurring({ recurring, transactions, fundsMap }) {
 
       {/* Subsección 2: ejecuciones */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Historial de ejecuciones</p>
-        <span style={{ fontSize: 12, color: '#34d399', fontWeight: 700 }}>Total invertido: {fmtEUR(totalInvested)}</span>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Historial de ejecuciones</p>
+        <span style={{ fontSize: 12, color: 'var(--positive)', fontWeight: 700 }}>Total invertido: {fmtEUR(totalInvested)}</span>
       </div>
 
       {byMonth.length > 0 && (
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={byMonth}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey="month" stroke="#4a5270" fontSize={10} />
-            <YAxis stroke="#4a5270" fontSize={10} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-3)" />
+            <XAxis dataKey="month" stroke="var(--text-faint)" fontSize={10} />
+            <YAxis stroke="var(--text-faint)" fontSize={10} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
             <Tooltip contentStyle={TT_STYLE} formatter={v => [fmtEUR(v), 'Invertido']} />
-            <Bar dataKey="total" fill="#818cf8" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="total" fill="var(--accent)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       )}
 
       {recurTx.length === 0 ? (
-        <p style={{ fontSize: 13, color: '#4a5270', padding: '12px 0' }}>Aún no se ha ejecutado ninguna aportación periódica.</p>
+        <p style={{ fontSize: 13, color: 'var(--text-faint)', padding: '12px 0' }}>Aún no se ha ejecutado ninguna aportación periódica.</p>
       ) : (
         <div style={{ overflowX: 'auto', marginTop: 14 }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead><tr>{['Fecha', 'Fondo', 'Euros', 'Precio día', 'Participaciones'].map(h => (
-              <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Fondo' ? 'left' : h === 'Fecha' ? 'left' : 'right', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
+              <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Fondo' ? 'left' : h === 'Fecha' ? 'left' : 'right', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600 }}>{h}</th>
             ))}</tr></thead>
             <tbody>
               {recurTx.map(t => {
                 const cur = fundsMap[t.ticker]?.currency || 'EUR'
                 const eur = Number(t.shares) * Number(t.price) * (FX[cur] || 1)
                 return (
-                  <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '7px 8px', color: '#4a5270' }}>{new Date(t.date).toLocaleDateString('es-ES')}</td>
-                    <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{fundName(t.ticker)}</td>
-                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399' }}>{fmtEUR(eur)}</td>
-                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{fmt(Number(t.price))} {cur}</td>
-                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{fmt(Number(t.shares), 4)}</td>
+                  <tr key={t.id} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                    <td style={{ padding: '7px 8px', color: 'var(--text-faint)' }}>{new Date(t.date).toLocaleDateString('es-ES')}</td>
+                    <td style={{ padding: '7px 8px', color: 'var(--text)' }}>{fundName(t.ticker)}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--positive)' }}>{fmtEUR(eur)}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>{fmt(Number(t.price))} {cur}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>{fmt(Number(t.shares), 4)}</td>
                   </tr>
                 )
               })}
@@ -688,7 +688,7 @@ export default function HistorialPage({ isPremium }) {
     load()
   }
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#4a5270' }}>Cargando historial…</div>
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-faint)' }}>Cargando historial…</div>
 
   const TABS = [
     { key: 'ops',  label: 'Operaciones' },
@@ -699,15 +699,15 @@ export default function HistorialPage({ isPremium }) {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px 64px' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', marginBottom: 20 }}>Historial</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 20 }}>Historial</h1>
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, flexWrap: 'wrap' }}>
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: tab === t.key ? 700 : 500,
-            background: tab === t.key ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)',
-            color: tab === t.key ? '#818cf8' : '#4a5270', display: 'flex', alignItems: 'center',
+            background: tab === t.key ? 'rgba(99,102,241,0.2)' : 'var(--surface-2)',
+            color: tab === t.key ? 'var(--accent)' : 'var(--text-faint)', display: 'flex', alignItems: 'center',
           }}>
             {t.label}{t.premium && !isPremium && <PremiumBadge />}
           </button>

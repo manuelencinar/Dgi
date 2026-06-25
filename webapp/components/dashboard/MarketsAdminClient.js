@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Card, SectionTitle } from '@/components/dashboard/ui'
 
 const REGIONS = ['América', 'Europa', 'Asia-Pacífico', 'África', 'ETFs globales']
-const cellInput = { background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 5, padding: '4px 6px', color: '#e0e8f0', fontSize: 12, outline: 'none', width: '100%', fontFamily: 'inherit' }
+const cellInput = { background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 5, padding: '4px 6px', color: 'var(--text-strong)', fontSize: 12, outline: 'none', width: '100%', fontFamily: 'inherit' }
 
 function Cell({ value, options, onSave, color }) {
   const [editing, setEditing] = useState(false)
@@ -17,7 +17,7 @@ function Cell({ value, options, onSave, color }) {
   if (editing) return options
     ? <select autoFocus value={val} onChange={e => setVal(e.target.value)} onBlur={commit} onKeyDown={e => e.key === 'Enter' && commit()} style={cellInput}>{options.map(o => <option key={o} value={o}>{o}</option>)}</select>
     : <input autoFocus value={val} onChange={e => setVal(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setVal(value); setEditing(false) } }} style={cellInput} />
-  return <span onClick={() => { setVal(value); setEditing(true) }} style={{ cursor: 'pointer', color: color || '#c8d0e0', display: 'inline-flex', gap: 5, alignItems: 'center' }}>{value || <span style={{ color: '#4a5270' }}>—</span>}{st === 'ok' && <span style={{ color: '#34d399' }}>✓</span>}{st === 'err' && <span style={{ color: '#f87171' }}>✗</span>}</span>
+  return <span onClick={() => { setVal(value); setEditing(true) }} style={{ cursor: 'pointer', color: color || 'var(--text)', display: 'inline-flex', gap: 5, alignItems: 'center' }}>{value || <span style={{ color: 'var(--text-faint)' }}>—</span>}{st === 'ok' && <span style={{ color: 'var(--positive)' }}>✓</span>}{st === 'err' && <span style={{ color: 'var(--negative)' }}>✗</span>}</span>
 }
 
 export default function MarketsAdminClient({ markets: initial }) {
@@ -35,9 +35,9 @@ export default function MarketsAdminClient({ markets: initial }) {
   return (
     <Card>
       <SectionTitle>Índices ({rows.length})</SectionTitle>
-      <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 12 }}>
+      <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 12 }}>
         Edita los campos (clic) o activa/desactiva un índice. Los índices no se eliminan — solo se desactivan.
-        {' '}<span style={{ color: '#fbbf24' }}>*</span> = membresía sin actualizar desde el Excel de índices.
+        {' '}<span style={{ color: 'var(--warning)' }}>*</span> = membresía sin actualizar desde el Excel de índices.
       </p>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 720 }}>
@@ -46,19 +46,19 @@ export default function MarketsAdminClient({ markets: initial }) {
             {rows.map(r => {
               const active = r.active !== false
               return (
-                <tr key={r.symbol} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', opacity: active ? 1 : 0.5 }}>
-                  <td style={{ ...td, color: '#818cf8', fontWeight: 700 }}>
+                <tr key={r.symbol} style={{ borderBottom: '1px solid var(--surface-2)', opacity: active ? 1 : 0.5 }}>
+                  <td style={{ ...td, color: 'var(--accent)', fontWeight: 700 }}>
                     {r.flag} {r.symbol}
-                    {!r.updated && <span title="Sin actualizar desde el Excel de índices" style={{ color: '#fbbf24', marginLeft: 4 }}>*</span>}
+                    {!r.updated && <span title="Sin actualizar desde el Excel de índices" style={{ color: 'var(--warning)', marginLeft: 4 }}>*</span>}
                   </td>
                   <td style={td}><Cell value={r.name} onSave={v => save(r.symbol, 'name', v)} /></td>
-                  <td style={td}><Cell value={r.yf_ticker || r.symbol} onSave={v => save(r.symbol, 'yf_ticker', v)} color="#8090a8" /></td>
-                  <td style={td}><Cell value={r.country} onSave={v => save(r.symbol, 'country', v)} color="#8090a8" /></td>
-                  <td style={td}><Cell value={r.region} options={REGIONS} onSave={v => save(r.symbol, 'region', v)} color="#8090a8" /></td>
+                  <td style={td}><Cell value={r.yf_ticker || r.symbol} onSave={v => save(r.symbol, 'yf_ticker', v)} color="var(--text-muted)" /></td>
+                  <td style={td}><Cell value={r.country} onSave={v => save(r.symbol, 'country', v)} color="var(--text-muted)" /></td>
+                  <td style={td}><Cell value={r.region} options={REGIONS} onSave={v => save(r.symbol, 'region', v)} color="var(--text-muted)" /></td>
                   <td style={td}>
                     <button onClick={() => toggleActive(r)} style={{
                       fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: 'none',
-                      background: active ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.06)', color: active ? '#34d399' : '#4a5270',
+                      background: active ? 'rgba(52,211,153,0.15)' : 'var(--border)', color: active ? 'var(--positive)' : 'var(--text-faint)',
                     }}>{active ? '● Activo' : '○ Inactivo'}</button>
                   </td>
                 </tr>
@@ -71,5 +71,5 @@ export default function MarketsAdminClient({ markets: initial }) {
   )
 }
 
-const th = { padding: '6px 8px', textAlign: 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.08)', fontWeight: 600, whiteSpace: 'nowrap' }
+const th = { padding: '6px 8px', textAlign: 'left', color: 'var(--text-faint)', borderBottom: '1px solid var(--surface-3)', fontWeight: 600, whiteSpace: 'nowrap' }
 const td = { padding: '6px 8px', whiteSpace: 'nowrap' }

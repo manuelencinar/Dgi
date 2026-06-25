@@ -49,8 +49,8 @@ export default function LandingFaq() {
         <div
           key={i}
           style={{
-            background: open === i ? 'rgba(99,102,241,0.05)' : 'rgba(255,255,255,0.02)',
-            border: `1px solid ${open === i ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.06)'}`,
+            background: open === i ? 'rgba(99,102,241,0.05)' : 'var(--surface)',
+            border: `1px solid ${open === i ? 'rgba(99,102,241,0.25)' : 'var(--border)'}`,
             borderRadius: 12, overflow: 'hidden', transition: 'border-color .2s',
           }}
         >
@@ -62,17 +62,17 @@ export default function LandingFaq() {
               cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
             }}
           >
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#c8d0e0', lineHeight: 1.4 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', lineHeight: 1.4 }}>
               {item.q}
             </span>
             <span style={{
-              fontSize: 16, color: '#4a5270', flexShrink: 0,
+              fontSize: 16, color: 'var(--text-faint)', flexShrink: 0,
               transform: open === i ? 'rotate(45deg)' : 'none',
               transition: 'transform .2s',
             }}>+</span>
           </button>
           {open === i && (
-            <div style={{ padding: '0 20px 18px', fontSize: 13, color: '#4a5270', lineHeight: 1.75 }}>
+            <div style={{ padding: '0 20px 18px', fontSize: 13, color: 'var(--text-faint)', lineHeight: 1.75 }}>
               {item.a}
             </div>
           )}

@@ -38,7 +38,7 @@ const INIT = {
 
 const PAGE = 50
 
-function scoreColor(s) { if (s == null) return '#3a4260'; if (s >= 8) return '#34d399'; if (s >= 6.5) return '#86efac'; if (s >= 5) return '#fbbf24'; if (s >= 3) return '#f97316'; return '#f87171' }
+function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return '#86efac'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
 
 // Dos modos de ranking: "Calidad DGI" (Score) y "Renta DGI" (yield + recuperación).
 const SORTS_CALIDAD = [
@@ -65,9 +65,9 @@ const SCR_CARD_CSS = `
 .scr-card{padding:5px 11px;margin-bottom:4px}
 .scr-mobile{display:flex;align-items:center;gap:8px}
 .scr-desktop{display:none}
-.scr-m-name{flex:1 1 auto;min-width:0;font-size:13px;font-weight:700;color:#d0d8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scr-m-name{flex:1 1 auto;min-width:0;font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scr-m-tier{flex-shrink:0;font-size:14px}
-.scr-m-yield{flex-shrink:0;font-size:12px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
+.scr-m-yield{flex-shrink:0;font-size:12px;font-weight:700;color:var(--text-muted);font-variant-numeric:tabular-nums}
 .scr-m-score{flex-shrink:0;font-size:16px;font-weight:900;min-width:28px;text-align:right;font-variant-numeric:tabular-nums}
 .scr-buyline{margin-top:6px;font-size:11px;line-height:1.4}
 @media(min-width:760px){
@@ -75,12 +75,12 @@ const SCR_CARD_CSS = `
   .scr-mobile{display:none}
   .scr-desktop{display:flex;align-items:center;gap:9px}
   .scr-buyline{display:none}
-  .scr-d-rank{width:34px;flex-shrink:0;font-size:11px;font-weight:800;color:#3a4260;text-align:right;font-variant-numeric:tabular-nums}
+  .scr-d-rank{width:34px;flex-shrink:0;font-size:11px;font-weight:800;color:var(--text-faintest);text-align:right;font-variant-numeric:tabular-nums}
   .scr-d-namewrap{flex:1 1 0;min-width:60px;display:flex;align-items:center;gap:6px;overflow:hidden}
-  .scr-d-name{font-size:13px;font-weight:700;color:#d0d8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .scr-d-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .scr-d-m{display:flex;flex-direction:column;text-align:right;min-width:44px;flex-shrink:0;line-height:1.2}
-  .scr-d-mlabel{font-size:8.5px;color:#3a4260;font-weight:400}
-  .scr-d-mval{font-size:12px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
+  .scr-d-mlabel{font-size:8.5px;color:var(--text-faintest);font-weight:400}
+  .scr-d-mval{font-size:12px;font-weight:700;color:var(--text-muted);font-variant-numeric:tabular-nums}
   .scr-d-score{font-size:18px;font-weight:900;min-width:30px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
 }`
 function fmtEUR0(v) { return v == null ? '—' : v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' }
@@ -100,8 +100,8 @@ function Chips({ label, opts, value, onChange, locked }) {
   return (
     <div style={{ minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-        <p style={{ fontSize: 10, fontWeight: 700, color: locked ? '#2e3a55' : '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{label}</p>
-        {locked && <span style={{ fontSize: 8, fontWeight: 700, color: '#6366f1', background: 'rgba(99,102,241,0.12)', padding: '1px 5px', borderRadius: 4 }}>🔒</span>}
+        <p style={{ fontSize: 10, fontWeight: 700, color: locked ? 'var(--text-faintest)' : 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{label}</p>
+        {locked && <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--accent)', background: 'rgba(99,102,241,0.12)', padding: '1px 5px', borderRadius: 4 }}>🔒</span>}
       </div>
       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', filter: locked ? 'opacity(0.5)' : 'none' }}>
         {opts.map(o => {
@@ -109,9 +109,9 @@ function Chips({ label, opts, value, onChange, locked }) {
           return (
             <button key={String(o.v)} onClick={() => !locked && onChange(o.v)} disabled={locked} style={{
               fontSize: 11, padding: '4px 9px', borderRadius: 6, border: '1px solid',
-              borderColor: active && !locked ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.07)',
+              borderColor: active && !locked ? 'rgba(99,102,241,0.5)' : 'var(--border)',
               background: active && !locked ? 'rgba(99,102,241,0.2)' : 'transparent',
-              color: locked ? '#2a3045' : (active ? '#818cf8' : '#4a5270'),
+              color: locked ? 'var(--text-faintest)' : (active ? 'var(--accent)' : 'var(--text-faint)'),
               cursor: locked ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontWeight: active ? 700 : 400,
             }}>{o.l}</button>
           )
@@ -125,14 +125,14 @@ function Toggle({ label, value, onChange, locked }) {
   return (
     <div style={{ minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-        <p style={{ fontSize: 10, fontWeight: 700, color: locked ? '#2e3a55' : '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</p>
-        {locked && <span style={{ fontSize: 8, fontWeight: 700, color: '#6366f1', background: 'rgba(99,102,241,0.12)', padding: '1px 5px', borderRadius: 4 }}>🔒</span>}
+        <p style={{ fontSize: 10, fontWeight: 700, color: locked ? 'var(--text-faintest)' : 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</p>
+        {locked && <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--accent)', background: 'rgba(99,102,241,0.12)', padding: '1px 5px', borderRadius: 4 }}>🔒</span>}
       </div>
       <button onClick={() => !locked && onChange(!value)} disabled={locked} style={{
         fontSize: 11, padding: '4px 12px', borderRadius: 6, border: '1px solid',
-        borderColor: value && !locked ? 'rgba(251,191,36,0.5)' : 'rgba(255,255,255,0.07)',
+        borderColor: value && !locked ? 'rgba(251,191,36,0.5)' : 'var(--border)',
         background: value && !locked ? 'rgba(251,191,36,0.15)' : 'transparent',
-        color: locked ? '#2a3045' : (value ? '#fbbf24' : '#4a5270'), cursor: locked ? 'not-allowed' : 'pointer',
+        color: locked ? 'var(--text-faintest)' : (value ? 'var(--warning)' : 'var(--text-faint)'), cursor: locked ? 'not-allowed' : 'pointer',
         fontFamily: 'inherit', fontWeight: value ? 700 : 400,
       }}>⚡ {value ? 'Activado' : 'Solo 10/10'}</button>
     </div>
@@ -150,12 +150,12 @@ function CompanyCard({ co, rank, destWHT, whtOverrides, sortKey, following, isAu
   const buyReason = buyZoneReason(co)
 
   return (
-    <div className="scr-card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
+    <div className="scr-card" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
       {/* Móvil: una sola línea */}
       <div className="scr-mobile">
         <span style={{ fontSize: 14, flexShrink: 0 }}>{ct?.flag || '🌐'}</span>
         <Link href={`/empresa/${encodeURIComponent(co.t)}`} className="scr-m-name" style={{ textDecoration: 'none' }}>
-          {co.n} <span style={{ fontSize: 10, color: '#2e3a55', fontWeight: 600 }}>{co.t}</span>
+          {co.n} <span style={{ fontSize: 10, color: 'var(--text-faintest)', fontWeight: 600 }}>{co.t}</span>
         </Link>
         {sb && <span className="scr-m-tier" title={tierName ? `${tierName} · ${co.streak} años subiendo el dividendo` : undefined}>{sb}</span>}
         {co.r1010 && <span title="Regla 10/10: yield + CAGR ≥ 10%" style={{ fontSize: 12, flexShrink: 0 }}>⚡</span>}
@@ -166,22 +166,22 @@ function CompanyCard({ co, rank, destWHT, whtOverrides, sortKey, following, isAu
       {/* Escritorio: UNA línea densa (tamaño de bloque como aristócratas) */}
       <div className="scr-desktop">
         <span className="scr-d-rank">
-          {sortKey === 'profit' && proj ? <span style={{ color: '#34d399' }}>{fmtEUR0(proj.cum10)}</span>
-            : sortKey === 'cheap' && co.mos != null && !co.mosUnreliable ? <span style={{ color: co.mos >= 0 ? '#34d399' : '#f87171' }}>{co.mos.toFixed(0)}%</span>
-            : (sortKey === 'renta' || sortKey === 'netyield') && ny != null ? <span style={{ color: '#34d399' }}>{ny.toFixed(1)}%</span>
-            : sortKey === 'payback' && proj?.payback ? <span style={{ color: '#818cf8' }}>r{proj.payback}</span>
+          {sortKey === 'profit' && proj ? <span style={{ color: 'var(--positive)' }}>{fmtEUR0(proj.cum10)}</span>
+            : sortKey === 'cheap' && co.mos != null && !co.mosUnreliable ? <span style={{ color: co.mos >= 0 ? 'var(--positive)' : 'var(--negative)' }}>{co.mos.toFixed(0)}%</span>
+            : (sortKey === 'renta' || sortKey === 'netyield') && ny != null ? <span style={{ color: 'var(--positive)' }}>{ny.toFixed(1)}%</span>
+            : sortKey === 'payback' && proj?.payback ? <span style={{ color: 'var(--accent)' }}>r{proj.payback}</span>
             : `#${rank}`}
         </span>
         <span style={{ fontSize: 15, flexShrink: 0 }}>{ct?.flag || '🌐'}</span>
         <div className="scr-d-namewrap">
           <Link href={`/empresa/${encodeURIComponent(co.t)}`} className="scr-d-name" style={{ textDecoration: 'none' }}>
-            {co.n} <span style={{ fontSize: 10, color: '#2e3a55', fontWeight: 600 }}>{co.t}</span>
+            {co.n} <span style={{ fontSize: 10, color: 'var(--text-faintest)', fontWeight: 600 }}>{co.t}</span>
           </Link>
           {sb && <span title={tierName ? `${tierName} · ${co.streak} años subiendo el dividendo` : 'Racha de dividendos'} style={{ fontSize: 12, flexShrink: 0 }}>{sb}</span>}
           {mb && <span title={co.moat === 'wide' ? 'Foso ancho' : 'Foso estrecho'} style={{ fontSize: 11, flexShrink: 0 }}>{mb}</span>}
           {co.r1010 && <span title="Regla 10/10: yield + CAGR ≥ 10%" style={{ fontSize: 11, flexShrink: 0 }}>⚡</span>}
           {co.ero && <span title="Señales de erosión del foso" style={{ fontSize: 11, flexShrink: 0 }}>📉</span>}
-          {buyReason && <span title={`Zona de compra: ${buyReason}`} style={{ fontSize: 9, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.14)', padding: '1px 5px', borderRadius: 4, flexShrink: 0, whiteSpace: 'nowrap', cursor: 'help' }}>● zona</span>}
+          {buyReason && <span title={`Zona de compra: ${buyReason}`} style={{ fontSize: 9, fontWeight: 700, color: 'var(--positive)', background: 'rgba(52,211,153,0.14)', padding: '1px 5px', borderRadius: 4, flexShrink: 0, whiteSpace: 'nowrap', cursor: 'help' }}>● zona</span>}
         </div>
 
         {co.y != null && <DM label="Yield" val={co.y.toFixed(1) + '%'} />}
@@ -189,11 +189,11 @@ function CompanyCard({ co, rank, destWHT, whtOverrides, sortKey, following, isAu
         {co.roicNA
           ? <DM label="ROE" val={co.roe == null ? '—' : co.roe.toFixed(0) + '%'} title="En banca/seguros/REITs/BDC el ROIC no aplica — se usa el ROE (rentabilidad sobre fondos propios), la métrica de rentabilidad clave del sector." />
           : <DM label="ROIC" val={co.roic == null ? '—' : (co.roicWarn ? '⚠' : '') + co.roic.toFixed(0) + '%'} color={co.roicWarn ? '#fb923c' : undefined} title={co.roicWarn ? 'ROIC muy elevado — comparar con peers' : 'Retorno sobre el capital invertido'} />}
-        {co.isPharma && co.rd != null && <DM label="I+D" val={co.rd.toFixed(0) + '%'} color={co.rd >= 12 ? '#34d399' : co.rd < 8 ? '#fbbf24' : undefined} title="I+D / Ingresos — inversión en pipeline futuro (farmacéuticas). >15% indica compromiso con la innovación." />}
+        {co.isPharma && co.rd != null && <DM label="I+D" val={co.rd.toFixed(0) + '%'} color={co.rd >= 12 ? 'var(--positive)' : co.rd < 8 ? 'var(--warning)' : undefined} title="I+D / Ingresos — inversión en pipeline futuro (farmacéuticas). >15% indica compromiso con la innovación." />}
         <DM label="Payout" val={co.payout == null ? '—' : co.payout.toFixed(0) + '%'} />
-        {co.safety != null && <DM label="Seguridad" val={String(co.safety)} color={co.safety >= 70 ? '#34d399' : co.safety >= 50 ? '#fbbf24' : '#f87171'} title="Seguridad del dividendo (0–100): riesgo de recorte según payout, balance, historial y tendencia. Verde ≥70, rojo <50." />}
+        {co.safety != null && <DM label="Seguridad" val={String(co.safety)} color={co.safety >= 70 ? 'var(--positive)' : co.safety >= 50 ? 'var(--warning)' : 'var(--negative)'} title="Seguridad del dividendo (0–100): riesgo de recorte según payout, balance, historial y tendencia. Verde ≥70, rojo <50." />}
         <DM label="Deuda" val={co.debt == null ? '—' : debtEbitdaIsArtifact(co.debt) ? 'EBITDA≈0' : co.debt.toFixed(1) + 'x'} title={debtEbitdaIsArtifact(co.debt) ? 'EBITDA cercano a cero — el ratio deuda/EBITDA no es representativo' : 'Deuda neta / EBITDA'} />
-        <DM label="MoS" val={co.mosUnreliable ? 'n/f' : co.mos == null ? '—' : (co.mos >= 0 ? '+' : '') + co.mos.toFixed(0) + '%'} color={!co.mosUnreliable && co.mos != null ? (co.mos >= 0 ? '#34d399' : '#f87171') : undefined} title={co.mosUnreliable ? 'Valor intrínseco no fiable para este tipo de activo' : 'Margen de seguridad sobre el valor intrínseco'} />
+        <DM label="MoS" val={co.mosUnreliable ? 'n/f' : co.mos == null ? '—' : (co.mos >= 0 ? '+' : '') + co.mos.toFixed(0) + '%'} color={!co.mosUnreliable && co.mos != null ? (co.mos >= 0 ? 'var(--positive)' : 'var(--negative)') : undefined} title={co.mosUnreliable ? 'Valor intrínseco no fiable para este tipo de activo' : 'Margen de seguridad sobre el valor intrínseco'} />
 
         <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
           <WatchlistEyeButton ticker={co.t} isAuthed={isAuthed} initialFollowing={following} size={13} />
@@ -205,8 +205,8 @@ function CompanyCard({ co, rank, destWHT, whtOverrides, sortKey, following, isAu
       {/* Por qué está en zona de compra — línea aparte solo en móvil */}
       {buyReason && (
         <div className="scr-buyline" style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
-          <span style={{ color: '#34d399', flexShrink: 0 }}>●</span>
-          <span style={{ color: '#86efac' }}><span style={{ fontWeight: 700, color: '#34d399' }}>Zona de compra:</span> {buyReason}</span>
+          <span style={{ color: 'var(--positive)', flexShrink: 0 }}>●</span>
+          <span style={{ color: '#86efac' }}><span style={{ fontWeight: 700, color: 'var(--positive)' }}>Zona de compra:</span> {buyReason}</span>
         </div>
       )}
     </div>
@@ -363,8 +363,8 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       <style>{SCR_CARD_CSS}</style>
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', marginBottom: 4 }}>Screener DGI</h1>
-        <p style={{ fontSize: 12, color: '#3a4260' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 4 }}>Screener DGI</h1>
+        <p style={{ fontSize: 12, color: 'var(--text-faintest)' }}>
           {isPremium
             ? `${companies.length.toLocaleString('es-ES')} empresas de 43 mercados`
             : `Muestra gratuita de ${companies.length} empresas · ${(totalCompanies || companies.length).toLocaleString('es-ES')} con Premium`}
@@ -378,11 +378,11 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       {showHueco && hueco && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
           <span style={{ fontSize: 16, flexShrink: 0 }}>🧩</span>
-          <p style={{ flex: 1, fontSize: 12.5, color: '#c8d0e0', lineHeight: 1.5 }}>
+          <p style={{ flex: 1, fontSize: 12.5, color: 'var(--text)', lineHeight: 1.5 }}>
             Para complementar tu cartera: <span style={{ fontWeight: 700, color: '#a5b4fc' }}>{hueco}</span>.
-            <Link href="/cartera" style={{ color: '#818cf8', textDecoration: 'none', marginLeft: 6 }}>← Volver a la cartera</Link>
+            <Link href="/cartera" style={{ color: 'var(--accent)', textDecoration: 'none', marginLeft: 6 }}>← Volver a la cartera</Link>
           </p>
-          <button onClick={() => { setShowHueco(false); clearAll() }} title="Quitar filtros" style={{ background: 'none', border: 'none', color: '#4a5270', cursor: 'pointer', fontSize: 18, lineHeight: 1, flexShrink: 0 }}>×</button>
+          <button onClick={() => { setShowHueco(false); clearAll() }} title="Quitar filtros" style={{ background: 'none', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: 18, lineHeight: 1, flexShrink: 0 }}>×</button>
         </div>
       )}
 
@@ -392,13 +392,13 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
           {MODES.map(o => (
             <button key={o.m} onClick={() => switchMode(o.m)} title={o.d} style={{
               fontSize: 13, padding: '9px 16px', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit',
-              border: '1px solid ' + (mode === o.m ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.08)'),
+              border: '1px solid ' + (mode === o.m ? 'rgba(52,211,153,0.5)' : 'var(--surface-3)'),
               background: mode === o.m ? 'rgba(52,211,153,0.14)' : 'transparent',
-              color: mode === o.m ? '#34d399' : '#4a5270', fontWeight: mode === o.m ? 800 : 500,
+              color: mode === o.m ? 'var(--positive)' : 'var(--text-faint)', fontWeight: mode === o.m ? 800 : 500,
             }}>{o.l}</button>
           ))}
         </div>
-        <p style={{ fontSize: 11.5, color: '#4a5270', marginTop: 7, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 7, lineHeight: 1.5 }}>
           {MODES.find(o => o.m === mode)?.d}
         </p>
       </div>
@@ -407,13 +407,13 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       <div style={{ marginBottom: 12 }}>
         <button onClick={() => set('golden', !filters.golden)} title="Pat Dorsey: foso real y estable, capital bien asignado, finanzas sólidas y precio razonable" style={{
           fontSize: 13, fontWeight: 800, padding: '9px 16px', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit',
-          border: '1px solid ' + (filters.golden ? 'rgba(251,191,36,0.6)' : 'rgba(255,255,255,0.1)'),
+          border: '1px solid ' + (filters.golden ? 'rgba(251,191,36,0.6)' : 'var(--border-strong)'),
           background: filters.golden ? 'rgba(251,191,36,0.15)' : 'transparent',
-          color: filters.golden ? '#fbbf24' : '#8090a8',
+          color: filters.golden ? 'var(--warning)' : 'var(--text-muted)',
         }}>🏅 Las 5 reglas de oro</button>
         {filters.golden && (
-          <p style={{ fontSize: 11.5, color: '#8090a8', marginTop: 8, lineHeight: 1.6, maxWidth: 720 }}>
-            Solo empresas que cumplen <b style={{ color: '#fbbf24' }}>las 5 reglas de Pat Dorsey</b>:
+          <p style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.6, maxWidth: 720 }}>
+            Solo empresas que cumplen <b style={{ color: 'var(--warning)' }}>las 5 reglas de Pat Dorsey</b>:
             (1) <b>foso económico real</b> · (2) <b>foso estable</b>, no erosionándose · (3) <b>capital bien asignado</b> (payout contenido, sin financiar el dividendo con deuda) · (4) <b>finanzas sólidas</b> (ROIC ≥12% — o ROE en banca/seguros/REITs, donde el ROIC no aplica —, deuda manejable, el beneficio se convierte en caja) · (5) <b>precio razonable</b> con margen de seguridad. Un filtro exigente: aparecerán pocas, pero de gran calidad.
           </p>
         )}
@@ -422,14 +422,14 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       {/* Buscador + ordenación */}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nombre o ticker…"
-          style={{ flex: 1, minWidth: 200, padding: '10px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 9, color: '#e0e8f0', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+          style={{ flex: 1, minWidth: 200, padding: '10px 14px', background: 'var(--surface-2)', border: '1px solid var(--surface-3)', borderRadius: 9, color: 'var(--text-strong)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
         <div style={{ display: 'flex', gap: 4 }}>
           {SORTS.map(s => (
             <button key={s.k} onClick={() => setSortKey(s.k)} style={{
               fontSize: 12, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-              border: '1px solid ' + (sortKey === s.k ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.08)'),
+              border: '1px solid ' + (sortKey === s.k ? 'rgba(99,102,241,0.5)' : 'var(--surface-3)'),
               background: sortKey === s.k ? 'rgba(99,102,241,0.2)' : 'transparent',
-              color: sortKey === s.k ? '#818cf8' : '#4a5270', fontWeight: sortKey === s.k ? 700 : 400,
+              color: sortKey === s.k ? 'var(--accent)' : 'var(--text-faint)', fontWeight: sortKey === s.k ? 700 : 400,
             }}>{s.l}</button>
           ))}
         </div>
@@ -437,31 +437,31 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
 
       {/* Toggle panel + chips activos */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-        <button onClick={() => setPanelOpen(o => !o)} style={{ fontSize: 12, fontWeight: 700, padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#8090a8', cursor: 'pointer', fontFamily: 'inherit' }}>
+        <button onClick={() => setPanelOpen(o => !o)} style={{ fontSize: 12, fontWeight: 700, padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border-strong)', background: 'var(--surface-2)', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>
           {panelOpen ? '▲ Ocultar filtros' : '▼ Filtros'}{activeChips.length > 0 ? ` (${activeChips.length})` : ''}
         </button>
-        <button onClick={() => setHelpOpen(o => !o)} style={{ fontSize: 12, fontWeight: 700, padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: helpOpen ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.03)', color: helpOpen ? '#818cf8' : '#8090a8', cursor: 'pointer', fontFamily: 'inherit' }}>
+        <button onClick={() => setHelpOpen(o => !o)} style={{ fontSize: 12, fontWeight: 700, padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border-strong)', background: helpOpen ? 'rgba(99,102,241,0.12)' : 'var(--surface-2)', color: helpOpen ? 'var(--accent)' : 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>
           {helpOpen ? '▲ Ocultar guía' : 'ℹ️ Guía de métricas'}
         </button>
         {activeChips.map(c => (
-          <button key={c.k} onClick={() => resetKey(c.k)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 14, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.12)', color: '#818cf8', cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button key={c.k} onClick={() => resetKey(c.k)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 14, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.12)', color: 'var(--accent)', cursor: 'pointer', fontFamily: 'inherit' }}>
             {c.label} ✕
           </button>
         ))}
-        {hasFilters && <button onClick={clearAll} style={{ fontSize: 11, color: '#4a5270', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>Limpiar filtros</button>}
+        {hasFilters && <button onClick={clearAll} style={{ fontSize: 11, color: 'var(--text-faint)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>Limpiar filtros</button>}
       </div>
 
       {/* Panel de filtros */}
       {panelOpen && (
-        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#4a5270', letterSpacing: '0.1em', marginBottom: 12 }}>BÁSICOS</p>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', letterSpacing: '0.1em', marginBottom: 12 }}>BÁSICOS</p>
           <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 16 }}>
             <Chips label="Score DGI" opts={SCORE_OPTS} value={filters.score} onChange={v => set('score', v)} />
             <Chips label="Zona" opts={ZONA_OPTS} value={filters.zona} onChange={v => set('zona', v)} />
             <Chips label="Divisa" opts={CUR_OPTS} value={filters.cur} onChange={v => set('cur', v)} />
             <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Sector</p>
-              <select value={filters.sector} onChange={e => set('sector', e.target.value)} style={{ fontSize: 11, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: '#0d1424', color: '#6a7090', fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Sector</p>
+              <select value={filters.sector} onChange={e => set('sector', e.target.value)} style={{ fontSize: 11, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-strong)', background: 'var(--bg-elev)', color: 'var(--text-muted)', fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}>
                 <option value="all">Todos los sectores</option>
                 {sectors.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
@@ -515,25 +515,25 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
       {/* Aviso freemium: muestra de 50 empresas vs. universo completo */}
       {!isPremium && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.18)', borderRadius: 10, padding: '10px 14px', marginBottom: 12 }}>
-          <p style={{ fontSize: 12.5, color: '#8090a8', lineHeight: 1.55, flex: 1, minWidth: 220 }}>
-            Plan gratuito: estás viendo una <span style={{ color: '#c8d0e0', fontWeight: 700 }}>muestra de {companies.length} empresas</span> de todo el mundo, con <span style={{ color: '#c8d0e0', fontWeight: 700 }}>todos los datos y filtros</span>.
-            {totalCompanies > companies.length && <> Premium desbloquea las <span style={{ color: '#34d399', fontWeight: 800 }}>{totalCompanies.toLocaleString('es-ES')}</span> empresas de 43 mercados.</>}
+          <p style={{ fontSize: 12.5, color: 'var(--text-muted)', lineHeight: 1.55, flex: 1, minWidth: 220 }}>
+            Plan gratuito: estás viendo una <span style={{ color: 'var(--text)', fontWeight: 700 }}>muestra de {companies.length} empresas</span> de todo el mundo, con <span style={{ color: 'var(--text)', fontWeight: 700 }}>todos los datos y filtros</span>.
+            {totalCompanies > companies.length && <> Premium desbloquea las <span style={{ color: 'var(--positive)', fontWeight: 800 }}>{totalCompanies.toLocaleString('es-ES')}</span> empresas de 43 mercados.</>}
           </p>
-          <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '8px 14px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>Ver Premium →</Link>
+          <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'var(--accent)', padding: '8px 14px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>Ver Premium →</Link>
         </div>
       )}
 
       {/* Contador */}
-      <p style={{ fontSize: 12, color: filtered.length > 0 ? '#4a5270' : '#f87171', marginBottom: 12 }}>
-        <span style={{ fontWeight: 700, color: filtered.length > 0 ? '#c8d0e0' : '#f87171', fontSize: 14 }}>{filtered.length.toLocaleString('es-ES')}</span>
+      <p style={{ fontSize: 12, color: filtered.length > 0 ? 'var(--text-faint)' : 'var(--negative)', marginBottom: 12 }}>
+        <span style={{ fontWeight: 700, color: filtered.length > 0 ? 'var(--text)' : 'var(--negative)', fontSize: 14 }}>{filtered.length.toLocaleString('es-ES')}</span>
         {hasFilters ? ` de ${companies.length.toLocaleString('es-ES')} con los filtros activos` : ` empresa${filtered.length !== 1 ? 's' : ''} encontrada${filtered.length !== 1 ? 's' : ''}`}
       </p>
 
       {/* Resultados */}
       {filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <p style={{ fontSize: 14, color: '#8090a8', marginBottom: 16 }}>Ninguna empresa cumple todos los filtros activos</p>
-          <button onClick={clearAll} style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '9px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Limpiar filtros</button>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16 }}>Ninguna empresa cumple todos los filtros activos</p>
+          <button onClick={clearAll} style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: 'var(--accent)', padding: '9px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Limpiar filtros</button>
         </div>
       ) : (
         <>
@@ -543,7 +543,7 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
           ))}
           {visible < sorted.length && (
             <div style={{ textAlign: 'center', marginTop: 16 }}>
-              <button onClick={() => setVisible(v => v + PAGE)} style={{ fontSize: 13, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', padding: '10px 24px', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={() => setVisible(v => v + PAGE)} style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', padding: '10px 24px', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Cargar más ({sorted.length - visible} restantes)
               </button>
             </div>
@@ -557,9 +557,9 @@ export default function ScreenerClient({ companies = [], isPremium = false, sect
 function Divider({ label }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-      <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
-      <span style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', letterSpacing: '0.1em' }}>{label}</span>
-      <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
+      <div style={{ flex: 1, height: 1, background: 'var(--surface-3)' }} />
+      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.1em' }}>{label}</span>
+      <div style={{ flex: 1, height: 1, background: 'var(--surface-3)' }} />
     </div>
   )
 }
@@ -607,18 +607,18 @@ const GUIDE = [
 
 function HelpGuide() {
   return (
-    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 12, padding: '18px 20px', marginBottom: 16 }}>
-      <p style={{ fontSize: 14, fontWeight: 800, color: '#e0e8f0', marginBottom: 4 }}>Guía de métricas</p>
-      <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 18 }}>Qué significa cada dato y badge que ves en las tarjetas.</p>
+    <div style={{ background: 'var(--surface)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 12, padding: '18px 20px', marginBottom: 16 }}>
+      <p style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-strong)', marginBottom: 4 }}>Guía de métricas</p>
+      <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 18 }}>Qué significa cada dato y badge que ves en las tarjetas.</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
         {GUIDE.map(sec => (
           <div key={sec.group}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>{sec.group}</p>
+            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>{sec.group}</p>
             <div style={{ display: 'grid', gap: 12 }}>
               {sec.items.map(([term, desc]) => (
                 <div key={term}>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: '#c8d0e0', marginBottom: 2 }}>{term}</p>
-                  <p style={{ fontSize: 11.5, color: '#8090a8', lineHeight: 1.5 }}>{desc}</p>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{term}</p>
+                  <p style={{ fontSize: 11.5, color: 'var(--text-muted)', lineHeight: 1.5 }}>{desc}</p>
                 </div>
               ))}
             </div>

@@ -43,9 +43,9 @@ export default async function DashboardHome() {
       {/* Métricas superiores */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12, marginBottom: 24 }}>
         <MetricCard label="Usuarios registrados" value={metrics.total} />
-        <MetricCard label="Activos (30 días)" value={metrics.active30d} color="#34d399" />
-        <MetricCard label="Premium activos" value={metrics.premiumTotal} color="#fbbf24" />
-        <MetricCard label="MRR estimado" value={`${metrics.mrr.toFixed(0)} €`} sub={`${metrics.conversion.toFixed(1)}% conversión`} color="#818cf8" />
+        <MetricCard label="Activos (30 días)" value={metrics.active30d} color="var(--positive)" />
+        <MetricCard label="Premium activos" value={metrics.premiumTotal} color="var(--warning)" />
+        <MetricCard label="MRR estimado" value={`${metrics.mrr.toFixed(0)} €`} sub={`${metrics.conversion.toFixed(1)}% conversión`} color="var(--accent)" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 16 }}>
@@ -54,28 +54,28 @@ export default async function DashboardHome() {
           <SectionTitle>Estado de datos</SectionTitle>
           <div style={{ display: 'grid', gap: 10 }}>
             {[
-              { label: 'Empresas con fundamentales', value: dataStats.totalFundamentals, col: '#c8d0e0' },
-              { label: 'Sin fundamentales', value: dataStats.missingCount, col: dataStats.missingCount > 0 ? '#fbbf24' : '#34d399' },
-              { label: 'Datos desactualizados (>30d)', value: dataStats.outdatedCount, col: dataStats.outdatedCount > 0 ? '#fbbf24' : '#34d399' },
-              { label: 'Datos incompletos', value: dataStats.incompleteCount, col: dataStats.incompleteCount > 0 ? '#f87171' : '#34d399' },
-              { label: 'No reparten dividendo (correcto)', value: dataStats.noDividendCount ?? 0, col: '#6b7693' },
-              { label: 'Dividendo por verificar', value: dataStats.unverifiedCount ?? 0, col: (dataStats.unverifiedCount ?? 0) > 0 ? '#60a5fa' : '#34d399' },
+              { label: 'Empresas con fundamentales', value: dataStats.totalFundamentals, col: 'var(--text)' },
+              { label: 'Sin fundamentales', value: dataStats.missingCount, col: dataStats.missingCount > 0 ? 'var(--warning)' : 'var(--positive)' },
+              { label: 'Datos desactualizados (>30d)', value: dataStats.outdatedCount, col: dataStats.outdatedCount > 0 ? 'var(--warning)' : 'var(--positive)' },
+              { label: 'Datos incompletos', value: dataStats.incompleteCount, col: dataStats.incompleteCount > 0 ? 'var(--negative)' : 'var(--positive)' },
+              { label: 'No reparten dividendo (correcto)', value: dataStats.noDividendCount ?? 0, col: 'var(--text-muted)' },
+              { label: 'Dividendo por verificar', value: dataStats.unverifiedCount ?? 0, col: (dataStats.unverifiedCount ?? 0) > 0 ? '#60a5fa' : 'var(--positive)' },
             ].map(r => (
-              <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <span style={{ fontSize: 13, color: '#8090a8' }}>{r.label}</span>
+              <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, borderBottom: '1px solid var(--surface-2)' }}>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{r.label}</span>
                 <span style={{ fontSize: 15, fontWeight: 700, color: r.col }}>{r.value.toLocaleString('es-ES')}</span>
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 14, padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: 8 }}>
-            <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 4 }}>Último run yfinance</p>
+          <div style={{ marginTop: 14, padding: '10px 12px', background: 'var(--surface)', borderRadius: 8 }}>
+            <p style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4 }}>Último run yfinance</p>
             {lastRun ? (
-              <p style={{ fontSize: 13, color: '#c8d0e0' }}>
+              <p style={{ fontSize: 13, color: 'var(--text)' }}>
                 <StatusDot status={lastRun.status} />
                 {fmtDateTime(lastRun.created_at)} — {lastRun.description || 'sin descripción'}
               </p>
             ) : (
-              <p style={{ fontSize: 13, color: '#4a5270' }}>Sin registros todavía</p>
+              <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>Sin registros todavía</p>
             )}
           </div>
         </Card>
@@ -85,13 +85,13 @@ export default async function DashboardHome() {
           <SectionTitle>Últimos usuarios</SectionTitle>
           <div style={{ display: 'grid', gap: 7 }}>
             {recentUsers.length === 0 ? (
-              <p style={{ fontSize: 13, color: '#4a5270' }}>Sin usuarios todavía.</p>
+              <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>Sin usuarios todavía.</p>
             ) : recentUsers.map(u => (
-              <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, paddingBottom: 6, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <span style={{ color: '#c8d0e0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{u.email}</span>
+              <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, paddingBottom: 6, borderBottom: '1px solid var(--surface-2)' }}>
+                <span style={{ color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{u.email}</span>
                 <span style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                  <span style={{ color: '#4a5270' }}>{fmtDate(u.created_at)}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: planByUser[u.id] === 'premium' ? '#fbbf24' : '#4a5270', background: planByUser[u.id] === 'premium' ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.04)', padding: '1px 6px', borderRadius: 4 }}>
+                  <span style={{ color: 'var(--text-faint)' }}>{fmtDate(u.created_at)}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: planByUser[u.id] === 'premium' ? 'var(--warning)' : 'var(--text-faint)', background: planByUser[u.id] === 'premium' ? 'rgba(251,191,36,0.12)' : 'var(--surface-2)', padding: '1px 6px', borderRadius: 4 }}>
                     {planByUser[u.id] === 'premium' ? 'PREMIUM' : 'free'}
                   </span>
                 </span>
@@ -104,7 +104,7 @@ export default async function DashboardHome() {
               <SectionTitle>Últimas alertas del sistema</SectionTitle>
               <div style={{ display: 'grid', gap: 5 }}>
                 {recentLogs.map(l => (
-                  <div key={l.id} style={{ fontSize: 11, color: l.status === 'error' ? '#f87171' : '#8090a8' }}>
+                  <div key={l.id} style={{ fontSize: 11, color: l.status === 'error' ? 'var(--negative)' : 'var(--text-muted)' }}>
                     <StatusDot status={l.status} />{l.description || l.event_type}
                   </div>
                 ))}

@@ -26,9 +26,9 @@ import UpcomingDividends from '@/components/cartera/UpcomingDividends'
 // ── Design tokens ──────────────────────────────────────────────────────────
 // padding como variable CSS → en móvil se reduce vía media query (ver cdp-root) sin
 // tocar cada ficha (el inline no se puede sobreescribir con CSS normal, pero una var sí).
-const CARD   = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 'var(--cdp-pad, 20px)' }
-const COLORS = ['#818cf8','#34d399','#fbbf24','#f87171','#60a5fa','#a78bfa','#fb923c','#4ade80','#f472b6','#38bdf8']
-const INPUT  = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', color: '#c8d0e0', fontSize: 13, outline: 'none', width: '100%', boxSizing: 'border-box' }
+const CARD   = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 'var(--cdp-pad, 20px)' }
+const COLORS = ['var(--accent)','var(--positive)','var(--warning)','var(--negative)','#60a5fa','#a78bfa','#fb923c','#4ade80','#f472b6','#38bdf8']
+const INPUT  = { background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '8px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', width: '100%', boxSizing: 'border-box' }
 
 function fmt(v, d = 2) {
   if (v == null || isNaN(v)) return '—'
@@ -40,7 +40,7 @@ function fmtEUR(v) {
   if (Math.abs(v) >= 1000) return v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €'
   return v.toLocaleString('es-ES', { maximumFractionDigits: 2 }) + ' €'
 }
-function gainCol(v) { return v == null ? '#4a5270' : v >= 0 ? '#34d399' : '#f87171' }
+function gainCol(v) { return v == null ? 'var(--text-faint)' : v >= 0 ? 'var(--positive)' : 'var(--negative)' }
 
 // ── Premium gate ───────────────────────────────────────────────────────────
 // Decoy: NO renderiza los children reales — solo un esqueleto ficticio. Quitar
@@ -48,10 +48,10 @@ function gainCol(v) { return v == null ? '#4a5270' : v >= 0 ? '#34d399' : '#f871
 function PremiumGate() {
   return (
     <div style={{ position: 'relative', minHeight: 150 }}>
-      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }} aria-hidden="true">
-        <div style={{ height: 11, width: '42%', background: 'rgba(255,255,255,0.10)', borderRadius: 5, marginBottom: 16 }} />
+      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }} aria-hidden="true">
+        <div style={{ height: 11, width: '42%', background: 'var(--border-strong)', borderRadius: 5, marginBottom: 16 }} />
         <div style={{ display: 'grid', gap: 9 }}>
-          {[88, 70, 94, 60].map((w, i) => <div key={i} style={{ height: 9, width: `${w}%`, background: 'rgba(255,255,255,0.06)', borderRadius: 4 }} />)}
+          {[88, 70, 94, 60].map((w, i) => <div key={i} style={{ height: 9, width: `${w}%`, background: 'var(--border)', borderRadius: 4 }} />)}
         </div>
       </div>
       <div style={{
@@ -59,8 +59,8 @@ function PremiumGate() {
         alignItems: 'center', justifyContent: 'center', gap: 8,
         background: 'rgba(8,11,20,0.55)',
       }}>
-        <p style={{ fontSize: 13, fontWeight: 700, color: '#818cf8' }}>Contenido Premium</p>
-        <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '7px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8 }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>Contenido Premium</p>
+        <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '7px 18px', background: 'var(--accent)', borderRadius: 8 }}>
           Activar Premium →
         </Link>
       </div>
@@ -74,8 +74,8 @@ function Modal({ onClose, title, children }) {
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
       <div style={{ ...CARD, minWidth: 300, maxWidth: 420, width: '90%' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-          <p style={{ fontWeight: 700, color: '#c8d0e0', fontSize: 15 }}>{title}</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#4a5270', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+          <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: 15 }}>{title}</p>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
         </div>
         {children}
       </div>
@@ -88,21 +88,21 @@ function DonutChart({ data, title }) {
   if (!data?.length) return null
   return (
     <div style={{ textAlign: 'center' }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{title}</p>
+      <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{title}</p>
       <ResponsiveContainer width="100%" height={160}>
         <PieChart>
           <Pie data={data} cx="50%" cy="50%" innerRadius={42} outerRadius={68} dataKey="value" paddingAngle={2}>
             {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
           </Pie>
           <Tooltip
-            contentStyle={{ background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }}
+            contentStyle={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 11 }}
             formatter={(v, n) => [`${v.toFixed(1)}%`, n]}
           />
         </PieChart>
       </ResponsiveContainer>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', justifyContent: 'center', marginTop: 6 }}>
         {data.slice(0, 6).map((d, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#8090a8' }}>
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--text-muted)' }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: COLORS[i % COLORS.length], flexShrink: 0 }} />
             {d.name}: {d.value.toFixed(0)}%
           </div>
@@ -155,21 +155,21 @@ function IncomeProjectionCard({ enriched, taxRate, isPremium }) {
   const legend = dir === 'bwd' ? 'Cobrado' : 'Estimado'
   const Stat = ({ label, value, color }) => (
     <div style={{ flex: 1, minWidth: 150, background: `${color}12`, border: `1px solid ${color}30`, borderRadius: 10, padding: '12px 14px' }}>
-      <p style={{ fontSize: 11, color: '#8090a8', marginBottom: 4 }}>{label}</p>
+      <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{label}</p>
       <p style={{ fontSize: 22, fontWeight: 800, color }}>{value}</p>
     </div>
   )
   const TogBtn = ({ k, label }) => (
     <button onClick={() => setDir(k)} style={{
       fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit',
-      border: '1px solid ' + (dir === k ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.1)'),
-      background: dir === k ? 'rgba(52,211,153,0.18)' : 'transparent', color: dir === k ? '#34d399' : '#8090a8',
+      border: '1px solid ' + (dir === k ? 'rgba(52,211,153,0.5)' : 'var(--border-strong)'),
+      background: dir === k ? 'rgba(52,211,153,0.18)' : 'transparent', color: dir === k ? 'var(--positive)' : 'var(--text-muted)',
     }}>{label}</button>
   )
   return (
     <div style={{ ...CARD, marginBottom: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Renta anual neta por dividendos, €</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Renta anual neta por dividendos, €</p>
         <div style={{ display: 'flex', gap: 6 }}>
           <TogBtn k="bwd" label="Pasado" />
           <TogBtn k="fwd" label="Futuro" />
@@ -177,28 +177,28 @@ function IncomeProjectionCard({ enriched, taxRate, isPremium }) {
       </div>
 
       {dir === 'bwd' && received != null && received.length === 0 ? (
-        <p style={{ fontSize: 12.5, color: '#4a5270', padding: '30px 0', textAlign: 'center' }}>Aún no hay dividendos cobrados registrados. Regístralos o impórtalos de tu bróker para ver tu historial de renta.</p>
+        <p style={{ fontSize: 12.5, color: 'var(--text-faint)', padding: '30px 0', textAlign: 'center' }}>Aún no hay dividendos cobrados registrados. Regístralos o impórtalos de tu bróker para ver tu historial de renta.</p>
       ) : (
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={data} margin={{ top: 22, right: 6, left: 2, bottom: 0 }}>
-            <XAxis dataKey="year" stroke="#8090a8" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.15)' }} angle={-90} textAnchor="end" height={42} interval={0} />
-            <YAxis stroke="#4a5270" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v} width={34} />
-            <Tooltip contentStyle={{ background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} formatter={v => [fmtEUR(v), dir === 'bwd' ? 'Cobrado' : 'Estimado']} labelFormatter={l => l} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-            <Bar dataKey="income" fill="#e2e8f5" radius={[3, 3, 0, 0]} maxBarSize={46}>
-              <LabelList dataKey="income" position="top" fill="#c8d0e0" fontSize={10} fontWeight={700} formatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : Math.round(v)} />
+            <XAxis dataKey="year" stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={{ stroke: 'var(--border-strong)' }} angle={-90} textAnchor="end" height={42} interval={0} />
+            <YAxis stroke="var(--text-faint)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v} width={34} />
+            <Tooltip contentStyle={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12 }} formatter={v => [fmtEUR(v), dir === 'bwd' ? 'Cobrado' : 'Estimado']} labelFormatter={l => l} cursor={{ fill: 'var(--surface-2)' }} />
+            <Bar dataKey="income" fill="var(--text)" radius={[3, 3, 0, 0]} maxBarSize={46}>
+              <LabelList dataKey="income" position="top" fill="var(--text)" fontSize={10} fontWeight={700} formatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : Math.round(v)} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 2, marginBottom: 14 }}>
-        <span style={{ width: 11, height: 11, background: '#e2e8f5', borderRadius: 2 }} />
-        <span style={{ fontSize: 11, color: '#8090a8' }}>{legend} (neto){dir === 'fwd' ? ' · escenario base, CAGR real de cada empresa' : ''}</span>
-        <Link href="/cartera/proyeccion" style={{ fontSize: 11, color: '#818cf8', textDecoration: 'none', marginLeft: 'auto' }}>Detalle y escenarios →</Link>
+        <span style={{ width: 11, height: 11, background: 'var(--text)', borderRadius: 2 }} />
+        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{legend} (neto){dir === 'fwd' ? ' · escenario base, CAGR real de cada empresa' : ''}</span>
+        <Link href="/cartera/proyeccion" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', marginLeft: 'auto' }}>Detalle y escenarios →</Link>
       </div>
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <Stat label="Crecimiento del dividendo · últimos 12 meses" value={growth.g1y != null ? `${growth.g1y >= 0 ? '+' : ''}${growth.g1y.toFixed(1)}%` : '—'} color="#34d399" />
-        <Stat label="Crecimiento del dividendo · últimos 5 años (anual)" value={growth.g5y != null ? `${growth.g5y.toFixed(1)}%` : '—'} color="#818cf8" />
+        <Stat label="Crecimiento del dividendo · últimos 12 meses" value={growth.g1y != null ? `${growth.g1y >= 0 ? '+' : ''}${growth.g1y.toFixed(1)}%` : '—'} color="var(--positive)" />
+        <Stat label="Crecimiento del dividendo · últimos 5 años (anual)" value={growth.g5y != null ? `${growth.g5y.toFixed(1)}%` : '—'} color="var(--accent)" />
       </div>
     </div>
   )
@@ -217,8 +217,8 @@ function SummarySection({ summary, netIncomeEUR }) {
       <style>{`@media(min-width:600px){.summary-grid{grid-template-columns:repeat(4,1fr)!important}}`}</style>
       {items.map(it => (
         <div key={it.label} style={{ ...CARD, padding: '8px 11px' }}>
-          <p style={{ fontSize: 9.5, color: '#4a5270', marginBottom: 2 }}>{it.label}</p>
-          <p style={{ fontSize: 17, fontWeight: 800, color: it.col || '#c8d0e0', lineHeight: 1.15 }}>{it.value}</p>
+          <p style={{ fontSize: 9.5, color: 'var(--text-faint)', marginBottom: 2 }}>{it.label}</p>
+          <p style={{ fontSize: 17, fontWeight: 800, color: it.col || 'var(--text)', lineHeight: 1.15 }}>{it.value}</p>
           {it.sub && <p style={{ fontSize: 11, fontWeight: 700, color: it.col, marginTop: 1 }}>{it.sub}</p>}
         </div>
       ))}
@@ -244,10 +244,10 @@ function IncomeGoalCard({ currentIncome, goal, growthPct, onSave }) {
     return (
       <div style={{ ...CARD, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0' }}>🎯 Fija tu meta de renta pasiva</p>
-          <p style={{ fontSize: 11.5, color: '#6b7693', marginTop: 2 }}>Define cuántos dividendos quieres cobrar al año y sigue tu progreso.</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>🎯 Fija tu meta de renta pasiva</p>
+          <p style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>Define cuántos dividendos quieres cobrar al año y sigue tu progreso.</p>
         </div>
-        <button onClick={() => setEditing(true)} style={{ padding: '8px 16px', background: 'rgba(99,102,241,0.85)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>Fijar meta</button>
+        <button onClick={() => setEditing(true)} style={{ padding: '8px 16px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>Fijar meta</button>
       </div>
     )
   }
@@ -258,35 +258,35 @@ function IncomeGoalCard({ currentIncome, goal, growthPct, onSave }) {
   // ETA solo con crecimiento orgánico del dividendo (sin aportaciones nuevas).
   let etaYears = null
   if (!reached && currentIncome > 0 && g > 0.001) etaYears = Math.log(goal / currentIncome) / Math.log(1 + g)
-  const barCol = reached ? '#34d399' : pct >= 50 ? '#60a5fa' : '#818cf8'
+  const barCol = reached ? 'var(--positive)' : pct >= 50 ? '#60a5fa' : 'var(--accent)'
 
   return (
     <div style={{ ...CARD, marginBottom: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>🎯 Meta de renta pasiva</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>🎯 Meta de renta pasiva</p>
         {editing ? (
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <input type="number" step="any" value={val} onChange={e => setVal(e.target.value)} placeholder="€/año" style={{ ...INPUT, width: 110, padding: '6px 10px' }} />
-            <button onClick={save} style={{ padding: '6px 12px', background: 'rgba(99,102,241,0.85)', border: 'none', borderRadius: 7, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Guardar</button>
+            <button onClick={save} style={{ padding: '6px 12px', background: 'var(--accent)', border: 'none', borderRadius: 7, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Guardar</button>
           </div>
         ) : (
-          <button onClick={() => setEditing(true)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, padding: '5px 12px', color: '#8090a8', fontSize: 11.5, cursor: 'pointer' }}>Editar meta</button>
+          <button onClick={() => setEditing(true)} style={{ background: 'none', border: '1px solid var(--border-strong)', borderRadius: 7, padding: '5px 12px', color: 'var(--text-muted)', fontSize: 11.5, cursor: 'pointer' }}>Editar meta</button>
         )}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-        <span style={{ fontSize: 24, fontWeight: 900, color: '#e0e8f0' }}>{fmtEUR(currentIncome)}<span style={{ fontSize: 13, color: '#4a5270', fontWeight: 700 }}> / {fmtEUR(goal)} al año</span></span>
+        <span style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-strong)' }}>{fmtEUR(currentIncome)}<span style={{ fontSize: 13, color: 'var(--text-faint)', fontWeight: 700 }}> / {fmtEUR(goal)} al año</span></span>
         <span style={{ fontSize: 18, fontWeight: 800, color: barCol }}>{pct.toFixed(0)}%</span>
       </div>
-      <div style={{ height: 10, background: 'rgba(255,255,255,0.06)', borderRadius: 6, overflow: 'hidden', marginBottom: 10 }}>
+      <div style={{ height: 10, background: 'var(--border)', borderRadius: 6, overflow: 'hidden', marginBottom: 10 }}>
         <div style={{ width: `${pct}%`, height: '100%', background: barCol, borderRadius: 6, transition: 'width .4s' }} />
       </div>
-      <p style={{ fontSize: 12, color: '#8090a8', lineHeight: 1.5 }}>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
         {reached
           ? '🎉 ¡Meta alcanzada! Tu cartera ya genera la renta que te marcaste.'
           : etaYears != null
-            ? <>Te faltan <strong style={{ color: '#c8d0e0' }}>{fmtEUR(goal - currentIncome)}</strong>. Solo con el crecimiento del dividendo (~{growthPct.toFixed(1)}%/año, sin nuevas aportaciones) la alcanzarías en <strong style={{ color: '#60a5fa' }}>~{etaYears < 1 ? '<1' : Math.round(etaYears)} {etaYears < 1 || Math.round(etaYears) === 1 ? 'año' : 'años'}</strong>.</>
-            : <>Te faltan <strong style={{ color: '#c8d0e0' }}>{fmtEUR(goal - currentIncome)}</strong>. Aporta y reinvierte para acelerar el objetivo.</>}
+            ? <>Te faltan <strong style={{ color: 'var(--text)' }}>{fmtEUR(goal - currentIncome)}</strong>. Solo con el crecimiento del dividendo (~{growthPct.toFixed(1)}%/año, sin nuevas aportaciones) la alcanzarías en <strong style={{ color: '#60a5fa' }}>~{etaYears < 1 ? '<1' : Math.round(etaYears)} {etaYears < 1 || Math.round(etaYears) === 1 ? 'año' : 'años'}</strong>.</>
+            : <>Te faltan <strong style={{ color: 'var(--text)' }}>{fmtEUR(goal - currentIncome)}</strong>. Aporta y reinvierte para acelerar el objetivo.</>}
       </p>
     </div>
   )
@@ -298,19 +298,19 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
 
   return (
     <div style={{ ...CARD, marginBottom: 16 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Posiciones</p>
+      <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Posiciones</p>
       {enriched.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <p style={{ color: '#4a5270', fontSize: 14, marginBottom: 8 }}>Empieza tu cartera DGI</p>
-          <p style={{ color: '#6b7693', fontSize: 12.5, marginBottom: 18, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.5 }}>¿No sabes por dónde empezar? Responde 4 preguntas y te proponemos una cartera inicial de empresas DGI a tu medida.</p>
+          <p style={{ color: 'var(--text-faint)', fontSize: 14, marginBottom: 8 }}>Empieza tu cartera DGI</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: 12.5, marginBottom: 18, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.5 }}>¿No sabes por dónde empezar? Responde 4 preguntas y te proponemos una cartera inicial de empresas DGI a tu medida.</p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/construir-cartera" style={{ padding: '10px 20px', background: 'rgba(52,211,153,0.85)', borderRadius: 8, color: '#06281d', fontSize: 13, fontWeight: 800, textDecoration: 'none' }}>
               🧭 Construir mi cartera desde cero
             </Link>
-            <Link href="/cartera/nueva-posicion" style={{ padding: '10px 20px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+            <Link href="/cartera/nueva-posicion" style={{ padding: '10px 20px', background: 'var(--accent)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
               Añadir posición
             </Link>
-            <Link href="/cartera/importar" style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#c8d0e0', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+            <Link href="/cartera/importar" style={{ padding: '10px 20px', background: 'var(--surface-3)', border: '1px solid var(--border-strong)', borderRadius: 8, color: 'var(--text)', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
               ⭳ Importar de ING
             </Link>
           </div>
@@ -321,7 +321,7 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
             <thead>
               <tr>
                 {['Empresa','Acciones','P. Medio','Coste real','P. Actual','Valor','Rentab.','YoC','Yield','Renta/año','Cobrado','Coste neto',''].map(h => (
-                  <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: '#4a5270', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap' }} title={
+                  <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: 'var(--text-faint)', fontWeight: 600, borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }} title={
                     h === 'Coste real' ? 'Coste por acción incluyendo comisiones de compra'
                     : h === 'Cobrado' ? 'Dividendos netos cobrados de esta posición (acumulado)'
                     : h === 'Coste neto' ? 'Coste de compra menos dividendos cobrados. Debajo, el YoC real = renta anual / coste neto.'
@@ -331,23 +331,23 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
             </thead>
             <tbody>
               {enriched.map((p, i) => (
-                <tr key={p.id} style={{ background: i % 2 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
-                  <td style={{ padding: '8px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <tr key={p.id} style={{ background: i % 2 ? 'var(--surface)' : 'transparent' }}>
+                  <td style={{ padding: '8px', borderBottom: '1px solid var(--surface-2)' }}>
                     <Link href={p.isFund ? `/fondo/${encodeURIComponent(p.ticker)}` : `/empresa/${encodeURIComponent(p.ticker)}`} style={{ textDecoration: 'none' }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
                         {p.name}
                         {p.assetType === 'etf' && <span style={{ fontSize: 9, fontWeight: 700, color: '#60a5fa', background: 'rgba(96,165,250,0.14)', padding: '1px 5px', borderRadius: 4 }}>ETF</span>}
                         {p.assetType === 'fund' && <span style={{ fontSize: 9, fontWeight: 700, color: '#a78bfa', background: 'rgba(167,139,250,0.14)', padding: '1px 5px', borderRadius: 4 }}>Fondo</span>}
                       </p>
-                      <p style={{ fontSize: 10, color: '#4a5270' }}>{p.ticker} · {p.currency}{p.isFund && p.ter != null ? ` · TER ${p.ter}%` : ''}</p>
+                      <p style={{ fontSize: 10, color: 'var(--text-faint)' }}>{p.ticker} · {p.currency}{p.isFund && p.ter != null ? ` · TER ${p.ter}%` : ''}</p>
                     </Link>
                   </td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#8090a8', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{fmt(p.shares, 4)}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#8090a8', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{fmt(p.avg_cost)}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: p.buyCommission > 0 ? '#c8d0e0' : '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.04)' }} title={p.buyCommission > 0 ? `Incluye ${fmt(p.buyCommission)} ${p.currency} de comisiones` : 'Sin comisiones registradas'}>{p.avgCostReal != null ? fmt(p.avgCostReal) : '—'}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#c8d0e0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{p.currentPrice != null ? fmt(p.currentPrice) : '—'}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{p.valueEUR != null ? fmtEUR(p.valueEUR) : '—'}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text-muted)', borderBottom: '1px solid var(--surface-2)' }}>{fmt(p.shares, 4)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text-muted)', borderBottom: '1px solid var(--surface-2)' }}>{fmt(p.avg_cost)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: p.buyCommission > 0 ? 'var(--text)' : 'var(--text-faint)', borderBottom: '1px solid var(--surface-2)' }} title={p.buyCommission > 0 ? `Incluye ${fmt(p.buyCommission)} ${p.currency} de comisiones` : 'Sin comisiones registradas'}>{p.avgCostReal != null ? fmt(p.avgCostReal) : '—'}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text)', borderBottom: '1px solid var(--surface-2)' }}>{p.currentPrice != null ? fmt(p.currentPrice) : '—'}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text)', fontWeight: 700, borderBottom: '1px solid var(--surface-2)' }}>{p.valueEUR != null ? fmtEUR(p.valueEUR) : '—'}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid var(--surface-2)' }}>
                     {p.gainPct != null ? (
                       <div>
                         <span style={{ color: gainCol(p.gainPct), fontWeight: 700 }}>{fmtPct(p.gainPct)}</span>
@@ -355,22 +355,22 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
                       </div>
                     ) : '—'}
                   </td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#818cf8', borderBottom: '1px solid rgba(255,255,255,0.04)' }} title="Yield on cost sobre el coste real (con comisiones)">{(p.yieldOnCostReal ?? p.yieldOnCost) != null ? (p.yieldOnCostReal ?? p.yieldOnCost).toFixed(2) + '%' : '—'}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#34d399', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{p.currentYield != null ? p.currentYield.toFixed(2) + '%' : '—'}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#fbbf24', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{p.annualIncomeEUR != null ? fmtEUR(p.annualIncomeEUR) : '—'}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: p.dividendsCollectedEUR > 0 ? '#34d399' : '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{p.dividendsCollectedEUR > 0 ? fmtEUR(p.dividendsCollectedEUR) : '—'}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.04)' }} title={p.dividendsCollectedEUR > 0 ? `Compra ${fmtEUR(p.costEUR)} − dividendos ${fmtEUR(p.dividendsCollectedEUR)}` : undefined}>
+                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--accent)', borderBottom: '1px solid var(--surface-2)' }} title="Yield on cost sobre el coste real (con comisiones)">{(p.yieldOnCostReal ?? p.yieldOnCost) != null ? (p.yieldOnCostReal ?? p.yieldOnCost).toFixed(2) + '%' : '—'}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--positive)', borderBottom: '1px solid var(--surface-2)' }}>{p.currentYield != null ? p.currentYield.toFixed(2) + '%' : '—'}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--warning)', borderBottom: '1px solid var(--surface-2)' }}>{p.annualIncomeEUR != null ? fmtEUR(p.annualIncomeEUR) : '—'}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: p.dividendsCollectedEUR > 0 ? 'var(--positive)' : 'var(--text-faint)', borderBottom: '1px solid var(--surface-2)' }}>{p.dividendsCollectedEUR > 0 ? fmtEUR(p.dividendsCollectedEUR) : '—'}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid var(--surface-2)' }} title={p.dividendsCollectedEUR > 0 ? `Compra ${fmtEUR(p.costEUR)} − dividendos ${fmtEUR(p.dividendsCollectedEUR)}` : undefined}>
                     {p.netCostEUR != null ? (
                       <div>
-                        <span style={{ color: p.netCostEUR <= 0 ? '#34d399' : '#c8d0e0', fontWeight: 700 }}>{fmtEUR(Math.max(0, p.netCostEUR))}</span>
-                        <p style={{ fontSize: 10, color: '#818cf8' }}>{p.yoCNet == null ? '' : p.yoCNet === Infinity ? 'YoC ✓ recuperada' : `YoC ${p.yoCNet.toFixed(2)}%`}</p>
+                        <span style={{ color: p.netCostEUR <= 0 ? 'var(--positive)' : 'var(--text)', fontWeight: 700 }}>{fmtEUR(Math.max(0, p.netCostEUR))}</span>
+                        <p style={{ fontSize: 10, color: 'var(--accent)' }}>{p.yoCNet == null ? '' : p.yoCNet === Infinity ? 'YoC ✓ recuperada' : `YoC ${p.yoCNet.toFixed(2)}%`}</p>
                       </div>
                     ) : '—'}
                   </td>
-                  <td style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.04)', whiteSpace: 'nowrap' }}>
-                    <button onClick={() => onEdit(p)} title="Editar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#818cf8', fontSize: 14, padding: '2px 4px' }}>✏</button>
-                    <button onClick={() => onDividend(p)} title="Registrar dividendo" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#34d399', fontSize: 14, padding: '2px 4px' }}>$</button>
-                    <button onClick={() => onDelete(p.id)} title="Eliminar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontSize: 14, padding: '2px 4px' }}>🗑</button>
+                  <td style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid var(--surface-2)', whiteSpace: 'nowrap' }}>
+                    <button onClick={() => onEdit(p)} title="Editar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 14, padding: '2px 4px' }}>✏</button>
+                    <button onClick={() => onDividend(p)} title="Registrar dividendo" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--positive)', fontSize: 14, padding: '2px 4px' }}>$</button>
+                    <button onClick={() => onDelete(p.id)} title="Eliminar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--negative)', fontSize: 14, padding: '2px 4px' }}>🗑</button>
                   </td>
                 </tr>
               ))}
@@ -382,13 +382,13 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
       <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end' }}>
         {!isPremium && enriched.length >= FREE_LIMIT ? (
           <div style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: 11, color: '#fbbf24', marginBottom: 6 }}>Límite del plan gratuito alcanzado (10 posiciones)</p>
-            <Link href="/pricing" style={{ padding: '9px 18px', background: 'rgba(251,191,36,0.2)', border: '1px solid rgba(251,191,36,0.4)', borderRadius: 8, color: '#fbbf24', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+            <p style={{ fontSize: 11, color: 'var(--warning)', marginBottom: 6 }}>Límite del plan gratuito alcanzado (10 posiciones)</p>
+            <Link href="/pricing" style={{ padding: '9px 18px', background: 'rgba(251,191,36,0.2)', border: '1px solid rgba(251,191,36,0.4)', borderRadius: 8, color: 'var(--warning)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
               Upgrade a Premium →
             </Link>
           </div>
         ) : (
-          <Link href="/cartera/nueva-posicion" style={{ padding: '10px 20px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+          <Link href="/cartera/nueva-posicion" style={{ padding: '10px 20px', background: 'var(--accent)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
             + Añadir posición
           </Link>
         )}
@@ -401,7 +401,7 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
 function ConcentrationSection({ concentration, sectorBreakdown, geoBreakdown, alerts, isPremium }) {
   const inner = (
     <div style={{ ...CARD, marginBottom: 16 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>Análisis de concentración</p>
+      <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>Análisis de concentración</p>
 
       {/* Diversificación por supersectores de Morningstar (sector + detalle) */}
       <div style={{ marginBottom: 20 }}>
@@ -417,8 +417,8 @@ function ConcentrationSection({ concentration, sectorBreakdown, geoBreakdown, al
         <div style={{ display: 'grid', gap: 8 }}>
           {alerts.map((a, i) => (
             <div key={i} style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 8, padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-              <span style={{ color: '#fbbf24', flexShrink: 0 }}>⚠</span>
-              <p style={{ fontSize: 12, color: '#fbbf24' }}>{a}</p>
+              <span style={{ color: 'var(--warning)', flexShrink: 0 }}>⚠</span>
+              <p style={{ fontSize: 12, color: 'var(--warning)' }}>{a}</p>
             </div>
           ))}
         </div>
@@ -434,14 +434,14 @@ function DiversificationSection({ score, isPremium }) {
     <div style={{ ...CARD, marginBottom: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Diversificación</p>
-          {score?.recommendation && <p style={{ fontSize: 13, color: '#8090a8', maxWidth: 440 }}>{score.recommendation}</p>}
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Diversificación</p>
+          {score?.recommendation && <p style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 440 }}>{score.recommendation}</p>}
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <p style={{ fontSize: 42, fontWeight: 900, lineHeight: 1, color: score?.score >= 7 ? '#34d399' : score?.score >= 5 ? '#fbbf24' : '#f87171' }}>
+          <p style={{ fontSize: 42, fontWeight: 900, lineHeight: 1, color: score?.score >= 7 ? 'var(--positive)' : score?.score >= 5 ? 'var(--warning)' : 'var(--negative)' }}>
             {score?.score?.toFixed(1) ?? '—'}
           </p>
-          <p style={{ fontSize: 10, color: '#4a5270' }}>/ 10</p>
+          <p style={{ fontSize: 10, color: 'var(--text-faint)' }}>/ 10</p>
         </div>
       </div>
     </div>
@@ -466,30 +466,30 @@ function DividendRiskSection({ risks, totalIncomeEUR, isPremium }) {
 
   const inner = (
     <div style={{ ...CARD, marginBottom: 16 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Dividendos en riesgo</p>
+      <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Dividendos en riesgo</p>
       {risks.length === 0 ? (
-        <p style={{ fontSize: 13, color: '#34d399' }}>✓ No se detectan señales de riesgo en los dividendos de tu cartera.</p>
+        <p style={{ fontSize: 13, color: 'var(--positive)' }}>✓ No se detectan señales de riesgo en los dividendos de tu cartera.</p>
       ) : (
         <>
-          <p style={{ fontSize: 11.5, color: '#6b7693', lineHeight: 1.5, marginBottom: 12 }}>
-            Empresas con señales que suelen <strong style={{ color: '#8090a8' }}>anticipar un recorte</strong> (payout, deuda, cobertura de intereses, caída del FCF). No es una predicción: es <strong style={{ color: '#8090a8' }}>dónde vigilar</strong>, y cuánta de tu renta depende de cada una.
+          <p style={{ fontSize: 11.5, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 12 }}>
+            Empresas con señales que suelen <strong style={{ color: 'var(--text-muted)' }}>anticipar un recorte</strong> (payout, deuda, cobertura de intereses, caída del FCF). No es una predicción: es <strong style={{ color: 'var(--text-muted)' }}>dónde vigilar</strong>, y cuánta de tu renta depende de cada una.
           </p>
           <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
             {risks.map((p, i) => (
-              <div key={i} style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, borderLeft: `3px solid ${p.worst === 'alto' ? '#f87171' : '#fbbf24'}` }}>
+              <div key={i} style={{ padding: '10px 12px', background: 'var(--surface)', borderRadius: 8, borderLeft: `3px solid ${p.worst === 'alto' ? 'var(--negative)' : 'var(--warning)'}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0' }}>{p.name} <span style={{ fontSize: 10, color: '#4a5270' }}>{p.ticker}</span></p>
-                  <p style={{ fontSize: 11, color: '#8090a8', flexShrink: 0 }}>{p.incPct.toFixed(1)}% de tu renta</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{p.name} <span style={{ fontSize: 10, color: 'var(--text-faint)' }}>{p.ticker}</span></p>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>{p.incPct.toFixed(1)}% de tu renta</p>
                 </div>
                 <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
                   {p.risks.map((r, j) => {
-                    const col = r.level === 'alto' ? '#f87171' : '#fbbf24'
+                    const col = r.level === 'alto' ? 'var(--negative)' : 'var(--warning)'
                     return (
                       <div key={j}>
                         <span style={{ fontSize: 10.5, fontWeight: 700, color: col, background: r.level === 'alto' ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)', padding: '2px 7px', borderRadius: 5 }}>
                           {r.label}: {r.value} · {r.level === 'alto' ? 'riesgo alto' : 'a vigilar'}
                         </span>
-                        <p style={{ fontSize: 11, color: '#6b7693', lineHeight: 1.45, marginTop: 4 }}>{r.detail}</p>
+                        <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.45, marginTop: 4 }}>{r.detail}</p>
                       </div>
                     )
                   })}
@@ -497,10 +497,10 @@ function DividendRiskSection({ risks, totalIncomeEUR, isPremium }) {
               </div>
             ))}
           </div>
-          <p style={{ fontSize: 11.5, color: riskPct >= 25 ? '#f87171' : '#fbbf24' }}>
+          <p style={{ fontSize: 11.5, color: riskPct >= 25 ? 'var(--negative)' : 'var(--warning)' }}>
             El <strong>{riskPct.toFixed(0)}%</strong> de tu renta anual proviene de empresas con señales de alerta.
           </p>
-          <p style={{ fontSize: 10.5, color: '#3a4260', marginTop: 8, lineHeight: 1.45 }}>
+          <p style={{ fontSize: 10.5, color: 'var(--text-faintest)', marginTop: 8, lineHeight: 1.45 }}>
             Señales sector-aware: REITs y BDC se miden por AFFO/NII, y banca y aseguradoras por capital y payout sobre beneficio —no por FCF ni deuda/EBITDA, que no les aplican. Su seguridad del dividendo se evalúa en la ficha de cada empresa.
           </p>
         </>
@@ -520,10 +520,10 @@ function FiscalSection({ fiscal, country, onCountryChange, isPremium, exempt = f
   const inner = (
     <div style={{ ...CARD, marginBottom: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Coste fiscal estimado</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Coste fiscal estimado</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, color: '#4a5270' }}>Residencia fiscal:</span>
-          <select value={country} onChange={e => onCountryChange(e.target.value)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#c8d0e0', fontSize: 12, padding: '4px 8px' }}>
+          <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>Residencia fiscal:</span>
+          <select value={country} onChange={e => onCountryChange(e.target.value)} style={{ background: 'var(--surface-3)', border: '1px solid var(--border-strong)', borderRadius: 6, color: 'var(--text)', fontSize: 12, padding: '4px 8px' }}>
             <option value="ES">España</option>
             <option value="OTHER">Otro (referencia)</option>
           </select>
@@ -532,15 +532,15 @@ function FiscalSection({ fiscal, country, onCountryChange, isPremium, exempt = f
 
       {exempt && (
         <div style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
-          <p style={{ fontSize: 12, color: '#34d399', fontWeight: 700, marginBottom: 2 }}>Estás exento de IRPF según tus ingresos</p>
-          <p style={{ fontSize: 11, color: '#8090a8', lineHeight: 1.5 }}>Tus ingresos quedan por debajo del umbral configurado, así que la retención sobre los dividendos <b>españoles</b> se te devolvería en la declaración (tipo efectivo 0%). La retención en origen de dividendos extranjeros se reclama al país de origen.</p>
+          <p style={{ fontSize: 12, color: 'var(--positive)', fontWeight: 700, marginBottom: 2 }}>Estás exento de IRPF según tus ingresos</p>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>Tus ingresos quedan por debajo del umbral configurado, así que la retención sobre los dividendos <b>españoles</b> se te devolvería en la declaración (tipo efectivo 0%). La retención en origen de dividendos extranjeros se reclama al país de origen.</p>
         </div>
       )}
       {!exempt && incomeMode && (
-        <p style={{ fontSize: 11, color: '#8090a8', marginBottom: 12 }}>Tipo del ahorro calculado según tus ingresos y tu renta del ahorro (dividendos anuales). Configúralo en <b>Ajustes → Fiscalidad</b>.</p>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12 }}>Tipo del ahorro calculado según tus ingresos y tu renta del ahorro (dividendos anuales). Configúralo en <b>Ajustes → Fiscalidad</b>.</p>
       )}
       {fiscal.length === 0 ? (
-        <p style={{ fontSize: 13, color: '#4a5270' }}>Añade posiciones con dividendo para ver el análisis fiscal.</p>
+        <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>Añade posiciones con dividendo para ver el análisis fiscal.</p>
       ) : (
         <>
           <div style={{ overflowX: 'auto' }}>
@@ -548,37 +548,37 @@ function FiscalSection({ fiscal, country, onCountryChange, isPremium, exempt = f
               <thead>
                 <tr>
                   {['Empresa','País empresa','Divid. bruto','Retención origen','Retención ES','Divid. neto','Tipo ef.'].map(h => (
-                    <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: '#4a5270', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap' }}>{h}</th>
+                    <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: 'var(--text-faint)', fontWeight: 600, borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {fiscal.map((f, i) => (
-                  <tr key={i} style={{ background: i % 2 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
-                    <td style={{ padding: '7px 8px', color: '#c8d0e0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{f.name}</td>
-                    <td style={{ padding: '7px 8px', color: '#8090a8', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{f.companyCountry}</td>
-                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{fmtEUR(f.gross)}</td>
-                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#f87171', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>-{fmtEUR(f.sourceWH)} ({f.sourceRate.toFixed(1)}%)</td>
-                    <td style={{ padding: '7px 8px', textAlign: 'right', color: f.additionalES < -0.005 ? '#34d399' : '#f87171', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{f.additionalES < -0.005 ? `+${fmtEUR(-f.additionalES)}` : `-${fmtEUR(f.additionalES)}`}</td>
-                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{fmtEUR(f.net)}</td>
-                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#fbbf24', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>{f.effectiveRate.toFixed(1)}%</td>
+                  <tr key={i} style={{ background: i % 2 ? 'var(--surface)' : 'transparent' }}>
+                    <td style={{ padding: '7px 8px', color: 'var(--text)', borderBottom: '1px solid var(--surface-2)' }}>{f.name}</td>
+                    <td style={{ padding: '7px 8px', color: 'var(--text-muted)', textAlign: 'right', borderBottom: '1px solid var(--surface-2)' }}>{f.companyCountry}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text)', borderBottom: '1px solid var(--surface-2)' }}>{fmtEUR(f.gross)}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--negative)', borderBottom: '1px solid var(--surface-2)' }}>-{fmtEUR(f.sourceWH)} ({f.sourceRate.toFixed(1)}%)</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: f.additionalES < -0.005 ? 'var(--positive)' : 'var(--negative)', borderBottom: '1px solid var(--surface-2)' }}>{f.additionalES < -0.005 ? `+${fmtEUR(-f.additionalES)}` : `-${fmtEUR(f.additionalES)}`}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--positive)', fontWeight: 700, borderBottom: '1px solid var(--surface-2)' }}>{fmtEUR(f.net)}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--warning)', borderBottom: '1px solid var(--surface-2)' }}>{f.effectiveRate.toFixed(1)}%</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                  <td colSpan={2} style={{ padding: '8px', fontWeight: 700, color: '#c8d0e0' }}>Total</td>
-                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#c8d0e0' }}>{fmtEUR(totalGross)}</td>
+                <tr style={{ borderTop: '1px solid var(--border-strong)' }}>
+                  <td colSpan={2} style={{ padding: '8px', fontWeight: 700, color: 'var(--text)' }}>Total</td>
+                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: 'var(--text)' }}>{fmtEUR(totalGross)}</td>
                   <td colSpan={2} />
-                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#34d399' }}>{fmtEUR(totalNet)}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#fbbf24' }}>
+                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: 'var(--positive)' }}>{fmtEUR(totalNet)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: 'var(--warning)' }}>
                     {totalGross > 0 ? ((totalGross - totalNet) / totalGross * 100).toFixed(1) + '%' : '—'}
                   </td>
                 </tr>
               </tfoot>
             </table>
           </div>
-          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10 }}>
+          <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 10 }}>
             Los cálculos son orientativos y no tienen en cuenta acuerdos de doble imposición ni situaciones personales específicas. Consulta con un asesor fiscal.
           </p>
         </>
@@ -606,16 +606,16 @@ function EditModal({ position, onClose, onSave }) {
     <Modal onClose={onClose} title={`Editar ${position.name}`}>
       <form onSubmit={submit} style={{ display: 'grid', gap: 14 }}>
         <div>
-          <label style={{ fontSize: 11, color: '#4a5270', marginBottom: 4, display: 'block' }}>Acciones</label>
+          <label style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4, display: 'block' }}>Acciones</label>
           <input style={INPUT} type="number" step="any" value={shares} onChange={e => setShares(e.target.value)} required />
         </div>
         <div>
-          <label style={{ fontSize: 11, color: '#4a5270', marginBottom: 4, display: 'block' }}>Precio medio compra ({position.currency})</label>
+          <label style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4, display: 'block' }}>Precio medio compra ({position.currency})</label>
           <input style={INPUT} type="number" step="any" value={avgCost} onChange={e => setAvgCost(e.target.value)} required />
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button type="button" onClick={onClose} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, color: '#4a5270', cursor: 'pointer', fontSize: 12 }}>Cancelar</button>
-          <button type="submit" disabled={saving} style={{ padding: '8px 16px', background: 'rgba(99,102,241,0.85)', border: 'none', borderRadius: 7, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>
+          <button type="button" onClick={onClose} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 7, color: 'var(--text-faint)', cursor: 'pointer', fontSize: 12 }}>Cancelar</button>
+          <button type="submit" disabled={saving} style={{ padding: '8px 16px', background: 'var(--accent)', border: 'none', borderRadius: 7, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>
             {saving ? 'Guardando…' : 'Guardar'}
           </button>
         </div>
@@ -644,20 +644,20 @@ function DividendModal({ position, onClose, onSave }) {
       <form onSubmit={submit} style={{ display: 'grid', gap: 14 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
-            <label style={{ fontSize: 11, color: '#4a5270', marginBottom: 4, display: 'block' }}>Importe bruto ({position.currency})</label>
+            <label style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4, display: 'block' }}>Importe bruto ({position.currency})</label>
             <input style={INPUT} type="number" step="any" min="0" placeholder="120.00" value={amount} onChange={e => setAmount(e.target.value)} required />
           </div>
           <div>
-            <label style={{ fontSize: 11, color: '#4a5270', marginBottom: 4, display: 'block' }}>Importe neto (opcional)</label>
+            <label style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4, display: 'block' }}>Importe neto (opcional)</label>
             <input style={INPUT} type="number" step="any" min="0" placeholder="97.00" value={amountNet} onChange={e => setAmountNet(e.target.value)} />
           </div>
         </div>
         <div>
-          <label style={{ fontSize: 11, color: '#4a5270', marginBottom: 4, display: 'block' }}>Fecha de cobro</label>
+          <label style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4, display: 'block' }}>Fecha de cobro</label>
           <input style={INPUT} type="date" value={date} onChange={e => setDate(e.target.value)} required />
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button type="button" onClick={onClose} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, color: '#4a5270', cursor: 'pointer', fontSize: 12 }}>Cancelar</button>
+          <button type="button" onClick={onClose} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 7, color: 'var(--text-faint)', cursor: 'pointer', fontSize: 12 }}>Cancelar</button>
           <button type="submit" disabled={saving} style={{ padding: '8px 16px', background: 'rgba(52,211,153,0.8)', border: 'none', borderRadius: 7, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>
             {saving ? 'Guardando…' : 'Registrar'}
           </button>
@@ -671,9 +671,9 @@ function DividendModal({ position, onClose, onSave }) {
 function DeleteModal({ positionId, onClose, onConfirm }) {
   return (
     <Modal onClose={onClose} title="Eliminar posición">
-      <p style={{ fontSize: 13, color: '#8090a8', marginBottom: 16 }}>Esta acción eliminará la posición. El historial de transacciones se mantendrá.</p>
+      <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>Esta acción eliminará la posición. El historial de transacciones se mantendrá.</p>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <button onClick={onClose} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, color: '#4a5270', cursor: 'pointer', fontSize: 12 }}>Cancelar</button>
+        <button onClick={onClose} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 7, color: 'var(--text-faint)', cursor: 'pointer', fontSize: 12 }}>Cancelar</button>
         <button onClick={() => { onConfirm(positionId); onClose() }} style={{ padding: '8px 16px', background: 'rgba(248,113,113,0.8)', border: 'none', borderRadius: 7, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>
           Sí, eliminar
         </button>
@@ -859,7 +859,7 @@ export default function PortfolioPage({ isPremium }) {
   if (loading) {
     return (
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 16px', textAlign: 'center' }}>
-        <p style={{ color: '#4a5270' }}>Cargando cartera…</p>
+        <p style={{ color: 'var(--text-faint)' }}>Cargando cartera…</p>
       </div>
     )
   }
@@ -873,14 +873,14 @@ export default function PortfolioPage({ isPremium }) {
       }`}</style>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0' }}>Mi cartera</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)' }}>Mi cartera</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <PricesFreshnessIndicator />
-          <Link href="/cartera/importar" style={{ padding: '9px 16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#c8d0e0', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+          <Link href="/cartera/importar" style={{ padding: '9px 16px', background: 'var(--surface-3)', border: '1px solid var(--border-strong)', borderRadius: 8, color: 'var(--text)', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
             ⭳ Importar
           </Link>
           {enriched.length > 0 && (
-            <Link href="/cartera/nueva-posicion" style={{ padding: '9px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+            <Link href="/cartera/nueva-posicion" style={{ padding: '9px 18px', background: 'var(--accent)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
               + Añadir posición
             </Link>
           )}

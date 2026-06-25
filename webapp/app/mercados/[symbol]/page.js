@@ -120,7 +120,7 @@ export default async function MarketPage({ params }) {
   } : dgiMetrics
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav />
       <MarketDetail
         market={market}

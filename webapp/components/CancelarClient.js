@@ -3,11 +3,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-const CARD   = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
+const CARD   = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }
 const BTN_GREEN = { padding: '12px 24px', background: 'rgba(52,211,153,0.9)', border: 'none', borderRadius: 8, color: '#062b1f', fontSize: 14, fontWeight: 800, cursor: 'pointer' }
 const BTN_INDIGO = { padding: '12px 24px', background: 'rgba(99,102,241,0.9)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }
-const LINK_SMALL = { fontSize: 12, color: '#4a5270', textDecoration: 'underline', cursor: 'pointer', background: 'none', border: 'none', padding: 0 }
-const TEXTAREA = { width: '100%', minHeight: 80, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#c8d0e0', fontSize: 14, outline: 'none', boxSizing: 'border-box', resize: 'vertical' }
+const LINK_SMALL = { fontSize: 12, color: 'var(--text-faint)', textDecoration: 'underline', cursor: 'pointer', background: 'none', border: 'none', padding: 0 }
+const TEXTAREA = { width: '100%', minHeight: 80, background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '10px 12px', color: 'var(--text)', fontSize: 14, outline: 'none', boxSizing: 'border-box', resize: 'vertical' }
 
 const REASONS = [
   { id: 'precio',           emoji: '💰', label: 'El precio es demasiado alto' },
@@ -86,8 +86,8 @@ export default function CancelarClient({ summary, accessUntil, discountUsed, mon
     return (
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '48px 16px 64px', textAlign: 'center' }}>
         <div style={{ ...CARD, padding: 32 }}>
-          <p style={{ fontSize: 17, fontWeight: 800, color: '#e0e8f0', marginBottom: 12 }}>Listo</p>
-          <p style={{ fontSize: 14, color: '#8090a8', lineHeight: 1.6, marginBottom: 24 }}>{doneMsg}</p>
+          <p style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-strong)', marginBottom: 12 }}>Listo</p>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 24 }}>{doneMsg}</p>
           <Link href="/cartera" style={{ ...BTN_INDIGO, textDecoration: 'none', display: 'inline-block' }}>Ir a mi cartera</Link>
         </div>
       </div>
@@ -98,7 +98,7 @@ export default function CancelarClient({ summary, accessUntil, discountUsed, mon
   if (view === 'confirm') {
     return (
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '32px 16px 64px' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', marginBottom: 20 }}>Confirmar cancelación</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 20 }}>Confirmar cancelación</h1>
         <div style={{ ...CARD, marginBottom: 20 }}>
           <div style={{ display: 'grid', gap: 14 }}>
             <Dato k="Acceso premium hasta" v={fmtFecha(accessUntil)} />
@@ -107,17 +107,17 @@ export default function CancelarClient({ summary, accessUntil, discountUsed, mon
           </div>
         </div>
 
-        <label style={{ fontSize: 12, color: '#4a5270', display: 'block', marginBottom: 6 }}>¿Algo más que quieras decirnos? (opcional)</label>
+        <label style={{ fontSize: 12, color: 'var(--text-faint)', display: 'block', marginBottom: 6 }}>¿Algo más que quieras decirnos? (opcional)</label>
         <textarea style={TEXTAREA} value={feedbackText} onChange={e => setFeedback(e.target.value)} placeholder="Tu opinión nos ayuda a mejorar" />
 
-        {error && <p style={{ fontSize: 12, color: '#f87171', marginTop: 12 }}>{error}</p>}
+        {error && <p style={{ fontSize: 12, color: 'var(--negative)', marginTop: 12 }}>{error}</p>}
 
         {/* Botón de mantener más visible; cancelar menos prominente — diseño honesto */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', marginTop: 24 }}>
           <button onClick={() => router.push('/cartera')} style={{ ...BTN_INDIGO, width: '100%', maxWidth: 320 }}>
             Mantener mi suscripción
           </button>
-          <button onClick={confirmCancel} disabled={busy} style={{ ...LINK_SMALL, color: '#f87171', fontSize: 13, padding: '6px 0' }}>
+          <button onClick={confirmCancel} disabled={busy} style={{ ...LINK_SMALL, color: 'var(--negative)', fontSize: 13, padding: '6px 0' }}>
             {busy ? 'Procesando…' : 'Cancelar suscripción'}
           </button>
         </div>
@@ -129,43 +129,43 @@ export default function CancelarClient({ summary, accessUntil, discountUsed, mon
   const cards = [
     summary.companies > 0 && { label: 'Empresas en tu índice DGI', value: summary.companies },
     summary.markets   > 0 && { label: 'Mercados que sigues', value: summary.markets },
-    summary.annualIncome != null && summary.annualIncome > 0 && { label: 'Renta anual proyectada', value: fmtEUR(summary.annualIncome), color: '#34d399' },
-    { label: 'Tiempo como Premium', value: `${summary.monthsAsPremium} ${summary.monthsAsPremium === 1 ? 'mes' : 'meses'}`, color: '#fbbf24' },
+    summary.annualIncome != null && summary.annualIncome > 0 && { label: 'Renta anual proyectada', value: fmtEUR(summary.annualIncome), color: 'var(--positive)' },
+    { label: 'Tiempo como Premium', value: `${summary.monthsAsPremium} ${summary.monthsAsPremium === 1 ? 'mes' : 'meses'}`, color: 'var(--warning)' },
     summary.totalValue != null && summary.totalValue > 0 && { label: 'Valor de tu cartera', value: fmtEUR(summary.totalValue) },
-    summary.yieldOnCost != null && { label: 'Yield on cost medio', value: summary.yieldOnCost.toFixed(2) + '%', color: '#818cf8' },
+    summary.yieldOnCost != null && { label: 'Yield on cost medio', value: summary.yieldOnCost.toFixed(2) + '%', color: 'var(--accent)' },
     summary.recurringTotal > 0 && { label: 'Aportado automáticamente', value: fmtEUR(summary.recurringTotal), color: '#a78bfa' },
   ].filter(Boolean)
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 16px 64px' }}>
       {/* PASO 1 — Resumen de uso */}
-      <h1 style={{ fontSize: 24, fontWeight: 900, color: '#e0e8f0', marginBottom: 6 }}>Antes de irte, mira lo que has construido</h1>
-      <p style={{ fontSize: 13, color: '#4a5270', marginBottom: 24 }}>Tu actividad como miembro Premium de Mi Índice DGI.</p>
+      <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 6 }}>Antes de irte, mira lo que has construido</h1>
+      <p style={{ fontSize: 13, color: 'var(--text-faint)', marginBottom: 24 }}>Tu actividad como miembro Premium de Mi Índice DGI.</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
         {cards.map(c => (
           <div key={c.label} style={{ ...CARD, padding: '16px 18px' }}>
-            <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 6 }}>{c.label}</p>
-            <p style={{ fontSize: 24, fontWeight: 900, color: c.color || '#c8d0e0', lineHeight: 1 }}>{c.value}</p>
+            <p style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 6 }}>{c.label}</p>
+            <p style={{ fontSize: 24, fontWeight: 900, color: c.color || 'var(--text)', lineHeight: 1 }}>{c.value}</p>
           </div>
         ))}
       </div>
 
-      <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 36 }}>
-        Si cancelas perderás acceso a estos datos y análisis el <strong style={{ color: '#c8d0e0' }}>{fmtFecha(accessUntil)}</strong>.
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 36 }}>
+        Si cancelas perderás acceso a estos datos y análisis el <strong style={{ color: 'var(--text)' }}>{fmtFecha(accessUntil)}</strong>.
       </p>
 
       {/* PASO 2 — Pregunta de motivo */}
-      <h2 style={{ fontSize: 18, fontWeight: 800, color: '#e0e8f0', marginBottom: 16 }}>¿Por qué quieres cancelar?</h2>
+      <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-strong)', marginBottom: 16 }}>¿Por qué quieres cancelar?</h2>
 
       <div style={{ display: 'grid', gap: 8, marginBottom: 20 }}>
         {REASONS.map(r => (
           <button key={r.id} onClick={() => { setReason(r.id); setError(null); setFeedback('') }} style={{
             display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%',
             padding: '12px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 14,
-            border: reason === r.id ? '1px solid rgba(99,102,241,0.6)' : '1px solid rgba(255,255,255,0.08)',
-            background: reason === r.id ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.02)',
-            color: reason === r.id ? '#c8d0e0' : '#8090a8', fontWeight: reason === r.id ? 700 : 500,
+            border: reason === r.id ? '1px solid rgba(99,102,241,0.6)' : '1px solid var(--surface-3)',
+            background: reason === r.id ? 'rgba(99,102,241,0.12)' : 'var(--surface)',
+            color: reason === r.id ? 'var(--text)' : 'var(--text-muted)', fontWeight: reason === r.id ? 700 : 500,
           }}>
             <span style={{ fontSize: 18 }}>{r.emoji}</span> {r.label}
           </button>
@@ -175,7 +175,7 @@ export default function CancelarClient({ summary, accessUntil, discountUsed, mon
       {/* Respuesta personalizada según motivo */}
       {reason && (
         <div style={{ ...CARD, padding: 22 }}>
-          {error && <p style={{ fontSize: 12, color: '#f87171', marginBottom: 12 }}>{error}</p>}
+          {error && <p style={{ fontSize: 12, color: 'var(--negative)', marginBottom: 12 }}>{error}</p>}
 
           {/* Precio → descuento (solo si no lo usó antes) */}
           {reason === 'precio' && (
@@ -209,7 +209,7 @@ export default function CancelarClient({ summary, accessUntil, discountUsed, mon
           {/* Faltan funciones → campo texto + enviar sugerencia */}
           {reason === 'faltan_funciones' && (
             <div>
-              <p style={{ fontSize: 14, color: '#c8d0e0', marginBottom: 12, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 14, color: 'var(--text)', marginBottom: 12, lineHeight: 1.5 }}>
                 Cuéntanos qué funciones necesitas — muchas de las mejoras actuales vienen de sugerencias de usuarios como tú.
               </p>
               <textarea style={TEXTAREA} value={feedbackText} onChange={e => setFeedback(e.target.value)} placeholder="Las funciones que echas en falta…" />
@@ -223,16 +223,16 @@ export default function CancelarClient({ summary, accessUntil, discountUsed, mon
           {/* Gasto temporal → pausa 1 o 2 meses */}
           {reason === 'gasto_temporal' && (
             <div>
-              <p style={{ fontSize: 14, color: '#c8d0e0', marginBottom: 14, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 14, color: 'var(--text)', marginBottom: 14, lineHeight: 1.5 }}>
                 Puedes pausar hasta 2 meses — sin coste, sin perder tus datos.
               </p>
               <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                 {[1, 2].map(m => (
                   <button key={m} onClick={() => setPauseMonths(m)} style={{
                     flex: 1, padding: '10px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700,
-                    border: pauseMonths === m ? '1px solid rgba(52,211,153,0.6)' : '1px solid rgba(255,255,255,0.1)',
-                    background: pauseMonths === m ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.03)',
-                    color: pauseMonths === m ? '#34d399' : '#8090a8',
+                    border: pauseMonths === m ? '1px solid rgba(52,211,153,0.6)' : '1px solid var(--border-strong)',
+                    background: pauseMonths === m ? 'rgba(52,211,153,0.12)' : 'var(--surface-2)',
+                    color: pauseMonths === m ? 'var(--positive)' : 'var(--text-muted)',
                   }}>Pausar {m} {m === 1 ? 'mes' : 'meses'}</button>
                 ))}
               </div>
@@ -246,7 +246,7 @@ export default function CancelarClient({ summary, accessUntil, discountUsed, mon
           {/* Otra herramienta / ya conseguido → texto opcional + confirmar */}
           {(reason === 'otra_herramienta' || reason === 'ya_conseguido') && (
             <div>
-              <p style={{ fontSize: 14, color: '#c8d0e0', marginBottom: 12, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 14, color: 'var(--text)', marginBottom: 12, lineHeight: 1.5 }}>
                 {reason === 'otra_herramienta' ? '¿Qué herramienta usarás? Nos ayuda a mejorar.' : '¿Qué buscabas conseguir? Nos ayuda a entender mejor a nuestros usuarios.'}
               </p>
               <textarea style={TEXTAREA} value={feedbackText} onChange={e => setFeedback(e.target.value)} placeholder="Opcional" />
@@ -259,7 +259,7 @@ export default function CancelarClient({ summary, accessUntil, discountUsed, mon
           {/* Otro motivo → directo a confirmar */}
           {reason === 'otro' && (
             <div>
-              <p style={{ fontSize: 14, color: '#c8d0e0', marginBottom: 12, lineHeight: 1.5 }}>Lamentamos verte partir. Puedes contarnos más en el siguiente paso.</p>
+              <p style={{ fontSize: 14, color: 'var(--text)', marginBottom: 12, lineHeight: 1.5 }}>Lamentamos verte partir. Puedes contarnos más en el siguiente paso.</p>
               <button onClick={() => setView('confirm')} style={BTN_INDIGO}>Continuar</button>
             </div>
           )}
@@ -272,14 +272,14 @@ export default function CancelarClient({ summary, accessUntil, discountUsed, mon
 function Retention({ text, btnLabel, onAccept, onCancel, busy }) {
   return (
     <div>
-      <p style={{ fontSize: 14, color: '#c8d0e0', marginBottom: 18, lineHeight: 1.5 }}>{text}</p>
+      <p style={{ fontSize: 14, color: 'var(--text)', marginBottom: 18, lineHeight: 1.5 }}>{text}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
         {onAccept && btnLabel && (
           <button onClick={onAccept} disabled={busy} style={{ padding: '12px 24px', background: 'rgba(52,211,153,0.9)', border: 'none', borderRadius: 8, color: '#062b1f', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
             {busy ? 'Procesando…' : btnLabel}
           </button>
         )}
-        <button onClick={onCancel} style={{ fontSize: 12, color: '#4a5270', textDecoration: 'underline', cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}>
+        <button onClick={onCancel} style={{ fontSize: 12, color: 'var(--text-faint)', textDecoration: 'underline', cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}>
           {onAccept ? 'No, prefiero cancelar de todas formas' : 'Continuar con la cancelación'}
         </button>
       </div>
@@ -289,9 +289,9 @@ function Retention({ text, btnLabel, onAccept, onCancel, busy }) {
 
 function Dato({ k, v }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-      <span style={{ fontSize: 13, color: '#4a5270' }}>{k}</span>
-      <span style={{ fontSize: 13, color: '#c8d0e0', fontWeight: 600, textAlign: 'right' }}>{v}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingBottom: 12, borderBottom: '1px solid var(--surface-3)' }}>
+      <span style={{ fontSize: 13, color: 'var(--text-faint)' }}>{k}</span>
+      <span style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, textAlign: 'right' }}>{v}</span>
     </div>
   )
 }

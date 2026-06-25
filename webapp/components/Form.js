@@ -15,27 +15,27 @@ function CompanySearch({onSelect}) {
   function pick(d){onSelect({name:d[0],ticker:d[1],country:d[2],currency:d[3],superSector:d[4],sectorName:d[5],sector:d[6]});setQ("")}
   return(
     <div style={{marginBottom:14}}>
-      <label style={{...LBL,color:"#818cf8",marginBottom:6}}>🔍 Buscar empresa ({DICT.length} disponibles)</label>
+      <label style={{...LBL,color:"var(--accent)",marginBottom:6}}>🔍 Buscar empresa ({DICT.length} disponibles)</label>
       <div style={{display:"flex",gap:6,marginBottom:results.length>0?8:0}}>
         <input style={{...INP,flex:1,background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.25)"}}
           placeholder="Nombre o ticker..." value={q} onChange={e=>setQ(e.target.value)} autoComplete="off" autoCorrect="off" spellCheck="false"/>
-        {q&&<button onClick={()=>setQ("")} style={{...BTN,padding:"0 12px",background:"rgba(255,255,255,0.05)",color:"#6a7090",fontSize:18}}>×</button>}
+        {q&&<button onClick={()=>setQ("")} style={{...BTN,padding:"0 12px",background:"var(--surface-3)",color:"var(--text-muted)",fontSize:18}}>×</button>}
       </div>
       {results.length>0&&(
-        <div style={{background:"#0f1221",border:"1px solid rgba(99,102,241,0.3)",borderRadius:10,overflow:"hidden"}}>
+        <div style={{background:"var(--bg-elev)",border:"1px solid rgba(99,102,241,0.3)",borderRadius:10,overflow:"hidden"}}>
           {results.map((d,i)=>(
-            <div key={i} onClick={()=>pick(d)} style={{padding:"10px 12px",cursor:"pointer",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+            <div key={i} onClick={()=>pick(d)} style={{padding:"10px 12px",cursor:"pointer",borderBottom:"1px solid var(--surface-2)"}}>
               <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-                <span style={{fontSize:13,fontWeight:600,color:"#e0e8f0"}}>{d[0]}</span>
-                <span style={{fontSize:11,color:"#3a4260",background:"rgba(255,255,255,0.04)",padding:"1px 5px",borderRadius:4}}>{d[1]}</span>
-                <span style={{fontSize:9,color:"#818cf8",background:"rgba(99,102,241,0.1)",padding:"1px 5px",borderRadius:4}}>{d[4]}</span>
+                <span style={{fontSize:13,fontWeight:600,color:"var(--text-strong)"}}>{d[0]}</span>
+                <span style={{fontSize:11,color:"var(--text-faintest)",background:"var(--surface-2)",padding:"1px 5px",borderRadius:4}}>{d[1]}</span>
+                <span style={{fontSize:9,color:"var(--accent)",background:"rgba(99,102,241,0.1)",padding:"1px 5px",borderRadius:4}}>{d[4]}</span>
               </div>
-              <p style={{fontSize:10,color:"#4a5270",marginTop:2}}>{d[5]} · {d[2]} · {d[3]}</p>
+              <p style={{fontSize:10,color:"var(--text-faint)",marginTop:2}}>{d[5]} · {d[2]} · {d[3]}</p>
             </div>
           ))}
         </div>
       )}
-      {q.length>=2&&results.length===0&&<p style={{fontSize:11,color:"#4a5270",padding:"8px 0"}}>Sin resultados</p>}
+      {q.length>=2&&results.length===0&&<p style={{fontSize:11,color:"var(--text-faint)",padding:"8px 0"}}>Sin resultados</p>}
     </div>
   )
 }
@@ -58,7 +58,7 @@ function DCFSection({form,setForm,live}) {
   return(
     <div style={{padding:"12px",background:"rgba(99,102,241,0.04)",border:"1px solid "+(hasMos?sC(s)+"40":"rgba(99,102,241,0.2)"),borderRadius:12,marginTop:8}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-        <div><span style={{fontSize:13,color:"#818cf8",fontWeight:600}}>DCF — 2 fases</span><p style={{fontSize:10,color:"#3a4260",marginTop:2}}>{cfg.lbl} <strong style={{color:"#c8d0e0"}}>por acción</strong></p></div>
+        <div><span style={{fontSize:13,color:"var(--accent)",fontWeight:600}}>DCF — 2 fases</span><p style={{fontSize:10,color:"var(--text-faintest)",marginTop:2}}>{cfg.lbl} <strong style={{color:"var(--text)"}}>por acción</strong></p></div>
         {hasMos&&<div style={{fontSize:22,fontWeight:800,color:sC(s)}}>{parseFloat(form.values.margin_safety)>0?"+":""}{form.values.margin_safety}%</div>}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
@@ -69,17 +69,17 @@ function DCFSection({form,setForm,live}) {
       </div>
       {ag!=null?(
         <>
-          <p style={{fontSize:11,color:"#4a5270",marginBottom:4}}>Fase 1 CAGR: <strong style={{color:"#c8d0e0"}}>{ag}%</strong></p>
+          <p style={{fontSize:11,color:"var(--text-faint)",marginBottom:4}}>Fase 1 CAGR: <strong style={{color:"var(--text)"}}>{ag}%</strong></p>
           <div style={{marginBottom:8}}><label style={LBL}>Fase 2 crec. años 6-10% (sugerido: {Math.max((ag||0)/2,2).toFixed(1)}%)</label><input style={INP} type="number" step="0.1" placeholder={String(Math.max((ag||0)/2,2).toFixed(1))} value={di.growth2||""} onChange={e=>sd({growth2:e.target.value})}/></div>
         </>
       ):(
         <div style={{marginBottom:8}}><label style={LBL}>Crecimiento proyectado %</label><input style={INP} type="number" step="0.1" placeholder="ej: 7" value={di.growth||""} onChange={e=>sd({growth:e.target.value})}/></div>
       )}
-      <button onClick={run} style={{...BTN,width:"100%",background:"rgba(99,102,241,0.25)",color:"#818cf8",fontSize:12,marginBottom:di.iv?8:0}}>↻ Calcular valor intrínseco</button>
+      <button onClick={run} style={{...BTN,width:"100%",background:"rgba(99,102,241,0.25)",color:"var(--accent)",fontSize:12,marginBottom:di.iv?8:0}}>↻ Calcular valor intrínseco</button>
       {di.iv&&(
         <div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",background:sBg(s),borderRadius:9}}>
-          <div><p style={{fontSize:10,color:"#4a5270"}}>Valor intrínseco</p><p style={{fontSize:20,fontWeight:800,color:"#fff"}}>{di.iv}</p></div>
-          {di.mos!=null&&<div style={{textAlign:"right"}}><p style={{fontSize:10,color:"#4a5270"}}>Margen seguridad</p><p style={{fontSize:20,fontWeight:800,color:sC(s)}}>{di.mos>0?"+":""}{di.mos}%</p></div>}
+          <div><p style={{fontSize:10,color:"var(--text-faint)"}}>Valor intrínseco</p><p style={{fontSize:20,fontWeight:800,color:"#fff"}}>{di.iv}</p></div>
+          {di.mos!=null&&<div style={{textAlign:"right"}}><p style={{fontSize:10,color:"var(--text-faint)"}}>Margen seguridad</p><p style={{fontSize:20,fontWeight:800,color:sC(s)}}>{di.mos>0?"+":""}{di.mos}%</p></div>}
         </div>
       )}
     </div>
@@ -106,10 +106,10 @@ export default function Form({initial,editingId,onSave,onCancel,destWHT}) {
   const sV=(id,v)=>setForm(f=>({...f,values:{...f.values,[id]:v}}))
 
   return(
-    <div style={{background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:16,padding:"18px 16px"}}>
-      <p style={{fontSize:10,color:"#4a5270",letterSpacing:"0.16em",textTransform:"uppercase",fontWeight:600,marginBottom:12}}>{editingId?"Editando":"Nueva empresa"}</p>
+    <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:16,padding:"18px 16px"}}>
+      <p style={{fontSize:10,color:"var(--text-faint)",letterSpacing:"0.16em",textTransform:"uppercase",fontWeight:600,marginBottom:12}}>{editingId?"Editando":"Nueva empresa"}</p>
       {!editingId&&<CompanySearch onSelect={applyDict}/>}
-      {form._sectorName&&<div style={{padding:"6px 10px",background:"rgba(99,102,241,0.06)",borderRadius:8,marginBottom:10,fontSize:11,color:"#818cf8"}}>{form._superSector} › {form._sectorName} · {form._currency}</div>}
+      {form._sectorName&&<div style={{padding:"6px 10px",background:"rgba(99,102,241,0.06)",borderRadius:8,marginBottom:10,fontSize:11,color:"var(--accent)"}}>{form._superSector} › {form._sectorName} · {form._currency}</div>}
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div><label style={LBL}>Nombre</label><input style={INP} placeholder="ej: Munich Re" value={form.name||""} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></div>
@@ -122,9 +122,9 @@ export default function Form({initial,editingId,onSave,onCancel,destWHT}) {
           {COUNTRIES.map(ct=>(
             <button key={ct.code} onClick={()=>setForm(f=>({...f,country:ct.code,originWHT:getWHT(ct.code)}))}
               style={{...BTN,padding:"4px 8px",fontSize:10,borderRadius:7,
-                background:form.country===ct.code?"rgba(99,102,241,0.4)":"rgba(255,255,255,0.04)",
-                color:form.country===ct.code?"#fff":"#5a6480",
-                border:"1px solid "+(form.country===ct.code?"rgba(99,102,241,0.5)":"rgba(255,255,255,0.06)")}}>
+                background:form.country===ct.code?"rgba(99,102,241,0.4)":"var(--surface-2)",
+                color:form.country===ct.code?"#fff":"var(--text-muted)",
+                border:"1px solid "+(form.country===ct.code?"rgba(99,102,241,0.5)":"var(--border)")}}>
               {ct.flag} {ct.name}
             </button>
           ))}
@@ -137,14 +137,14 @@ export default function Form({initial,editingId,onSave,onCancel,destWHT}) {
           {Object.entries(SECTORS).map(([k,s])=>(
             <button key={k} onClick={()=>chSec(k)}
               style={{...BTN,padding:"6px 12px",fontSize:11,borderRadius:8,
-                background:form.sector===k?s.color+"25":"rgba(255,255,255,0.04)",
-                color:form.sector===k?s.color:"#5a6480",
-                border:"1px solid "+(form.sector===k?s.color+"50":"rgba(255,255,255,0.06)")}}>
+                background:form.sector===k?s.color+"25":"var(--surface-2)",
+                color:form.sector===k?s.color:"var(--text-muted)",
+                border:"1px solid "+(form.sector===k?s.color+"50":"var(--border)")}}>
               {s.label}
             </button>
           ))}
         </div>
-        <p style={{fontSize:11,color:"#3a4260",marginTop:4,fontStyle:"italic"}}>{sc.desc}</p>
+        <p style={{fontSize:11,color:"var(--text-faintest)",marginTop:4,fontStyle:"italic"}}>{sc.desc}</p>
       </div>
 
       <div style={{marginBottom:12}}>
@@ -157,15 +157,15 @@ export default function Form({initial,editingId,onSave,onCancel,destWHT}) {
         {ms.filter(m=>!m.isDCF).map(m=>{
           const s=live.scores[m.id],has=form.values[m.id]!==undefined&&form.values[m.id]!==""
           return(
-            <div key={m.id} style={{padding:"10px 12px",background:"rgba(255,255,255,0.02)",border:"1px solid "+(has?sC(s)+"30":"rgba(255,255,255,0.04)"),borderRadius:9}}>
+            <div key={m.id} style={{padding:"10px 12px",background:"var(--surface)",border:"1px solid "+(has?sC(s)+"30":"var(--surface-2)"),borderRadius:9}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
-                    <span style={{fontSize:12,color:"#8090a8",fontWeight:500}}>{m.label}</span>
-                    <button style={{background:"none",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"50%",color:"#4a5270",width:15,height:15,fontSize:8,cursor:"pointer",padding:0,lineHeight:"15px"}} onClick={()=>setOpenH(openH===m.id?null:m.id)}>?</button>
+                    <span style={{fontSize:12,color:"var(--text-muted)",fontWeight:500}}>{m.label}</span>
+                    <button style={{background:"none",border:"1px solid var(--surface-3)",borderRadius:"50%",color:"var(--text-faint)",width:15,height:15,fontSize:8,cursor:"pointer",padding:0,lineHeight:"15px"}} onClick={()=>setOpenH(openH===m.id?null:m.id)}>?</button>
                   </div>
-                  {openH===m.id&&<p style={{fontSize:11,color:"#4a5270",fontStyle:"italic",marginBottom:3}}>{m.hint}</p>}
-                  {!m.skipRanges&&<button style={{background:"none",border:"none",color:"#2a3a55",fontSize:10,cursor:"pointer",padding:0}} onClick={()=>setShowR(showR===m.id?null:m.id)}>{showR===m.id?"ocultar rangos":"ver rangos"}</button>}
+                  {openH===m.id&&<p style={{fontSize:11,color:"var(--text-faint)",fontStyle:"italic",marginBottom:3}}>{m.hint}</p>}
+                  {!m.skipRanges&&<button style={{background:"none",border:"none",color:"var(--text-faintest)",fontSize:10,cursor:"pointer",padding:0}} onClick={()=>setShowR(showR===m.id?null:m.id)}>{showR===m.id?"ocultar rangos":"ver rangos"}</button>}
                   {!m.skipRanges&&showR===m.id&&(
                     <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:3,marginTop:6}}>
                       {m.ranges.map((r,i)=>(
@@ -180,7 +180,7 @@ export default function Form({initial,editingId,onSave,onCancel,destWHT}) {
                 <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
                   <div style={{position:"relative"}}>
                     <input style={{...INP,width:80,padding:"7px 28px 7px 8px",fontSize:14}} type="number" step="any" placeholder={m.placeholder} value={form.values[m.id]??""} onChange={e=>sV(m.id,e.target.value)}/>
-                    <span style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",fontSize:10,color:"#3a4260",pointerEvents:"none"}}>{m.unit}</span>
+                    <span style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",fontSize:10,color:"var(--text-faintest)",pointerEvents:"none"}}>{m.unit}</span>
                   </div>
                   <div style={{width:30,height:30,borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,flexShrink:0,background:sBg(s),color:sC(s),opacity:has?1:0.25}}>{has?(s!=null?s:"—"):"—"}</div>
                 </div>
@@ -194,7 +194,7 @@ export default function Form({initial,editingId,onSave,onCancel,destWHT}) {
 
       {/* Retenciones */}
       <div style={{marginTop:10,padding:"12px",background:"rgba(251,191,36,0.04)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:12}}>
-        <p style={{fontSize:12,fontWeight:600,color:"#fbbf24",marginBottom:8}}>Retenciones fiscales</p>
+        <p style={{fontSize:12,fontWeight:600,color:"var(--warning)",marginBottom:8}}>Retenciones fiscales</p>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
           <div>
             <label style={LBL}>Retención origen % ({getCountry(form.country||"US").name})</label>
@@ -203,14 +203,14 @@ export default function Form({initial,editingId,onSave,onCancel,destWHT}) {
           <div>
             <label style={LBL}>Tu retención destino %</label>
             <input style={{...INP,opacity:0.6,cursor:"not-allowed"}} type="number" value={dest} readOnly/>
-            <p style={{fontSize:10,color:"#3a4260",marginTop:3}}>Cambia en ajustes globales</p>
+            <p style={{fontSize:10,color:"var(--text-faintest)",marginTop:3}}>Cambia en ajustes globales</p>
           </div>
         </div>
         {yld>0&&(
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-            <div style={{padding:"8px",background:"rgba(255,255,255,0.02)",borderRadius:8,textAlign:"center"}}><p style={{fontSize:9,color:"#4a5270"}}>Yield bruto</p><p style={{fontSize:16,fontWeight:700,color:"#c8d0e0"}}>{yld}%</p></div>
-            <div style={{padding:"8px",background:"rgba(255,255,255,0.02)",borderRadius:8,textAlign:"center"}}><p style={{fontSize:9,color:"#4a5270"}}>Retención efectiva</p><p style={{fontSize:16,fontWeight:700,color:"#fbbf24"}}>{Math.max(originWHT,dest)}%</p></div>
-            <div style={{padding:"8px",background:"rgba(52,211,153,0.08)",borderRadius:8,textAlign:"center"}}><p style={{fontSize:9,color:"#4a5270"}}>Yield neto</p><p style={{fontSize:16,fontWeight:700,color:"#34d399"}}>{netY}%</p></div>
+            <div style={{padding:"8px",background:"var(--surface)",borderRadius:8,textAlign:"center"}}><p style={{fontSize:9,color:"var(--text-faint)"}}>Yield bruto</p><p style={{fontSize:16,fontWeight:700,color:"var(--text)"}}>{yld}%</p></div>
+            <div style={{padding:"8px",background:"var(--surface)",borderRadius:8,textAlign:"center"}}><p style={{fontSize:9,color:"var(--text-faint)"}}>Retención efectiva</p><p style={{fontSize:16,fontWeight:700,color:"var(--warning)"}}>{Math.max(originWHT,dest)}%</p></div>
+            <div style={{padding:"8px",background:"rgba(52,211,153,0.08)",borderRadius:8,textAlign:"center"}}><p style={{fontSize:9,color:"var(--text-faint)"}}>Yield neto</p><p style={{fontSize:16,fontWeight:700,color:"var(--positive)"}}>{netY}%</p></div>
           </div>
         )}
       </div>
@@ -218,8 +218,8 @@ export default function Form({initial,editingId,onSave,onCancel,destWHT}) {
       {/* Proyección 10 años */}
       <div style={{marginTop:10,padding:"12px",background:"rgba(129,140,248,0.04)",border:"1px solid rgba(129,140,248,0.2)",borderRadius:12}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <p style={{fontSize:12,fontWeight:600,color:"#818cf8"}}>Proyección a 10 años</p>
-          <button onClick={()=>setShowProj(p=>!p)} style={{...BTN,fontSize:11,padding:"4px 10px",background:"rgba(129,140,248,0.15)",color:"#818cf8"}}>{showProj?"Ocultar":"Ver"}</button>
+          <p style={{fontSize:12,fontWeight:600,color:"var(--accent)"}}>Proyección a 10 años</p>
+          <button onClick={()=>setShowProj(p=>!p)} style={{...BTN,fontSize:11,padding:"4px 10px",background:"rgba(129,140,248,0.15)",color:"var(--accent)"}}>{showProj?"Ocultar":"Ver"}</button>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
           <div>
@@ -228,19 +228,19 @@ export default function Form({initial,editingId,onSave,onCancel,destWHT}) {
           </div>
           {form._projAmt>0&&yld>0&&netY&&(
             <div style={{padding:"8px",background:"rgba(129,140,248,0.08)",borderRadius:8}}>
-              <p style={{fontSize:9,color:"#4a5270"}}>Renta neta año 1</p>
-              <p style={{fontSize:16,fontWeight:700,color:"#818cf8"}}>€{(form._projAmt*parseFloat(netY)/100).toFixed(2)}</p>
-              {projRows&&<p style={{fontSize:9,color:"#4a5270",marginTop:2}}>Total 10 años: <strong style={{color:"#a78bfa"}}>€{projRows[9]?.cum?.toFixed(2)}</strong></p>}
+              <p style={{fontSize:9,color:"var(--text-faint)"}}>Renta neta año 1</p>
+              <p style={{fontSize:16,fontWeight:700,color:"var(--accent)"}}>€{(form._projAmt*parseFloat(netY)/100).toFixed(2)}</p>
+              {projRows&&<p style={{fontSize:9,color:"var(--text-faint)",marginTop:2}}>Total 10 años: <strong style={{color:"#a78bfa"}}>€{projRows[9]?.cum?.toFixed(2)}</strong></p>}
             </div>
           )}
         </div>
-        {(!yld||yld===0)&&<p style={{fontSize:11,color:"#3a4260",marginTop:4}}>Introduce el Yield actual para ver la proyección.</p>}
+        {(!yld||yld===0)&&<p style={{fontSize:11,color:"var(--text-faintest)",marginTop:4}}>Introduce el Yield actual para ver la proyección.</p>}
       </div>
 
       {/* Botones */}
       <div style={{display:"flex",gap:8,marginTop:16}}>
-        <button onClick={onCancel} style={{...BTN,flex:1,background:"rgba(255,255,255,0.05)",color:"#6a7090",fontSize:13}}>Cancelar</button>
-        <button onClick={()=>onSave(form)} style={{...BTN,flex:2,background:"rgba(99,102,241,0.8)",fontSize:13}} disabled={!form.name?.trim()}>
+        <button onClick={onCancel} style={{...BTN,flex:1,background:"var(--surface-3)",color:"var(--text-muted)",fontSize:13}}>Cancelar</button>
+        <button onClick={()=>onSave(form)} style={{...BTN,flex:2,background:"var(--accent)",fontSize:13}} disabled={!form.name?.trim()}>
           {editingId?"Actualizar":"Guardar empresa"}
         </button>
       </div>

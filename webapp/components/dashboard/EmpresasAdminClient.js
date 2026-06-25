@@ -3,15 +3,15 @@ import { useState, useMemo, Fragment } from 'react'
 import { Card, SectionTitle } from '@/components/dashboard/ui'
 
 const PAGE = 25
-const STATUS = { sin: { l: 'Sin fundamentales', c: '#f87171' }, incompletos: { l: 'Incompletos', c: '#fbbf24' }, desactualizados: { l: 'Desactualizados', c: '#fb923c' }, ok: { l: 'OK', c: '#34d399' } }
+const STATUS = { sin: { l: 'Sin fundamentales', c: 'var(--negative)' }, incompletos: { l: 'Incompletos', c: 'var(--warning)' }, desactualizados: { l: 'Desactualizados', c: '#fb923c' }, ok: { l: 'OK', c: 'var(--positive)' } }
 const DIV_STATUS = {
-  falta_dps:     { l: 'Falta DPS',     c: '#fbbf24' },
-  no_reparte:    { l: 'No reparte',    c: '#6b7693' },
+  falta_dps:     { l: 'Falta DPS',     c: 'var(--warning)' },
+  no_reparte:    { l: 'No reparte',    c: 'var(--text-muted)' },
   por_verificar: { l: 'Por verificar', c: '#60a5fa' },
-  ok:            { l: 'Reparte',       c: '#34d399' },
+  ok:            { l: 'Reparte',       c: 'var(--positive)' },
 }
 const TYPES = ['general', 'banco', 'aseguradora', 'reit', 'bdc', 'utilities']
-const inputStyle = { background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 5, padding: '4px 6px', color: '#e0e8f0', fontSize: 12, outline: 'none', width: '100%', fontFamily: 'inherit' }
+const inputStyle = { background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 5, padding: '4px 6px', color: 'var(--text-strong)', fontSize: 12, outline: 'none', width: '100%', fontFamily: 'inherit' }
 
 function downloadCSV(name, rows) {
   const csv = rows.map(r => r.map(c => { const s = c == null ? '' : String(c); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s }).join(',')).join('\n')
@@ -44,10 +44,10 @@ function Cell({ value, options, validate, onSave, color }) {
     )
   }
   return (
-    <span onClick={() => { setVal(value); setEditing(true) }} title="Clic para editar" style={{ cursor: 'pointer', color: color || '#c8d0e0', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-      {value || <span style={{ color: '#4a5270' }}>—</span>}
-      {state === 'ok' && <span style={{ color: '#34d399' }}>✓</span>}
-      {state === 'err' && <span style={{ color: '#f87171' }}>✗</span>}
+    <span onClick={() => { setVal(value); setEditing(true) }} title="Clic para editar" style={{ cursor: 'pointer', color: color || 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+      {value || <span style={{ color: 'var(--text-faint)' }}>—</span>}
+      {state === 'ok' && <span style={{ color: 'var(--positive)' }}>✓</span>}
+      {state === 'err' && <span style={{ color: 'var(--negative)' }}>✗</span>}
     </span>
   )
 }
@@ -169,7 +169,7 @@ export default function EmpresasAdminClient({ companies: initial, sectors, count
         <SectionTitle>Empresas ({filtered.length.toLocaleString('es-ES')})</SectionTitle>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={exportSel} style={ghost}>↓ Exportar CSV</button>
-          <button onClick={triggerAll} disabled={triggering} style={{ ...ghost, color: '#818cf8', borderColor: 'rgba(99,102,241,0.3)' }}>
+          <button onClick={triggerAll} disabled={triggering} style={{ ...ghost, color: 'var(--accent)', borderColor: 'rgba(99,102,241,0.3)' }}>
             {triggering ? '…' : '↻ Actualizar fundamentales (GitHub)'}
           </button>
         </div>
@@ -184,16 +184,16 @@ export default function EmpresasAdminClient({ companies: initial, sectors, count
         <select value={fDiv} onChange={e => { setFDiv(e.target.value); setPage(1) }} style={filterStyle}><option value="">Dividendo: todos</option><option value="falta_dps">Incompletos reales (falta DPS)</option><option value="no_reparte">No reparten dividendo</option><option value="por_verificar">Por verificar</option></select>
       </div>
 
-      {msg && <p style={{ fontSize: 12, color: msg.t === 'ok' ? '#34d399' : msg.t === 'err' ? '#f87171' : '#8090a8', marginBottom: 10 }}>{msg.m}</p>}
+      {msg && <p style={{ fontSize: 12, color: msg.t === 'ok' ? 'var(--positive)' : msg.t === 'err' ? 'var(--negative)' : 'var(--text-muted)', marginBottom: 10 }}>{msg.m}</p>}
 
       {/* Barra de acciones masivas */}
       {sel.size > 0 && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', padding: '10px 12px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 8, marginBottom: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#818cf8' }}>{sel.size} seleccionadas</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)' }}>{sel.size} seleccionadas</span>
           <select value={bulkSector} onChange={e => setBulkSector(e.target.value)} style={filterStyle}><option value="">Cambiar sector a…</option>{sectors.map(s => <option key={s} value={s}>{s}</option>)}</select>
           <button onClick={bulkChangeSector} disabled={!bulkSector} style={ghost}>Aplicar</button>
           <button onClick={exportSel} style={ghost}>Exportar CSV</button>
-          <button onClick={bulkDelete} style={{ ...ghost, color: '#f87171', borderColor: 'rgba(248,113,113,0.3)' }}>Eliminar todas</button>
+          <button onClick={bulkDelete} style={{ ...ghost, color: 'var(--negative)', borderColor: 'rgba(248,113,113,0.3)' }}>Eliminar todas</button>
           <button onClick={() => setSel(new Set())} style={{ ...ghost, marginLeft: 'auto' }}>Limpiar</button>
         </div>
       )}
@@ -208,38 +208,38 @@ export default function EmpresasAdminClient({ companies: initial, sectors, count
           <tbody>
             {pageRows.map(r => (
               <Fragment key={r.ticker}>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <tr style={{ borderBottom: '1px solid var(--surface-2)' }}>
                   <td style={td}><input type="checkbox" checked={sel.has(r.ticker)} onChange={() => toggle(r.ticker)} /></td>
                   <td style={{ ...td, fontWeight: 700 }}>
                     {renaming === r.ticker ? (
                       <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
                         <input autoFocus value={newTicker} onChange={e => setNewTicker(e.target.value.toUpperCase())} onKeyDown={e => e.key === 'Enter' && renameTicker(r)} style={{ ...inputStyle, width: 90 }} />
-                        <button onClick={() => renameTicker(r)} style={miniBtn('#34d399')}>✓</button>
-                        <button onClick={() => { setRenaming(null); setNewTicker('') }} style={miniBtn('#8090a8')}>✗</button>
+                        <button onClick={() => renameTicker(r)} style={miniBtn('var(--positive)')}>✓</button>
+                        <button onClick={() => { setRenaming(null); setNewTicker('') }} style={miniBtn('var(--text-muted)')}>✗</button>
                       </span>
                     ) : (
                       <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center' }}>
-                        <span style={{ color: '#818cf8' }}>{r.ticker}</span>
-                        <button onClick={() => { setRenaming(r.ticker); setNewTicker(r.ticker) }} title="Cambiar ticker" style={miniBtn('#4a5270')}>✎</button>
+                        <span style={{ color: 'var(--accent)' }}>{r.ticker}</span>
+                        <button onClick={() => { setRenaming(r.ticker); setNewTicker(r.ticker) }} title="Cambiar ticker" style={miniBtn('var(--text-faint)')}>✎</button>
                       </span>
                     )}
                   </td>
                   <td style={td}><Cell value={r.name} onSave={v => saveField(r, 'name', v)} /></td>
-                  <td style={td}><Cell value={r.sector} options={sectors} onSave={v => saveField(r, 'sector', v)} color="#8090a8" /></td>
-                  <td style={td}><Cell value={r.country} options={countries} onSave={v => saveField(r, 'country', v)} color="#4a5270" /></td>
-                  <td style={td}><Cell value={r.type} options={TYPES} onSave={v => saveField(r, 'type', v)} color="#4a5270" /></td>
+                  <td style={td}><Cell value={r.sector} options={sectors} onSave={v => saveField(r, 'sector', v)} color="var(--text-muted)" /></td>
+                  <td style={td}><Cell value={r.country} options={countries} onSave={v => saveField(r, 'country', v)} color="var(--text-faint)" /></td>
+                  <td style={td}><Cell value={r.type} options={TYPES} onSave={v => saveField(r, 'type', v)} color="var(--text-faint)" /></td>
                   <td style={td}><span style={{ fontSize: 10, fontWeight: 700, color: STATUS[r.status]?.c, background: `${STATUS[r.status]?.c}18`, padding: '2px 7px', borderRadius: 5 }}>{STATUS[r.status]?.l}</span></td>
-                  <td style={td}>{r.divStatus ? <span style={{ fontSize: 10, fontWeight: 700, color: DIV_STATUS[r.divStatus]?.c, background: `${DIV_STATUS[r.divStatus]?.c}18`, padding: '2px 7px', borderRadius: 5 }}>{DIV_STATUS[r.divStatus]?.l}</span> : <span style={{ color: '#4a5270' }}>—</span>}</td>
+                  <td style={td}>{r.divStatus ? <span style={{ fontSize: 10, fontWeight: 700, color: DIV_STATUS[r.divStatus]?.c, background: `${DIV_STATUS[r.divStatus]?.c}18`, padding: '2px 7px', borderRadius: 5 }}>{DIV_STATUS[r.divStatus]?.l}</span> : <span style={{ color: 'var(--text-faint)' }}>—</span>}</td>
                   <td style={td}>
-                    <button onClick={() => loadFund(r.ticker)} disabled={loading.has(r.ticker)} title="Cargar de yfinance" style={miniBtn('#818cf8')}>{loading.has(r.ticker) ? '…' : '⤓'}</button>
-                    <button onClick={() => openDelete(r.ticker)} title="Eliminar" style={miniBtn('#f87171')}>🗑</button>
+                    <button onClick={() => loadFund(r.ticker)} disabled={loading.has(r.ticker)} title="Cargar de yfinance" style={miniBtn('var(--accent)')}>{loading.has(r.ticker) ? '…' : '⤓'}</button>
+                    <button onClick={() => openDelete(r.ticker)} title="Eliminar" style={miniBtn('var(--negative)')}>🗑</button>
                   </td>
                 </tr>
                 {confirmDel === r.ticker && (
                   <tr><td colSpan={9} style={{ padding: '10px 12px', background: 'rgba(248,113,113,0.06)' }}>
-                    <p style={{ fontSize: 12, color: '#c8d0e0', marginBottom: delInfo?.users ? 4 : 8 }}>¿Eliminar <b>{r.name}</b>? Esta empresa dejó de cotizar.</p>
-                    {delInfo?.users > 0 && <p style={{ fontSize: 11, color: '#fbbf24', marginBottom: 8 }}>⚠ {delInfo.users} usuario(s) la tienen en cartera — sus posiciones históricas se conservarán pero no verán datos actualizados.</p>}
-                    <button onClick={() => doDelete(r.ticker)} style={{ ...ghost, color: '#f87171', borderColor: 'rgba(248,113,113,0.3)', marginRight: 6 }}>Sí, eliminar</button>
+                    <p style={{ fontSize: 12, color: 'var(--text)', marginBottom: delInfo?.users ? 4 : 8 }}>¿Eliminar <b>{r.name}</b>? Esta empresa dejó de cotizar.</p>
+                    {delInfo?.users > 0 && <p style={{ fontSize: 11, color: 'var(--warning)', marginBottom: 8 }}>⚠ {delInfo.users} usuario(s) la tienen en cartera — sus posiciones históricas se conservarán pero no verán datos actualizados.</p>}
+                    <button onClick={() => doDelete(r.ticker)} style={{ ...ghost, color: 'var(--negative)', borderColor: 'rgba(248,113,113,0.3)', marginRight: 6 }}>Sí, eliminar</button>
                     <button onClick={() => setConfirmDel(null)} style={ghost}>Cancelar</button>
                   </td></tr>
                 )}
@@ -252,7 +252,7 @@ export default function EmpresasAdminClient({ companies: initial, sectors, count
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 12, alignItems: 'center' }}>
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={ghost}>←</button>
-          <span style={{ fontSize: 12, color: '#4a5270' }}>{page}/{totalPages}</span>
+          <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>{page}/{totalPages}</span>
           <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={ghost}>→</button>
         </div>
       )}
@@ -260,8 +260,8 @@ export default function EmpresasAdminClient({ companies: initial, sectors, count
   )
 }
 
-const th = { padding: '6px 8px', textAlign: 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.08)', fontWeight: 600, whiteSpace: 'nowrap' }
+const th = { padding: '6px 8px', textAlign: 'left', color: 'var(--text-faint)', borderBottom: '1px solid var(--surface-3)', fontWeight: 600, whiteSpace: 'nowrap' }
 const td = { padding: '6px 8px', whiteSpace: 'nowrap' }
-const filterStyle = { background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '7px 9px', color: '#c8d0e0', fontSize: 12, outline: 'none', fontFamily: 'inherit' }
-const ghost = { fontSize: 11, fontWeight: 700, padding: '6px 12px', borderRadius: 7, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#8090a8' }
+const filterStyle = { background: 'rgba(0,0,0,0.25)', border: '1px solid var(--border-strong)', borderRadius: 7, padding: '7px 9px', color: 'var(--text)', fontSize: 12, outline: 'none', fontFamily: 'inherit' }
+const ghost = { fontSize: 11, fontWeight: 700, padding: '6px 12px', borderRadius: 7, cursor: 'pointer', border: '1px solid var(--border-strong)', background: 'transparent', color: 'var(--text-muted)' }
 const miniBtn = c => ({ fontSize: 12, padding: '2px 6px', borderRadius: 5, cursor: 'pointer', border: 'none', background: 'transparent', color: c })

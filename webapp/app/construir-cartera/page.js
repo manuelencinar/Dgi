@@ -36,7 +36,7 @@ export default async function ConstruirCarteraPage() {
   const sectors = [...new Set(dict.map(d => d[4]))].filter(Boolean).sort()
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav active="/construir-cartera" />
       <ConstruirCarteraClient
         sectors={sectors}

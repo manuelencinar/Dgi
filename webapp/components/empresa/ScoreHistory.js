@@ -1,9 +1,9 @@
 // Sparkline de la evolución del Score DGI — detecta deterioro/mejora silenciosa.
 // data: [{ date: 'YYYY-MM-DD', score: number }] ascendente. SVG puro (sin estado).
 function color(s) {
-  if (s == null) return '#3a4260'
-  if (s >= 8) return '#34d399'; if (s >= 6.5) return '#86efac'
-  if (s >= 5) return '#fbbf24'; if (s >= 3) return '#f97316'; return '#f87171'
+  if (s == null) return 'var(--text-faintest)'
+  if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return '#86efac'
+  if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)'
 }
 function fmtDate(d) {
   try { return new Date(d).toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }) } catch { return d }
@@ -14,7 +14,7 @@ export default function ScoreHistory({ data = [] }) {
 
   if (pts.length < 2) {
     return (
-      <p style={{ fontSize: 10.5, color: '#4a5270', marginTop: 8, marginBottom: 2 }}>
+      <p style={{ fontSize: 10.5, color: 'var(--text-faint)', marginTop: 8, marginBottom: 2 }}>
         📈 Evolución del Score DGI: aún acumulando histórico — se registra una nota por semana.
       </p>
     )
@@ -31,22 +31,22 @@ export default function ScoreHistory({ data = [] }) {
 
   const first = pts[0].score, last = pts[pts.length - 1].score
   const delta = Math.round((last - first) * 10) / 10
-  const dColor = delta > 0 ? '#34d399' : delta < 0 ? '#f87171' : '#8090a8'
+  const dColor = delta > 0 ? 'var(--positive)' : delta < 0 ? 'var(--negative)' : 'var(--text-muted)'
   const lineColor = color(last)
 
   return (
     <div style={{ marginTop: 10, marginBottom: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-        <span style={{ fontSize: 10, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Evolución del Score DGI</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Evolución del Score DGI</span>
         <span style={{ fontSize: 11, fontWeight: 800, color: dColor }}>
-          {delta > 0 ? '+' : ''}{delta.toFixed(1)} <span style={{ color: '#3a4260', fontWeight: 600 }}>({pts.length} sem.)</span>
+          {delta > 0 ? '+' : ''}{delta.toFixed(1)} <span style={{ color: 'var(--text-faintest)', fontWeight: 600 }}>({pts.length} sem.)</span>
         </span>
       </div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block' }}>
         <polyline points={pts.map((p, i) => `${x(i)},${y(p.score)}`).join(' ')} fill="none" stroke={lineColor} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
         <circle cx={x(pts.length - 1)} cy={y(last)} r="2.4" fill={lineColor} />
       </svg>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#3a4260', marginTop: 2 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'var(--text-faintest)', marginTop: 2 }}>
         <span>{fmtDate(pts[0].date)} · {first.toFixed(1)}</span>
         <span>{fmtDate(pts[pts.length - 1].date)} · {last.toFixed(1)}</span>
       </div>

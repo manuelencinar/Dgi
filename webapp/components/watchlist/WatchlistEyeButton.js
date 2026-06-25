@@ -41,7 +41,7 @@ export default function WatchlistEyeButton({ ticker, isAuthed = false, initialFo
       title={following ? 'En tu watchlist — clic para quitarla' : 'Añadir a tu watchlist (seguir)'}
       style={{
         background: following ? 'rgba(99,102,241,0.16)' : 'transparent',
-        border: '1px solid ' + (following ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.12)'),
+        border: '1px solid ' + (following ? 'rgba(99,102,241,0.4)' : 'var(--border-strong)'),
         borderRadius: 6, cursor: 'pointer', padding: '2px 6px', lineHeight: 1,
         fontSize: size, opacity: following ? 1 : 0.45, flexShrink: 0,
       }}

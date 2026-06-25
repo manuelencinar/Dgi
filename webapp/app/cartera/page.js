@@ -31,7 +31,7 @@ export default async function CarteraPage() {
   const plan = await getUserPlan()
   if (!plan) {
     return (
-      <div style={{ minHeight: '100vh', background: '#080b14' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
         <PublicNav active="/cartera" />
         <LoggedOutPreview variant="cartera" />
       </div>
@@ -39,7 +39,7 @@ export default async function CarteraPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav active="/cartera" />
       <CarteraNav />
       <PortfolioPage isPremium={plan === 'premium'} />

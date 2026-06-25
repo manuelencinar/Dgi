@@ -63,7 +63,7 @@ export default async function ScreenerPage({ searchParams }) {
   const hueco = sp.from === 'cartera' && sp.hueco ? String(sp.hueco) : null
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav active="/screener" />
       <ScreenerClient
         companies={companies}

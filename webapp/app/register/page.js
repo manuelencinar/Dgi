@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const BTN = {border:"none",borderRadius:9,padding:"12px 20px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%"}
-const INP = {width:"100%",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"11px 14px",color:"#fff",fontSize:14,outline:"none",fontFamily:"inherit",marginBottom:10}
+const INP = {width:"100%",background:"var(--surface-3)",border:"1px solid var(--border-strong)",borderRadius:8,padding:"11px 14px",color:"#fff",fontSize:14,outline:"none",fontFamily:"inherit",marginBottom:10}
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" style={{flexShrink:0}}>
@@ -17,9 +17,9 @@ const GoogleIcon = () => (
 
 const Divider = () => (
   <div style={{display:"flex",alignItems:"center",gap:12,margin:"16px 0"}}>
-    <div style={{flex:1,height:1,background:"rgba(255,255,255,0.07)"}}/>
-    <span style={{fontSize:11,color:"#3a4260"}}>o regístrate con email</span>
-    <div style={{flex:1,height:1,background:"rgba(255,255,255,0.07)"}}/>
+    <div style={{flex:1,height:1,background:"var(--border)"}}/>
+    <span style={{fontSize:11,color:"var(--text-faintest)"}}>o regístrate con email</span>
+    <div style={{flex:1,height:1,background:"var(--border)"}}/>
   </div>
 )
 
@@ -56,21 +56,21 @@ export default function RegisterPage() {
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
       <div style={{textAlign:"center",maxWidth:380}}>
         <p style={{fontSize:36,marginBottom:12}}>✉️</p>
-        <h2 style={{fontSize:18,fontWeight:700,color:"#e0e8f0",marginBottom:8}}>Revisa tu email</h2>
-        <p style={{fontSize:13,color:"#4a5270"}}>Te hemos enviado un enlace de confirmación a <strong style={{color:"#818cf8"}}>{email}</strong></p>
-        <a href="/login" style={{display:"block",marginTop:20,color:"#818cf8",fontSize:13}}>Volver al login</a>
+        <h2 style={{fontSize:18,fontWeight:700,color:"var(--text-strong)",marginBottom:8}}>Revisa tu email</h2>
+        <p style={{fontSize:13,color:"var(--text-faint)"}}>Te hemos enviado un enlace de confirmación a <strong style={{color:"var(--accent)"}}>{email}</strong></p>
+        <a href="/login" style={{display:"block",marginTop:20,color:"var(--accent)",fontSize:13}}>Volver al login</a>
       </div>
     </div>
   )
 
   return (
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-      <div style={{width:"100%",maxWidth:380,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,padding:"32px 28px"}}>
-        <h1 style={{fontSize:22,fontWeight:800,color:"#e0e8f0",marginBottom:6}}>Crear cuenta</h1>
-        <p style={{fontSize:13,color:"#4a5270",marginBottom:24}}>Gratis · Sin tarjeta · Hasta 10 empresas</p>
+      <div style={{width:"100%",maxWidth:380,background:"var(--surface-2)",border:"1px solid var(--surface-3)",borderRadius:16,padding:"32px 28px"}}>
+        <h1 style={{fontSize:22,fontWeight:800,color:"var(--text-strong)",marginBottom:6}}>Crear cuenta</h1>
+        <p style={{fontSize:13,color:"var(--text-faint)",marginBottom:24}}>Gratis · Sin tarjeta · Hasta 10 empresas</p>
 
         <button onClick={handleGoogleLogin} disabled={googleLoading}
-          style={{...BTN,display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",color:"#e0e8f0",marginBottom:0}}>
+          style={{...BTN,display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:"var(--border)",border:"1px solid var(--border-strong)",color:"var(--text-strong)",marginBottom:0}}>
           <GoogleIcon/>
           {googleLoading ? "Redirigiendo..." : "Continuar con Google"}
         </button>
@@ -80,15 +80,15 @@ export default function RegisterPage() {
         <form onSubmit={handleRegister}>
           <input style={INP} type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} required autoComplete="email"/>
           <input style={INP} type="password" placeholder="Contraseña (mín. 6 caracteres)" value={password} onChange={e=>setPassword(e.target.value)} required autoComplete="new-password"/>
-          {error && <p style={{fontSize:12,color:"#f87171",marginBottom:10}}>{error}</p>}
-          <button type="submit" style={{...BTN,background:loading?"rgba(99,102,241,0.4)":"rgba(99,102,241,0.8)"}} disabled={loading}>
+          {error && <p style={{fontSize:12,color:"var(--negative)",marginBottom:10}}>{error}</p>}
+          <button type="submit" style={{...BTN,background:loading?"rgba(99,102,241,0.4)":"var(--accent)"}} disabled={loading}>
             {loading ? "Creando cuenta..." : "Crear cuenta gratis"}
           </button>
         </form>
 
-        <p style={{fontSize:12,color:"#4a5270",textAlign:"center",marginTop:16}}>
+        <p style={{fontSize:12,color:"var(--text-faint)",textAlign:"center",marginTop:16}}>
           ¿Ya tienes cuenta?{' '}
-          <a href="/login" style={{color:"#818cf8",textDecoration:"none"}}>Inicia sesión</a>
+          <a href="/login" style={{color:"var(--accent)",textDecoration:"none"}}>Inicia sesión</a>
         </p>
       </div>
     </div>

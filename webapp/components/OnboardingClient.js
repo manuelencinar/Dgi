@@ -79,8 +79,8 @@ export default function OnboardingClient({ initial, hasPositions }) {
       <Shell>
         <div style={{ textAlign: 'center', maxWidth: 480 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#e0e8f0', marginBottom: 12 }}>Tu índice DGI está listo</h1>
-          <p style={{ fontSize: 15, color: '#8090a8', lineHeight: 1.6, marginBottom: 32 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 12 }}>Tu índice DGI está listo</h1>
+          <p style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 32 }}>
             Aquí empieza tu camino hacia la independencia financiera.
           </p>
           <button onClick={() => router.push(selected ? `/cartera/nueva-posicion?ticker=${encodeURIComponent(selected)}` : '/mercados')} style={{ ...BTN, width: '100%', maxWidth: 320 }}>
@@ -92,7 +92,7 @@ export default function OnboardingClient({ initial, hasPositions }) {
             </button>
           </div>
           <div style={{ marginTop: 14 }}>
-            <button onClick={() => router.push('/mercados')} style={{ background: 'none', border: 'none', color: '#4a5270', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>Ir al inicio</button>
+            <button onClick={() => router.push('/mercados')} style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>Ir al inicio</button>
           </div>
         </div>
       </Shell>
@@ -105,10 +105,10 @@ export default function OnboardingClient({ initial, hasPositions }) {
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: 6 }}>
           {[0, 1, 2].map(i => (
-            <div key={i} style={{ width: step === i ? 24 : 8, height: 8, borderRadius: 4, background: i <= step ? '#818cf8' : 'rgba(255,255,255,0.12)', transition: 'all 0.3s' }} />
+            <div key={i} style={{ width: step === i ? 24 : 8, height: 8, borderRadius: 4, background: i <= step ? 'var(--accent)' : 'var(--border-strong)', transition: 'all 0.3s' }} />
           ))}
         </div>
-        <button onClick={skip} disabled={busy} style={{ background: 'none', border: 'none', color: '#4a5270', fontSize: 13, cursor: 'pointer' }}>Saltar configuración</button>
+        <button onClick={skip} disabled={busy} style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: 13, cursor: 'pointer' }}>Saltar configuración</button>
       </div>
 
       {/* PASO 1 — Bienvenida */}
@@ -116,7 +116,7 @@ export default function OnboardingClient({ initial, hasPositions }) {
         <div style={fade} key="s0">
           <div style={{ textAlign: 'center', maxWidth: 460 }}>
             <div style={{ fontSize: 44, marginBottom: 16 }}>📈</div>
-            <h1 style={{ fontSize: 28, fontWeight: 900, color: '#e0e8f0', marginBottom: 28 }}>Bienvenido a Mi Índice DGI</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 28 }}>Bienvenido a Mi Índice DGI</h1>
             <div style={{ display: 'grid', gap: 16, marginBottom: 36, textAlign: 'left' }}>
               {[
                 ['📊', '43 mercados globales analizados con criterios DGI'],
@@ -125,7 +125,7 @@ export default function OnboardingClient({ initial, hasPositions }) {
               ].map(([icon, txt]) => (
                 <div key={txt} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                   <span style={{ fontSize: 24, flexShrink: 0 }}>{icon}</span>
-                  <span style={{ fontSize: 15, color: '#c8d0e0' }}>{txt}</span>
+                  <span style={{ fontSize: 15, color: 'var(--text)' }}>{txt}</span>
                 </div>
               ))}
             </div>
@@ -138,8 +138,8 @@ export default function OnboardingClient({ initial, hasPositions }) {
       {step === 1 && (
         <div style={fade} key="s1">
           <div style={{ width: '100%', maxWidth: 460 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 900, color: '#e0e8f0', marginBottom: 4, textAlign: 'center' }}>Cuéntanos sobre ti</h1>
-            <p style={{ fontSize: 13, color: '#4a5270', marginBottom: 28, textAlign: 'center' }}>Solo 3 preguntas para personalizar tu experiencia</p>
+            <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 4, textAlign: 'center' }}>Cuéntanos sobre ti</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-faint)', marginBottom: 28, textAlign: 'center' }}>Solo 3 preguntas para personalizar tu experiencia</p>
 
             <Label>Divisa base</Label>
             <div style={{ display: 'flex', gap: 8, marginBottom: 22, flexWrap: 'wrap' }}>
@@ -156,11 +156,11 @@ export default function OnboardingClient({ initial, hasPositions }) {
               {LEVELS.map(l => (
                 <button key={l.v} onClick={() => set('experience_level', l.v)} style={{
                   textAlign: 'left', padding: '12px 16px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit',
-                  border: '1px solid ' + (prefs.experience_level === l.v ? 'rgba(99,102,241,0.6)' : 'rgba(255,255,255,0.08)'),
-                  background: prefs.experience_level === l.v ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.02)',
+                  border: '1px solid ' + (prefs.experience_level === l.v ? 'rgba(99,102,241,0.6)' : 'var(--surface-3)'),
+                  background: prefs.experience_level === l.v ? 'rgba(99,102,241,0.12)' : 'var(--surface)',
                 }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: prefs.experience_level === l.v ? '#818cf8' : '#c8d0e0' }}>{l.t}</p>
-                  <p style={{ fontSize: 12, color: '#4a5270', marginTop: 2 }}>{l.d}</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: prefs.experience_level === l.v ? 'var(--accent)' : 'var(--text)' }}>{l.t}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 2 }}>{l.d}</p>
                 </button>
               ))}
             </div>
@@ -173,18 +173,18 @@ export default function OnboardingClient({ initial, hasPositions }) {
       {step === 2 && (
         <div style={fade} key="s2">
           <div style={{ width: '100%', maxWidth: 460 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 900, color: '#e0e8f0', marginBottom: 4, textAlign: 'center' }}>Añade tu primera empresa</h1>
-            <p style={{ fontSize: 13, color: '#4a5270', marginBottom: 22, textAlign: 'center' }}>Busca cualquier empresa del mundo — tenemos casi 2.000 disponibles</p>
+            <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 4, textAlign: 'center' }}>Añade tu primera empresa</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-faint)', marginBottom: 22, textAlign: 'center' }}>Busca cualquier empresa del mundo — tenemos casi 2.000 disponibles</p>
 
             <div style={{ position: 'relative', marginBottom: 12 }}>
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Busca por nombre o ticker…" autoFocus
-                style={{ width: '100%', padding: '13px 16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 10, color: '#e0e8f0', fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '13px 16px', background: 'var(--surface-2)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 10, color: 'var(--text-strong)', fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
               {results.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, marginTop: 4, background: '#0f1221', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 10, overflow: 'hidden', maxHeight: 280, overflowY: 'auto' }}>
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, marginTop: 4, background: 'var(--bg-elev)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 10, overflow: 'hidden', maxHeight: 280, overflowY: 'auto' }}>
                   {results.map(d => (
-                    <button key={d[1]} onClick={() => pickCompany(d[1])} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', fontFamily: 'inherit' }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#e0e8f0' }}>{d[0]}</span>
-                      <span style={{ fontSize: 11, color: '#3a4260', marginLeft: 6 }}>{d[1]} · {d[4]} · {d[2]}</span>
+                    <button key={d[1]} onClick={() => pickCompany(d[1])} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid var(--surface-2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-strong)' }}>{d[0]}</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-faintest)', marginLeft: 6 }}>{d[1]} · {d[4]} · {d[2]}</span>
                     </button>
                   ))}
                 </div>
@@ -194,10 +194,10 @@ export default function OnboardingClient({ initial, hasPositions }) {
             {/* Sugerencias según nivel */}
             {!selected && (
               <div style={{ marginBottom: 20 }}>
-                <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 8 }}>¿No sabes por dónde empezar? Prueba con:</p>
+                <p style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 8 }}>¿No sabes por dónde empezar? Prueba con:</p>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {(SUGGESTIONS[prefs.experience_level] || SUGGESTIONS.intermediate).map(t => (
-                    <button key={t} onClick={() => pickCompany(t)} style={{ fontSize: 12, padding: '6px 12px', borderRadius: 16, border: '1px solid rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.08)', color: '#818cf8', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <button key={t} onClick={() => pickCompany(t)} style={{ fontSize: 12, padding: '6px 12px', borderRadius: 16, border: '1px solid rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.08)', color: 'var(--accent)', cursor: 'pointer', fontFamily: 'inherit' }}>
                       {nameOf(t)}
                     </button>
                   ))}
@@ -207,16 +207,16 @@ export default function OnboardingClient({ initial, hasPositions }) {
 
             {/* Preview de la empresa seleccionada */}
             {selected && (
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 12, padding: 16, marginBottom: 20 }}>
+              <div style={{ background: 'var(--surface-2)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 12, padding: 16, marginBottom: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#e0e8f0' }}>{nameOf(selected)} <span style={{ fontSize: 11, color: '#4a5270' }}>{selected}</span></p>
-                  <button onClick={() => { setSelected(null); setPreview(null) }} style={{ background: 'none', border: 'none', color: '#4a5270', fontSize: 16, cursor: 'pointer' }}>×</button>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-strong)' }}>{nameOf(selected)} <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>{selected}</span></p>
+                  <button onClick={() => { setSelected(null); setPreview(null) }} style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: 16, cursor: 'pointer' }}>×</button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
-                  <Stat label="Score DGI" value={preview?.score != null ? preview.score.toFixed(1) : '…'} color="#818cf8" />
-                  <Stat label="Yield" value={preview?.yield != null ? preview.yield.toFixed(2) + '%' : '…'} color="#34d399" />
-                  <Stat label="Racha" value={preview?.streak != null ? preview.streak + 'a' : '…'} color="#c8d0e0" />
-                  <Stat label="MoS" value={preview?.mos != null ? (preview.mos >= 0 ? '+' : '') + preview.mos.toFixed(0) + '%' : '…'} color={preview?.mos >= 0 ? '#34d399' : '#f87171'} />
+                  <Stat label="Score DGI" value={preview?.score != null ? preview.score.toFixed(1) : '…'} color="var(--accent)" />
+                  <Stat label="Yield" value={preview?.yield != null ? preview.yield.toFixed(2) + '%' : '…'} color="var(--positive)" />
+                  <Stat label="Racha" value={preview?.streak != null ? preview.streak + 'a' : '…'} color="var(--text)" />
+                  <Stat label="MoS" value={preview?.mos != null ? (preview.mos >= 0 ? '+' : '') + preview.mos.toFixed(0) + '%' : '…'} color={preview?.mos >= 0 ? 'var(--positive)' : 'var(--negative)'} />
                 </div>
               </div>
             )}
@@ -225,8 +225,8 @@ export default function OnboardingClient({ initial, hasPositions }) {
               {busy ? 'Terminando…' : 'Añadir al índice y terminar →'}
             </button>
 
-            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
-              <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 8 }}>¿No sabes qué comprar? Deja que te propongamos una cartera entera.</p>
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+              <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 8 }}>¿No sabes qué comprar? Deja que te propongamos una cartera entera.</p>
               <button onClick={goWizard} disabled={busy} style={{ fontSize: 13, fontWeight: 700, padding: '10px 18px', borderRadius: 9, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.1)', color: '#a5b4fc', cursor: 'pointer', fontFamily: 'inherit' }}>
                 🧭 Construir mi cartera desde cero →
               </button>
@@ -240,30 +240,30 @@ export default function OnboardingClient({ initial, hasPositions }) {
 
 function Shell({ children }) {
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', position: 'relative' }}>
       <style>{`@keyframes ob-fade { from { opacity: 0; transform: translateX(12px) } to { opacity: 1; transform: translateX(0) } }`}</style>
       {children}
     </div>
   )
 }
 function Label({ children }) {
-  return <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{children}</p>
+  return <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{children}</p>
 }
 function Choice({ active, onClick, children, small }) {
   return (
     <button onClick={onClick} style={{
       flex: small ? '0 0 auto' : 1, minWidth: small ? 0 : 70, padding: small ? '8px 14px' : '12px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit',
       fontSize: small ? 13 : 15, fontWeight: 700,
-      border: '1px solid ' + (active ? 'rgba(99,102,241,0.6)' : 'rgba(255,255,255,0.08)'),
-      background: active ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.02)',
-      color: active ? '#818cf8' : '#8090a8',
+      border: '1px solid ' + (active ? 'rgba(99,102,241,0.6)' : 'var(--surface-3)'),
+      background: active ? 'rgba(99,102,241,0.18)' : 'var(--surface)',
+      color: active ? 'var(--accent)' : 'var(--text-muted)',
     }}>{children}</button>
   )
 }
 function Stat({ label, value, color }) {
   return (
     <div style={{ textAlign: 'center' }}>
-      <p style={{ fontSize: 9, color: '#3a4260', marginBottom: 2 }}>{label}</p>
+      <p style={{ fontSize: 9, color: 'var(--text-faintest)', marginBottom: 2 }}>{label}</p>
       <p style={{ fontSize: 14, fontWeight: 800, color }}>{value}</p>
     </div>
   )

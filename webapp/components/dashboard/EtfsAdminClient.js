@@ -86,69 +86,69 @@ export default function EtfsAdminClient({ funds: initialFunds }) {
     <Card style={{ marginTop: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
         <SectionTitle>ETFs y Fondos</SectionTitle>
-        <button onClick={() => recalc(null)} disabled={busy} style={{ fontSize: 12, fontWeight: 700, padding: '7px 14px', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', cursor: 'pointer' }}>
+        <button onClick={() => recalc(null)} disabled={busy} style={{ fontSize: 12, fontWeight: 700, padding: '7px 14px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', cursor: 'pointer' }}>
           {busy ? '…' : 'Recalcular todas'}
         </button>
       </div>
-      {msg && <p style={{ fontSize: 12, color: msg.startsWith('✓') ? '#34d399' : msg.startsWith('✗') ? '#f87171' : '#fbbf24', marginBottom: 10 }}>{msg}</p>}
+      {msg && <p style={{ fontSize: 12, color: msg.startsWith('✓') ? 'var(--positive)' : msg.startsWith('✗') ? 'var(--negative)' : 'var(--warning)', marginBottom: 10 }}>{msg}</p>}
 
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 640 }}>
           <thead>
             <tr>{['Nombre', 'Tipo', 'TER (%)', 'Benchmark', ''].map(h => (
-              <th key={h} style={{ padding: '6px 8px', textAlign: 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.08)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+              <th key={h} style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-faint)', borderBottom: '1px solid var(--surface-3)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
             ))}</tr>
           </thead>
           <tbody>
             {funds.map(f => (
-              <tr key={f.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <td style={{ padding: '6px 8px', color: '#c8d0e0' }}>
+              <tr key={f.ticker} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                <td style={{ padding: '6px 8px', color: 'var(--text)' }}>
                   {editName === f.ticker ? (
                     <input autoFocus value={nameDraft} onChange={e => setNameDraft(e.target.value)} onBlur={() => commitName(f.ticker)} onKeyDown={e => e.key === 'Enter' && commitName(f.ticker)}
-                      style={{ width: 180, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 6, color: '#e0e8f0', fontSize: 12, padding: '4px 6px', outline: 'none' }} />
+                      style={{ width: 180, background: 'var(--border)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 6, color: 'var(--text-strong)', fontSize: 12, padding: '4px 6px', outline: 'none' }} />
                   ) : (
                     <span onClick={() => { setEditName(f.ticker); setNameDraft(f.name || '') }} style={{ cursor: 'pointer' }}>{f.name || f.ticker}</span>
                   )}
-                  <span style={{ color: '#3a4260', fontSize: 10 }}> {f.ticker}</span>
+                  <span style={{ color: 'var(--text-faintest)', fontSize: 10 }}> {f.ticker}</span>
                 </td>
                 <td style={{ padding: '6px 8px' }}>
                   <select value={f.asset_type === 'fund' ? 'fund' : 'etf'} onChange={e => saveField(f.ticker, { asset_type: e.target.value })}
-                    style={{ background: '#0d1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#8090a8', fontSize: 11, padding: '4px 6px', outline: 'none' }}>
+                    style={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 6, color: 'var(--text-muted)', fontSize: 11, padding: '4px 6px', outline: 'none' }}>
                     <option value="etf">ETF</option><option value="fund">Fondo</option>
                   </select>
                 </td>
                 <td style={{ padding: '6px 8px' }}>
                   {editing === f.ticker ? (
                     <input autoFocus type="number" step="0.01" value={draft} onChange={e => setDraft(e.target.value)} onBlur={() => commitTer(f.ticker)} onKeyDown={e => e.key === 'Enter' && commitTer(f.ticker)}
-                      style={{ width: 70, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 6, color: '#e0e8f0', fontSize: 12, padding: '4px 6px', outline: 'none' }} />
+                      style={{ width: 70, background: 'var(--border)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 6, color: 'var(--text-strong)', fontSize: 12, padding: '4px 6px', outline: 'none' }} />
                   ) : (
                     <span onClick={() => { setEditing(f.ticker); setDraft(f.ter != null ? String(Math.round(f.ter * 100 * 1000) / 1000) : '') }}
-                      style={{ cursor: 'pointer', color: f.ter != null ? '#c8d0e0' : '#4a5270', borderBottom: '1px dotted rgba(255,255,255,0.2)' }}>
+                      style={{ cursor: 'pointer', color: f.ter != null ? 'var(--text)' : 'var(--text-faint)', borderBottom: '1px dotted var(--border-strong)' }}>
                       {f.ter != null ? (f.ter * 100).toFixed(2) + '%' : 'editar'}
                     </span>
                   )}
                 </td>
                 <td style={{ padding: '6px 8px' }}>
                   <select value={f._custom ? '__custom__' : (f.benchmark_ticker || '')} onChange={e => onBenchmark(f.ticker, e.target.value)}
-                    style={{ background: '#0d1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#c8d0e0', fontSize: 11, padding: '4px 6px', outline: 'none' }}>
+                    style={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 6, color: 'var(--text)', fontSize: 11, padding: '4px 6px', outline: 'none' }}>
                     {BENCHMARKS.map(b => <option key={b.t || 'none'} value={b.t}>{b.n}</option>)}
                   </select>
                   {f._custom && (
                     <input placeholder="ticker yfinance" defaultValue={f.benchmark_ticker || ''} onBlur={e => saveCustomBench(f.ticker, e.target.value.trim(), e.target.value.trim())}
-                      style={{ width: 110, marginLeft: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 6, color: '#e0e8f0', fontSize: 11, padding: '4px 6px', outline: 'none' }} />
+                      style={{ width: 110, marginLeft: 6, background: 'var(--border)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 6, color: 'var(--text-strong)', fontSize: 11, padding: '4px 6px', outline: 'none' }} />
                   )}
                 </td>
                 <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
                   {del === f.ticker ? (
                     <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                      <span style={{ fontSize: 11, color: '#f87171' }}>¿Eliminar?</span>
-                      <button onClick={() => doDelete(f.ticker)} style={{ fontSize: 11, fontWeight: 700, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.1)', color: '#f87171', cursor: 'pointer' }}>Sí</button>
-                      <button onClick={() => setDel(null)} style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#8090a8', cursor: 'pointer' }}>No</button>
+                      <span style={{ fontSize: 11, color: 'var(--negative)' }}>¿Eliminar?</span>
+                      <button onClick={() => doDelete(f.ticker)} style={{ fontSize: 11, fontWeight: 700, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.1)', color: 'var(--negative)', cursor: 'pointer' }}>Sí</button>
+                      <button onClick={() => setDel(null)} style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border-strong)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>No</button>
                     </span>
                   ) : (
                     <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                      <button onClick={() => recalc(f.ticker)} disabled={busy} style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.1)', color: '#818cf8', cursor: 'pointer', whiteSpace: 'nowrap' }}>Recalcular</button>
-                      <button onClick={() => setDel(f.ticker)} title="Eliminar" style={{ fontSize: 12, padding: '4px 7px', borderRadius: 6, border: 'none', background: 'transparent', color: '#f87171', cursor: 'pointer' }}>🗑</button>
+                      <button onClick={() => recalc(f.ticker)} disabled={busy} style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.1)', color: 'var(--accent)', cursor: 'pointer', whiteSpace: 'nowrap' }}>Recalcular</button>
+                      <button onClick={() => setDel(f.ticker)} title="Eliminar" style={{ fontSize: 12, padding: '4px 7px', borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--negative)', cursor: 'pointer' }}>🗑</button>
                     </span>
                   )}
                 </td>

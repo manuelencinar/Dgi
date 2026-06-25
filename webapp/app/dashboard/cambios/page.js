@@ -66,8 +66,8 @@ const PENDING = [
 ]
 
 const TYPE_COLOR = {
-  'Dato faltante': '#fbbf24',
-  'Precisión': '#818cf8',
+  'Dato faltante': 'var(--warning)',
+  'Precisión': 'var(--accent)',
 }
 
 export default function CambiosPendientesPage() {
@@ -79,25 +79,25 @@ export default function CambiosPendientesPage() {
 
       <Card style={{ marginBottom: 16 }}>
         <SectionTitle>Resumen</SectionTitle>
-        <p style={{ fontSize: 13, color: '#8090a8', lineHeight: 1.6 }}>
-          Hay <b style={{ color: '#e0e8f0' }}>{PENDING.length}</b> elementos pendientes. No bloquean el uso de la app — son refinamientos
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+          Hay <b style={{ color: 'var(--text-strong)' }}>{PENDING.length}</b> elementos pendientes. No bloquean el uso de la app — son refinamientos
           de precisión o features que necesitan una fuente de datos que todavía no tenemos.
         </p>
       </Card>
 
       <div style={{ display: 'grid', gap: 12 }}>
         {PENDING.map((p, i) => {
-          const col = TYPE_COLOR[p.type] || '#4a5270'
+          const col = TYPE_COLOR[p.type] || 'var(--text-faint)'
           return (
             <Card key={i} style={{ borderLeft: `3px solid ${col}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 800, color: '#e0e8f0' }}>{p.title}</span>
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#4a5270', background: 'rgba(255,255,255,0.04)', padding: '2px 8px', borderRadius: 5 }}>{p.area}</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-strong)' }}>{p.title}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', background: 'var(--surface-2)', padding: '2px 8px', borderRadius: 5 }}>{p.area}</span>
                 <span style={{ fontSize: 10, fontWeight: 700, color: col, background: `${col}18`, padding: '2px 8px', borderRadius: 5 }}>{p.type}</span>
               </div>
-              <p style={{ fontSize: 13, color: '#8090a8', lineHeight: 1.55, marginBottom: 8 }}>{p.detail}</p>
-              <p style={{ fontSize: 12, color: '#4a5270', lineHeight: 1.55 }}>
-                <span style={{ color: '#34d399', fontWeight: 700 }}>Cómo implementarlo: </span>{p.action}
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.55, marginBottom: 8 }}>{p.detail}</p>
+              <p style={{ fontSize: 12, color: 'var(--text-faint)', lineHeight: 1.55 }}>
+                <span style={{ color: 'var(--positive)', fontWeight: 700 }}>Cómo implementarlo: </span>{p.action}
               </p>
             </Card>
           )

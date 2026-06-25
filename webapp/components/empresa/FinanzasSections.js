@@ -9,8 +9,8 @@ import { computeCDR } from '@/lib/capital-discipline'
 import { fmtDebtEbitda, debtEbitdaIsArtifact } from '@/lib/helpers'
 
 const C = {
-  blue: '#60a5fa', green: '#34d399', indigo: '#818cf8', red: '#f87171',
-  orange: '#fbbf24', neg: '#ef4444', gray: '#6b7280', yellow: '#facc15',
+  blue: '#60a5fa', green: 'var(--positive)', indigo: 'var(--accent)', red: 'var(--negative)',
+  orange: 'var(--warning)', neg: '#ef4444', gray: '#6b7280', yellow: '#facc15',
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────────
@@ -52,20 +52,20 @@ const fmtMoney = v => { if (v == null || isNaN(v)) return '—'; const a = Math.
 const fmtPct = (v, d = 1) => v == null ? '—' : (v > 0 ? '+' : '') + v.toFixed(d) + '%'
 const fmtNum = (v, d = 2) => v == null ? '—' : v.toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d })
 
-const axis = { tick: { fontSize: 10, fill: '#4a5270' }, axisLine: { stroke: 'rgba(255,255,255,0.08)' }, tickLine: false }
-const grid = <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+const axis = { tick: { fontSize: 10, fill: 'var(--text-faint)' }, axisLine: { stroke: 'var(--surface-3)' }, tickLine: false }
+const grid = <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-2)" vertical={false} />
 
 function tipBox(title, rows, note) {
   return (
-    <div style={{ background: 'rgba(13,20,36,0.97)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 11px', fontSize: 11.5, lineHeight: 1.6 }}>
-      <p style={{ color: '#c8d0e0', fontWeight: 700, marginBottom: 4 }}>{title}</p>
+    <div style={{ background: 'rgba(13,20,36,0.97)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '8px 11px', fontSize: 11.5, lineHeight: 1.6 }}>
+      <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: 4 }}>{title}</p>
       {rows.map((r, i) => (
         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 14 }}>
-          <span style={{ color: r.c || '#8090a8' }}>{r.l}</span>
-          <span style={{ color: '#e0e8f0', fontWeight: 600 }}>{r.v}</span>
+          <span style={{ color: r.c || 'var(--text-muted)' }}>{r.l}</span>
+          <span style={{ color: 'var(--text-strong)', fontWeight: 600 }}>{r.v}</span>
         </div>
       ))}
-      {note && <p style={{ color: '#fbbf24', marginTop: 5, maxWidth: 210 }}>{note}</p>}
+      {note && <p style={{ color: 'var(--warning)', marginTop: 5, maxWidth: 210 }}>{note}</p>}
     </div>
   )
 }
@@ -73,8 +73,8 @@ function tipBox(title, rows, note) {
 function Section({ title, subtitle, children, height }) {
   return (
     <div>
-      <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: subtitle ? 2 : 10 }}>{title}</p>
-      {subtitle && <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 10 }}>{subtitle}</p>}
+      <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: subtitle ? 2 : 10 }}>{title}</p>
+      {subtitle && <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>{subtitle}</p>}
       {children}
     </div>
   )
@@ -83,8 +83,8 @@ function Section({ title, subtitle, children, height }) {
 function Placeholder() {
   return (
     <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 }}>
-      <p style={{ fontSize: 12, color: '#4a5270', textAlign: 'center' }}>Datos no disponibles.</p>
-      <Link href="/dashboard/datos" style={{ fontSize: 11, color: '#818cf8', textDecoration: 'none' }}>Añadir desde la plantilla Excel →</Link>
+      <p style={{ fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>Datos no disponibles.</p>
+      <Link href="/dashboard/datos" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>Añadir desde la plantilla Excel →</Link>
     </div>
   )
 }
@@ -128,15 +128,15 @@ function buildFin(income, cashflow, balance, divHistory) {
 //  KPIs (8 tarjetas) — gratuito
 // ════════════════════════════════════════════════════════════════════════════
 function KpiCard({ label, value, change, good, secondary }) {
-  const col = change == null ? '#4a5270' : good ? '#34d399' : '#f87171'
+  const col = change == null ? 'var(--text-faint)' : good ? 'var(--positive)' : 'var(--negative)'
   const arrow = change == null ? '' : change > 0 ? '▲' : change < 0 ? '▼' : '■'
   return (
-    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '12px 14px' }}>
-      <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 6 }}>{label}</p>
-      <p style={{ fontSize: 19, fontWeight: 800, color: '#e0e8f0', lineHeight: 1.1, overflowWrap: 'anywhere' }}>{value}</p>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px' }}>
+      <p style={{ fontSize: 10, color: 'var(--text-faint)', marginBottom: 6 }}>{label}</p>
+      <p style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-strong)', lineHeight: 1.1, overflowWrap: 'anywhere' }}>{value}</p>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 5, gap: 6 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: col }}>{change == null ? '—' : `${arrow} ${changeStr(change)}`}</span>
-        {secondary && <span style={{ fontSize: 10, color: '#4a5270', textAlign: 'right' }}>{secondary}</span>}
+        {secondary && <span style={{ fontSize: 10, color: 'var(--text-faint)', textAlign: 'right' }}>{secondary}</span>}
       </div>
     </div>
   )
@@ -203,16 +203,16 @@ function PremiumGate() {
     <div style={{ position: 'relative', minHeight: 160 }}>
       <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }} aria-hidden="true">
         <div style={{ display: 'grid', gap: 12 }}>
-          <div style={{ height: 11, width: '38%', background: 'rgba(255,255,255,0.10)', borderRadius: 5 }} />
+          <div style={{ height: 11, width: '38%', background: 'var(--border-strong)', borderRadius: 5 }} />
           {[88, 72, 94, 60, 80].map((w, i) => (
-            <div key={i} style={{ height: 9, width: `${w}%`, background: 'rgba(255,255,255,0.06)', borderRadius: 4 }} />
+            <div key={i} style={{ height: 9, width: `${w}%`, background: 'var(--border)', borderRadius: 4 }} />
           ))}
         </div>
       </div>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(8,11,20,0.55)' }}>
-        <p style={{ fontSize: 13, fontWeight: 700, color: '#818cf8' }}>Análisis financiero avanzado (Premium)</p>
-        <p style={{ fontSize: 12, color: '#4a5270', textAlign: 'center', maxWidth: 280 }}>Márgenes, deuda, rentabilidad histórica, capital allocation y por acción.</p>
-        <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '7px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8 }}>Activar Premium →</Link>
+        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>Análisis financiero avanzado (Premium)</p>
+        <p style={{ fontSize: 12, color: 'var(--text-faint)', textAlign: 'center', maxWidth: 280 }}>Márgenes, deuda, rentabilidad histórica, capital allocation y por acción.</p>
+        <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '7px 18px', background: 'var(--accent)', borderRadius: 8 }}>Activar Premium →</Link>
       </div>
     </div>
   )
@@ -340,29 +340,29 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
         <Section title="Análisis de solvencia">
           <div className="fin-2col">
             <div>
-              <p style={{ fontSize: 11, color: '#8090a8', marginBottom: 6 }}>Solvencia (Solvency II / RBC)</p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>Solvencia (Solvency II / RBC)</p>
               {!(insurer.solvencyHistory?.length) ? <Placeholder /> : (
                 <Chart h={180}>
                   <ComposedChart data={insurer.solvencyHistory.map(h => ({ x: h.period, v: h.value }))} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
                     {grid}
                     <XAxis dataKey="x" {...axis} />
                     <YAxis {...axis} width={42} tickFormatter={v => v + '%'} />
-                    <Tooltip content={({ active, payload }) => active && payload?.length ? tipBox(payload[0].payload.x, [{ l: 'Solvencia', v: payload[0].payload.v.toFixed(0) + '%', c: C.green }]) : null} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-                    <ReferenceLine y={100} stroke="#f87171" strokeDasharray="4 4" strokeOpacity={0.6} />
+                    <Tooltip content={({ active, payload }) => active && payload?.length ? tipBox(payload[0].payload.x, [{ l: 'Solvencia', v: payload[0].payload.v.toFixed(0) + '%', c: C.green }]) : null} cursor={{ fill: 'var(--surface-2)' }} />
+                    <ReferenceLine y={100} stroke="var(--negative)" strokeDasharray="4 4" strokeOpacity={0.6} />
                     <Line dataKey="v" name="Solvencia" stroke={C.green} strokeWidth={2} dot={{ r: 2.5 }} />
                   </ComposedChart>
                 </Chart>
               )}
             </div>
             <div>
-              <p style={{ fontSize: 11, color: '#8090a8', marginBottom: 6 }}>Loss ratio</p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>Loss ratio</p>
               {!(insurer.lossHistory?.length) ? <Placeholder /> : (
                 <Chart h={180}>
                   <ComposedChart data={insurer.lossHistory.map(h => ({ x: h.period, v: h.value }))} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
                     {grid}
                     <XAxis dataKey="x" {...axis} />
                     <YAxis {...axis} width={34} tickFormatter={v => v + '%'} />
-                    <Tooltip content={({ active, payload }) => active && payload?.length ? tipBox(payload[0].payload.x, [{ l: 'Loss ratio', v: payload[0].payload.v.toFixed(1) + '%', c: C.orange }]) : null} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                    <Tooltip content={({ active, payload }) => active && payload?.length ? tipBox(payload[0].payload.x, [{ l: 'Loss ratio', v: payload[0].payload.v.toFixed(1) + '%', c: C.orange }]) : null} cursor={{ fill: 'var(--surface-2)' }} />
                     <Line dataKey="v" name="Loss ratio" stroke={C.orange} strokeWidth={2} dot={{ r: 2.5 }} />
                   </ComposedChart>
                 </Chart>
@@ -374,15 +374,15 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
             <Mini label="Loss ratio" value={insurer.loss != null ? insurer.loss.toFixed(1) + '%' : '–'} />
             <Mini label="Combined ratio" value={insurer.combined != null ? insurer.combined.toFixed(1) + '%' : '–'} />
           </div>
-          <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 8, lineHeight: 1.6 }}>
-            La <b style={{ color: '#4a5270' }}>solvencia</b> mide cuánto capital tiene la aseguradora frente al que le exige el regulador para responder ante siniestros extremos: por encima del 100% cumple, y un colchón amplio (≈180%+) le da margen para resistir crisis y sostener el dividendo. El <b style={{ color: '#4a5270' }}>loss ratio</b> (siniestros / primas) muestra si el negocio asegurador es rentable de por sí: cuanto más bajo, más margen queda tras pagar los siniestros, antes incluso de contar los ingresos por inversión.
+          <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 8, lineHeight: 1.6 }}>
+            La <b style={{ color: 'var(--text-faint)' }}>solvencia</b> mide cuánto capital tiene la aseguradora frente al que le exige el regulador para responder ante siniestros extremos: por encima del 100% cumple, y un colchón amplio (≈180%+) le da margen para resistir crisis y sostener el dividendo. El <b style={{ color: 'var(--text-faint)' }}>loss ratio</b> (siniestros / primas) muestra si el negocio asegurador es rentable de por sí: cuanto más bajo, más margen queda tras pagar los siniestros, antes incluso de contar los ingresos por inversión.
           </p>
         </Section>
       ) : (
       <Section title="Análisis de la deuda">
         <div className="fin-2col">
           <div>
-            <p style={{ fontSize: 11, color: '#8090a8', marginBottom: 6 }}>Deuda vs caja</p>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>Deuda vs caja</p>
             {d.debt.length < 1 ? <Placeholder /> : (
               <Chart h={180}>
                 <ComposedChart data={d.debt} margin={{ top: 6, right: 6, left: 0, bottom: 0 }} barGap={2}>
@@ -393,7 +393,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
                     { l: 'Deuda total', v: fmtU(payload[0].payload.deuda, mUnit), c: C.red },
                     { l: 'Caja', v: fmtU(payload[0].payload.caja, mUnit), c: C.green },
                     { l: 'Deuda neta', v: fmtU(payload[0].payload.neta, mUnit), c: payload[0].payload.neta < 0 ? C.green : C.orange },
-                  ]) : null} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                  ]) : null} cursor={{ fill: 'var(--surface-2)' }} />
                   <Bar dataKey="deuda" name="Deuda" fill={C.red} radius={[2, 2, 0, 0]} />
                   <Bar dataKey="caja" name="Caja" fill={C.green} radius={[2, 2, 0, 0]} />
                   <Line dataKey="neta" name="Deuda neta" stroke={C.orange} strokeWidth={2} dot={{ r: 2.5 }} />
@@ -402,7 +402,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
             )}
           </div>
           <div>
-            <p style={{ fontSize: 11, color: '#8090a8', marginBottom: 6 }}>Cobertura de intereses</p>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>Cobertura de intereses</p>
             {d.intcov.length < 1 ? <Placeholder /> : (
               <Chart h={180}>
                 <BarChart data={d.intcov} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
@@ -411,8 +411,8 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
                   <YAxis {...axis} width={34} tickFormatter={v => v + '×'} />
                   <Tooltip content={({ active, payload }) => active && payload?.length ? tipBox(payload[0].payload.year, [
                     { l: 'Cobertura', v: payload[0].payload.cov.toFixed(1) + '×', c: covColor(payload[0].payload.cov) },
-                  ]) : null} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-                  <ReferenceLine y={3} stroke="#f87171" strokeDasharray="4 4" strokeOpacity={0.6} />
+                  ]) : null} cursor={{ fill: 'var(--surface-2)' }} />
+                  <ReferenceLine y={3} stroke="var(--negative)" strokeDasharray="4 4" strokeOpacity={0.6} />
                   <Bar dataKey="cov" name="Cobertura" radius={[2, 2, 0, 0]}>
                     {d.intcov.map((r, i) => <Cell key={i} fill={covColor(r.cov)} />)}
                   </Bar>
@@ -448,7 +448,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
               <Area dataKey="roa" name="ROA" stroke={C.indigo} fill={C.indigo} fillOpacity={0.08} strokeWidth={2} dot={{ r: 2 }} connectNulls />
             </AreaChart>
           </Chart>
-          {roicNote && <p style={{ fontSize: 12, color: '#34d399', marginTop: 8 }}>{roicNote}</p>}
+          {roicNote && <p style={{ fontSize: 12, color: 'var(--positive)', marginTop: 8 }}>{roicNote}</p>}
         </>}
       </Section>
 
@@ -466,7 +466,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
                 { l: 'Recompras netas', v: fmtU(p.buybacks, capUnit) + pc(p.buybacks), c: C.blue },
                 ...(p.acquisitions > 0 ? [{ l: 'Adquisiciones', v: fmtU(p.acquisitions, capUnit) + pc(p.acquisitions), c: C.orange }] : []),
                 { l: 'Resto (caja/deuda)', v: fmtU(p.resto, capUnit), c: p.resto < 0 ? C.neg : '#94a3b8' },
-              ], p.resto < 0 ? 'Distribución superior al FCF — la diferencia se financió con deuda o caja acumulada.' : null) }} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+              ], p.resto < 0 ? 'Distribución superior al FCF — la diferencia se financió con deuda o caja acumulada.' : null) }} cursor={{ fill: 'var(--surface-2)' }} />
               <Legend wrapperStyle={{ fontSize: 10 }} />
               <Bar dataKey="dividends" name="Dividendos" stackId="c" fill={C.green} />
               <Bar dataKey="buybacks" name="Recompras" stackId="c" fill={C.blue} />
@@ -482,7 +482,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
             <Mini label="Distribución total / FCF" value={capMetrics ? capMetrics.dist.toFixed(0) + '%' : '—'} color={capMetrics ? band(capMetrics.dist, 90, 120) : null} />
           </div>
           {capOver && ly && (
-            <p style={{ fontSize: 12, color: '#fbbf24', marginTop: 8 }}>
+            <p style={{ fontSize: 12, color: 'var(--warning)', marginTop: 8 }}>
               En {ly.year} la empresa distribuyó más de lo que generó — la diferencia fue financiada con deuda o caja acumulada.
             </p>
           )}
@@ -504,7 +504,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
                 { l: 'DPS', v: fmtNum(p.dps), c: C.indigo },
                 { l: 'Valor contable/acción', v: fmtNum(p.bvps), c: C.orange },
                 { l: 'Payout FCF', v: p.fcfps && p.dps != null ? (p.dps / p.fcfps * 100).toFixed(1) + '%' : '—' },
-              ]) }} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+              ]) }} cursor={{ fill: 'var(--surface-2)' }} />
               <Legend wrapperStyle={{ fontSize: 10 }} />
               <Bar dataKey="eps" name={`EPS (${currency})`} fill={C.blue} radius={[2, 2, 0, 0]} />
               <Bar dataKey="fcfps" name="FCF/acción" fill={C.green} radius={[2, 2, 0, 0]} />
@@ -524,24 +524,24 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
 // ── auxiliares de presentación ──────────────────────────────────────────────
 function Mini({ label, value, color }) {
   return (
-    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
-      <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 4 }}>{label}</p>
-      <p style={{ fontSize: 16, fontWeight: 800, color: color || '#c8d0e0' }}>{value}</p>
+    <div style={{ background: 'var(--surface-2)', borderRadius: 8, padding: '10px 12px' }}>
+      <p style={{ fontSize: 10, color: 'var(--text-faint)', marginBottom: 4 }}>{label}</p>
+      <p style={{ fontSize: 16, fontWeight: 800, color: color || 'var(--text)' }}>{value}</p>
     </div>
   )
 }
-function band(v, g, y) { return v == null ? '#c8d0e0' : v < g ? '#34d399' : v <= y ? '#fbbf24' : '#f87171' }
+function band(v, g, y) { return v == null ? 'var(--text)' : v < g ? 'var(--positive)' : v <= y ? 'var(--warning)' : 'var(--negative)' }
 function netDebtText(cdr) {
   if (!cdr || cdr.netDebtChange == null) return null
   const x = fmtMoney(Math.abs(cdr.netDebtChange))
   const pct = cdr.netDebtChangePct
-  if (cdr.netDebtChange < 0) return { color: '#34d399', text: `La deuda neta se ha reducido ${x} en los últimos 4 años — señal de disciplina financiera.` }
-  if (pct != null && pct > 50) return { color: '#f87171', text: `La deuda neta ha crecido significativamente (${x}) en los últimos 4 años — las distribuciones pueden estar financiándose con deuda.` }
-  if (pct != null && pct > 20) return { color: '#fbbf24', text: `La deuda neta ha crecido ${x} en los últimos 4 años — revisar si las distribuciones son sostenibles.` }
-  return { color: '#8090a8', text: `La deuda neta ha crecido ${x} en los últimos 4 años — crecimiento moderado.` }
+  if (cdr.netDebtChange < 0) return { color: 'var(--positive)', text: `La deuda neta se ha reducido ${x} en los últimos 4 años — señal de disciplina financiera.` }
+  if (pct != null && pct > 50) return { color: 'var(--negative)', text: `La deuda neta ha crecido significativamente (${x}) en los últimos 4 años — las distribuciones pueden estar financiándose con deuda.` }
+  if (pct != null && pct > 20) return { color: 'var(--warning)', text: `La deuda neta ha crecido ${x} en los últimos 4 años — revisar si las distribuciones son sostenibles.` }
+  return { color: 'var(--text-muted)', text: `La deuda neta ha crecido ${x} en los últimos 4 años — crecimiento moderado.` }
 }
 const pctN = v => v == null ? '—' : v.toFixed(1) + '%'
-function covColor(v) { return v == null ? '#4a5270' : v > 5 ? '#34d399' : v >= 3 ? '#fbbf24' : '#f87171' }
+function covColor(v) { return v == null ? 'var(--text-faint)' : v > 5 ? 'var(--positive)' : v >= 3 ? 'var(--warning)' : 'var(--negative)' }
 
 function trendText(margins, key, what) {
   const valid = margins.filter(m => m[key] != null)
@@ -551,9 +551,9 @@ function trendText(margins, key, what) {
   const ref = valid[refIdx][key]
   const n = valid.length - 1 - refIdx
   const diff = last - ref
-  if (diff > 2) return { color: '#34d399', text: `Los ${what} se han expandido en los últimos ${n} años — señal de mejora del poder de fijación de precios.` }
-  if (diff < -2) return { color: '#f87171', text: `Los ${what} se han contraído en los últimos ${n} años — vigilar la presión competitiva.` }
-  return { color: '#8090a8', text: `Márgenes estables en los últimos ${n} años.` }
+  if (diff > 2) return { color: 'var(--positive)', text: `Los ${what} se han expandido en los últimos ${n} años — señal de mejora del poder de fijación de precios.` }
+  if (diff < -2) return { color: 'var(--negative)', text: `Los ${what} se han contraído en los últimos ${n} años — vigilar la presión competitiva.` }
+  return { color: 'var(--text-muted)', text: `Márgenes estables en los últimos ${n} años.` }
 }
 
 function shareText(share) {
@@ -561,8 +561,8 @@ function shareText(share) {
   if (v.length < 2) return null
   const g = (key) => { const arr = v.filter(s => s[key] != null); if (arr.length < 2) return null; const a = arr[0][key], b = arr[arr.length - 1][key]; return (a && a !== 0) ? (b - a) / Math.abs(a) : null }
   const gE = g('eps'), gF = g('fcfps'), gD = g('dps')
-  if (gD != null && gF != null && gD > gF * 1.3) return { color: '#f87171', text: 'El dividendo crece más rápido que el FCF por acción — vigilar la sostenibilidad.' }
-  if (gD != null && gE != null && gF != null && gD < Math.min(gE, gF)) return { color: '#34d399', text: 'El dividendo crece con margen de seguridad — hay capacidad para acelerarlo.' }
-  if (gE != null && gF != null && Math.abs(gE - gF) > 0.4) return { color: '#8090a8', text: 'Diferencia relevante entre EPS y FCF por acción — revisar la calidad del beneficio contable.' }
+  if (gD != null && gF != null && gD > gF * 1.3) return { color: 'var(--negative)', text: 'El dividendo crece más rápido que el FCF por acción — vigilar la sostenibilidad.' }
+  if (gD != null && gE != null && gF != null && gD < Math.min(gE, gF)) return { color: 'var(--positive)', text: 'El dividendo crece con margen de seguridad — hay capacidad para acelerarlo.' }
+  if (gE != null && gF != null && Math.abs(gE - gF) > 0.4) return { color: 'var(--text-muted)', text: 'Diferencia relevante entre EPS y FCF por acción — revisar la calidad del beneficio contable.' }
   return null
 }

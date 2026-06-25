@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-const CARD = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: 20 }
+const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 20 }
 const fmtVal = v => {
   if (v == null) return '—'
   const a = Math.abs(v)
@@ -13,16 +13,16 @@ const fmtVal = v => {
 const fmtSh = v => v == null ? '—' : Math.abs(v).toLocaleString('es-ES')
 
 const VERDICT = {
-  compradores: { label: 'Insiders compradores netos', color: '#34d399', icon: '↑', desc: 'Los directivos han comprado más de lo que han vendido en los últimos 12 meses — señal de convicción.' },
-  vendedores:  { label: 'Insiders vendedores netos',  color: '#f87171', icon: '↓', desc: 'Predominan las ventas de directivos en los últimos 12 meses (a menudo por diversificación o impuestos, no siempre negativo).' },
-  mixto:       { label: 'Actividad mixta',            color: '#fbbf24', icon: '·', desc: 'Compras y ventas equilibradas entre los directivos.' },
-  neutral:     { label: 'Sin operaciones de mercado', color: '#8090a8', icon: '·', desc: 'No hay compras ni ventas de directivos en mercado abierto en los últimos 12 meses.' },
+  compradores: { label: 'Insiders compradores netos', color: 'var(--positive)', icon: '↑', desc: 'Los directivos han comprado más de lo que han vendido en los últimos 12 meses — señal de convicción.' },
+  vendedores:  { label: 'Insiders vendedores netos',  color: 'var(--negative)', icon: '↓', desc: 'Predominan las ventas de directivos en los últimos 12 meses (a menudo por diversificación o impuestos, no siempre negativo).' },
+  mixto:       { label: 'Actividad mixta',            color: 'var(--warning)', icon: '·', desc: 'Compras y ventas equilibradas entre los directivos.' },
+  neutral:     { label: 'Sin operaciones de mercado', color: 'var(--text-muted)', icon: '·', desc: 'No hay compras ni ventas de directivos en mercado abierto en los últimos 12 meses.' },
 }
 
 const KIND = {
-  buy:   { label: 'Compra', color: '#34d399' },
-  sell:  { label: 'Venta',  color: '#f87171' },
-  other: { label: 'Opciones/grant', color: '#8090a8' },
+  buy:   { label: 'Compra', color: 'var(--positive)' },
+  sell:  { label: 'Venta',  color: 'var(--negative)' },
+  other: { label: 'Opciones/grant', color: 'var(--text-muted)' },
 }
 
 export default function InsiderCard({ ticker, isPremium }) {
@@ -51,10 +51,10 @@ export default function InsiderCard({ ticker, isPremium }) {
     return (
       <div style={{ ...CARD, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0' }}>Operaciones de directivos (insiders)</p>
-          <p style={{ fontSize: 12, color: '#4a5270', marginTop: 2 }}>Quién de la directiva ha comprado o vendido, y si son compradores o vendedores netos.</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Operaciones de directivos (insiders)</p>
+          <p style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 2 }}>Quién de la directiva ha comprado o vendido, y si son compradores o vendedores netos.</p>
         </div>
-        <a href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '8px 16px', background: 'rgba(99,102,241,0.85)', borderRadius: 8 }}>Premium →</a>
+        <a href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '8px 16px', background: 'var(--accent)', borderRadius: 8 }}>Premium →</a>
       </div>
     )
   }
@@ -64,18 +64,18 @@ export default function InsiderCard({ ticker, isPremium }) {
 
   return (
     <div style={CARD}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Operaciones de directivos (insiders)</p>
+      <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Operaciones de directivos (insiders)</p>
 
       {/* Veredicto 12 meses */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: `${v.color}12`, border: `1px solid ${v.color}33`, borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
         <span style={{ color: v.color, fontSize: 18, fontWeight: 800, lineHeight: 1 }}>{v.icon}</span>
         <div>
           <p style={{ fontSize: 13.5, fontWeight: 700, color: v.color }}>{v.label}</p>
-          <p style={{ fontSize: 12, color: '#8090a8', marginTop: 3, lineHeight: 1.5 }}>{v.desc}</p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.5 }}>{v.desc}</p>
           {(n.buyCount > 0 || n.sellCount > 0) && (
-            <p style={{ fontSize: 11.5, color: '#8090a8', marginTop: 6 }}>
-              Últimos 12 meses: <b style={{ color: '#34d399' }}>{n.buyers} {n.buyers === 1 ? 'comprador' : 'compradores'}</b> ({fmtVal(n.buyValue)}) ·{' '}
-              <b style={{ color: '#f87171' }}>{n.sellers} {n.sellers === 1 ? 'vendedor' : 'vendedores'}</b> ({fmtVal(n.sellValue)}).
+            <p style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 6 }}>
+              Últimos 12 meses: <b style={{ color: 'var(--positive)' }}>{n.buyers} {n.buyers === 1 ? 'comprador' : 'compradores'}</b> ({fmtVal(n.buyValue)}) ·{' '}
+              <b style={{ color: 'var(--negative)' }}>{n.sellers} {n.sellers === 1 ? 'vendedor' : 'vendedores'}</b> ({fmtVal(n.sellValue)}).
             </p>
           )}
         </div>
@@ -83,10 +83,10 @@ export default function InsiderCard({ ticker, isPremium }) {
 
       {/* Resumen 6m de Yahoo */}
       {data.summary6m && (data.summary6m.buyCount > 0 || data.summary6m.sellCount > 0) && (
-        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginBottom: 14, fontSize: 12, color: '#8090a8' }}>
-          <span>Compras 6m: <b style={{ color: '#34d399' }}>{data.summary6m.buyCount}</b> ({fmtSh(data.summary6m.buyShares)} acc.)</span>
-          <span>Ventas 6m: <b style={{ color: '#f87171' }}>{data.summary6m.sellCount}</b> ({fmtSh(data.summary6m.sellShares)} acc.)</span>
-          {data.summary6m.netPct != null && <span>Variación neta: <b style={{ color: '#c8d0e0' }}>{(data.summary6m.netShares >= 0 ? '+' : '') + (data.summary6m.netPct * 100).toFixed(2)}%</b> de las acciones de insiders</span>}
+        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginBottom: 14, fontSize: 12, color: 'var(--text-muted)' }}>
+          <span>Compras 6m: <b style={{ color: 'var(--positive)' }}>{data.summary6m.buyCount}</b> ({fmtSh(data.summary6m.buyShares)} acc.)</span>
+          <span>Ventas 6m: <b style={{ color: 'var(--negative)' }}>{data.summary6m.sellCount}</b> ({fmtSh(data.summary6m.sellShares)} acc.)</span>
+          {data.summary6m.netPct != null && <span>Variación neta: <b style={{ color: 'var(--text)' }}>{(data.summary6m.netShares >= 0 ? '+' : '') + (data.summary6m.netPct * 100).toFixed(2)}%</b> de las acciones de insiders</span>}
         </div>
       )}
 
@@ -97,7 +97,7 @@ export default function InsiderCard({ ticker, isPremium }) {
             <thead>
               <tr>
                 {['Directivo', 'Cargo', 'Operación', 'Acciones', 'Importe', 'Fecha'].map((h, i) => (
-                  <th key={i} style={{ padding: '6px 8px', textAlign: i > 2 ? 'right' : 'left', color: '#4a5270', fontWeight: 600, whiteSpace: 'nowrap', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>{h}</th>
+                  <th key={i} style={{ padding: '6px 8px', textAlign: i > 2 ? 'right' : 'left', color: 'var(--text-faint)', fontWeight: 600, whiteSpace: 'nowrap', borderBottom: '1px solid var(--border)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -105,13 +105,13 @@ export default function InsiderCard({ ticker, isPremium }) {
               {data.transactions.map((t, i) => {
                 const k = KIND[t.kind] || KIND.other
                 return (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '6px 8px', color: '#c8d0e0', whiteSpace: 'nowrap', textTransform: 'capitalize' }}>{t.name.toLowerCase()}</td>
-                    <td style={{ padding: '6px 8px', color: '#8090a8', whiteSpace: 'nowrap' }}>{t.relation}</td>
+                  <tr key={i} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                    <td style={{ padding: '6px 8px', color: 'var(--text)', whiteSpace: 'nowrap', textTransform: 'capitalize' }}>{t.name.toLowerCase()}</td>
+                    <td style={{ padding: '6px 8px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t.relation}</td>
                     <td style={{ padding: '6px 8px', color: k.color, fontWeight: 600 }}>{k.label}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#c8d0e0' }}>{fmtSh(t.shares)}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#c8d0e0' }}>{fmtVal(t.value)}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#8090a8', whiteSpace: 'nowrap' }}>{t.date}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text)' }}>{fmtSh(t.shares)}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text)' }}>{fmtVal(t.value)}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t.date}</td>
                   </tr>
                 )
               })}
@@ -119,7 +119,7 @@ export default function InsiderCard({ ticker, isPremium }) {
           </table>
         </div>
       )}
-      <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 12 }}>Fuente: Yahoo Finance. Las ventas de directivos no siempre son una señal negativa (impuestos, diversificación); las compras en mercado abierto son la señal de convicción más fiable.</p>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 12 }}>Fuente: Yahoo Finance. Las ventas de directivos no siempre son una señal negativa (impuestos, diversificación); las compras en mercado abierto son la señal de convicción más fiable.</p>
     </div>
   )
 }

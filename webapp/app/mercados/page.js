@@ -25,7 +25,7 @@ export default async function MercadosPage() {
   try { markets = await getEffectiveMarkets() } catch { markets = undefined }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav active="/mercados" />
       <MarketsClient initialQuotes={quotes} initialTs={ts} dgiScores={dgiData} markets={markets} />
     </div>

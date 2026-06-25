@@ -24,7 +24,7 @@ export default async function Page() {
   const plan = await getPlan()
   if (!plan) redirect('/login')
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav active="/cartera" />
       <CarteraNav />
       <DividendosPage isPremium={plan === 'premium'} />

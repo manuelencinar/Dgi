@@ -5,9 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import { computeDGIScore, detectSectorType } from '@/lib/dgi-score'
 import { DICT } from '@/data/dict'
 
-const CARD    = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 24, marginBottom: 20 }
-const INPUT   = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '5px 8px', color: '#c8d0e0', fontSize: 12, outline: 'none', width: 64 }
-const SEC_TIT = { fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 18 }
+const CARD    = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 24, marginBottom: 20 }
+const INPUT   = { background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 6, padding: '5px 8px', color: 'var(--text)', fontSize: 12, outline: 'none', width: 64 }
+const SEC_TIT = { fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 18 }
 
 const DEFAULT_CONFIG = {
   priceDrop:    { enabled: true,  threshold: 20 },
@@ -27,7 +27,7 @@ function Toggle({ value, onChange, disabled }) {
   return (
     <button onClick={() => !disabled && onChange(!value)} disabled={disabled} style={{
       width: 40, height: 22, borderRadius: 11, border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
-      background: value ? 'rgba(52,211,153,0.7)' : 'rgba(255,255,255,0.1)', position: 'relative', opacity: disabled ? 0.4 : 1, flexShrink: 0,
+      background: value ? 'rgba(52,211,153,0.7)' : 'var(--border-strong)', position: 'relative', opacity: disabled ? 0.4 : 1, flexShrink: 0,
     }}>
       <span style={{ position: 'absolute', top: 3, left: value ? 21 : 3, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
     </button>
@@ -178,10 +178,10 @@ export default function AlertsSettings({ isPremium }) {
     return (
       <div style={CARD}>
         <p style={SEC_TIT}>Alertas de cartera</p>
-        <p style={{ fontSize: 13, color: '#8090a8', marginBottom: 14 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
           Recibe avisos cuando tus empresas recortan el dividendo, suben el payout o caen de precio.
         </p>
-        <Link href="/pricing" style={{ padding: '9px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
+        <Link href="/pricing" style={{ padding: '9px 18px', background: 'var(--accent)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
           Activar Premium →
         </Link>
       </div>
@@ -194,33 +194,33 @@ export default function AlertsSettings({ isPremium }) {
 
       {saveErr && (
         <div style={{ marginBottom: 14, padding: '10px 14px', background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 8 }}>
-          <p style={{ fontSize: 12, color: '#fbbf24' }}>⚠ No se pudo guardar la configuración. Si el problema persiste, faltan columnas en la base de datos (alert_config, alert_dismissed).</p>
+          <p style={{ fontSize: 12, color: 'var(--warning)' }}>⚠ No se pudo guardar la configuración. Si el problema persiste, faltan columnas en la base de datos (alert_config, alert_dismissed).</p>
         </div>
       )}
 
       {/* Alertas activas */}
       <div style={{ marginBottom: 22 }}>
-        <p style={{ fontSize: 12, fontWeight: 700, color: '#8090a8', marginBottom: 12 }}>
-          Alertas activas {activeAlerts.length > 0 && <span style={{ color: '#f87171' }}>({activeAlerts.length})</span>}
+        <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 12 }}>
+          Alertas activas {activeAlerts.length > 0 && <span style={{ color: 'var(--negative)' }}>({activeAlerts.length})</span>}
         </p>
         {loading ? (
-          <p style={{ fontSize: 13, color: '#4a5270' }}>Cargando alertas…</p>
+          <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>Cargando alertas…</p>
         ) : positions.length === 0 ? (
-          <p style={{ fontSize: 13, color: '#4a5270' }}>Añade posiciones a tu cartera para recibir alertas.</p>
+          <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>Añade posiciones a tu cartera para recibir alertas.</p>
         ) : activeAlerts.length === 0 ? (
-          <p style={{ fontSize: 13, color: '#34d399' }}>✓ No hay alertas activas en este momento.</p>
+          <p style={{ fontSize: 13, color: 'var(--positive)' }}>✓ No hay alertas activas en este momento.</p>
         ) : (
           <div style={{ display: 'grid', gap: 8 }}>
             {activeAlerts.map(a => (
               <div key={a.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: a.level === 'alto' ? 'rgba(248,113,113,0.06)' : 'rgba(251,191,36,0.06)', borderRadius: 8, gap: 10, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 220 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: a.level === 'alto' ? '#f87171' : '#fbbf24', flexShrink: 0 }} />
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: a.level === 'alto' ? 'var(--negative)' : 'var(--warning)', flexShrink: 0 }} />
                   <div>
-                    <Link href={`/empresa/${encodeURIComponent(a.ticker)}`} style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0', textDecoration: 'none' }}>{a.name}</Link>
-                    <p style={{ fontSize: 11, color: a.level === 'alto' ? '#f87171' : '#fbbf24' }}>{a.type} · {a.current} <span style={{ color: '#4a5270' }}>(umbral {a.threshold})</span></p>
+                    <Link href={`/empresa/${encodeURIComponent(a.ticker)}`} style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', textDecoration: 'none' }}>{a.name}</Link>
+                    <p style={{ fontSize: 11, color: a.level === 'alto' ? 'var(--negative)' : 'var(--warning)' }}>{a.type} · {a.current} <span style={{ color: 'var(--text-faint)' }}>(umbral {a.threshold})</span></p>
                   </div>
                 </div>
-                <button onClick={() => dismiss(a.key)} style={{ fontSize: 11, color: '#4a5270', background: 'rgba(255,255,255,0.04)', border: 'none', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', flexShrink: 0 }}>
+                <button onClick={() => dismiss(a.key)} style={{ fontSize: 11, color: 'var(--text-faint)', background: 'var(--surface-2)', border: 'none', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', flexShrink: 0 }}>
                   Marcar como vista
                 </button>
               </div>
@@ -230,15 +230,15 @@ export default function AlertsSettings({ isPremium }) {
 
         {dismissedAlerts.length > 0 && (
           <div style={{ marginTop: 14 }}>
-            <button onClick={() => setShowHistory(s => !s)} style={{ background: 'none', border: 'none', color: '#4a5270', cursor: 'pointer', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button onClick={() => setShowHistory(s => !s)} style={{ background: 'none', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}>
               {showHistory ? '▲' : '▼'} Alertas vistas ({dismissedAlerts.length})
             </button>
             {showHistory && (
               <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
                 {dismissedAlerts.map(a => (
-                  <div key={a.key} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 12px', background: 'rgba(255,255,255,0.015)', borderRadius: 6, opacity: 0.6 }}>
-                    <span style={{ fontSize: 12, color: '#8090a8' }}>{a.name} — {a.type}</span>
-                    <span style={{ fontSize: 11, color: '#4a5270' }}>{a.current}</span>
+                  <div key={a.key} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 12px', background: 'var(--surface)', borderRadius: 6, opacity: 0.6 }}>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.name} — {a.type}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>{a.current}</span>
                   </div>
                 ))}
               </div>
@@ -248,17 +248,17 @@ export default function AlertsSettings({ isPremium }) {
       </div>
 
       {/* Configuración de umbrales */}
-      <p style={{ fontSize: 12, fontWeight: 700, color: '#8090a8', marginBottom: 12 }}>Umbrales de alerta</p>
+      <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 12 }}>Umbrales de alerta</p>
       <div style={{ display: 'grid', gap: 12 }}>
         {ALERT_TYPES.map(t => (
-          <div key={t.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-            <span style={{ fontSize: 13, color: '#c8d0e0', flex: 1 }}>{t.label}</span>
+          <div key={t.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingBottom: 10, borderBottom: '1px solid var(--surface-2)' }}>
+            <span style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>{t.label}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               {t.configurable && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <input type="number" style={INPUT} value={config[t.key]?.threshold ?? ''} disabled={!config[t.key]?.enabled}
                     onChange={e => updateConfig(t.key, { threshold: parseFloat(e.target.value) || 0 })} />
-                  {t.unit && <span style={{ fontSize: 11, color: '#4a5270' }}>{t.unit}</span>}
+                  {t.unit && <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>{t.unit}</span>}
                 </div>
               )}
               <Toggle value={config[t.key]?.enabled ?? false} disabled={t.locked} onChange={v => updateConfig(t.key, { enabled: v })} />
@@ -266,8 +266,8 @@ export default function AlertsSettings({ isPremium }) {
           </div>
         ))}
       </div>
-      <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 14 }}>
-        Las alertas se comprueban cada domingo al actualizar los datos de mercado. El envío por email se activa en la sección <b style={{ color: '#4a5270' }}>Notificaciones</b>.
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 14 }}>
+        Las alertas se comprueban cada domingo al actualizar los datos de mercado. El envío por email se activa en la sección <b style={{ color: 'var(--text-faint)' }}>Notificaciones</b>.
       </p>
     </div>
   )

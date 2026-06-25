@@ -80,22 +80,22 @@ export default function PricingClient({
 
       {/* Banner éxito/cancelación */}
       {success && (
-        <div style={{ marginBottom: 28, padding: '14px 20px', background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 10, color: '#34d399', fontSize: 14, fontWeight: 600, textAlign: 'center' }}>
+        <div style={{ marginBottom: 28, padding: '14px 20px', background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 10, color: 'var(--positive)', fontSize: 14, fontWeight: 600, textAlign: 'center' }}>
           ¡Suscripción activada! Ya tienes acceso completo al plan premium.
         </div>
       )}
       {cancel && (
-        <div style={{ marginBottom: 28, padding: '14px 20px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 10, color: '#f87171', fontSize: 14, textAlign: 'center' }}>
+        <div style={{ marginBottom: 28, padding: '14px 20px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 10, color: 'var(--negative)', fontSize: 14, textAlign: 'center' }}>
           El pago fue cancelado. Puedes intentarlo de nuevo cuando quieras.
         </div>
       )}
 
       {/* Cabecera */}
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
-        <h1 style={{ fontSize: 30, fontWeight: 900, color: '#e0e8f0', marginBottom: 10 }}>
+        <h1 style={{ fontSize: 30, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 10 }}>
           Planes simples y transparentes
         </h1>
-        <p style={{ fontSize: 14, color: '#4a5270' }}>
+        <p style={{ fontSize: 14, color: 'var(--text-faint)' }}>
           Empieza gratis. Sin tarjeta. Actualiza cuando quieras.
         </p>
       </div>
@@ -104,53 +104,53 @@ export default function PricingClient({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 14, maxWidth: 860, margin: '0 auto 20px' }}>
 
         {/* Gratuito */}
-        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '28px 24px' }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#4a5270', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Gratuito</p>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--surface-3)', borderRadius: 16, padding: '28px 24px' }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Gratuito</p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
-            <span style={{ fontSize: 38, fontWeight: 900, color: '#e0e8f0' }}>0€</span>
-            <span style={{ fontSize: 13, color: '#4a5270' }}>/mes</span>
+            <span style={{ fontSize: 38, fontWeight: 900, color: 'var(--text-strong)' }}>0€</span>
+            <span style={{ fontSize: 13, color: 'var(--text-faint)' }}>/mes</span>
           </div>
-          <p style={{ fontSize: 11, color: '#3a4260', marginBottom: 22 }}>Sin tarjeta. Para siempre.</p>
+          <p style={{ fontSize: 11, color: 'var(--text-faintest)', marginBottom: 22 }}>Sin tarjeta. Para siempre.</p>
           <div style={{ display: 'grid', gap: 9, marginBottom: 28 }}>
             {FREE_FEATURES.map((f, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, fontSize: 13 }}>
-                <span style={{ color: '#34d399', flexShrink: 0, fontWeight: 700, lineHeight: 1.4 }}>✓</span>
-                <span style={{ color: '#8090a8', lineHeight: 1.4 }}>{f}</span>
+                <span style={{ color: 'var(--positive)', flexShrink: 0, fontWeight: 700, lineHeight: 1.4 }}>✓</span>
+                <span style={{ color: 'var(--text-muted)', lineHeight: 1.4 }}>{f}</span>
               </div>
             ))}
           </div>
           {isPremium ? (
-            <div style={{ textAlign: 'center', padding: '11px 0', color: '#3a4260', fontSize: 13 }}>Plan inferior</div>
+            <div style={{ textAlign: 'center', padding: '11px 0', color: 'var(--text-faintest)', fontSize: 13 }}>Plan inferior</div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '11px 0', background: 'rgba(255,255,255,0.03)', color: '#4a5270', borderRadius: 9, fontSize: 13, fontWeight: 700 }}>
+            <div style={{ textAlign: 'center', padding: '11px 0', background: 'var(--surface-2)', color: 'var(--text-faint)', borderRadius: 9, fontSize: 13, fontWeight: 700 }}>
               Plan actual
             </div>
           )}
         </div>
 
         {/* Mensual */}
-        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '28px 24px' }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#6a7090', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Premium mensual</p>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border-strong)', borderRadius: 16, padding: '28px 24px' }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Premium mensual</p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
-            <span style={{ fontSize: 38, fontWeight: 900, color: '#e0e8f0' }}>9,99€</span>
-            <span style={{ fontSize: 13, color: '#4a5270' }}>/mes</span>
+            <span style={{ fontSize: 38, fontWeight: 900, color: 'var(--text-strong)' }}>9,99€</span>
+            <span style={{ fontSize: 13, color: 'var(--text-faint)' }}>/mes</span>
           </div>
-          <p style={{ fontSize: 11, color: '#3a4260', marginBottom: 22 }}>Cancela en cualquier momento.</p>
+          <p style={{ fontSize: 11, color: 'var(--text-faintest)', marginBottom: 22 }}>Cancela en cualquier momento.</p>
           <div style={{ display: 'grid', gap: 9, marginBottom: 28 }}>
             {PREMIUM_FEATURES.map((f, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, fontSize: 13 }}>
-                <span style={{ color: '#818cf8', flexShrink: 0, fontWeight: 700, lineHeight: 1.4 }}>✓</span>
-                <span style={{ color: '#8090a8', lineHeight: 1.4 }}>{f}</span>
+                <span style={{ color: 'var(--accent)', flexShrink: 0, fontWeight: 700, lineHeight: 1.4 }}>✓</span>
+                <span style={{ color: 'var(--text-muted)', lineHeight: 1.4 }}>{f}</span>
               </div>
             ))}
           </div>
           {isPremium ? (
-            <div style={{ textAlign: 'center', padding: '11px 0', color: '#3a4260', fontSize: 13 }}>Incluido en tu plan</div>
+            <div style={{ textAlign: 'center', padding: '11px 0', color: 'var(--text-faintest)', fontSize: 13 }}>Incluido en tu plan</div>
           ) : (
             <button
               onClick={() => startCheckout(monthlyPriceId, 'monthly')}
               disabled={loading === 'monthly'}
-              style={{ width: '100%', padding: '12px 0', background: 'rgba(99,102,241,0.25)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.35)', borderRadius: 9, fontSize: 14, fontWeight: 700, cursor: loading === 'monthly' ? 'default' : 'pointer', fontFamily: 'inherit', transition: 'opacity .15s' }}>
+              style={{ width: '100%', padding: '12px 0', background: 'rgba(99,102,241,0.25)', color: 'var(--accent)', border: '1px solid rgba(99,102,241,0.35)', borderRadius: 9, fontSize: 14, fontWeight: 700, cursor: loading === 'monthly' ? 'default' : 'pointer', fontFamily: 'inherit', transition: 'opacity .15s' }}>
               {loading === 'monthly' ? 'Redirigiendo…' : (isLoggedIn ? 'Activar mensual' : 'Crear cuenta y activar')}
             </button>
           )}
@@ -158,35 +158,35 @@ export default function PricingClient({
 
         {/* Anual — protagonista */}
         <div style={{ background: 'rgba(99,102,241,0.06)', border: '2px solid rgba(99,102,241,0.45)', borderRadius: 16, padding: '28px 24px', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: '#6366f1', color: '#fff', fontSize: 10, fontWeight: 800, padding: '4px 16px', borderRadius: 10, letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+          <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: 'var(--accent)', color: '#fff', fontSize: 10, fontWeight: 800, padding: '4px 16px', borderRadius: 10, letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
             MEJOR PRECIO · −50%
           </div>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#818cf8', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Premium anual</p>
+          <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Premium anual</p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
-            <span style={{ fontSize: 38, fontWeight: 900, color: '#e0e8f0' }}>59,90€</span>
-            <span style={{ fontSize: 13, color: '#4a5270' }}>/año</span>
+            <span style={{ fontSize: 38, fontWeight: 900, color: 'var(--text-strong)' }}>59,90€</span>
+            <span style={{ fontSize: 13, color: 'var(--text-faint)' }}>/año</span>
           </div>
-          <p style={{ fontSize: 12, color: '#34d399', fontWeight: 600, marginBottom: 4 }}>
+          <p style={{ fontSize: 12, color: 'var(--positive)', fontWeight: 600, marginBottom: 4 }}>
             Equivale a 4,99€/mes
           </p>
-          <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 22 }}>
+          <p style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 22 }}>
             Ahorras 60€ al año frente al mensual.
           </p>
           <div style={{ display: 'grid', gap: 9, marginBottom: 28 }}>
             {PREMIUM_FEATURES.map((f, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, fontSize: 13 }}>
-                <span style={{ color: '#818cf8', flexShrink: 0, fontWeight: 700, lineHeight: 1.4 }}>✓</span>
-                <span style={{ color: '#8090a8', lineHeight: 1.4 }}>{f}</span>
+                <span style={{ color: 'var(--accent)', flexShrink: 0, fontWeight: 700, lineHeight: 1.4 }}>✓</span>
+                <span style={{ color: 'var(--text-muted)', lineHeight: 1.4 }}>{f}</span>
               </div>
             ))}
           </div>
           {isPremium ? (
-            <div style={{ textAlign: 'center', padding: '11px 0', color: '#34d399', fontSize: 13, fontWeight: 600 }}>✓ Plan activo</div>
+            <div style={{ textAlign: 'center', padding: '11px 0', color: 'var(--positive)', fontSize: 13, fontWeight: 600 }}>✓ Plan activo</div>
           ) : (
             <button
               onClick={() => startCheckout(annualPriceId, 'annual')}
               disabled={loading === 'annual'}
-              style={{ width: '100%', padding: '13px 0', background: '#6366f1', color: '#fff', border: 'none', borderRadius: 9, fontSize: 15, fontWeight: 800, cursor: loading === 'annual' ? 'default' : 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(99,102,241,0.35)', transition: 'opacity .15s' }}>
+              style={{ width: '100%', padding: '13px 0', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 9, fontSize: 15, fontWeight: 800, cursor: loading === 'annual' ? 'default' : 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(99,102,241,0.35)', transition: 'opacity .15s' }}>
               {loading === 'annual' ? 'Redirigiendo…' : (isLoggedIn ? 'Activar anual →' : 'Crear cuenta y activar →')}
             </button>
           )}
@@ -199,7 +199,7 @@ export default function PricingClient({
           <button
             onClick={openPortal}
             disabled={loading === 'portal'}
-            style={{ fontSize: 12, color: '#4a5270', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>
+            style={{ fontSize: 12, color: 'var(--text-faint)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>
             {loading === 'portal' ? 'Abriendo portal…' : 'Gestionar suscripción / Cancelar'}
           </button>
         </div>
@@ -207,14 +207,14 @@ export default function PricingClient({
 
       {/* FAQ */}
       <div style={{ maxWidth: 600, margin: '0 auto' }}>
-        <h2 style={{ fontSize: 12, fontWeight: 700, color: '#3a4260', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16, textAlign: 'center' }}>
+        <h2 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-faintest)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16, textAlign: 'center' }}>
           Preguntas frecuentes
         </h2>
         <div style={{ display: 'grid', gap: 8 }}>
           {FAQ.map((item, i) => (
-            <div key={i} style={{ padding: '14px 18px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0', marginBottom: 5 }}>{item.q}</p>
-              <p style={{ fontSize: 12, color: '#4a5270', lineHeight: 1.65 }}>{item.a}</p>
+            <div key={i} style={{ padding: '14px 18px', background: 'var(--surface)', border: '1px solid var(--surface-3)', borderRadius: 10 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 5 }}>{item.q}</p>
+              <p style={{ fontSize: 12, color: 'var(--text-faint)', lineHeight: 1.65 }}>{item.a}</p>
             </div>
           ))}
         </div>

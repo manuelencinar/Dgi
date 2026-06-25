@@ -6,9 +6,9 @@ import { SECTORS_BY_SUPER, industriesOf, sectorLabelEs, industryEs } from '@/lib
 
 const SUPER_KEYS = Object.keys(SECTORS_BY_SUPER)   // ciclico, sensible, defensivo
 const PAGE = 20
-const sel = { background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(99,102,241,0.35)', borderRadius: 5, padding: '5px 6px', color: '#e0e8f0', fontSize: 12, outline: 'none', width: '100%', fontFamily: 'inherit' }
-const th = { textAlign: 'left', padding: '8px 8px', fontSize: 10, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, whiteSpace: 'nowrap' }
-const td = { padding: '7px 8px', borderTop: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'middle' }
+const sel = { background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(99,102,241,0.35)', borderRadius: 5, padding: '5px 6px', color: 'var(--text-strong)', fontSize: 12, outline: 'none', width: '100%', fontFamily: 'inherit' }
+const th = { textAlign: 'left', padding: '8px 8px', fontSize: 10, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, whiteSpace: 'nowrap' }
+const td = { padding: '7px 8px', borderTop: '1px solid var(--surface-2)', verticalAlign: 'middle' }
 
 // Supersector (de los 3 asignables) al que pertenece un sector inglés.
 function superOf(sector) {
@@ -69,13 +69,13 @@ export default function SectorAssignClient() {
     }
   }
 
-  if (companies === null) return <Card><p style={{ fontSize: 13, color: '#4a5270' }}>Cargando empresas…</p></Card>
+  if (companies === null) return <Card><p style={{ fontSize: 13, color: 'var(--text-faint)' }}>Cargando empresas…</p></Card>
 
   return (
     <Card>
       <SectionTitle>Asignación de sectores (Morningstar)</SectionTitle>
-      <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 14 }}>
-        Tres niveles: <b style={{ color: '#8090a8' }}>Supersector → Sector → Industria</b>. El sector define el supersector del gráfico de la cartera; la industria es informativa. Al guardar se bloquea para que el run de Yahoo no lo sobreescriba.
+      <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 14 }}>
+        Tres niveles: <b style={{ color: 'var(--text-muted)' }}>Supersector → Sector → Industria</b>. El sector define el supersector del gráfico de la cartera; la industria es informativa. Al guardar se bloquea para que el run de Yahoo no lo sobreescriba.
       </p>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -86,7 +86,7 @@ export default function SectorAssignClient() {
           <option value="nosector">Sin sector válido</option>
           <option value="locked">Asignadas a mano</option>
         </select>
-        <span style={{ fontSize: 12, color: '#4a5270', alignSelf: 'center' }}>{filtered.length} empresas</span>
+        <span style={{ fontSize: 12, color: 'var(--text-faint)', alignSelf: 'center' }}>{filtered.length} empresas</span>
       </div>
 
       <div style={{ overflowX: 'auto' }}>
@@ -108,9 +108,9 @@ export default function SectorAssignClient() {
               return (
                 <tr key={c.ticker}>
                   <td style={{ ...td, minWidth: 150 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, color: '#c8d0e0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }}>{c.name}</div>
-                    <div style={{ fontSize: 10, color: '#4a5270' }}>
-                      {c.ticker} {c.locked && <span title="Asignado a mano" style={{ color: '#818cf8' }}>· 🔒</span>}
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }}>{c.name}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-faint)' }}>
+                      {c.ticker} {c.locked && <span title="Asignado a mano" style={{ color: 'var(--accent)' }}>· 🔒</span>}
                     </div>
                   </td>
                   <td style={{ ...td, minWidth: 130 }}>
@@ -135,8 +135,8 @@ export default function SectorAssignClient() {
                     <button onClick={() => save(c)} disabled={!dirty || !ed.sector || st === 'saving'} style={{
                       fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 6, border: 'none', fontFamily: 'inherit',
                       cursor: (!dirty || !ed.sector) ? 'default' : 'pointer',
-                      background: (!dirty || !ed.sector) ? 'rgba(255,255,255,0.06)' : '#6366f1',
-                      color: (!dirty || !ed.sector) ? '#4a5270' : '#fff',
+                      background: (!dirty || !ed.sector) ? 'var(--border)' : 'var(--accent)',
+                      color: (!dirty || !ed.sector) ? 'var(--text-faint)' : '#fff',
                     }}>
                       {st === 'saving' ? '…' : st === 'ok' ? '✓' : st === 'err' ? '✗' : 'Guardar'}
                     </button>
@@ -150,9 +150,9 @@ export default function SectorAssignClient() {
 
       {pages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 14 }}>
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ fontSize: 12, padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: page === 1 ? '#2a3045' : '#8090a8', cursor: page === 1 ? 'default' : 'pointer' }}>← Anterior</button>
-          <span style={{ fontSize: 12, color: '#4a5270' }}>{page} / {pages}</span>
-          <button onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages} style={{ fontSize: 12, padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: page === pages ? '#2a3045' : '#8090a8', cursor: page === pages ? 'default' : 'pointer' }}>Siguiente →</button>
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ fontSize: 12, padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border-strong)', background: 'transparent', color: page === 1 ? 'var(--text-faintest)' : 'var(--text-muted)', cursor: page === 1 ? 'default' : 'pointer' }}>← Anterior</button>
+          <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>{page} / {pages}</span>
+          <button onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages} style={{ fontSize: 12, padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border-strong)', background: 'transparent', color: page === pages ? 'var(--text-faintest)' : 'var(--text-muted)', cursor: page === pages ? 'default' : 'pointer' }}>Siguiente →</button>
         </div>
       )}
     </Card>

@@ -245,16 +245,16 @@ function fmtTax(v) {
 }
 
 function taxColor(v) {
-  if (v == null) return '#4a5270'
-  if (v < 0)    return '#34d399'   // crédito fiscal
-  if (v < 10)   return '#34d399'   // tasa muy baja
-  if (v > 60)   return '#fbbf24'   // anomalía
-  if (v > 35)   return '#fbbf24'   // tasa elevada
-  return '#c8d0e0'
+  if (v == null) return 'var(--text-faint)'
+  if (v < 0)    return 'var(--positive)'   // crédito fiscal
+  if (v < 10)   return 'var(--positive)'   // tasa muy baja
+  if (v > 60)   return 'var(--warning)'   // anomalía
+  if (v > 35)   return 'var(--warning)'   // tasa elevada
+  return 'var(--text)'
 }
 
 function epsColor(v) {
-  return v != null && v < 0 ? '#f87171' : '#c8d0e0'
+  return v != null && v < 0 ? 'var(--negative)' : 'var(--text)'
 }
 
 function findRow(data, ...keys) {
@@ -266,7 +266,7 @@ function findRow(data, ...keys) {
 
 function TableView({ stmt, isQuarterly, important }) {
   if (!stmt?.columns?.length || !stmt?.data) {
-    return <p style={{ fontSize: 13, color: '#4a5270', textAlign: 'center', padding: '24px 0' }}>Datos no disponibles para esta empresa.</p>
+    return <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', padding: '24px 0' }}>Datos no disponibles para esta empresa.</p>
   }
 
   const cols    = stmt.columns
@@ -318,11 +318,11 @@ function TableView({ stmt, isQuarterly, important }) {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: Math.max(400, cols.length * 110) }}>
         <thead>
           <tr>
-            <th style={{ padding: '8px 10px', textAlign: 'left', color: '#4a5270', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap', minWidth: 200 }}>
+            <th style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--text-faint)', fontWeight: 600, borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap', minWidth: 200 }}>
               Partida
             </th>
             {periods.map(p => (
-              <th key={p} style={{ padding: '8px 10px', textAlign: 'right', color: '#4a5270', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap' }}>
+              <th key={p} style={{ padding: '8px 10px', textAlign: 'right', color: 'var(--text-faint)', fontWeight: 600, borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
                 {p}
               </th>
             ))}
@@ -338,21 +338,21 @@ function TableView({ stmt, isQuarterly, important }) {
             const isSpecial   = isEPS || isTax
 
             return (
-              <tr key={label} style={{ background: ri % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
-                <td style={{ padding: '7px 10px', color: isKey || isSpecial ? '#c8d0e0' : '#8090a8', fontWeight: isKey || isSpecial ? 700 : 400, whiteSpace: 'nowrap', borderBottom: isKey ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              <tr key={label} style={{ background: ri % 2 === 0 ? 'transparent' : 'var(--surface)' }}>
+                <td style={{ padding: '7px 10px', color: isKey || isSpecial ? 'var(--text)' : 'var(--text-muted)', fontWeight: isKey || isSpecial ? 700 : 400, whiteSpace: 'nowrap', borderBottom: isKey ? '1px solid var(--surface-2)' : 'none' }}>
                   {label}
                 </td>
                 {vals.map((v, ci) => {
                   const prev    = vals[ci + 1] ?? null
                   const yoy     = (isKey && !isSpecial) ? yoyPct(v, prev, lowerBetter) : null
                   const display = isEPS ? fmtEPS(v) : isTax ? fmtTax(v) : fmtM(v)
-                  const color   = isEPS ? epsColor(v) : isTax ? taxColor(v) : (isKey ? '#c8d0e0' : '#4a5270')
+                  const color   = isEPS ? epsColor(v) : isTax ? taxColor(v) : (isKey ? 'var(--text)' : 'var(--text-faint)')
 
                   return (
-                    <td key={ci} style={{ padding: '7px 10px', textAlign: 'right', color, fontWeight: isKey || isSpecial ? 700 : 400, whiteSpace: 'nowrap', borderBottom: isKey ? '1px solid rgba(255,255,255,0.04)' : 'none', verticalAlign: 'top' }}>
+                    <td key={ci} style={{ padding: '7px 10px', textAlign: 'right', color, fontWeight: isKey || isSpecial ? 700 : 400, whiteSpace: 'nowrap', borderBottom: isKey ? '1px solid var(--surface-2)' : 'none', verticalAlign: 'top' }}>
                       <div>{display}</div>
                       {yoy != null && (
-                        <div style={{ fontSize: 10, color: yoy.improved ? '#34d399' : '#f87171', marginTop: 2 }}>
+                        <div style={{ fontSize: 10, color: yoy.improved ? 'var(--positive)' : 'var(--negative)', marginTop: 2 }}>
                           {yoy.pct > 0 ? '+' : ''}{(yoy.pct * 100).toFixed(1)}%
                         </div>
                       )}
@@ -382,7 +382,7 @@ function ManualBadge({ manualImport }) {
   return (
     <span
       title={`Algunos campos de esta empresa han sido introducidos manualmente${date ? ` (última importación: ${date})` : ''} y tienen prioridad sobre los datos automáticos.`}
-      style={{ fontSize: 10, fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', padding: '2px 8px', borderRadius: 5, cursor: 'help', whiteSpace: 'nowrap' }}
+      style={{ fontSize: 10, fontWeight: 700, color: 'var(--warning)', background: 'rgba(251,191,36,0.12)', padding: '2px 8px', borderRadius: 5, cursor: 'help', whiteSpace: 'nowrap' }}
     >✏ Datos parcialmente manuales</span>
   )
 }
@@ -424,22 +424,22 @@ export default function FinancialTables({
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', marginBottom: open ? 14 : 0 }}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Cuenta de resultados</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Cuenta de resultados</span>
             <ManualBadge manualImport={manualImport} />
           </span>
-          <span style={{ fontSize: 14, color: '#4a5270', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
+          <span style={{ fontSize: 14, color: 'var(--text-faint)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
         </button>
 
         {open && (
           <>
             {freeStmtFiltered
               ? <TableView stmt={freeStmtFiltered} isQuarterly={false} important={IMPORTANT_IS} />
-              : <p style={{ fontSize: 13, color: '#4a5270', textAlign: 'center', padding: '24px 0' }}>Datos no disponibles para esta empresa.</p>
+              : <p style={{ fontSize: 13, color: 'var(--text-faint)', textAlign: 'center', padding: '24px 0' }}>Datos no disponibles para esta empresa.</p>
             }
             <div style={{ marginTop: 16, textAlign: 'center', padding: '14px', background: 'rgba(99,102,241,0.04)', border: '1px dashed rgba(99,102,241,0.2)', borderRadius: 10 }}>
-              <p style={{ fontSize: 12, color: '#818cf8', fontWeight: 700, marginBottom: 4 }}>Contenido Premium</p>
-              <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 10 }}>Balance, flujo de caja y datos trimestrales con variaciones YoY.</p>
-              <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'rgba(99,102,241,0.8)', borderRadius: 8, padding: '7px 16px', textDecoration: 'none' }}>
+              <p style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 700, marginBottom: 4 }}>Contenido Premium</p>
+              <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 10 }}>Balance, flujo de caja y datos trimestrales con variaciones YoY.</p>
+              <Link href="/pricing" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'var(--accent)', borderRadius: 8, padding: '7px 16px', textDecoration: 'none' }}>
                 Ver planes →
               </Link>
             </div>
@@ -466,10 +466,10 @@ export default function FinancialTables({
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', marginBottom: open ? 16 : 0 }}
       >
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Estados financieros completos</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Estados financieros completos</span>
           <ManualBadge manualImport={manualImport} />
         </span>
-        <span style={{ fontSize: 14, color: '#4a5270', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
+        <span style={{ fontSize: 14, color: 'var(--text-faint)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
       </button>
 
       {open && (
@@ -480,8 +480,8 @@ export default function FinancialTables({
               <button key={t.id} onClick={() => setTab(t.id)} style={{
                 padding: '6px 14px', fontSize: 12, fontWeight: 600, border: 'none', borderRadius: 8,
                 cursor: 'pointer', fontFamily: 'inherit',
-                background: tab === t.id ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)',
-                color: tab === t.id ? '#818cf8' : '#4a5270',
+                background: tab === t.id ? 'rgba(99,102,241,0.2)' : 'var(--surface-2)',
+                color: tab === t.id ? 'var(--accent)' : 'var(--text-faint)',
               }}>
                 {t.label}
               </button>
@@ -491,8 +491,8 @@ export default function FinancialTables({
                 <button key={p} onClick={() => setPeriod(p)} style={{
                   padding: '5px 10px', fontSize: 11, fontWeight: 600, border: 'none', borderRadius: 6,
                   cursor: 'pointer', fontFamily: 'inherit',
-                  background: period === p ? 'rgba(255,255,255,0.08)' : 'transparent',
-                  color: period === p ? '#c8d0e0' : '#4a5270',
+                  background: period === p ? 'var(--surface-3)' : 'transparent',
+                  color: period === p ? 'var(--text)' : 'var(--text-faint)',
                 }}>
                   {p === 'annual' ? 'Anual' : 'Trimestral'}
                 </button>
@@ -502,7 +502,7 @@ export default function FinancialTables({
 
           <TableView stmt={stmt} isQuarterly={isQuarterly} important={current.important} />
 
-          <p style={{ fontSize: 10, color: '#4a5270', marginTop: 10, textAlign: 'right' }}>
+          <p style={{ fontSize: 10, color: 'var(--text-faint)', marginTop: 10, textAlign: 'right' }}>
             Cifras en millones · Fuente: yfinance
           </p>
         </>

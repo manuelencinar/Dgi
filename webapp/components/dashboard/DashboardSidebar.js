@@ -24,7 +24,7 @@ export default function DashboardSidebar() {
           <Link key={l.href} href={l.href} onClick={() => setOpen(false)} style={{
             display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8,
             textDecoration: 'none', fontSize: 14, fontWeight: active ? 700 : 500,
-            color: active ? '#818cf8' : '#8090a8',
+            color: active ? 'var(--accent)' : 'var(--text-muted)',
             background: active ? 'rgba(99,102,241,0.12)' : 'transparent',
           }}>
             <span style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{l.icon}</span>
@@ -37,7 +37,7 @@ export default function DashboardSidebar() {
 
   const header = (
     <div style={{ marginBottom: 24 }}>
-      <p style={{ fontSize: 15, fontWeight: 900, color: '#e0e8f0' }}>Mi Índice DGI</p>
+      <p style={{ fontSize: 15, fontWeight: 900, color: 'var(--text-strong)' }}>Mi Índice DGI</p>
       <p style={{ fontSize: 10, fontWeight: 700, color: '#fb923c', letterSpacing: '0.1em', marginTop: 2 }}>ADMIN</p>
     </div>
   )
@@ -45,8 +45,8 @@ export default function DashboardSidebar() {
   const viewApp = (
     <a href="/" target="_blank" rel="noopener" style={{
       display: 'block', marginTop: 'auto', padding: '9px 14px', borderRadius: 8, textAlign: 'center',
-      fontSize: 12, fontWeight: 700, color: '#8090a8', textDecoration: 'none',
-      background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+      fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textDecoration: 'none',
+      background: 'var(--surface-2)', border: '1px solid var(--surface-3)',
     }}>
       Ver app ↗
     </a>
@@ -57,11 +57,11 @@ export default function DashboardSidebar() {
       {/* Topbar móvil */}
       <div className="dash-mobile-bar" style={{
         display: 'none', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+        padding: '12px 16px', borderBottom: '1px solid var(--border)',
         position: 'sticky', top: 0, background: 'rgba(8,11,20,0.95)', backdropFilter: 'blur(12px)', zIndex: 60,
       }}>
-        <p style={{ fontSize: 14, fontWeight: 900, color: '#e0e8f0' }}>Admin · Mi Índice DGI</p>
-        <button onClick={() => setOpen(o => !o)} style={{ background: 'none', border: 'none', color: '#c8d0e0', fontSize: 22, cursor: 'pointer' }}>≡</button>
+        <p style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-strong)' }}>Admin · Mi Índice DGI</p>
+        <button onClick={() => setOpen(o => !o)} style={{ background: 'none', border: 'none', color: 'var(--text)', fontSize: 22, cursor: 'pointer' }}>≡</button>
       </div>
 
       {/* Drawer móvil */}
@@ -70,8 +70,8 @@ export default function DashboardSidebar() {
           display: 'none', position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(0,0,0,0.6)',
         }} onClick={() => setOpen(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            width: 240, height: '100%', background: '#0d1424', padding: 20,
-            display: 'flex', flexDirection: 'column', borderRight: '1px solid rgba(255,255,255,0.08)',
+            width: 240, height: '100%', background: 'var(--bg-elev)', padding: 20,
+            display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--surface-3)',
           }}>
             {header}{nav}{viewApp}
           </div>
@@ -81,7 +81,7 @@ export default function DashboardSidebar() {
       {/* Sidebar desktop */}
       <aside className="dash-sidebar" style={{
         width: 220, flexShrink: 0, height: '100vh', position: 'sticky', top: 0,
-        background: '#0d1424', borderRight: '1px solid rgba(255,255,255,0.06)',
+        background: 'var(--bg-elev)', borderRight: '1px solid var(--border)',
         padding: 20, display: 'flex', flexDirection: 'column',
       }}>
         {header}{nav}{viewApp}

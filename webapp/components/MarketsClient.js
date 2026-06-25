@@ -25,13 +25,13 @@ function fmt(v) {
 }
 
 function scoreColor(s) {
-  if (s == null) return '#2e3a55'
-  return s >= 7 ? '#34d399' : s >= 4 ? '#fbbf24' : '#f87171'
+  if (s == null) return 'var(--text-faintest)'
+  return s >= 7 ? 'var(--positive)' : s >= 4 ? 'var(--warning)' : 'var(--negative)'
 }
 
 function MarketCard({ m, q, dgi }) {
   const up     = q?.pct != null ? q.pct >= 0 : null
-  const pctCol = up === null ? '#3a4260' : up ? '#34d399' : '#f87171'
+  const pctCol = up === null ? 'var(--text-faintest)' : up ? 'var(--positive)' : 'var(--negative)'
   const sign   = q?.pct != null && q.pct >= 0 ? '+' : ''
   const pctStr = q?.pct != null
     ? sign + q.pct.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%'
@@ -45,8 +45,8 @@ function MarketCard({ m, q, dgi }) {
   return (
     <Link href={`/mercados/${encodeURIComponent(m.symbol)}`} style={{ textDecoration: 'none', display: 'block' }}>
       <div
-        style={{ padding: '11px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer' }}
-        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+        style={{ padding: '11px 14px', borderBottom: '1px solid var(--surface-3)', cursor: 'pointer' }}
+        onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
       >
         {/* Top row: name + score */}
@@ -54,17 +54,17 @@ function MarketCard({ m, q, dgi }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
             <Flag emoji={m.flag} />
             <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#d0d8e8', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {m.name}
               </p>
-              <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 1 }}>{m.country}</p>
+              <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 1 }}>{m.country}</p>
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <p style={{ fontSize: 22, fontWeight: 900, color: sCol, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
               {score != null ? score.toFixed(1) : '—'}
             </p>
-            <p style={{ fontSize: 8, color: '#2e3a55', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 1 }}>
+            <p style={{ fontSize: 8, color: 'var(--text-faintest)', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 1 }}>
               Score DGI
             </p>
           </div>
@@ -73,7 +73,7 @@ function MarketCard({ m, q, dgi }) {
         {/* Bottom row: price + yield + opps */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-            <p style={{ fontSize: 12, fontWeight: 700, color: '#8090a8', fontVariantNumeric: 'tabular-nums' }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
               {fmt(q?.price)}
             </p>
             <p style={{ fontSize: 11, fontWeight: 600, color: pctCol, fontVariantNumeric: 'tabular-nums' }}>
@@ -83,16 +83,16 @@ function MarketCard({ m, q, dgi }) {
 
           {yield_ != null && (
             <>
-              <div style={{ width: 1, height: 10, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-              <p style={{ fontSize: 11, color: '#4a5270' }}>
-                Yield <span style={{ color: '#34d399', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{(yield_ * 100).toFixed(2)}%</span>
+              <div style={{ width: 1, height: 10, background: 'var(--surface-3)', flexShrink: 0 }} />
+              <p style={{ fontSize: 11, color: 'var(--text-faint)' }}>
+                Yield <span style={{ color: 'var(--positive)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{(yield_ * 100).toFixed(2)}%</span>
               </p>
             </>
           )}
 
           {opps != null && opps > 0 && (
             <>
-              <div style={{ width: 1, height: 10, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+              <div style={{ width: 1, height: 10, background: 'var(--surface-3)', flexShrink: 0 }} />
               <p style={{ fontSize: 11, color: '#fb923c', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fb923c', display: 'inline-block', flexShrink: 0 }} />
                 {opps} en zona de compra
@@ -172,18 +172,18 @@ export default function MarketsClient({ initialQuotes = {}, initialTs = 0, dgiSc
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
           <div>
-            <h1 style={{ fontSize: 18, fontWeight: 900, color: '#e0e8f0', lineHeight: 1, marginBottom: 3 }}>
+            <h1 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text-strong)', lineHeight: 1, marginBottom: 3 }}>
               Mercados Globales
             </h1>
-            <p style={{ fontSize: 10, color: '#3a4260' }}>
+            <p style={{ fontSize: 10, color: 'var(--text-faintest)' }}>
               {sorted.length} índices
-              {scoredCount > 0 && <> · <span style={{ color: '#4a5270' }}>{scoredCount} con Score DGI</span></>}
+              {scoredCount > 0 && <> · <span style={{ color: 'var(--text-faint)' }}>{scoredCount} con Score DGI</span></>}
               {updatedAt && <> · act. {updatedAt}</>}
             </p>
           </div>
           <button onClick={refresh} disabled={loading} style={{
             fontSize: 11, fontWeight: 700,
-            color: loading ? '#3a4260' : '#818cf8',
+            color: loading ? 'var(--text-faintest)' : 'var(--accent)',
             background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
             borderRadius: 8, padding: '5px 12px', cursor: loading ? 'default' : 'pointer', fontFamily: 'inherit',
           }}>
@@ -199,9 +199,9 @@ export default function MarketsClient({ initialQuotes = {}, initialTs = 0, dgiSc
             return (
               <button key={r} onClick={() => setRegion(r)} style={{
                 fontSize: 11, fontWeight: active ? 700 : 400, padding: '4px 11px', borderRadius: 20,
-                border: '1px solid ' + (active ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.07)'),
+                border: '1px solid ' + (active ? 'rgba(99,102,241,0.4)' : 'var(--border)'),
                 background: active ? 'rgba(99,102,241,0.15)' : 'transparent',
-                color: active ? '#818cf8' : '#4a5270', cursor: 'pointer', fontFamily: 'inherit',
+                color: active ? 'var(--accent)' : 'var(--text-faint)', cursor: 'pointer', fontFamily: 'inherit',
               }}>
                 {r} <span style={{ opacity: 0.5, fontSize: 10 }}>{count}</span>
               </button>
@@ -211,15 +211,15 @@ export default function MarketsClient({ initialQuotes = {}, initialTs = 0, dgiSc
 
         {/* Sort controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
-          <p style={{ fontSize: 10, color: '#2e3a55' }}>Ordenar por:</p>
+          <p style={{ fontSize: 10, color: 'var(--text-faintest)' }}>Ordenar por:</p>
           {SORT_OPTIONS.map(o => {
             const active = o.id === sortBy
             return (
               <button key={o.id} onClick={() => setSortBy(o.id)} style={{
                 fontSize: 10, fontWeight: active ? 700 : 400, padding: '3px 10px', borderRadius: 6,
-                border: '1px solid ' + (active ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)'),
-                background: active ? 'rgba(255,255,255,0.07)' : 'transparent',
-                color: active ? '#c8d4e4' : '#3a4260', cursor: 'pointer', fontFamily: 'inherit',
+                border: '1px solid ' + (active ? 'var(--border-strong)' : 'var(--border)'),
+                background: active ? 'var(--border)' : 'transparent',
+                color: active ? 'var(--text)' : 'var(--text-faintest)', cursor: 'pointer', fontFamily: 'inherit',
               }}>
                 {o.label}{active ? ' ↓' : ''}
               </button>
@@ -228,7 +228,7 @@ export default function MarketsClient({ initialQuotes = {}, initialTs = 0, dgiSc
         </div>
 
         {/* Grid */}
-        <div className="mkts-grid" style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, overflow: 'hidden' }}>
+        <div className="mkts-grid" style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
           {sorted.map(m => (
             <MarketCard key={m.symbol} m={m} q={quotes[m.symbol]} dgi={dgiScores[m.symbol]} />
           ))}

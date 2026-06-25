@@ -165,15 +165,15 @@ export default function ImportExcelClient() {
           onDragLeave={() => setDragOver(false)}
           onDrop={e => { e.preventDefault(); setDragOver(false); pickFile(e.dataTransfer.files?.[0]) }}
           style={{
-            border: `2px dashed ${dragOver ? '#818cf8' : 'rgba(255,255,255,0.15)'}`, borderRadius: 12,
+            border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--border-strong)'}`, borderRadius: 12,
             padding: '28px 20px', textAlign: 'center', cursor: 'pointer',
             background: dragOver ? 'rgba(99,102,241,0.06)' : 'transparent', transition: 'all 0.15s',
           }}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>📊</div>
-          <p style={{ fontSize: 14, color: '#c8d0e0', fontWeight: 600 }}>
+          <p style={{ fontSize: 14, color: 'var(--text)', fontWeight: 600 }}>
             {file ? file.name : 'Arrastra la plantilla aquí o pulsa para seleccionar'}
           </p>
-          <p style={{ fontSize: 11, color: '#4a5270', marginTop: 4 }}>Solo .xlsx · máximo 50MB</p>
+          <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 4 }}>Solo .xlsx · máximo 50MB</p>
           <input ref={inputRef} type="file" accept=".xlsx" style={{ display: 'none' }}
             onChange={e => pickFile(e.target.files?.[0])} />
         </div>
@@ -181,8 +181,8 @@ export default function ImportExcelClient() {
         <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, cursor: 'pointer' }}>
           <input type="checkbox" checked={overwrite} onChange={e => setOverwrite(e.target.checked)} style={{ accentColor: '#f59e0b' }} />
           <div>
-            <p style={{ fontSize: 13, color: '#fbbf24', fontWeight: 600 }}>⚠ Sobreescribir datos manuales existentes</p>
-            <p style={{ fontSize: 11, color: '#4a5270' }}>Si está desactivado, los datos que introdujiste manualmente nunca se sobreescriben.</p>
+            <p style={{ fontSize: 13, color: 'var(--warning)', fontWeight: 600 }}>⚠ Sobreescribir datos manuales existentes</p>
+            <p style={{ fontSize: 11, color: 'var(--text-faint)' }}>Si está desactivado, los datos que introdujiste manualmente nunca se sobreescriben.</p>
           </div>
         </label>
 
@@ -190,45 +190,45 @@ export default function ImportExcelClient() {
           <button onClick={handleProcess} disabled={!file || processing} style={{
             fontSize: 13, fontWeight: 700, padding: '9px 18px', borderRadius: 8, border: 'none',
             cursor: file && !processing ? 'pointer' : 'not-allowed',
-            background: file && !processing ? '#6366f1' : 'rgba(255,255,255,0.06)',
-            color: file && !processing ? '#fff' : '#4a5270',
+            background: file && !processing ? 'var(--accent)' : 'var(--border)',
+            color: file && !processing ? '#fff' : 'var(--text-faint)',
           }}>{processing ? 'Procesando…' : 'Procesar Excel'}</button>
           <a href="/plantilla_investing.xlsx" download style={{
             fontSize: 13, fontWeight: 700, padding: '9px 18px', borderRadius: 8, textDecoration: 'none',
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#8090a8',
+            background: 'var(--surface-3)', border: '1px solid var(--border-strong)', color: 'var(--text-muted)',
           }}>Descargar plantilla</a>
           <button onClick={generateEmptyTemplate} disabled={genBusy || !stale} style={{
-            fontSize: 13, fontWeight: 700, padding: '9px 18px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
-            cursor: 'pointer', background: 'rgba(255,255,255,0.05)', color: '#8090a8',
+            fontSize: 13, fontWeight: 700, padding: '9px 18px', borderRadius: 8, border: '1px solid var(--border-strong)',
+            cursor: 'pointer', background: 'var(--surface-3)', color: 'var(--text-muted)',
           }}>{genBusy ? 'Generando…' : 'Plantilla con empresas sin datos'}</button>
         </div>
 
-        {error && <p style={{ fontSize: 12, color: '#f87171', marginTop: 12 }}>✗ {error}</p>}
+        {error && <p style={{ fontSize: 12, color: 'var(--negative)', marginTop: 12 }}>✗ {error}</p>}
 
         {/* ── SUBSECCIÓN 2 — Progreso / resultado ── */}
         {progress && (
           <div style={{ marginTop: 16 }}>
-            <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 6 }}>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>
               {progress.phase === 'parse'
                 ? `Procesando pestaña ${progress.i} de ${progress.total}: ${progress.ticker}`
                 : `Guardando ${progress.i} de ${progress.total} empresas…`}
             </p>
-            <div style={{ height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${pct}%`, background: '#6366f1', borderRadius: 4, transition: 'width 0.2s' }} />
+            <div style={{ height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${pct}%`, background: 'var(--accent)', borderRadius: 4, transition: 'width 0.2s' }} />
             </div>
           </div>
         )}
 
         {summary && (
-          <div style={{ marginTop: 16, padding: '14px 16px', background: 'rgba(255,255,255,0.02)', borderRadius: 10 }}>
+          <div style={{ marginTop: 16, padding: '14px 16px', background: 'var(--surface)', borderRadius: 10 }}>
             <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginBottom: summary.results?.length ? 10 : 0 }}>
-              <span style={{ fontSize: 13, color: '#34d399', fontWeight: 700 }}>✓ {summary.updated} actualizadas</span>
-              <span style={{ fontSize: 13, color: '#818cf8', fontWeight: 700 }}>✓ {summary.created} creadas</span>
-              {summary.errors > 0 && <span style={{ fontSize: 13, color: '#f87171', fontWeight: 700 }}>✗ {summary.errors} errores</span>}
+              <span style={{ fontSize: 13, color: 'var(--positive)', fontWeight: 700 }}>✓ {summary.updated} actualizadas</span>
+              <span style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 700 }}>✓ {summary.created} creadas</span>
+              {summary.errors > 0 && <span style={{ fontSize: 13, color: 'var(--negative)', fontWeight: 700 }}>✗ {summary.errors} errores</span>}
             </div>
             {summary.results?.length > 0 && (
               <>
-                <button onClick={() => setShowDetails(s => !s)} style={{ fontSize: 11, color: '#818cf8', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                <button onClick={() => setShowDetails(s => !s)} style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                   {showDetails ? 'Ocultar detalle ▲' : 'Ver detalle por empresa ▼'}
                 </button>
                 {showDetails && (
@@ -236,16 +236,16 @@ export default function ImportExcelClient() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                       <thead><tr>
                         {['Ticker', 'Estado', 'Campos añadidos', 'Saltados (manual)'].map(h => (
-                          <th key={h} style={{ padding: '5px 8px', textAlign: 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>{h}</th>
+                          <th key={h} style={{ padding: '5px 8px', textAlign: 'left', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)' }}>{h}</th>
                         ))}
                       </tr></thead>
                       <tbody>
                         {summary.results.map((r, i) => (
-                          <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                            <td style={{ padding: '5px 8px', color: '#c8d0e0', fontWeight: 600 }}>{r.ticker}</td>
-                            <td style={{ padding: '5px 8px', color: r.status === 'error' ? '#f87171' : r.status === 'created' ? '#818cf8' : '#34d399' }}>{r.status === 'error' ? `error: ${r.error}` : r.status}</td>
-                            <td style={{ padding: '5px 8px', color: '#8090a8' }}>{r.fieldsAdded?.length || 0}</td>
-                            <td style={{ padding: '5px 8px', color: '#fbbf24' }}>{r.fieldsSkipped?.length ? r.fieldsSkipped.join(', ') : '—'}</td>
+                          <tr key={i} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                            <td style={{ padding: '5px 8px', color: 'var(--text)', fontWeight: 600 }}>{r.ticker}</td>
+                            <td style={{ padding: '5px 8px', color: r.status === 'error' ? 'var(--negative)' : r.status === 'created' ? 'var(--accent)' : 'var(--positive)' }}>{r.status === 'error' ? `error: ${r.error}` : r.status}</td>
+                            <td style={{ padding: '5px 8px', color: 'var(--text-muted)' }}>{r.fieldsAdded?.length || 0}</td>
+                            <td style={{ padding: '5px 8px', color: 'var(--warning)' }}>{r.fieldsSkipped?.length ? r.fieldsSkipped.join(', ') : '—'}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -261,28 +261,28 @@ export default function ImportExcelClient() {
       {/* ── SUBSECCIÓN 3 — Estado de datos manuales ── */}
       <Card>
         <SectionTitle>Empresas con datos manuales</SectionTitle>
-        {manualRows == null ? <p style={{ fontSize: 12, color: '#4a5270' }}>Cargando…</p>
-          : manualRows.length === 0 ? <p style={{ fontSize: 12, color: '#4a5270' }}>Aún no hay empresas con datos manuales.</p>
+        {manualRows == null ? <p style={{ fontSize: 12, color: 'var(--text-faint)' }}>Cargando…</p>
+          : manualRows.length === 0 ? <p style={{ fontSize: 12, color: 'var(--text-faint)' }}>Aún no hay empresas con datos manuales.</p>
           : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 640 }}>
                 <thead><tr>
                   {['Empresa', 'Campos protegidos', 'Última importación', 'Datos hasta', ''].map(h => (
-                    <th key={h} style={{ padding: '6px 8px', textAlign: 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
+                    <th key={h} style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600 }}>{h}</th>
                   ))}
                 </tr></thead>
                 <tbody>
                   {manualRows.map(r => (
-                    <tr key={r.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                      <td style={{ padding: '6px 8px', color: '#c8d0e0' }}><b>{r.ticker}</b> <span style={{ color: '#4a5270' }}>{r.name}</span></td>
-                      <td style={{ padding: '6px 8px', color: '#8090a8', maxWidth: 240 }}>{r.protectedFields.length} campos</td>
-                      <td style={{ padding: '6px 8px', color: '#8090a8' }}>{fmtDateTime(r.lastImport)}</td>
-                      <td style={{ padding: '6px 8px', color: '#8090a8' }}>{r.vintage?.income_statement_annual_through || '—'}</td>
+                    <tr key={r.ticker} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                      <td style={{ padding: '6px 8px', color: 'var(--text)' }}><b>{r.ticker}</b> <span style={{ color: 'var(--text-faint)' }}>{r.name}</span></td>
+                      <td style={{ padding: '6px 8px', color: 'var(--text-muted)', maxWidth: 240 }}>{r.protectedFields.length} campos</td>
+                      <td style={{ padding: '6px 8px', color: 'var(--text-muted)' }}>{fmtDateTime(r.lastImport)}</td>
+                      <td style={{ padding: '6px 8px', color: 'var(--text-muted)' }}>{r.vintage?.income_statement_annual_through || '—'}</td>
                       <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
-                        <button onClick={() => unprotect(r.ticker)} disabled={unprotecting === r.ticker} style={{ fontSize: 11, color: '#fbbf24', background: 'none', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', marginRight: 6 }}>
+                        <button onClick={() => unprotect(r.ticker)} disabled={unprotecting === r.ticker} style={{ fontSize: 11, color: 'var(--warning)', background: 'none', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', marginRight: 6 }}>
                           {unprotecting === r.ticker ? '…' : 'Desproteger'}
                         </button>
-                        <a href={`/empresa/${encodeURIComponent(r.ticker)}`} target="_blank" rel="noopener" style={{ fontSize: 11, color: '#818cf8', textDecoration: 'none' }}>Ver →</a>
+                        <a href={`/empresa/${encodeURIComponent(r.ticker)}`} target="_blank" rel="noopener" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>Ver →</a>
                       </td>
                     </tr>
                   ))}
@@ -296,35 +296,35 @@ export default function ImportExcelClient() {
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
           <SectionTitle>Empresas sin datos o desactualizadas</SectionTitle>
-          <button onClick={exportStaleCsv} disabled={!stale} style={{ fontSize: 11, fontWeight: 700, color: '#8090a8', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '5px 10px', cursor: 'pointer' }}>Exportar CSV</button>
+          <button onClick={exportStaleCsv} disabled={!stale} style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface-3)', border: '1px solid var(--border-strong)', borderRadius: 6, padding: '5px 10px', cursor: 'pointer' }}>Exportar CSV</button>
         </div>
-        {stale == null ? <p style={{ fontSize: 12, color: '#4a5270' }}>Cargando…</p> : (
+        {stale == null ? <p style={{ fontSize: 12, color: 'var(--text-faint)' }}>Cargando…</p> : (
           <>
-            <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 10 }}>
-              <b style={{ color: '#f87171' }}>{stale.missing?.length || 0}</b> sin datos · <b style={{ color: '#fbbf24' }}>{stale.stale?.length || 0}</b> con datos manuales atrasados (&gt;12 meses)
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>
+              <b style={{ color: 'var(--negative)' }}>{stale.missing?.length || 0}</b> sin datos · <b style={{ color: 'var(--warning)' }}>{stale.stale?.length || 0}</b> con datos manuales atrasados (&gt;12 meses)
             </p>
             <div style={{ overflowX: 'auto', maxHeight: 360 }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 520 }}>
                 <thead><tr>
                   {['Empresa', 'Estado', 'Último año', 'Meses atrás'].map(h => (
-                    <th key={h} style={{ padding: '6px 8px', textAlign: 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, position: 'sticky', top: 0, background: '#0d1424' }}>{h}</th>
+                    <th key={h} style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600, position: 'sticky', top: 0, background: 'var(--bg-elev)' }}>{h}</th>
                   ))}
                 </tr></thead>
                 <tbody>
                   {(stale.stale || []).map(s => (
-                    <tr key={s.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                      <td style={{ padding: '6px 8px', color: '#c8d0e0' }}><b>{s.ticker}</b> <span style={{ color: '#4a5270' }}>{s.name}</span></td>
-                      <td style={{ padding: '6px 8px', color: '#fbbf24' }}>desactualizada</td>
-                      <td style={{ padding: '6px 8px', color: '#8090a8' }}>{s.through}</td>
-                      <td style={{ padding: '6px 8px', color: '#8090a8' }}>{s.monthsBehind}</td>
+                    <tr key={s.ticker} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                      <td style={{ padding: '6px 8px', color: 'var(--text)' }}><b>{s.ticker}</b> <span style={{ color: 'var(--text-faint)' }}>{s.name}</span></td>
+                      <td style={{ padding: '6px 8px', color: 'var(--warning)' }}>desactualizada</td>
+                      <td style={{ padding: '6px 8px', color: 'var(--text-muted)' }}>{s.through}</td>
+                      <td style={{ padding: '6px 8px', color: 'var(--text-muted)' }}>{s.monthsBehind}</td>
                     </tr>
                   ))}
                   {(stale.missing || []).slice(0, 200).map(m => (
-                    <tr key={m.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                      <td style={{ padding: '6px 8px', color: '#c8d0e0' }}><b>{m.ticker}</b> <span style={{ color: '#4a5270' }}>{m.name}</span></td>
-                      <td style={{ padding: '6px 8px', color: '#f87171' }}>sin datos</td>
-                      <td style={{ padding: '6px 8px', color: '#4a5270' }}>—</td>
-                      <td style={{ padding: '6px 8px', color: '#4a5270' }}>—</td>
+                    <tr key={m.ticker} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                      <td style={{ padding: '6px 8px', color: 'var(--text)' }}><b>{m.ticker}</b> <span style={{ color: 'var(--text-faint)' }}>{m.name}</span></td>
+                      <td style={{ padding: '6px 8px', color: 'var(--negative)' }}>sin datos</td>
+                      <td style={{ padding: '6px 8px', color: 'var(--text-faint)' }}>—</td>
+                      <td style={{ padding: '6px 8px', color: 'var(--text-faint)' }}>—</td>
                     </tr>
                   ))}
                 </tbody>

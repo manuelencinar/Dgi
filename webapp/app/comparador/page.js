@@ -37,7 +37,7 @@ export default async function ComparadorPage({ searchParams }) {
   const options = (await getEffectiveDict()).map(d => [d[0], d[1], d[4], d[6], d[5]])
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav active="/comparador" />
       <ComparadorClient
         initialCompanies={initialCompanies}

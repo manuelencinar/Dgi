@@ -24,20 +24,20 @@ export default function PricesFreshnessIndicator() {
 
   let color, text
   if (ageInDays === 0) {
-    color = '#34d399'
+    color = 'var(--positive)'
     const h = updatedAt.getHours().toString().padStart(2, '0')
     const m = updatedAt.getMinutes().toString().padStart(2, '0')
     text  = `Precios actualizados hoy ${h}:${m}`
   } else if (ageInDays === 1) {
-    color = '#fbbf24'
+    color = 'var(--warning)'
     text  = `Precios de cierre del ${new Date(priceDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`
   } else {
-    color = '#f87171'
+    color = 'var(--negative)'
     text  = 'Precios desactualizados'
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#4a5270' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-faint)' }}>
       <span style={{ color, fontSize: 8 }}>●</span>
       <span style={{ color }}>{text}</span>
     </div>

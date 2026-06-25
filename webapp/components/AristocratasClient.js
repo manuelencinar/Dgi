@@ -20,33 +20,33 @@ const ZONA_OPTS = [
 
 const FREE_PREVIEW = 5
 
-function scoreColor(s) { if (s == null) return '#3a4260'; if (s >= 8) return '#34d399'; if (s >= 6.5) return '#86efac'; if (s >= 5) return '#fbbf24'; if (s >= 3) return '#f97316'; return '#f87171' }
+function scoreColor(s) { if (s == null) return 'var(--text-faintest)'; if (s >= 8) return 'var(--positive)'; if (s >= 6.5) return '#86efac'; if (s >= 5) return 'var(--warning)'; if (s >= 3) return '#f97316'; return 'var(--negative)' }
 function streakIcon(n) { return dividendTierInfo(n)?.emoji || '' }
 
 // Estilos responsive. Móvil: una SOLA línea compacta — bandera · nombre (… si
 // es muy largo) · racha · nota. Escritorio (≥760px): layout de bloques con
 // etiquetas (Racha / Yield neto / Score), como estaba.
 const ROW_CSS = `
-.aristo-row{display:flex;align-items:center;gap:8px;padding:5px 11px;background:rgba(255,255,255,0.02);border-radius:8px;margin-bottom:2px}
+.aristo-row{display:flex;align-items:center;gap:8px;padding:5px 11px;background:var(--surface);border-radius:8px;margin-bottom:2px}
 .aristo-rank{display:none}
 .aristo-flag{font-size:14px;flex-shrink:0}
 .aristo-namewrap{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;justify-content:center}
-.aristo-name{font-size:13px;font-weight:700;color:#d0d8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
-.aristo-ticker{font-size:10px;color:#2e3a55;font-weight:600}
+.aristo-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.aristo-ticker{font-size:10px;color:var(--text-faintest);font-weight:600}
 .aristo-buy{display:none}
-.aristo-buydot{flex-shrink:0;font-size:9px;color:#34d399}
-.aristo-chip{flex-shrink:0;font-size:11px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
+.aristo-buydot{flex-shrink:0;font-size:9px;color:var(--positive)}
+.aristo-chip{flex-shrink:0;font-size:11px;font-weight:700;color:var(--text-muted);font-variant-numeric:tabular-nums}
 .aristo-ychip{color:#6a9b86}
 .aristo-m{display:none;flex-direction:column;text-align:right;min-width:52px;flex-shrink:0}
-.aristo-mlabel{font-size:9px;color:#3a4260;font-weight:400}
-.aristo-mval{font-size:13px;font-weight:700;color:#8090a8;font-variant-numeric:tabular-nums}
+.aristo-mlabel{font-size:9px;color:var(--text-faintest);font-weight:400}
+.aristo-mval{font-size:13px;font-weight:700;color:var(--text-muted);font-variant-numeric:tabular-nums}
 .aristo-score{font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;flex-shrink:0;min-width:28px;text-align:right}
 @media(min-width:760px){
   .aristo-row{gap:10px;padding:8px 12px;margin-bottom:5px;border-radius:9px}
-  .aristo-rank{display:inline;width:22px;text-align:right;font-size:12px;font-weight:800;color:#3a4260;flex-shrink:0}
+  .aristo-rank{display:inline;width:22px;text-align:right;font-size:12px;font-weight:800;color:var(--text-faintest);flex-shrink:0}
   .aristo-flag{font-size:15px}
   .aristo-namewrap{gap:2px}
-  .aristo-buy{display:inline-block;align-self:flex-start;font-size:9px;font-weight:700;color:#34d399;background:rgba(52,211,153,0.12);padding:1px 6px;border-radius:4px}
+  .aristo-buy{display:inline-block;align-self:flex-start;font-size:9px;font-weight:700;color:var(--positive);background:rgba(52,211,153,0.12);padding:1px 6px;border-radius:4px}
   .aristo-buydot{display:none}
   .aristo-chip{display:none}
   .aristo-m{display:flex}
@@ -71,7 +71,7 @@ function Row({ co, rank, destWHT }) {
         <span className="aristo-chip aristo-ychip" title="Yield neto (tras retención)">{nyTxt}</span>
         <div className="aristo-m" title="Años consecutivos subiendo el dividendo">
           <span className="aristo-mlabel">Racha</span>
-          <span className="aristo-mval" style={{ color: '#c8d0e0' }}>{streakIcon(co.streak)} {co.streak}a</span>
+          <span className="aristo-mval" style={{ color: 'var(--text)' }}>{streakIcon(co.streak)} {co.streak}a</span>
         </div>
         <div className="aristo-m">
           <span className="aristo-mlabel">Yield neto</span>
@@ -109,9 +109,9 @@ export default function AristocratasClient({ companies = [], isPremium = false, 
       <style>{ROW_CSS}</style>
       <RankingsTabs active="aristocratas" />
       <div style={{ marginBottom: 14 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', marginBottom: 4 }}>👑 Reyes, Aristócratas y Aspirantes</h1>
-        <p style={{ fontSize: 12, color: '#5a6480', lineHeight: 1.5 }}>
-          Empresas clasificadas por su <strong style={{ color: '#8090a8' }}>racha de años consecutivos subiendo el dividendo</strong> — la mejor evidencia de compromiso y estabilidad del negocio.
+        <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 4 }}>👑 Reyes, Aristócratas y Aspirantes</h1>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+          Empresas clasificadas por su <strong style={{ color: 'var(--text-muted)' }}>racha de años consecutivos subiendo el dividendo</strong> — la mejor evidencia de compromiso y estabilidad del negocio.
         </p>
       </div>
 
@@ -121,7 +121,7 @@ export default function AristocratasClient({ companies = [], isPremium = false, 
           <div key={t.id} style={{ background: `${t.color}10`, border: `1px solid ${t.color}33`, borderRadius: 12, padding: '12px 10px', textAlign: 'center' }}>
             <p style={{ fontSize: 20 }}>{t.emoji}</p>
             <p style={{ fontSize: 12, fontWeight: 800, color: t.color }}>{t.name}</p>
-            <p style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', fontVariantNumeric: 'tabular-nums' }}>{byTier[t.id].length}</p>
+            <p style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)', fontVariantNumeric: 'tabular-nums' }}>{byTier[t.id].length}</p>
           </div>
         ))}
       </div>
@@ -129,19 +129,19 @@ export default function AristocratasClient({ companies = [], isPremium = false, 
       {/* Controles */}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nombre o ticker…"
-          style={{ flex: 1, minWidth: 180, padding: '9px 13px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 9, color: '#e0e8f0', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+          style={{ flex: 1, minWidth: 180, padding: '9px 13px', background: 'var(--surface-2)', border: '1px solid var(--surface-3)', borderRadius: 9, color: 'var(--text-strong)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
         <button onClick={() => setOnlyBuy(b => !b)} style={{
           fontSize: 12, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-          border: '1px solid ' + (onlyBuy ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.08)'),
-          background: onlyBuy ? 'rgba(52,211,153,0.14)' : 'transparent', color: onlyBuy ? '#34d399' : '#4a5270', fontWeight: onlyBuy ? 700 : 400,
+          border: '1px solid ' + (onlyBuy ? 'rgba(52,211,153,0.5)' : 'var(--surface-3)'),
+          background: onlyBuy ? 'rgba(52,211,153,0.14)' : 'transparent', color: onlyBuy ? 'var(--positive)' : 'var(--text-faint)', fontWeight: onlyBuy ? 700 : 400,
         }}>● Solo en zona de compra</button>
       </div>
       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 20 }}>
         {ZONA_OPTS.map(o => (
           <button key={o.v} onClick={() => setZona(o.v)} style={{
             fontSize: 11, padding: '5px 11px', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit',
-            border: '1px solid ' + (zona === o.v ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.07)'),
-            background: zona === o.v ? 'rgba(99,102,241,0.2)' : 'transparent', color: zona === o.v ? '#818cf8' : '#4a5270', fontWeight: zona === o.v ? 700 : 400,
+            border: '1px solid ' + (zona === o.v ? 'rgba(99,102,241,0.5)' : 'var(--border)'),
+            background: zona === o.v ? 'rgba(99,102,241,0.2)' : 'transparent', color: zona === o.v ? 'var(--accent)' : 'var(--text-faint)', fontWeight: zona === o.v ? 700 : 400,
           }}>{o.l}</button>
         ))}
       </div>
@@ -156,13 +156,13 @@ export default function AristocratasClient({ companies = [], isPremium = false, 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, paddingBottom: 8, borderBottom: `1px solid ${t.color}33` }}>
               <span style={{ fontSize: 20 }}>{t.emoji}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 15, fontWeight: 800, color: t.color }}>{t.name} <span style={{ fontSize: 11, color: '#3a4260', fontWeight: 600 }}>· {list.length}</span></p>
-                <p style={{ fontSize: 10, color: '#4a5270' }}>{t.desc}</p>
+                <p style={{ fontSize: 15, fontWeight: 800, color: t.color }}>{t.name} <span style={{ fontSize: 11, color: 'var(--text-faintest)', fontWeight: 600 }}>· {list.length}</span></p>
+                <p style={{ fontSize: 10, color: 'var(--text-faint)' }}>{t.desc}</p>
               </div>
             </div>
 
             {list.length === 0
-              ? <p style={{ fontSize: 12, color: '#3a4260', padding: '10px 0' }}>Ninguna empresa en este nivel con los filtros actuales.</p>
+              ? <p style={{ fontSize: 12, color: 'var(--text-faintest)', padding: '10px 0' }}>Ninguna empresa en este nivel con los filtros actuales.</p>
               : shown.map((co, i) => <Row key={co.t} co={co} rank={i + 1} destWHT={destWHT} />)}
 
             {hidden > 0 && (
@@ -170,7 +170,7 @@ export default function AristocratasClient({ companies = [], isPremium = false, 
                 <p style={{ fontSize: 13, color: '#a8b0c8', fontWeight: 600, marginBottom: 8 }}>
                   +{hidden} {t.name.toLowerCase()} más {onlyBuy || zona !== 'all' || search ? 'con estos filtros' : ''}
                 </p>
-                <Link href={isAuthed ? '/pricing' : '/register'} style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '8px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8 }}>
+                <Link href={isAuthed ? '/pricing' : '/register'} style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '8px 18px', background: 'var(--accent)', borderRadius: 8 }}>
                   {isAuthed ? 'Hazte premium para ver la lista completa' : 'Regístrate gratis'}
                 </Link>
               </div>
@@ -179,7 +179,7 @@ export default function AristocratasClient({ companies = [], isPremium = false, 
         )
       })}
 
-      <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 16, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 16, lineHeight: 1.5 }}>
         La racha se calcula con datos históricos de dividendos. En algunos mercados asiáticos puede quedarse corta por limitaciones de la fuente de datos.
       </p>
     </div>

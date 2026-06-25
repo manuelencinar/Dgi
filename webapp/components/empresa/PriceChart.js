@@ -118,7 +118,7 @@ function Chart({ data, range, showTR, avgCost }) {
   const { timestamps: ts, closes, adjCloses, benchCloses, benchName } = data || {}
   if (!closes?.length) return (
     <div style={{ height: H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#3a4260', fontSize: 12 }}>Sin datos</p>
+      <p style={{ color: 'var(--text-faintest)', fontSize: 12 }}>Sin datos</p>
     </div>
   )
 
@@ -143,7 +143,7 @@ function Chart({ data, range, showTR, avgCost }) {
   const yOf = v => PAD.top  + IH - ((v - min) / span) * IH
 
   const priceUp    = closes[closes.length - 1] >= closes[0]
-  const priceColor = priceUp ? '#34d399' : '#f87171'
+  const priceColor = priceUp ? 'var(--positive)' : 'var(--negative)'
 
   const priceLine = buildLine(closes, xOf, yOf)
   const priceArea = buildArea(priceLine, closes, xOf, yOf)
@@ -199,7 +199,7 @@ function Chart({ data, range, showTR, avgCost }) {
             <span style={{ color: priceColor, fontWeight: 600 }}>
               — Precio  {priceGain >= 0 ? '+' : ''}{priceGain.toFixed(1)}%
             </span>
-            <span style={{ color: '#818cf8', fontWeight: 600 }}>
+            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
               — Con dividendos  {trGain != null ? `${trGain >= 0 ? '+' : ''}${trGain.toFixed(1)}%` : ''}
             </span>
           </>
@@ -208,9 +208,9 @@ function Chart({ data, range, showTR, avgCost }) {
             {priceGain >= 0 ? '+' : ''}{priceGain.toFixed(1)}%
           </span>
         )}
-        <span style={{ color: '#4a5270' }}>Mín {fmtPrice(min)} · Máx {fmtPrice(max)}</span>
+        <span style={{ color: 'var(--text-faint)' }}>Mín {fmtPrice(min)} · Máx {fmtPrice(max)}</span>
         {benchSeries && (
-          <span style={{ color: '#fbbf24', fontWeight: 600 }}>— {benchName || 'Benchmark'} {benchGain != null ? `${benchGain >= 0 ? '+' : ''}${benchGain.toFixed(1)}%` : ''}</span>
+          <span style={{ color: 'var(--warning)', fontWeight: 600 }}>— {benchName || 'Benchmark'} {benchGain != null ? `${benchGain >= 0 ? '+' : ''}${benchGain.toFixed(1)}%` : ''}</span>
         )}
         {showAvgCost && (
           <span style={{ color: '#a78bfa', fontWeight: 600 }}>— Precio medio {fmtPrice(avgCost)}</span>
@@ -223,15 +223,15 @@ function Chart({ data, range, showTR, avgCost }) {
           position: 'absolute', top: 28,
           left: hover.x / W * 100 + '%',
           transform: hover.idx > closes.length * 0.65 ? 'translateX(-110%)' : 'translateX(8px)',
-          background: '#0f1221', border: '1px solid rgba(255,255,255,0.1)',
+          background: 'var(--bg-elev)', border: '1px solid var(--border-strong)',
           borderRadius: 8, padding: '6px 10px', pointerEvents: 'none', zIndex: 10, whiteSpace: 'nowrap',
         }}>
-          <p style={{ fontSize: 10, color: '#4a5270', marginBottom: 4 }}>{fmtDate(hover.ts, range)}</p>
+          <p style={{ fontSize: 10, color: 'var(--text-faint)', marginBottom: 4 }}>{fmtDate(hover.ts, range)}</p>
           <p style={{ fontSize: 13, fontWeight: 800, color: priceColor, fontVariantNumeric: 'tabular-nums' }}>
             {fmtPrice(hover.price)}
           </p>
           {hover.trPrice != null && (
-            <p style={{ fontSize: 11, color: '#818cf8', fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>
+            <p style={{ fontSize: 11, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>
               Total return {fmtPrice(hover.trPrice)}
             </p>
           )}
@@ -251,16 +251,16 @@ function Chart({ data, range, showTR, avgCost }) {
             <stop offset="100%" stopColor={priceColor} stopOpacity="0" />
           </linearGradient>
           <linearGradient id="grad-tr" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="#818cf8" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#818cf8" stopOpacity="0" />
+            <stop offset="0%"   stopColor="var(--accent)" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
           </linearGradient>
         </defs>
 
         {/* Grid lines + Y labels */}
         {yLabels.map((l, i) => (
           <g key={i}>
-            <line x1={PAD.left} x2={W - PAD.right} y1={l.y} y2={l.y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-            <text x={PAD.left - 6} y={l.y + 4} textAnchor="end" fontSize="9" fill="#2a3045" fontFamily="inherit">{l.label}</text>
+            <line x1={PAD.left} x2={W - PAD.right} y1={l.y} y2={l.y} stroke="var(--surface-3)" strokeWidth="1" />
+            <text x={PAD.left - 6} y={l.y + 4} textAnchor="end" fontSize="9" fill="var(--text-faintest)" fontFamily="inherit">{l.label}</text>
           </g>
         ))}
 
@@ -269,12 +269,12 @@ function Chart({ data, range, showTR, avgCost }) {
           <path d={trArea} fill="url(#grad-tr)" />
         )}
         {trSeries && trLine && (
-          <path d={trLine} stroke="#818cf8" strokeWidth="1.5" fill="none" strokeLinejoin="round" strokeDasharray="4 2" />
+          <path d={trLine} stroke="var(--accent)" strokeWidth="1.5" fill="none" strokeLinejoin="round" strokeDasharray="4 2" />
         )}
 
         {/* Benchmark line (rebaseada al precio inicial del fondo) */}
         {benchLine && (
-          <path d={benchLine} stroke="#fbbf24" strokeWidth="1.5" fill="none" strokeLinejoin="round" strokeDasharray="5 3" opacity="0.85" />
+          <path d={benchLine} stroke="var(--warning)" strokeWidth="1.5" fill="none" strokeLinejoin="round" strokeDasharray="5 3" opacity="0.85" />
         )}
 
         {/* Price fill + line */}
@@ -296,17 +296,17 @@ function Chart({ data, range, showTR, avgCost }) {
         {hover && (
           <>
             <line x1={hover.x} x2={hover.x} y1={PAD.top} y2={PAD.top + IH}
-              stroke="rgba(255,255,255,0.18)" strokeWidth="1" strokeDasharray="4 3" />
-            <circle cx={hover.x} cy={hover.yPrice} r="4" fill={priceColor} stroke="#080b14" strokeWidth="2" />
+              stroke="var(--border-strong)" strokeWidth="1" strokeDasharray="4 3" />
+            <circle cx={hover.x} cy={hover.yPrice} r="4" fill={priceColor} stroke="var(--bg)" strokeWidth="2" />
             {hover.yTR != null && (
-              <circle cx={hover.x} cy={hover.yTR} r="4" fill="#818cf8" stroke="#080b14" strokeWidth="2" />
+              <circle cx={hover.x} cy={hover.yTR} r="4" fill="var(--accent)" stroke="var(--bg)" strokeWidth="2" />
             )}
           </>
         )}
 
         {/* X labels */}
         {xLabels.map((l, i) => (
-          <text key={i} x={l.x} y={H - 6} textAnchor="middle" fontSize="9" fill="#2a3045" fontFamily="inherit">{l.label}</text>
+          <text key={i} x={l.x} y={H - 6} textAnchor="middle" fontSize="9" fill="var(--text-faintest)" fontFamily="inherit">{l.label}</text>
         ))}
       </svg>
     </div>
@@ -378,15 +378,15 @@ export default function PriceChart({ ticker, currency, avgCost, divHistory, benc
           return (
             <button key={r.id} onClick={() => handleRange(r.id)} style={{
               fontSize: 11, fontWeight: active ? 700 : 400, padding: '4px 12px', borderRadius: 6,
-              border: '1px solid ' + (active ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.08)'),
+              border: '1px solid ' + (active ? 'rgba(99,102,241,0.5)' : 'var(--surface-3)'),
               background: active ? 'rgba(99,102,241,0.2)' : 'transparent',
-              color: active ? '#818cf8' : '#4a5270', cursor: 'pointer', fontFamily: 'inherit',
+              color: active ? 'var(--accent)' : 'var(--text-faint)', cursor: 'pointer', fontFamily: 'inherit',
             }}>{r.label}</button>
           )
         })}
 
         {/* Separator */}
-        <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.08)', margin: '0 4px' }} />
+        <div style={{ width: 1, height: 16, background: 'var(--surface-3)', margin: '0 4px' }} />
 
         {/* Total return toggle */}
         <button
@@ -394,9 +394,9 @@ export default function PriceChart({ ticker, currency, avgCost, divHistory, benc
           disabled={!hasTR}
           style={{
             fontSize: 11, fontWeight: showTR ? 700 : 400, padding: '4px 12px', borderRadius: 6,
-            border: '1px solid ' + (showTR ? 'rgba(129,140,248,0.5)' : 'rgba(255,255,255,0.08)'),
+            border: '1px solid ' + (showTR ? 'rgba(129,140,248,0.5)' : 'var(--surface-3)'),
             background: showTR ? 'rgba(99,102,241,0.15)' : 'transparent',
-            color: showTR ? '#818cf8' : hasTR ? '#4a5270' : '#2e3a55',
+            color: showTR ? 'var(--accent)' : hasTR ? 'var(--text-faint)' : 'var(--text-faintest)',
             cursor: hasTR ? 'pointer' : 'default', fontFamily: 'inherit',
             opacity: hasTR ? 1 : 0.4,
           }}
@@ -405,17 +405,17 @@ export default function PriceChart({ ticker, currency, avgCost, divHistory, benc
           + Dividendos
         </button>
 
-        {loading && <span style={{ fontSize: 11, color: '#3a4260', marginLeft: 4 }}>cargando…</span>}
+        {loading && <span style={{ fontSize: 11, color: 'var(--text-faintest)', marginLeft: 4 }}>cargando…</span>}
       </div>
 
       {/* Chart */}
       {loading ? (
         <div style={{ height: H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p style={{ color: '#3a4260', fontSize: 12 }}>Cargando…</p>
+          <p style={{ color: 'var(--text-faintest)', fontSize: 12 }}>Cargando…</p>
         </div>
       ) : (error || !data?.closes?.length) ? (
         <div style={{ height: H, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p style={{ color: '#3a4260', fontSize: 12 }}>Historial de precios pendiente de carga</p>
+          <p style={{ color: 'var(--text-faintest)', fontSize: 12 }}>Historial de precios pendiente de carga</p>
         </div>
       ) : (
         <Chart data={data} range={range} showTR={showTR} avgCost={avgCost} />

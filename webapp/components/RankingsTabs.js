@@ -17,9 +17,9 @@ export default function RankingsTabs({ active }) {
           <Link key={t.key} href={t.href} style={{
             fontSize: 13, fontWeight: on ? 800 : 600, textDecoration: 'none',
             padding: '8px 16px', borderRadius: 9,
-            border: '1px solid ' + (on ? 'rgba(129,140,248,0.5)' : 'rgba(255,255,255,0.08)'),
+            border: '1px solid ' + (on ? 'rgba(129,140,248,0.5)' : 'var(--surface-3)'),
             background: on ? 'rgba(99,102,241,0.16)' : 'transparent',
-            color: on ? '#a5b4fc' : '#6a7090',
+            color: on ? '#a5b4fc' : 'var(--text-muted)',
           }}>{t.label}</Link>
         )
       })}

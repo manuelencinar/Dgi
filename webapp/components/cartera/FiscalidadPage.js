@@ -6,9 +6,9 @@ import { createClient } from '@/lib/supabase/client'
 import { DICT } from '@/data/dict'
 import { computeAutoEntries, countryCodeOf, fiscalWHT, COUNTRY_NAMES, nameOf } from '@/lib/fiscalidad'
 
-const CARD = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
+const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }
 const BOX  = { background: 'rgba(13,18,32,0.85)', border: '1px solid rgba(129,140,248,0.35)', borderRadius: 12, padding: '16px 18px' }
-const INPUT = { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(129,140,248,0.4)', borderRadius: 6, padding: '5px 7px', color: '#e0e8f0', fontSize: 12, outline: 'none', width: '100%', fontFamily: 'inherit', boxSizing: 'border-box' }
+const INPUT = { background: 'var(--border)', border: '1px solid rgba(129,140,248,0.4)', borderRadius: 6, padding: '5px 7px', color: 'var(--text-strong)', fontSize: 12, outline: 'none', width: '100%', fontFamily: 'inherit', boxSizing: 'border-box' }
 
 const fmtEUR = v => v == null || isNaN(v) ? '—' : Number(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
 const fmtPct = v => v == null ? '—' : Number(v).toLocaleString('es-ES', { maximumFractionDigits: 3 }) + '%'
@@ -22,7 +22,7 @@ function downloadCSV(filename, rows) {
   const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url)
 }
 
-const Th = (h, align = 'left') => <th key={h} style={{ padding: '6px 8px', textAlign: align, color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+const Th = (h, align = 'left') => <th key={h} style={{ padding: '6px 8px', textAlign: align, color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
 
 function StatusBadges({ e }) {
   return (
@@ -30,7 +30,7 @@ function StatusBadges({ e }) {
       {e.source === 'manual'
         ? <span style={{ fontSize: 9.5, fontWeight: 700, color: '#fb923c', background: 'rgba(251,146,60,0.14)', padding: '1px 6px', borderRadius: 4 }}>Editado ✏</span>
         : <span style={{ fontSize: 9.5, fontWeight: 700, color: '#60a5fa', background: 'rgba(96,165,250,0.14)', padding: '1px 6px', borderRadius: 4 }}>Auto 🤖</span>}
-      {e.is_confirmed && <span style={{ fontSize: 9.5, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.14)', padding: '1px 6px', borderRadius: 4 }}>✓ Confirmado</span>}
+      {e.is_confirmed && <span style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--positive)', background: 'rgba(52,211,153,0.14)', padding: '1px 6px', borderRadius: 4 }}>✓ Confirmado</span>}
     </span>
   )
 }
@@ -41,12 +41,12 @@ function Progress({ confirmed, total }) {
   return (
     <div style={{ marginBottom: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-        <span style={{ fontSize: 11, color: done ? '#34d399' : '#8090a8', fontWeight: done ? 700 : 500 }}>
+        <span style={{ fontSize: 11, color: done ? 'var(--positive)' : 'var(--text-muted)', fontWeight: done ? 700 : 500 }}>
           {done ? '✓ Todas las entradas confirmadas — tu resumen fiscal está listo' : `${confirmed} de ${total} entradas confirmadas`}
         </span>
       </div>
-      <div style={{ height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: done ? '#34d399' : '#818cf8', borderRadius: 3, transition: 'width 0.2s' }} />
+      <div style={{ height: 5, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: done ? 'var(--positive)' : 'var(--accent)', borderRadius: 3, transition: 'width 0.2s' }} />
       </div>
     </div>
   )
@@ -248,7 +248,7 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
     downloadCSV(`fiscalidad_${year}.csv`, r)
   }
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#4a5270' }}>Cargando…{prefilling ? ' calculando prefill fiscal…' : ''}</div>
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-faint)' }}>Cargando…{prefilling ? ' calculando prefill fiscal…' : ''}</div>
 
   // ── No residente en España ──
   if (countryResidence !== 'ES') {
@@ -257,11 +257,11 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 16px 64px' }}>
         <div style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 14, padding: '32px 28px', textAlign: 'center' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🌍</div>
-          <h2 style={{ fontSize: 20, fontWeight: 900, color: '#e0e8f0', marginBottom: 12 }}>Fiscalidad internacional — Próximamente</h2>
-          <p style={{ fontSize: 14, color: '#8090a8', lineHeight: 1.7, maxWidth: 480, margin: '0 auto 20px' }}>
+          <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 12 }}>Fiscalidad internacional — Próximamente</h2>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 480, margin: '0 auto 20px' }}>
             Estamos trabajando en el módulo fiscal para {pais}. Por ahora solo tenemos disponible el módulo para residentes en España. Te avisaremos cuando esté disponible para tu país.
           </p>
-          <Link href="/ajustes" style={{ padding: '10px 20px', background: 'rgba(99,102,241,0.85)', borderRadius: 9, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>Cambiar país de residencia</Link>
+          <Link href="/ajustes" style={{ padding: '10px 20px', background: 'var(--accent)', borderRadius: 9, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>Cambiar país de residencia</Link>
         </div>
       </div>
     )
@@ -272,13 +272,13 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px 64px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0' }}>Fiscalidad</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)' }}>Fiscalidad</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={recalc} disabled={prefilling} style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 8, padding: '7px 12px', color: '#818cf8', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+          <button onClick={recalc} disabled={prefilling} style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 8, padding: '7px 12px', color: 'var(--accent)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
             {prefilling ? '…' : '↻ Recalcular automáticamente'}
           </button>
-          <span style={{ fontSize: 12, color: '#4a5270' }}>Ejercicio</span>
-          <select value={year} onChange={e => setYear(Number(e.target.value))} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '7px 12px', color: '#c8d0e0', fontSize: 13, outline: 'none' }}>
+          <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>Ejercicio</span>
+          <select value={year} onChange={e => setYear(Number(e.target.value))} style={{ background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '7px 12px', color: 'var(--text)', fontSize: 13, outline: 'none' }}>
             {years.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
@@ -287,22 +287,22 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
       {/* Aviso: la fiscalidad de dividendos se basa en los cobros confirmados */}
       {divs.length === 0 && (
         <div style={{ background: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <p style={{ fontSize: 12.5, color: '#8090a8' }}>Para calcular tu fiscalidad confirma los dividendos cobrados en la sección Dividendos.</p>
+          <p style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>Para calcular tu fiscalidad confirma los dividendos cobrados en la sección Dividendos.</p>
           <Link href="/cartera/dividendos" style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'rgba(96,165,250,0.85)', padding: '7px 14px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>Ir a Dividendos →</Link>
         </div>
       )}
 
       {/* Resumen ejecutivo */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12, marginBottom: 16 }}>
-        <SummaryCard label="Rendimientos de capital" value={fmtEUR(t.grossDiv)} sub="Dividendos brutos cobrados" col="#34d399" />
+        <SummaryCard label="Rendimientos de capital" value={fmtEUR(t.grossDiv)} sub="Dividendos brutos cobrados" col="var(--positive)" />
         <SummaryCard label="Retenciones totales" value={fmtEUR(t.retTotal)} sub="Origen + destino" col="#fb923c" />
-        <SummaryCard label="Ganancias/pérdidas" value={(t.netCG >= 0 ? '+' : '') + fmtEUR(t.netCG)} sub="Resultado de transmisiones" col={t.netCG >= 0 ? '#34d399' : '#f87171'} />
-        <SummaryCard label="Base del ahorro estimada" value={fmtEUR(t.taxBase)} sub="Estimación orientativa" col="#818cf8" />
+        <SummaryCard label="Ganancias/pérdidas" value={(t.netCG >= 0 ? '+' : '') + fmtEUR(t.netCG)} sub="Resultado de transmisiones" col={t.netCG >= 0 ? 'var(--positive)' : 'var(--negative)'} />
+        <SummaryCard label="Base del ahorro estimada" value={fmtEUR(t.taxBase)} sub="Estimación orientativa" col="var(--accent)" />
       </div>
 
       {/* Indicador de confirmación global */}
       <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8, background: t.allConfirmed ? 'rgba(52,211,153,0.06)' : 'rgba(251,191,36,0.06)', border: `1px solid ${t.allConfirmed ? 'rgba(52,211,153,0.2)' : 'rgba(251,191,36,0.2)'}` }}>
-        <p style={{ fontSize: 12, color: t.allConfirmed ? '#34d399' : '#fbbf24' }}>
+        <p style={{ fontSize: 12, color: t.allConfirmed ? 'var(--positive)' : 'var(--warning)' }}>
           {t.total === 0 ? 'Sin entradas fiscales todavía para este ejercicio.'
             : t.allConfirmed ? `✓ Resumen basado en ${t.confirmed} entradas confirmadas`
             : `⚠ ${t.total - t.confirmed} entradas pendientes de confirmar — los importes pueden variar`}
@@ -311,52 +311,52 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
 
       {!isPremium ? (
         <div style={{ ...CARD, textAlign: 'center', padding: '32px 20px' }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#818cf8', marginBottom: 6 }}>Prefill fiscal y casillas de la renta — Premium</p>
-          <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 14, maxWidth: 440, marginInline: 'auto' }}>El cálculo automático de dividendos y plusvalías, la edición y las casillas de la renta están disponibles con Premium.</p>
-          <Link href="/pricing" style={{ padding: '9px 18px', background: 'rgba(99,102,241,0.85)', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>Activar Premium →</Link>
+          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', marginBottom: 6 }}>Prefill fiscal y casillas de la renta — Premium</p>
+          <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 14, maxWidth: 440, marginInline: 'auto' }}>El cálculo automático de dividendos y plusvalías, la edición y las casillas de la renta están disponibles con Premium.</p>
+          <Link href="/pricing" style={{ padding: '9px 18px', background: 'var(--accent)', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>Activar Premium →</Link>
         </div>
       ) : (
         <>
           {/* ── DIVIDENDOS (solo lectura — cobros confirmados en la sección Dividendos) ── */}
           <div style={{ ...CARD, marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-              <p style={{ fontSize: 13, fontWeight: 800, color: '#e0e8f0' }}>Rendimientos del capital mobiliario — Dividendos</p>
-              <Link href="/cartera/dividendos" style={{ fontSize: 12, color: '#818cf8', fontWeight: 700, textDecoration: 'none' }}>Gestionar dividendos →</Link>
+              <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-strong)' }}>Rendimientos del capital mobiliario — Dividendos</p>
+              <Link href="/cartera/dividendos" style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>Gestionar dividendos →</Link>
             </div>
-            <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 12 }}>Solo entran los dividendos confirmados como cobrados en la sección Dividendos. Los pendientes no computan.</p>
+            <p style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 12 }}>Solo entran los dividendos confirmados como cobrados en la sección Dividendos. Los pendientes no computan.</p>
 
             {divs.length === 0 ? (
-              <p style={{ fontSize: 13, color: '#4a5270' }}>Sin dividendos cobrados confirmados en {year}.</p>
+              <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>Sin dividendos cobrados confirmados en {year}.</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 720 }}>
                   <thead><tr>{[Th('Empresa'), Th('País'), Th('Forma de pago'), Th('Bruto', 'right'), Th('Ret. origen', 'right'), Th('Ret. destino', 'right'), Th('Neto', 'right')]}</tr></thead>
                   <tbody>
                     {divs.map((e, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{flag(e.country)} {e.company_name} <span style={{ color: '#3a4260', fontSize: 10 }}>{e.ticker}</span></td>
-                        <td style={{ padding: '7px 8px', color: '#8090a8' }}>{COUNTRY_NAMES[e.country] || e.country}</td>
+                      <tr key={i} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                        <td style={{ padding: '7px 8px', color: 'var(--text)' }}>{flag(e.country)} {e.company_name} <span style={{ color: 'var(--text-faintest)', fontSize: 10 }}>{e.ticker}</span></td>
+                        <td style={{ padding: '7px 8px', color: 'var(--text-muted)' }}>{COUNTRY_NAMES[e.country] || e.country}</td>
                         <td style={{ padding: '7px 8px', textAlign: 'center' }} title={e.payment_method === 'stock' ? 'Dividendo en acciones' : 'Dividendo en efectivo'}>{e.payment_method === 'stock' ? '📈' : '💵'}</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#34d399', fontWeight: 600 }}>{fmtEUR(e.gross_amount)}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--positive)', fontWeight: 600 }}>{fmtEUR(e.gross_amount)}</td>
                         {e.payment_method === 'stock'
-                          ? <td colSpan={2} style={{ padding: '7px 8px', textAlign: 'right', color: '#fbbf24', fontSize: 11 }}>Sin retención — declarar en renta</td>
+                          ? <td colSpan={2} style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--warning)', fontSize: 11 }}>Sin retención — declarar en renta</td>
                           : <>
                               <td style={{ padding: '7px 8px', textAlign: 'right', color: '#fb923c', whiteSpace: 'nowrap' }}>{fmtPct(e.withholding_origin_pct)} · {fmtEUR(e.withholding_origin)}</td>
                               <td style={{ padding: '7px 8px', textAlign: 'right', color: '#fb923c', whiteSpace: 'nowrap' }}>{e.withholding_dest > 0 ? fmtEUR(e.withholding_dest) : '—'}</td>
                             </>}
-                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600 }}>{fmtEUR(e.net_amount)}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text)', fontWeight: 600 }}>{fmtEUR(e.net_amount)}</td>
                       </tr>
                     ))}
-                    <tr style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                      <td colSpan={3} style={{ padding: '8px', color: '#8090a8', fontWeight: 700 }}>Totales</td>
-                      <td style={{ padding: '8px', textAlign: 'right', color: '#34d399', fontWeight: 700 }}>{fmtEUR(t.grossDiv)}</td>
+                    <tr style={{ borderTop: '1px solid var(--border-strong)' }}>
+                      <td colSpan={3} style={{ padding: '8px', color: 'var(--text-muted)', fontWeight: 700 }}>Totales</td>
+                      <td style={{ padding: '8px', textAlign: 'right', color: 'var(--positive)', fontWeight: 700 }}>{fmtEUR(t.grossDiv)}</td>
                       <td colSpan={2} style={{ padding: '8px', textAlign: 'right', color: '#fb923c', fontWeight: 700 }}>{fmtEUR(t.retTotal)}</td>
-                      <td style={{ padding: '8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 700 }}>{fmtEUR(t.grossDiv - t.retTotal)}</td>
+                      <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text)', fontWeight: 700 }}>{fmtEUR(t.grossDiv - t.retTotal)}</td>
                     </tr>
                   </tbody>
                 </table>
                 {divs.some(e => e.payment_method === 'stock') && (
-                  <p style={{ fontSize: 10.5, color: '#6b7693', marginTop: 10, lineHeight: 1.55 }}>
+                  <p style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.55 }}>
                     Los dividendos cobrados en acciones (📈) tributan como rendimiento del capital mobiliario por el valor de mercado en la fecha de cobro. No tienen retención previa. Las acciones recibidas tienen precio de adquisición fiscal igual al valor declarado aquí.
                   </p>
                 )}
@@ -366,10 +366,10 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
 
           {/* ── GANANCIAS Y PÉRDIDAS ── */}
           <div style={{ ...CARD, marginBottom: 16 }}>
-            <p style={{ fontSize: 13, fontWeight: 800, color: '#e0e8f0', marginBottom: 12 }}>Ganancias y pérdidas patrimoniales — Transmisiones (FIFO)</p>
+            <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-strong)', marginBottom: 12 }}>Ganancias y pérdidas patrimoniales — Transmisiones (FIFO)</p>
             <Progress confirmed={gains.filter(e => e.is_confirmed).length} total={gains.length} />
             {gains.length === 0 ? (
-              <p style={{ fontSize: 13, color: '#4a5270' }}>No tienes transmisiones registradas en {year}.</p>
+              <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>No tienes transmisiones registradas en {year}.</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 820 }}>
@@ -379,25 +379,25 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
                       const editing = editId === e.id
                       const gl = editing ? num(draft.sell) - num(draft.buy) : num(e.gain_loss)
                       return (
-                        <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                          <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{e.company_name || nameOf(e.ticker)} <span style={{ color: '#3a4260', fontSize: 10 }}>{e.ticker}</span></td>
-                          <td style={{ padding: '7px 8px', color: '#8090a8', whiteSpace: 'nowrap' }}>{fmtDate(e.buy_date)}</td>
-                          <td style={{ padding: '7px 8px', color: '#8090a8', whiteSpace: 'nowrap' }}>{fmtDate(e.sell_date)}</td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{Number(e.shares).toLocaleString('es-ES', { maximumFractionDigits: 4 })}</td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="any" value={draft.buy} onChange={ev => setDraft(d => ({ ...d, buy: ev.target.value }))} /> : <span style={{ color: '#8090a8' }}>{fmtEUR(e.buy_price_total)}</span>}</td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="any" value={draft.sell} onChange={ev => setDraft(d => ({ ...d, sell: ev.target.value }))} /> : <span style={{ color: '#8090a8' }}>{fmtEUR(e.sell_price_total)}</span>}</td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 700, color: gl >= 0 ? '#34d399' : '#f87171' }}>{(gl >= 0 ? '+' : '') + fmtEUR(gl)}</td>
+                        <tr key={e.id} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                          <td style={{ padding: '7px 8px', color: 'var(--text)' }}>{e.company_name || nameOf(e.ticker)} <span style={{ color: 'var(--text-faintest)', fontSize: 10 }}>{e.ticker}</span></td>
+                          <td style={{ padding: '7px 8px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{fmtDate(e.buy_date)}</td>
+                          <td style={{ padding: '7px 8px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{fmtDate(e.sell_date)}</td>
+                          <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>{Number(e.shares).toLocaleString('es-ES', { maximumFractionDigits: 4 })}</td>
+                          <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="any" value={draft.buy} onChange={ev => setDraft(d => ({ ...d, buy: ev.target.value }))} /> : <span style={{ color: 'var(--text-muted)' }}>{fmtEUR(e.buy_price_total)}</span>}</td>
+                          <td style={{ padding: '7px 8px', textAlign: 'right' }}>{editing ? <input style={INPUT} type="number" step="any" value={draft.sell} onChange={ev => setDraft(d => ({ ...d, sell: ev.target.value }))} /> : <span style={{ color: 'var(--text-muted)' }}>{fmtEUR(e.sell_price_total)}</span>}</td>
+                          <td style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 700, color: gl >= 0 ? 'var(--positive)' : 'var(--negative)' }}>{(gl >= 0 ? '+' : '') + fmtEUR(gl)}</td>
                           <td style={{ padding: '7px 8px' }}>{e._live ? <span style={{ fontSize: 9.5, fontWeight: 700, color: '#60a5fa', background: 'rgba(96,165,250,0.14)', padding: '1px 6px', borderRadius: 4 }}>Calculado</span> : <StatusBadges e={e} />}</td>
                           <td style={{ padding: '7px 8px', textAlign: 'right' }}>
                             {e._live ? null : editing ? (
-                              <ActionBtns><button onClick={() => saveGain(e)} style={mini('#34d399')} title="Guardar">💾</button><button onClick={() => setEditId(null)} style={mini('#8090a8')} title="Cancelar">✕</button></ActionBtns>
+                              <ActionBtns><button onClick={() => saveGain(e)} style={mini('var(--positive)')} title="Guardar">💾</button><button onClick={() => setEditId(null)} style={mini('var(--text-muted)')} title="Cancelar">✕</button></ActionBtns>
                             ) : delId === e.id ? (
-                              <span style={{ fontSize: 10.5, color: '#fbbf24' }}>¿Eliminar? <button onClick={() => softDelete(e.id)} style={mini('#f87171')}>Sí</button><button onClick={() => setDelId(null)} style={mini('#8090a8')}>No</button></span>
+                              <span style={{ fontSize: 10.5, color: 'var(--warning)' }}>¿Eliminar? <button onClick={() => softDelete(e.id)} style={mini('var(--negative)')}>Sí</button><button onClick={() => setDelId(null)} style={mini('var(--text-muted)')}>No</button></span>
                             ) : (
                               <ActionBtns>
-                                <button onClick={() => startEdit(e)} style={mini('#818cf8')} title="Editar">✏</button>
-                                {!e.is_confirmed && <button onClick={() => confirm(e.id)} style={mini('#34d399')} title="Confirmar">✓</button>}
-                                <button onClick={() => setDelId(e.id)} style={mini('#f87171')} title="Eliminar">🗑</button>
+                                <button onClick={() => startEdit(e)} style={mini('var(--accent)')} title="Editar">✏</button>
+                                {!e.is_confirmed && <button onClick={() => confirm(e.id)} style={mini('var(--positive)')} title="Confirmar">✓</button>}
+                                <button onClick={() => setDelId(e.id)} style={mini('var(--negative)')} title="Eliminar">🗑</button>
                               </ActionBtns>
                             )}
                           </td>
@@ -408,18 +408,18 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
                 </table>
               </div>
             )}
-            <p style={{ fontSize: 10.5, color: '#4a5270', marginTop: 10 }}>Cálculo por método <b style={{ color: '#8090a8' }}>FIFO</b> (primera entrada, primera salida), el establecido por la Agencia Tributaria para acciones cotizadas.</p>
+            <p style={{ fontSize: 10.5, color: 'var(--text-faint)', marginTop: 10 }}>Cálculo por método <b style={{ color: 'var(--text-muted)' }}>FIFO</b> (primera entrada, primera salida), el establecido por la Agencia Tributaria para acciones cotizadas.</p>
 
             {excludedSells.length > 0 && (
               <div style={{ background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 8, padding: '10px 14px', marginTop: 12 }}>
-                <button onClick={() => setShowExcluded(s => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fbbf24', fontSize: 12, fontWeight: 700, padding: 0 }}>
+                <button onClick={() => setShowExcluded(s => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--warning)', fontSize: 12, fontWeight: 700, padding: 0 }}>
                   ⚠ {excludedSells.length} venta(s) no incluida(s) por falta de compra registrada {showExcluded ? '▲' : '▼'}
                 </button>
                 {showExcluded && (
                   <div style={{ marginTop: 8 }}>
                     {excludedSells.map((x, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5, color: '#8090a8', padding: '4px 0', gap: 10 }}>
-                        <span>{x.name} <span style={{ color: '#3a4260' }}>{x.ticker}</span> · {Number(x.shares).toLocaleString('es-ES', { maximumFractionDigits: 4 })} acc. · venta {fmtDate(x.sell_date)}</span>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5, color: 'var(--text-muted)', padding: '4px 0', gap: 10 }}>
+                        <span>{x.name} <span style={{ color: 'var(--text-faintest)' }}>{x.ticker}</span> · {Number(x.shares).toLocaleString('es-ES', { maximumFractionDigits: 4 })} acc. · venta {fmtDate(x.sell_date)}</span>
                         <Link href={`/cartera/nueva-posicion?ticker=${encodeURIComponent(x.ticker)}&type=stock`} style={{ color: '#60a5fa', fontWeight: 700, whiteSpace: 'nowrap' }}>Añadir compra →</Link>
                       </div>
                     ))}
@@ -431,29 +431,29 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
 
           {/* ── RESUMEN DE CASILLAS ── */}
           <div style={{ ...CARD, marginBottom: 16 }}>
-            <p style={{ fontSize: 13, fontWeight: 800, color: '#e0e8f0', marginBottom: 12 }}>Resumen para la renta {year}</p>
+            <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-strong)', marginBottom: 12 }}>Resumen para la renta {year}</p>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead><tr>{[Th('Casilla'), Th('Concepto'), Th('Importe', 'right')]}</tr></thead>
                 <tbody>
                   {[['0029', 'Dividendos íntegros', t.boxes['0029']], ['0031', 'Retenciones sobre dividendos', t.boxes['0031']], ['0380', 'Ganancias patrimoniales', t.boxes['0380']], ['0382', 'Pérdidas patrimoniales', t.boxes['0382']], ['0588', 'Deducción doble imposición', t.boxes['0588']]].map(([b, c, a]) => (
-                    <tr key={b} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      <td style={{ padding: '8px', color: '#818cf8', fontWeight: 700 }}>{b}</td>
-                      <td style={{ padding: '8px', color: '#c8d0e0' }}>{c}</td>
-                      <td style={{ padding: '8px', textAlign: 'right', color: '#e0e8f0', fontWeight: 700 }}>{fmtEUR(a)}</td>
+                    <tr key={b} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                      <td style={{ padding: '8px', color: 'var(--accent)', fontWeight: 700 }}>{b}</td>
+                      <td style={{ padding: '8px', color: 'var(--text)' }}>{c}</td>
+                      <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text-strong)', fontWeight: 700 }}>{fmtEUR(a)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <p style={{ fontSize: 11.5, color: t.allConfirmed ? '#34d399' : '#fbbf24', marginTop: 10 }}>
+            <p style={{ fontSize: 11.5, color: t.allConfirmed ? 'var(--positive)' : 'var(--warning)', marginTop: 10 }}>
               {t.allConfirmed ? `✓ Basado en ${t.confirmed} entradas confirmadas` : `⚠ ${t.total - t.confirmed} entradas pendientes de confirmar — los importes pueden variar`}
             </p>
             <div style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
-              <button onClick={() => window.print()} style={{ padding: '9px 16px', background: 'rgba(99,102,241,0.85)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Exportar como PDF</button>
-              <button onClick={exportBoxesCSV} style={{ padding: '9px 16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#c8d0e0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Exportar como CSV</button>
+              <button onClick={() => window.print()} style={{ padding: '9px 16px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Exportar como PDF</button>
+              <button onClick={exportBoxesCSV} style={{ padding: '9px 16px', background: 'var(--surface-3)', border: '1px solid var(--border-strong)', borderRadius: 8, color: 'var(--text)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Exportar como CSV</button>
             </div>
-            <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 12 }}>Las casillas son las vigentes para el ejercicio 2024-2025. Verifica que las casillas corresponden al ejercicio que estás declarando.</p>
+            <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 12 }}>Las casillas son las vigentes para el ejercicio 2024-2025. Verifica que las casillas corresponden al ejercicio que estás declarando.</p>
           </div>
         </>
       )}
@@ -471,9 +471,9 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
 function SummaryCard({ label, value, sub, col }) {
   return (
     <div style={{ ...CARD, padding: '16px 18px' }}>
-      <p style={{ fontSize: 10.5, color: '#4a5270', marginBottom: 6 }}>{label}</p>
+      <p style={{ fontSize: 10.5, color: 'var(--text-faint)', marginBottom: 6 }}>{label}</p>
       <p style={{ fontSize: 21, fontWeight: 900, color: col }}>{value}</p>
-      <p style={{ fontSize: 10, color: '#3a4260', marginTop: 4 }}>{sub}</p>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 4 }}>{sub}</p>
     </div>
   )
 }

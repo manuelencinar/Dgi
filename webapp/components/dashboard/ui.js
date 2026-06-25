@@ -2,7 +2,7 @@
 
 export function Card({ children, style }) {
   return (
-    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 18, ...style }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 18, ...style }}>
       {children}
     </div>
   )
@@ -11,32 +11,32 @@ export function Card({ children, style }) {
 export function PageTitle({ children, sub }) {
   return (
     <div style={{ marginBottom: 22 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0' }}>{children}</h1>
-      {sub && <p style={{ fontSize: 13, color: '#4a5270', marginTop: 4 }}>{sub}</p>}
+      <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)' }}>{children}</h1>
+      {sub && <p style={{ fontSize: 13, color: 'var(--text-faint)', marginTop: 4 }}>{sub}</p>}
     </div>
   )
 }
 
 export function SectionTitle({ children }) {
   return (
-    <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
+    <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
       {children}
     </p>
   )
 }
 
-export function MetricCard({ label, value, sub, color = '#c8d0e0' }) {
+export function MetricCard({ label, value, sub, color = 'var(--text)' }) {
   return (
     <Card style={{ padding: '16px 18px' }}>
-      <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 6 }}>{label}</p>
+      <p style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 6 }}>{label}</p>
       <p style={{ fontSize: 26, fontWeight: 900, color, lineHeight: 1 }}>{value}</p>
-      {sub && <p style={{ fontSize: 11, color: '#4a5270', marginTop: 6 }}>{sub}</p>}
+      {sub && <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 6 }}>{sub}</p>}
     </Card>
   )
 }
 
 export function StatusDot({ status }) {
-  const col = status === 'error' ? '#f87171' : status === 'warn' ? '#fbbf24' : '#34d399'
+  const col = status === 'error' ? 'var(--negative)' : status === 'warn' ? 'var(--warning)' : 'var(--positive)'
   return <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: col, marginRight: 6 }} />
 }
 

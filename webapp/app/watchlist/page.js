@@ -19,7 +19,7 @@ export default async function WatchlistPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return (
-      <div style={{ minHeight: '100vh', background: '#080b14' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
         <PublicNav active="/watchlist" />
         <LoggedOutPreview variant="watchlist" />
       </div>
@@ -42,7 +42,7 @@ export default async function WatchlistPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav active="/watchlist" />
       <WatchlistClient initialItems={items} isPremium={isPremium} />
     </div>

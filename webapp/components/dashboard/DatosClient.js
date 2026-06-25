@@ -34,11 +34,11 @@ function FetchButton({ ticker, onResult }) {
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
       <button onClick={run} disabled={state === 'loading'} style={{
         fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, cursor: 'pointer',
-        border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.12)', color: '#818cf8',
+        border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.12)', color: 'var(--accent)',
       }}>
         {state === 'loading' ? '…' : state === 'ok' ? '✓' : 'Cargar'}
       </button>
-      {msg && <span style={{ fontSize: 10, color: state === 'err' ? '#f87171' : '#34d399' }}>{msg}</span>}
+      {msg && <span style={{ fontSize: 10, color: state === 'err' ? 'var(--negative)' : 'var(--positive)' }}>{msg}</span>}
     </span>
   )
 }
@@ -51,21 +51,21 @@ function Paginated({ rows, render, cols }) {
     <>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-          <thead><tr>{cols.map(c => <th key={c} style={{ padding: '6px 8px', textAlign: 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{c}</th>)}</tr></thead>
+          <thead><tr>{cols.map(c => <th key={c} style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600, whiteSpace: 'nowrap' }}>{c}</th>)}</tr></thead>
           <tbody>{slice.map(render)}</tbody>
         </table>
       </div>
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 12 }}>
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={navBtn(page === 1)}>←</button>
-          <span style={{ fontSize: 12, color: '#4a5270', alignSelf: 'center' }}>{page}/{totalPages}</span>
+          <span style={{ fontSize: 12, color: 'var(--text-faint)', alignSelf: 'center' }}>{page}/{totalPages}</span>
           <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={navBtn(page === totalPages)}>→</button>
         </div>
       )}
     </>
   )
 }
-const navBtn = disabled => ({ padding: '5px 12px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: disabled ? '#2a3045' : '#8090a8', cursor: disabled ? 'default' : 'pointer', fontSize: 12 })
+const navBtn = disabled => ({ padding: '5px 12px', borderRadius: 7, border: '1px solid var(--surface-3)', background: 'transparent', color: disabled ? 'var(--text-faintest)' : 'var(--text-muted)', cursor: disabled ? 'default' : 'pointer', fontSize: 12 })
 
 export default function DatosClient({ missing, incomplete, outdated }) {
   const [manualTicker, setManualTicker] = useState('')
@@ -109,21 +109,21 @@ export default function DatosClient({ missing, incomplete, outdated }) {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <input value={manualTicker} onChange={e => setManualTicker(e.target.value)} placeholder="Ticker (ej: AAPL, ITX.MC)"
             onKeyDown={e => e.key === 'Enter' && loadManual()}
-            style={{ flex: 1, minWidth: 180, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '9px 12px', color: '#c8d0e0', fontSize: 13, outline: 'none' }} />
-          <button onClick={loadManual} disabled={manualState === 'loading'} style={{ padding: '9px 18px', background: 'rgba(99,102,241,0.85)', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
+            style={{ flex: 1, minWidth: 180, background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none' }} />
+          <button onClick={loadManual} disabled={manualState === 'loading'} style={{ padding: '9px 18px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
             {manualState === 'loading' ? 'Cargando…' : 'Cargar fundamentales'}
           </button>
         </div>
         {manualResult && (
-          <div style={{ marginTop: 12, padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, fontSize: 12 }}>
+          <div style={{ marginTop: 12, padding: '12px', background: 'var(--surface)', borderRadius: 8, fontSize: 12 }}>
             {manualResult.error ? (
-              <p style={{ color: '#f87171' }}>✗ {manualResult.error}</p>
+              <p style={{ color: 'var(--negative)' }}>✗ {manualResult.error}</p>
             ) : (
               <>
-                <p style={{ color: '#34d399', marginBottom: 6 }}>✓ {manualResult.name} — {manualResult.obtained.length} campos obtenidos</p>
-                <p style={{ color: '#8090a8', fontSize: 11, marginBottom: 4 }}><strong>Obtenidos:</strong> {manualResult.obtained.join(', ')}</p>
-                {manualResult.failed?.length > 0 && <p style={{ color: '#fbbf24', fontSize: 11, marginBottom: 4 }}><strong>Vacíos:</strong> {manualResult.failed.join(', ')}</p>}
-                <p style={{ color: '#2e3a55', fontSize: 10, marginTop: 6 }}>{manualResult.note}</p>
+                <p style={{ color: 'var(--positive)', marginBottom: 6 }}>✓ {manualResult.name} — {manualResult.obtained.length} campos obtenidos</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: 11, marginBottom: 4 }}><strong>Obtenidos:</strong> {manualResult.obtained.join(', ')}</p>
+                {manualResult.failed?.length > 0 && <p style={{ color: 'var(--warning)', fontSize: 11, marginBottom: 4 }}><strong>Vacíos:</strong> {manualResult.failed.join(', ')}</p>}
+                <p style={{ color: 'var(--text-faintest)', fontSize: 10, marginTop: 6 }}>{manualResult.note}</p>
               </>
             )}
           </div>
@@ -139,14 +139,14 @@ export default function DatosClient({ missing, incomplete, outdated }) {
             <button onClick={triggerAll} style={primaryBtn}>Actualizar todas (GitHub)</button>
           </div>
         </div>
-        {triggerMsg && <p style={{ fontSize: 12, color: triggerMsg.startsWith('✓') ? '#34d399' : '#fbbf24', marginBottom: 10 }}>{triggerMsg}</p>}
-        {missing.length === 0 ? <p style={{ fontSize: 13, color: '#34d399' }}>✓ Todas las empresas del DICT tienen fundamentales.</p> : (
+        {triggerMsg && <p style={{ fontSize: 12, color: triggerMsg.startsWith('✓') ? 'var(--positive)' : 'var(--warning)', marginBottom: 10 }}>{triggerMsg}</p>}
+        {missing.length === 0 ? <p style={{ fontSize: 13, color: 'var(--positive)' }}>✓ Todas las empresas del DICT tienen fundamentales.</p> : (
           <Paginated rows={missing} cols={['Ticker', 'Nombre', 'Sector', 'País', '']} render={c => (
-            <tr key={c.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <td style={{ padding: '6px 8px', color: '#818cf8', fontWeight: 700 }}>{c.ticker}</td>
-              <td style={{ padding: '6px 8px', color: '#c8d0e0' }}>{c.name}</td>
-              <td style={{ padding: '6px 8px', color: '#8090a8' }}>{c.sector}</td>
-              <td style={{ padding: '6px 8px', color: '#4a5270' }}>{c.country}</td>
+            <tr key={c.ticker} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+              <td style={{ padding: '6px 8px', color: 'var(--accent)', fontWeight: 700 }}>{c.ticker}</td>
+              <td style={{ padding: '6px 8px', color: 'var(--text)' }}>{c.name}</td>
+              <td style={{ padding: '6px 8px', color: 'var(--text-muted)' }}>{c.sector}</td>
+              <td style={{ padding: '6px 8px', color: 'var(--text-faint)' }}>{c.country}</td>
               <td style={{ padding: '6px 8px' }}><FetchButton ticker={c.ticker} /></td>
             </tr>
           )} />
@@ -156,13 +156,13 @@ export default function DatosClient({ missing, incomplete, outdated }) {
       {/* Sección 2: Incompletas */}
       <Card style={{ marginBottom: 16 }}>
         <SectionTitle>{incomplete.length.toLocaleString('es-ES')} empresas con datos incompletos</SectionTitle>
-        {incomplete.length === 0 ? <p style={{ fontSize: 13, color: '#34d399' }}>✓ Sin datos incompletos.</p> : (
+        {incomplete.length === 0 ? <p style={{ fontSize: 13, color: 'var(--positive)' }}>✓ Sin datos incompletos.</p> : (
           <Paginated rows={incomplete} cols={['Ticker', 'Nombre', 'Campos que faltan', 'Actualizado', '']} render={c => (
-            <tr key={c.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <td style={{ padding: '6px 8px', color: '#818cf8', fontWeight: 700 }}>{c.ticker}</td>
-              <td style={{ padding: '6px 8px', color: '#c8d0e0' }}>{c.name}</td>
-              <td style={{ padding: '6px 8px' }}>{c.missingFields.map(f => <span key={f} style={{ fontSize: 10, color: '#f87171', background: 'rgba(248,113,113,0.1)', padding: '1px 6px', borderRadius: 4, marginRight: 4 }}>{f}</span>)}</td>
-              <td style={{ padding: '6px 8px', color: '#4a5270' }}>{fmtDate(c.updated_at)}</td>
+            <tr key={c.ticker} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+              <td style={{ padding: '6px 8px', color: 'var(--accent)', fontWeight: 700 }}>{c.ticker}</td>
+              <td style={{ padding: '6px 8px', color: 'var(--text)' }}>{c.name}</td>
+              <td style={{ padding: '6px 8px' }}>{c.missingFields.map(f => <span key={f} style={{ fontSize: 10, color: 'var(--negative)', background: 'rgba(248,113,113,0.1)', padding: '1px 6px', borderRadius: 4, marginRight: 4 }}>{f}</span>)}</td>
+              <td style={{ padding: '6px 8px', color: 'var(--text-faint)' }}>{fmtDate(c.updated_at)}</td>
               <td style={{ padding: '6px 8px' }}><FetchButton ticker={c.ticker} /></td>
             </tr>
           )} />
@@ -172,12 +172,12 @@ export default function DatosClient({ missing, incomplete, outdated }) {
       {/* Sección 3: Desactualizadas */}
       <Card>
         <SectionTitle>{outdated.length.toLocaleString('es-ES')} empresas desactualizadas (&gt;30 días)</SectionTitle>
-        {outdated.length === 0 ? <p style={{ fontSize: 13, color: '#34d399' }}>✓ Todo actualizado en los últimos 30 días.</p> : (
+        {outdated.length === 0 ? <p style={{ fontSize: 13, color: 'var(--positive)' }}>✓ Todo actualizado en los últimos 30 días.</p> : (
           <Paginated rows={outdated} cols={['Ticker', 'Nombre', 'Última actualización', '']} render={c => (
-            <tr key={c.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <td style={{ padding: '6px 8px', color: '#818cf8', fontWeight: 700 }}>{c.ticker}</td>
-              <td style={{ padding: '6px 8px', color: '#c8d0e0' }}>{c.name}</td>
-              <td style={{ padding: '6px 8px', color: '#fbbf24' }}>{fmtDate(c.updated_at)}</td>
+            <tr key={c.ticker} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+              <td style={{ padding: '6px 8px', color: 'var(--accent)', fontWeight: 700 }}>{c.ticker}</td>
+              <td style={{ padding: '6px 8px', color: 'var(--text)' }}>{c.name}</td>
+              <td style={{ padding: '6px 8px', color: 'var(--warning)' }}>{fmtDate(c.updated_at)}</td>
               <td style={{ padding: '6px 8px' }}><FetchButton ticker={c.ticker} /></td>
             </tr>
           )} />
@@ -187,5 +187,5 @@ export default function DatosClient({ missing, incomplete, outdated }) {
   )
 }
 
-const ghostBtn = { fontSize: 11, fontWeight: 700, padding: '7px 14px', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#8090a8' }
-const primaryBtn = { fontSize: 11, fontWeight: 700, padding: '7px 14px', borderRadius: 8, cursor: 'pointer', border: 'none', background: 'rgba(99,102,241,0.85)', color: '#fff' }
+const ghostBtn = { fontSize: 11, fontWeight: 700, padding: '7px 14px', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--border-strong)', background: 'transparent', color: 'var(--text-muted)' }
+const primaryBtn = { fontSize: 11, fontWeight: 700, padding: '7px 14px', borderRadius: 8, cursor: 'pointer', border: 'none', background: 'var(--accent)', color: '#fff' }

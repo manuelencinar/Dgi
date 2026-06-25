@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { enrichPositions, calcSummary, toEUR } from '@/lib/portfolio'
 
-const CARD = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(129,140,248,0.18)', borderRadius: 12, padding: 16 }
+const CARD = { background: 'var(--surface)', border: '1px solid rgba(129,140,248,0.18)', borderRadius: 12, padding: 16 }
 
 function fmtEUR(v) { return v != null ? v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €' : '—' }
 function fmtPct(v) { return v != null ? v.toFixed(1) + '%' : '—' }
@@ -75,22 +75,22 @@ export default function PositionImpactPreview({ ticker, name, currency, shares, 
   if (!sim) return null
 
   const rows = [
-    { label: 'Renta anual adicional', value: `+${fmtEUR(sim.addedIncome)}`, sub: sim.incomePct != null ? `+${fmtPct(sim.incomePct)} sobre tu renta actual` : null, col: '#34d399' },
-    { label: 'Nueva renta anual total', value: fmtEUR(sim.newTotalIncome), col: '#c8d0e0' },
-    { label: 'Yield on cost', value: `${fmtPct(sim.oldYoC)} → ${fmtPct(sim.newYoC)}`, col: '#818cf8' },
-    { label: 'Peso de la nueva posición', value: fmtPct(sim.newWeight), col: sim.newWeight > 20 ? '#f87171' : '#fbbf24' },
-    { label: 'Diversificación sectorial', value: sim.divNote, col: '#8090a8', small: true },
+    { label: 'Renta anual adicional', value: `+${fmtEUR(sim.addedIncome)}`, sub: sim.incomePct != null ? `+${fmtPct(sim.incomePct)} sobre tu renta actual` : null, col: 'var(--positive)' },
+    { label: 'Nueva renta anual total', value: fmtEUR(sim.newTotalIncome), col: 'var(--text)' },
+    { label: 'Yield on cost', value: `${fmtPct(sim.oldYoC)} → ${fmtPct(sim.newYoC)}`, col: 'var(--accent)' },
+    { label: 'Peso de la nueva posición', value: fmtPct(sim.newWeight), col: sim.newWeight > 20 ? 'var(--negative)' : 'var(--warning)' },
+    { label: 'Diversificación sectorial', value: sim.divNote, col: 'var(--text-muted)', small: true },
   ]
 
   return (
     <div style={{ ...CARD, marginTop: 14 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
         Impacto en tu cartera{name ? ` · ${name}` : ''}
       </p>
       <div style={{ display: 'grid', gap: 8 }}>
         {rows.map(it => (
           <div key={it.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-            <span style={{ fontSize: 11, color: '#4a5270' }}>{it.label}</span>
+            <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>{it.label}</span>
             <div style={{ textAlign: 'right' }}>
               <span style={{ fontSize: it.small ? 11 : 13, fontWeight: 700, color: it.col }}>{it.value}</span>
               {it.sub && <p style={{ fontSize: 10, color: it.col }}>{it.sub}</p>}
@@ -99,7 +99,7 @@ export default function PositionImpactPreview({ ticker, name, currency, shares, 
         ))}
       </div>
       {!cand?.dps && (
-        <p style={{ fontSize: 10, color: '#3a4260', marginTop: 8 }}>Sin datos de dividendo para esta empresa — el impacto en renta puede ser 0.</p>
+        <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 8 }}>Sin datos de dividendo para esta empresa — el impacto en renta puede ser 0.</p>
       )}
     </div>
   )

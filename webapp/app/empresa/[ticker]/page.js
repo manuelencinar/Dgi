@@ -387,7 +387,7 @@ export default async function EmpresaPage({ params, searchParams }) {
   const _sinfo = sectorInfo(_cfSector)
   const classification = _cfSector ? {
     superLabel: SUPERSECTORS[_sinfo.sup]?.label ?? null,
-    superColor: SUPERSECTORS[_sinfo.sup]?.color ?? '#818cf8',
+    superColor: SUPERSECTORS[_sinfo.sup]?.color ?? 'var(--accent)',
     sectorEs:   _sinfo.es,
     industryEs: detail?.industry ? industryEs(_cfSector, detail.industry) : null,
   } : null
@@ -504,7 +504,7 @@ export default async function EmpresaPage({ params, searchParams }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav />
       <CompanyDetailPage
         ticker={t}

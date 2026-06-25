@@ -5,8 +5,8 @@ import {
   XAxis, YAxis, Tooltip, CartesianGrid,
 } from 'recharts'
 
-const CARD = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
-const C = { rev: '#60a5fa', revEst: '#818cf8', eps: '#34d399' }
+const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }
+const C = { rev: '#60a5fa', revEst: 'var(--accent)', eps: 'var(--positive)' }
 
 // Ingresos en la divisa de reporte (valores absolutos). En millones (M) / miles (K),
 // como en el resto de la app (evita el "billion" americano, ambiguo en español).
@@ -26,7 +26,7 @@ function fmtGrowth(v) {
   if (v == null || isNaN(v)) return '—'
   return (v > 0 ? '+' : '') + (v * 100).toFixed(1) + '%'
 }
-const growthCol = v => v == null ? '#4a5270' : v >= 0 ? '#34d399' : '#f87171'
+const growthCol = v => v == null ? 'var(--text-faint)' : v >= 0 ? 'var(--positive)' : 'var(--negative)'
 
 // Unidad coherente para el eje de ingresos (millones / miles, como en el resto de la app).
 function revUnit(values) {
@@ -40,18 +40,18 @@ function ChartTooltip({ active, payload, currency }) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
-    <div style={{ background: 'rgba(13,20,36,0.97)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 11px', fontSize: 11.5, lineHeight: 1.7 }}>
-      <p style={{ color: '#c8d0e0', fontWeight: 700, marginBottom: 3 }}>
-        {d.year} <span style={{ color: d.actual ? '#3a4565' : '#818cf8', fontWeight: 600 }}>· {d.actual ? 'real' : 'estimación'}</span>
+    <div style={{ background: 'rgba(13,20,36,0.97)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '8px 11px', fontSize: 11.5, lineHeight: 1.7 }}>
+      <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: 3 }}>
+        {d.year} <span style={{ color: d.actual ? 'var(--text-faintest)' : 'var(--accent)', fontWeight: 600 }}>· {d.actual ? 'real' : 'estimación'}</span>
       </p>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
-        <span style={{ color: C.rev }}>Ingresos</span><span style={{ color: '#e0e8f0', fontWeight: 600 }}>{fmtRevenue(d.revenue, currency)}</span>
+        <span style={{ color: C.rev }}>Ingresos</span><span style={{ color: 'var(--text-strong)', fontWeight: 600 }}>{fmtRevenue(d.revenue, currency)}</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
-        <span style={{ color: '#8090a8' }}>Crecimiento</span><span style={{ color: growthCol(d.revenueGrowth), fontWeight: 600 }}>{fmtGrowth(d.revenueGrowth)}</span>
+        <span style={{ color: 'var(--text-muted)' }}>Crecimiento</span><span style={{ color: growthCol(d.revenueGrowth), fontWeight: 600 }}>{fmtGrowth(d.revenueGrowth)}</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
-        <span style={{ color: C.eps }}>BPA</span><span style={{ color: '#e0e8f0', fontWeight: 600 }}>{fmtEps(d.eps)}{currency ? ` ${currency}` : ''}</span>
+        <span style={{ color: C.eps }}>BPA</span><span style={{ color: 'var(--text-strong)', fontWeight: 600 }}>{fmtEps(d.eps)}{currency ? ` ${currency}` : ''}</span>
       </div>
     </div>
   )
@@ -112,14 +112,14 @@ export default function AnalystEstimates({ ticker }) {
       <style>{`.ae-chart{height:230px}@media(max-width:768px){.ae-chart{height:190px}}`}</style>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap', gap: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
           Estimaciones de analistas
         </p>
-        <span style={{ fontSize: 10, fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.12)', padding: '2px 8px', borderRadius: 5 }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'rgba(99,102,241,0.12)', padding: '2px 8px', borderRadius: 5 }}>
           Consenso de analistas
         </span>
       </div>
-      <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 14, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 14, lineHeight: 1.5 }}>
         Ingresos y BPA reales por ejercicio, seguidos de la proyección de consenso de los analistas.
       </p>
 
@@ -127,12 +127,12 @@ export default function AnalystEstimates({ ticker }) {
       <div className="ae-chart">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barGap={2}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-            <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#4a5270' }} axisLine={{ stroke: 'rgba(255,255,255,0.08)' }} tickLine={false} />
-            <YAxis yAxisId="rev" tick={{ fontSize: 10, fill: '#4a5270' }} axisLine={false} tickLine={false} width={44}
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-2)" vertical={false} />
+            <XAxis dataKey="year" tick={{ fontSize: 10, fill: 'var(--text-faint)' }} axisLine={{ stroke: 'var(--surface-3)' }} tickLine={false} />
+            <YAxis yAxisId="rev" tick={{ fontSize: 10, fill: 'var(--text-faint)' }} axisLine={false} tickLine={false} width={44}
               tickFormatter={v => v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + unit.suffix} />
-            <YAxis yAxisId="eps" orientation="right" tick={{ fontSize: 10, fill: '#4a5270' }} axisLine={false} tickLine={false} width={36} />
-            <Tooltip content={<ChartTooltip currency={currency} />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+            <YAxis yAxisId="eps" orientation="right" tick={{ fontSize: 10, fill: 'var(--text-faint)' }} axisLine={false} tickLine={false} width={36} />
+            <Tooltip content={<ChartTooltip currency={currency} />} cursor={{ fill: 'var(--surface-2)' }} />
             <Bar yAxisId="rev" dataKey="revScaled" name="Ingresos" radius={[2, 2, 0, 0]} maxBarSize={46}>
               {chartData.map((d, i) => (
                 <Cell key={i} fill={d.actual ? C.rev : C.revEst} fillOpacity={d.actual ? 1 : 0.45} />
@@ -146,10 +146,10 @@ export default function AnalystEstimates({ ticker }) {
 
       {/* Leyenda manual (controla exactamente real vs estimación) */}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center', margin: '10px 0 16px' }}>
-        <Legend sw={<span style={{ width: 11, height: 11, borderRadius: 3, background: C.rev }} />} label="Ingresos (real)" color="#8090a8" />
-        <Legend sw={<span style={{ width: 11, height: 11, borderRadius: 3, background: C.revEst, opacity: 0.55 }} />} label="Ingresos (est.)" color="#818cf8" />
-        <Legend sw={<span style={{ width: 14, height: 0, borderTop: `2px solid ${C.eps}` }} />} label="BPA (real)" color="#8090a8" />
-        <Legend sw={<span style={{ width: 14, height: 0, borderTop: `2px dashed ${C.eps}` }} />} label="BPA (est.)" color="#8090a8" />
+        <Legend sw={<span style={{ width: 11, height: 11, borderRadius: 3, background: C.rev }} />} label="Ingresos (real)" color="var(--text-muted)" />
+        <Legend sw={<span style={{ width: 11, height: 11, borderRadius: 3, background: C.revEst, opacity: 0.55 }} />} label="Ingresos (est.)" color="var(--accent)" />
+        <Legend sw={<span style={{ width: 14, height: 0, borderTop: `2px solid ${C.eps}` }} />} label="BPA (real)" color="var(--text-muted)" />
+        <Legend sw={<span style={{ width: 14, height: 0, borderTop: `2px dashed ${C.eps}` }} />} label="BPA (est.)" color="var(--text-muted)" />
       </div>
 
       {/* Tabla años en filas (responsive, sin scroll horizontal forzado) */}
@@ -157,26 +157,26 @@ export default function AnalystEstimates({ ticker }) {
         <thead>
           <tr>
             {['Año', 'Ingresos', 'Crec.', `BPA${currency ? ` (${currency})` : ''}`].map((h, i) => (
-              <th key={h} style={{ padding: '7px 8px', textAlign: i === 0 ? 'left' : 'right', color: '#4a5270', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.08)', whiteSpace: 'nowrap' }}>{h}</th>
+              <th key={h} style={{ padding: '7px 8px', textAlign: i === 0 ? 'left' : 'right', color: 'var(--text-faint)', fontWeight: 600, borderBottom: '1px solid var(--surface-3)', whiteSpace: 'nowrap' }}>{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rows.map(r => (
-            <tr key={r.year} style={{ background: r.actual ? 'transparent' : 'rgba(99,102,241,0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+            <tr key={r.year} style={{ background: r.actual ? 'transparent' : 'rgba(99,102,241,0.06)', borderBottom: '1px solid var(--surface-2)' }}>
               <td style={{ padding: '7px 8px', whiteSpace: 'nowrap' }}>
-                <span style={{ color: r.actual ? '#c8d0e0' : '#818cf8', fontWeight: 700 }}>{r.year}</span>
-                {!r.actual && <span style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', marginLeft: 6 }}>EST.</span>}
+                <span style={{ color: r.actual ? 'var(--text)' : 'var(--accent)', fontWeight: 700 }}>{r.year}</span>
+                {!r.actual && <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--accent)', marginLeft: 6 }}>EST.</span>}
               </td>
-              <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmtRevenue(r.revenue, null)}</td>
+              <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text)', fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmtRevenue(r.revenue, null)}</td>
               <td style={{ padding: '7px 8px', textAlign: 'right', color: growthCol(r.revenueGrowth), fontWeight: 700, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmtGrowth(r.revenueGrowth)}</td>
-              <td style={{ padding: '7px 8px', textAlign: 'right', color: '#c8d0e0', fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmtEps(r.eps)}</td>
+              <td style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text)', fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmtEps(r.eps)}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 12 }}>
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 12 }}>
         Las proyecciones de analistas son consensos orientativos, no una garantía de resultados.
       </p>
     </div>

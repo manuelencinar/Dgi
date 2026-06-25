@@ -34,10 +34,10 @@ export async function generateMetadata({ params }) {
 }
 
 const Card = ({ children, style }) => (
-  <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20, ...style }}>{children}</div>
+  <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, ...style }}>{children}</div>
 )
 const SectionTitle = ({ children }) => (
-  <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>{children}</p>
+  <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>{children}</p>
 )
 
 export default async function FondoPage({ params }) {
@@ -70,19 +70,19 @@ export default async function FondoPage({ params }) {
 
   // TER almacenado como decimal (0.0006 = 0.06%)
   const terPctV  = (fund.ter != null && fund.ter > 0) ? fund.ter * 100 : null
-  const terColor = terPctV == null ? '#4a5270' : terPctV < 0.20 ? '#34d399' : terPctV <= 0.50 ? '#fbbf24' : '#f87171'
+  const terColor = terPctV == null ? 'var(--text-faint)' : terPctV < 0.20 ? 'var(--positive)' : terPctV <= 0.50 ? 'var(--warning)' : 'var(--negative)'
   const annualDist = (fund.yield_ttm != null && fund.current_price != null) ? fund.yield_ttm / 100 * fund.current_price : null
   const byYear = distByYear(fund.distribution_history)
   const typeLabel = fund.asset_type === 'fund' ? 'Fondo' : 'ETF'
   const typeColor = fund.asset_type === 'fund' ? '#a78bfa' : '#60a5fa'
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav />
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px 64px' }}>
-        <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 16 }}>
-          <Link href="/cartera" style={{ color: '#4a5270', textDecoration: 'none' }}>Cartera</Link>{' / '}
-          <span style={{ color: '#8090a8' }}>{fund.name || t}</span>
+        <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 16 }}>
+          <Link href="/cartera" style={{ color: 'var(--text-faint)', textDecoration: 'none' }}>Cartera</Link>{' / '}
+          <span style={{ color: 'var(--text-muted)' }}>{fund.name || t}</span>
         </p>
 
         {/* Cabecera */}
@@ -90,24 +90,24 @@ export default async function FondoPage({ params }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0' }}>{fund.name || t}</h1>
+                <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)' }}>{fund.name || t}</h1>
                 <span style={{ fontSize: 11, fontWeight: 700, color: typeColor, background: `${typeColor}22`, padding: '2px 8px', borderRadius: 5 }}>{typeLabel}</span>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, color: '#4a5270' }}>{t}</span>
-                <span style={{ fontSize: 11, color: '#4a5270', background: 'rgba(255,255,255,0.04)', padding: '2px 8px', borderRadius: 5 }}>{fund.currency}</span>
-                {fund.category && <span style={{ fontSize: 11, color: '#818cf8', background: 'rgba(99,102,241,0.1)', padding: '2px 8px', borderRadius: 5 }}>{fund.category}</span>}
+                <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>{t}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-faint)', background: 'var(--surface-2)', padding: '2px 8px', borderRadius: 5 }}>{fund.currency}</span>
+                {fund.category && <span style={{ fontSize: 11, color: 'var(--accent)', background: 'rgba(99,102,241,0.1)', padding: '2px 8px', borderRadius: 5 }}>{fund.category}</span>}
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: 36, fontWeight: 900, color: '#e0e8f0', lineHeight: 1 }}>
+              <p style={{ fontSize: 36, fontWeight: 900, color: 'var(--text-strong)', lineHeight: 1 }}>
                 {fund.current_price != null ? fmt(fund.current_price) : '—'}
-                <span style={{ fontSize: 14, color: '#4a5270', fontWeight: 400, marginLeft: 6 }}>{fund.currency}</span>
+                <span style={{ fontSize: 14, color: 'var(--text-faint)', fontWeight: 400, marginLeft: 6 }}>{fund.currency}</span>
               </p>
               <LocalPrice price={fund.current_price != null ? Number(fund.current_price) : null} currency={fund.currency} />
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
-                <div><p style={{ fontSize: 10, color: '#4a5270' }}>TER</p><p style={{ fontSize: 14, fontWeight: 700, color: terColor }}>{terPctV != null ? terPctV.toFixed(2) + '%' : 'Pendiente'}</p></div>
-                <div><p style={{ fontSize: 10, color: '#4a5270' }}>Yield TTM</p><p style={{ fontSize: 14, fontWeight: 700, color: '#34d399' }}>{fund.yield_ttm != null ? fund.yield_ttm + '%' : '—'}</p></div>
+                <div><p style={{ fontSize: 10, color: 'var(--text-faint)' }}>TER</p><p style={{ fontSize: 14, fontWeight: 700, color: terColor }}>{terPctV != null ? terPctV.toFixed(2) + '%' : 'Pendiente'}</p></div>
+                <div><p style={{ fontSize: 10, color: 'var(--text-faint)' }}>Yield TTM</p><p style={{ fontSize: 14, fontWeight: 700, color: 'var(--positive)' }}>{fund.yield_ttm != null ? fund.yield_ttm + '%' : '—'}</p></div>
               </div>
             </div>
           </div>
@@ -129,7 +129,7 @@ export default async function FondoPage({ params }) {
           const hasAny = PERIODS.some(([, k]) => fund[k] != null)
           const hasBench = !!fund.benchmark_name && PERIODS.some(([, , bk]) => fund[bk] != null)
           const pf = v => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%'
-          const retCol = v => v == null ? '#4a5270' : v >= 0 ? '#34d399' : '#f87171'
+          const retCol = v => v == null ? 'var(--text-faint)' : v >= 0 ? 'var(--positive)' : 'var(--negative)'
           return (
             <Card style={{ marginBottom: 16 }}>
               <SectionTitle>Rentabilidad</SectionTitle>
@@ -139,37 +139,37 @@ export default async function FondoPage({ params }) {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 420 }}>
                       <thead>
                         <tr>
-                          <th style={{ textAlign: 'left', padding: '7px 8px', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.08)' }}></th>
-                          {PERIODS.map(([l]) => <th key={l} style={{ textAlign: 'right', padding: '7px 8px', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>{l}</th>)}
+                          <th style={{ textAlign: 'left', padding: '7px 8px', color: 'var(--text-faint)', borderBottom: '1px solid var(--surface-3)' }}></th>
+                          {PERIODS.map(([l]) => <th key={l} style={{ textAlign: 'right', padding: '7px 8px', color: 'var(--text-faint)', borderBottom: '1px solid var(--surface-3)' }}>{l}</th>)}
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td style={{ padding: '7px 8px', color: '#c8d0e0', fontWeight: 700 }}>{fund.ticker}</td>
+                          <td style={{ padding: '7px 8px', color: 'var(--text)', fontWeight: 700 }}>{fund.ticker}</td>
                           {PERIODS.map(([l, k]) => <td key={l} style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 700, color: retCol(fund[k]) }}>{pf(fund[k])}</td>)}
                         </tr>
                         {hasBench && (
                           <tr>
-                            <td style={{ padding: '7px 8px', color: '#8090a8' }}>{fund.benchmark_name}</td>
-                            {PERIODS.map(([l, , bk]) => <td key={l} style={{ padding: '7px 8px', textAlign: 'right', color: '#8090a8' }}>{pf(fund[bk])}</td>)}
+                            <td style={{ padding: '7px 8px', color: 'var(--text-muted)' }}>{fund.benchmark_name}</td>
+                            {PERIODS.map(([l, , bk]) => <td key={l} style={{ padding: '7px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>{pf(fund[bk])}</td>)}
                           </tr>
                         )}
                         {hasBench && (
-                          <tr style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                            <td style={{ padding: '7px 8px', color: '#4a5270' }}>Diferencia</td>
+                          <tr style={{ borderTop: '1px solid var(--border)' }}>
+                            <td style={{ padding: '7px 8px', color: 'var(--text-faint)' }}>Diferencia</td>
                             {PERIODS.map(([l, k, bk]) => {
                               const d = (fund[k] != null && fund[bk] != null) ? fund[k] - fund[bk] : null
-                              return <td key={l} style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 700, color: d == null ? '#4a5270' : d >= 0 ? '#34d399' : '#f87171' }}>{d == null ? '—' : (d >= 0 ? '+' : '') + d.toFixed(1) + '%'}</td>
+                              return <td key={l} style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 700, color: d == null ? 'var(--text-faint)' : d >= 0 ? 'var(--positive)' : 'var(--negative)' }}>{d == null ? '—' : (d >= 0 ? '+' : '') + d.toFixed(1) + '%'}</td>
                             })}
                           </tr>
                         )}
                       </tbody>
                     </table>
                   </div>
-                  <p style={{ fontSize: 10, color: '#2e3a55', marginTop: 10 }}>Rentabilidad calculada desde precio de cierre. No incluye dividendos reinvertidos.</p>
+                  <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 10 }}>Rentabilidad calculada desde precio de cierre. No incluye dividendos reinvertidos.</p>
                 </>
               ) : (
-                <p style={{ fontSize: 13, color: '#4a5270' }}>Sin datos de rentabilidad todavía.</p>
+                <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>Sin datos de rentabilidad todavía.</p>
               )}
             </Card>
           )
@@ -179,7 +179,7 @@ export default async function FondoPage({ params }) {
         <Card style={{ marginBottom: 16 }}>
           <SectionTitle>Coste (TER)</SectionTitle>
           {terPctV == null ? (
-            <p style={{ fontSize: 13, color: '#4a5270' }}>TER pendiente de carga.</p>
+            <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>TER pendiente de carga.</p>
           ) : (
             <div style={{ display: 'grid', gap: 9 }}>
               {[
@@ -189,9 +189,9 @@ export default async function FondoPage({ params }) {
                   ? [['Coste anual sobre tu posición', `${fmt(fund.ter * fund.current_price * position.shares)} €/año`]]
                   : []),
               ].map(([k, v]) => (
-                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, paddingBottom: 7, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <span style={{ color: '#4a5270' }}>{k}</span>
-                  <span style={{ color: '#c8d0e0', fontWeight: 600 }}>{v}</span>
+                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, paddingBottom: 7, borderBottom: '1px solid var(--surface-2)' }}>
+                  <span style={{ color: 'var(--text-faint)' }}>{k}</span>
+                  <span style={{ color: 'var(--text)', fontWeight: 600 }}>{v}</span>
                 </div>
               ))}
             </div>
@@ -213,9 +213,9 @@ export default async function FondoPage({ params }) {
                 ['Gestora / emisor', fund.manager || '—'],
                 ['ISIN', fund.isin || '—'],
               ].map(([k, v]) => (
-                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, paddingBottom: 7, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <span style={{ color: '#4a5270' }}>{k}</span>
-                  <span style={{ color: '#c8d0e0', fontWeight: 600, textAlign: 'right' }}>{v}</span>
+                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, paddingBottom: 7, borderBottom: '1px solid var(--surface-2)' }}>
+                  <span style={{ color: 'var(--text-faint)' }}>{k}</span>
+                  <span style={{ color: 'var(--text)', fontWeight: 600, textAlign: 'right' }}>{v}</span>
                 </div>
               ))}
             </div>
@@ -240,9 +240,9 @@ export default async function FondoPage({ params }) {
                     ['Distribución anual', annualDist != null ? `${fmt(annualDist * position.shares)} ${fund.currency}` : '—'],
                     ['Yield on cost', yoc != null ? yoc.toFixed(2) + '%' : '—'],
                   ].map(([k, v]) => (
-                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, paddingBottom: 7, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      <span style={{ color: '#4a5270' }}>{k}</span>
-                      <span style={{ color: '#c8d0e0', fontWeight: 600 }}>{v}</span>
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, paddingBottom: 7, borderBottom: '1px solid var(--surface-2)' }}>
+                      <span style={{ color: 'var(--text-faint)' }}>{k}</span>
+                      <span style={{ color: 'var(--text)', fontWeight: 600 }}>{v}</span>
                     </div>
                   ))
                 })()}
@@ -254,12 +254,12 @@ export default async function FondoPage({ params }) {
         {/* Historial de distribuciones */}
         <Card style={{ marginTop: 16 }}>
           <SectionTitle>Historial de distribuciones</SectionTitle>
-          {byYear.length > 0 ? <DividendBars history={byYear} /> : <p style={{ fontSize: 13, color: '#4a5270' }}>Sin historial de distribuciones disponible.</p>}
+          {byYear.length > 0 ? <DividendBars history={byYear} /> : <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>Sin historial de distribuciones disponible.</p>}
         </Card>
 
         {/* Nota informativa */}
-        <div style={{ marginTop: 16, padding: '12px 16px', background: 'rgba(255,255,255,0.02)', borderRadius: 10 }}>
-          <p style={{ fontSize: 11, color: '#4a5270', lineHeight: 1.5 }}>
+        <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--surface)', borderRadius: 10 }}>
+          <p style={{ fontSize: 11, color: 'var(--text-faint)', lineHeight: 1.5 }}>
             Los ETFs y fondos no incluyen análisis de foso económico, salud financiera ni valoración intrínseca. Estos análisis aplican a empresas individuales.
           </p>
         </div>

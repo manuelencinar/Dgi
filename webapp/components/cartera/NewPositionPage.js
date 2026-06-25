@@ -7,11 +7,11 @@ import { DICT } from '@/data/dict'
 import { weightedAvgCost } from '@/lib/portfolio'
 import PositionImpactPreview from '@/components/cartera/PositionImpactPreview'
 
-const CARD = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }
-const INPUT = { width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#c8d0e0', fontSize: 14, outline: 'none', boxSizing: 'border-box' }
-const LABEL = { fontSize: 12, color: '#4a5270', marginBottom: 6, display: 'block' }
-const BTN_PRIMARY = { padding: '11px 24px', background: 'rgba(99,102,241,0.85)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }
-const BTN_GHOST = { padding: '11px 24px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#4a5270', fontSize: 14, cursor: 'pointer' }
+const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }
+const INPUT = { width: '100%', background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '10px 12px', color: 'var(--text)', fontSize: 14, outline: 'none', boxSizing: 'border-box' }
+const LABEL = { fontSize: 12, color: 'var(--text-faint)', marginBottom: 6, display: 'block' }
+const BTN_PRIMARY = { padding: '11px 24px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }
+const BTN_GHOST = { padding: '11px 24px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 8, color: 'var(--text-faint)', fontSize: 14, cursor: 'pointer' }
 
 const ASSET_TYPES = [
   { v: 'stock', l: 'Acción' },
@@ -277,10 +277,10 @@ export default function NewPositionPage() {
   const fxSection = needsFx && (
     <div style={{ background: 'rgba(129,140,248,0.05)', border: '1px solid rgba(129,140,248,0.15)', borderRadius: 8, padding: 14 }}>
       {fxInfo?.loading ? (
-        <p style={{ fontSize: 12, color: '#4a5270' }}>Buscando tipo de cambio…</p>
+        <p style={{ fontSize: 12, color: 'var(--text-faint)' }}>Buscando tipo de cambio…</p>
       ) : fxInfo?.notFound ? (
         <div>
-          <p style={{ fontSize: 12, color: '#fbbf24', marginBottom: 10 }}>
+          <p style={{ fontSize: 12, color: 'var(--warning)', marginBottom: 10 }}>
             Tipo de cambio {fxCurrency}/{userSettings.base_currency} no disponible para esta fecha — introduce el tipo manualmente
           </p>
           <input
@@ -293,10 +293,10 @@ export default function NewPositionPage() {
         </div>
       ) : fxInfo ? (
         <div style={{ display: 'grid', gap: 6 }}>
-          <p style={{ fontSize: 12, color: '#8090a8' }}>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
             Tipo de cambio {fxCurrency}/{userSettings.base_currency} del{' '}
             {new Date(fxInfo.rateDate + 'T12:00:00').toLocaleDateString('es-ES')}:{' '}
-            <span style={{ color: '#c8d0e0', fontWeight: 700 }}>{fxInfo.rate.toFixed(4)}</span>
+            <span style={{ color: 'var(--text)', fontWeight: 700 }}>{fxInfo.rate.toFixed(4)}</span>
           </p>
           {fxBreakdown && renderBreakdown(fxBreakdown, fxCurrency, userSettings)}
         </div>
@@ -308,32 +308,32 @@ export default function NewPositionPage() {
     <div style={{ maxWidth: 540, margin: '0 auto', padding: '24px 16px 64px' }}>
       {divModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(4,6,12,0.72)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ width: '100%', maxWidth: 460, background: '#0d1322', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 24 }}>
+          <div style={{ width: '100%', maxWidth: 460, background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 14, padding: 24 }}>
             {divSaved ? (
-              <p style={{ fontSize: 13, color: '#34d399', textAlign: 'center', padding: '14px 0' }}>✓ Preferencia guardada — puedes cambiarla en cualquier momento desde Dividendos → Configuración</p>
+              <p style={{ fontSize: 13, color: 'var(--positive)', textAlign: 'center', padding: '14px 0' }}>✓ Preferencia guardada — puedes cambiarla en cualquier momento desde Dividendos → Configuración</p>
             ) : (
               <>
-                <h2 style={{ fontSize: 17, fontWeight: 800, color: '#e0e8f0', marginBottom: 16 }}>¿Cómo quieres cobrar los dividendos de {divModal.name}?</h2>
+                <h2 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-strong)', marginBottom: 16 }}>¿Cómo quieres cobrar los dividendos de {divModal.name}?</h2>
                 <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
-                  <button onClick={() => saveDivMethod('cash')} style={{ textAlign: 'left', padding: '14px 16px', borderRadius: 10, cursor: 'pointer', background: 'rgba(99,102,241,0.12)', border: '2px solid rgba(99,102,241,0.5)', color: '#e0e8f0' }}>
+                  <button onClick={() => saveDivMethod('cash')} style={{ textAlign: 'left', padding: '14px 16px', borderRadius: 10, cursor: 'pointer', background: 'rgba(99,102,241,0.12)', border: '2px solid rgba(99,102,241,0.5)', color: 'var(--text-strong)' }}>
                     <p style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>💵 En efectivo</p>
-                    <p style={{ fontSize: 11.5, color: '#8090a8' }}>Los dividendos se abonan en tu cuenta. Opción por defecto.</p>
+                    <p style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>Los dividendos se abonan en tu cuenta. Opción por defecto.</p>
                   </button>
-                  <button onClick={() => saveDivMethod('stock')} style={{ textAlign: 'left', padding: '14px 16px', borderRadius: 10, cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#e0e8f0' }}>
+                  <button onClick={() => saveDivMethod('stock')} style={{ textAlign: 'left', padding: '14px 16px', borderRadius: 10, cursor: 'pointer', background: 'var(--surface-2)', border: '1px solid var(--border-strong)', color: 'var(--text-strong)' }}>
                     <p style={{ fontSize: 14, fontWeight: 800, marginBottom: 3 }}>📈 En acciones</p>
-                    <p style={{ fontSize: 11.5, color: '#8090a8' }}>Recibes acciones adicionales en lugar de efectivo. Se añaden automáticamente a tu cartera.</p>
+                    <p style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>Recibes acciones adicionales en lugar de efectivo. Se añaden automáticamente a tu cartera.</p>
                   </button>
                 </div>
-                <button onClick={() => { setDivModal(null); router.push('/cartera') }} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', color: '#4a5270', fontSize: 12, padding: '6px' }}>Decidir más tarde — usar efectivo por ahora</button>
+                <button onClick={() => { setDivModal(null); router.push('/cartera') }} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-faint)', fontSize: 12, padding: '6px' }}>Decidir más tarde — usar efectivo por ahora</button>
               </>
             )}
           </div>
         </div>
       )}
       <div style={{ marginBottom: 20 }}>
-        <Link href="/cartera" style={{ fontSize: 12, color: '#4a5270', textDecoration: 'none' }}>← Volver a cartera</Link>
+        <Link href="/cartera" style={{ fontSize: 12, color: 'var(--text-faint)', textDecoration: 'none' }}>← Volver a cartera</Link>
       </div>
-      <h1 style={{ fontSize: 22, fontWeight: 900, color: '#e0e8f0', marginBottom: 24 }}>Añadir operación</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 24 }}>Añadir operación</h1>
 
       <form onSubmit={handleSubmit}>
         <div style={{ ...CARD, display: 'grid', gap: 18 }}>
@@ -345,9 +345,9 @@ export default function NewPositionPage() {
               {ASSET_TYPES.map(a => (
                 <button key={a.v} type="button" onClick={() => { setAssetType(a.v); setSelected(null); setFundData(null); setLookupState('idle'); setFxInfo(null) }} style={{
                   flex: 1, padding: '8px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 700,
-                  border: assetType === a.v ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                  background: assetType === a.v ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.03)',
-                  color: assetType === a.v ? '#818cf8' : '#4a5270',
+                  border: assetType === a.v ? 'none' : '1px solid var(--border-strong)',
+                  background: assetType === a.v ? 'rgba(99,102,241,0.2)' : 'var(--surface-2)',
+                  color: assetType === a.v ? 'var(--accent)' : 'var(--text-faint)',
                 }}>{a.l}</button>
               ))}
             </div>
@@ -359,18 +359,18 @@ export default function NewPositionPage() {
               <label style={LABEL}>Empresa</label>
               <input style={INPUT} placeholder="Busca por nombre o ticker..." autoComplete="off" value={query} onChange={e => search(e.target.value)} />
               {results.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, background: '#10172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, overflow: 'hidden', marginTop: 4, maxHeight: 280, overflowY: 'auto' }}>
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, overflow: 'hidden', marginTop: 4, maxHeight: 280, overflowY: 'auto' }}>
                   {results.map(r => (
-                    <button key={r.ticker} type="button" onClick={() => selectStock(r)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      <span style={{ fontSize: 13, color: '#c8d0e0' }}>{r.name}</span>
-                      <span style={{ fontSize: 11, color: '#4a5270', marginLeft: 8, flexShrink: 0 }}>{r.ticker} · {r.currency}</span>
+                    <button key={r.ticker} type="button" onClick={() => selectStock(r)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid var(--surface-2)' }}>
+                      <span style={{ fontSize: 13, color: 'var(--text)' }}>{r.name}</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-faint)', marginLeft: 8, flexShrink: 0 }}>{r.ticker} · {r.currency}</span>
                     </button>
                   ))}
                 </div>
               )}
               {selected && (
-                <p style={{ fontSize: 11, color: '#4a5270', marginTop: 6 }}>
-                  Seleccionado: <span style={{ color: '#c8d0e0' }}>{selected.name}</span> · cotiza en <span style={{ color: '#818cf8', fontWeight: 700 }}>{selected.currency}</span>
+                <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 6 }}>
+                  Seleccionado: <span style={{ color: 'var(--text)' }}>{selected.name}</span> · cotiza en <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{selected.currency}</span>
                 </p>
               )}
             </div>
@@ -386,8 +386,8 @@ export default function NewPositionPage() {
 
               {fundData && lookupState === 'ok' && (
                 <div style={{ marginTop: 10, padding: '12px', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: 8 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#c8d0e0' }}>{fundData.name}</p>
-                  <p style={{ fontSize: 12, color: '#8090a8', marginTop: 4 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{fundData.name}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
                     Precio: {fundData.current_price != null ? `${fundData.current_price} ${fundData.currency}` : '—'}
                     {fundData.ter != null && ` · TER ${fundData.ter}%`}
                     {fundData.yield_ttm != null && ` · Yield TTM ${fundData.yield_ttm}%`}
@@ -397,11 +397,11 @@ export default function NewPositionPage() {
 
               {lookupState === 'notfound' && (
                 <div style={{ marginTop: 10 }}>
-                  <p style={{ fontSize: 12, color: '#fbbf24', marginBottom: assetType === 'fund' ? 10 : 0 }}>
+                  <p style={{ fontSize: 12, color: 'var(--warning)', marginBottom: assetType === 'fund' ? 10 : 0 }}>
                     No encontrado en Yahoo Finance{assetType === 'fund' ? ' — introduce los datos manualmente:' : '. Verifica el ticker.'}
                   </p>
                   {assetType === 'fund' && (
-                    <div style={{ display: 'grid', gap: 8, padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: 8 }}>
+                    <div style={{ display: 'grid', gap: 8, padding: '12px', background: 'var(--surface)', borderRadius: 8 }}>
                       <input style={INPUT} placeholder="Nombre del fondo" value={manual.name} onChange={e => setManual(m => ({ ...m, name: e.target.value }))} />
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                         <input style={INPUT} placeholder="Divisa (EUR)" value={manual.currency} onChange={e => setManual(m => ({ ...m, currency: e.target.value.toUpperCase() }))} />
@@ -423,9 +423,9 @@ export default function NewPositionPage() {
               {['buy', 'sell'].map(t => (
                 <button key={t} type="button" onClick={() => field('type', t)} style={{
                   flex: 1, padding: '8px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700,
-                  border: form.type === t ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                  background: form.type === t ? (t === 'buy' ? 'rgba(52,211,153,0.2)' : 'rgba(248,113,113,0.2)') : 'rgba(255,255,255,0.03)',
-                  color: form.type === t ? (t === 'buy' ? '#34d399' : '#f87171') : '#4a5270',
+                  border: form.type === t ? 'none' : '1px solid var(--border-strong)',
+                  background: form.type === t ? (t === 'buy' ? 'rgba(52,211,153,0.2)' : 'rgba(248,113,113,0.2)') : 'var(--surface-2)',
+                  color: form.type === t ? (t === 'buy' ? 'var(--positive)' : 'var(--negative)') : 'var(--text-faint)',
                 }}>{t === 'buy' ? 'Compra' : 'Venta'}</button>
               ))}
             </div>
@@ -439,7 +439,7 @@ export default function NewPositionPage() {
             <div>
               <label style={LABEL}>
                 Precio {selected ? `(${selected.currency})` : ''}
-                {needsFx && <span style={{ color: '#818cf8', marginLeft: 4 }}>· cotiza en {selected.currency}</span>}
+                {needsFx && <span style={{ color: 'var(--accent)', marginLeft: 4 }}>· cotiza en {selected.currency}</span>}
               </label>
               <input style={INPUT} type="number" step="any" min="0" placeholder="45.50" value={form.price} onChange={e => field('price', e.target.value)} required />
             </div>
@@ -447,9 +447,9 @@ export default function NewPositionPage() {
 
           {/* Comisión del broker */}
           <div>
-            <label style={LABEL}>Comisión del broker {selected ? `(${selected.currency})` : ''} <span style={{ color: '#3a4260' }}>· opcional</span></label>
+            <label style={LABEL}>Comisión del broker {selected ? `(${selected.currency})` : ''} <span style={{ color: 'var(--text-faintest)' }}>· opcional</span></label>
             <input style={INPUT} type="number" step="any" min="0" placeholder="ej. 3.95" value={form.commission} onChange={e => field('commission', e.target.value)} />
-            <p style={{ fontSize: 11, color: '#3a4260', marginTop: 5 }}>Incluye aquí la comisión de compraventa y el canon de bolsa si aplica.</p>
+            <p style={{ fontSize: 11, color: 'var(--text-faintest)', marginTop: 5 }}>Incluye aquí la comisión de compraventa y el canon de bolsa si aplica.</p>
           </div>
 
           {/* Sección FX — solo si la empresa cotiza en divisa distinta a la del usuario */}
@@ -465,15 +465,15 @@ export default function NewPositionPage() {
             <textarea style={{ ...INPUT, minHeight: 64, resize: 'vertical' }} value={form.notes} onChange={e => field('notes', e.target.value)} />
           </div>
 
-          {error && <p style={{ fontSize: 12, color: '#f87171' }}>{error}</p>}
+          {error && <p style={{ fontSize: 12, color: 'var(--negative)' }}>{error}</p>}
 
           {/* Banner de alerta de comisión elevada */}
           {fxAlertPending && fxBreakdown && (
             <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 8, padding: '14px 16px' }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#fbbf24', marginBottom: 6 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--warning)', marginBottom: 6 }}>
                 ⚠ La comisión de cambio de esta operación es de {fxBreakdown.commission.toFixed(2)} {userSettings.base_currency}
               </p>
-              <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 12 }}>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
                 Supera tu umbral de alerta de {userSettings.fx_alert_threshold ?? 10} {userSettings.base_currency}. ¿Deseas continuar?
               </p>
               <div style={{ display: 'flex', gap: 10 }}>
@@ -508,18 +508,18 @@ export default function NewPositionPage() {
 function renderBreakdown(bd, fxCurrency, userSettings) {
   return (
     <div style={{ display: 'grid', gap: 4, marginTop: 6 }}>
-      <p style={{ fontSize: 12, color: '#8090a8' }}>
-        Total en {fxCurrency}: <span style={{ color: '#c8d0e0' }}>{bd.totalOrig.toFixed(2)} {fxCurrency}</span>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+        Total en {fxCurrency}: <span style={{ color: 'var(--text)' }}>{bd.totalOrig.toFixed(2)} {fxCurrency}</span>
       </p>
-      <p style={{ fontSize: 12, color: '#8090a8' }}>
-        Total en {userSettings.base_currency}: <span style={{ color: '#c8d0e0' }}>{bd.totalBase.toFixed(2)} {userSettings.base_currency}</span>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+        Total en {userSettings.base_currency}: <span style={{ color: 'var(--text)' }}>{bd.totalBase.toFixed(2)} {userSettings.base_currency}</span>
       </p>
       {userSettings.fx_commission_pct > 0 && (
-        <p style={{ fontSize: 12, color: '#8090a8' }}>
-          Comisión de cambio ({userSettings.fx_commission_pct}%): <span style={{ color: '#fbbf24', fontWeight: 700 }}>{bd.commission.toFixed(2)} {userSettings.base_currency}</span>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          Comisión de cambio ({userSettings.fx_commission_pct}%): <span style={{ color: 'var(--warning)', fontWeight: 700 }}>{bd.commission.toFixed(2)} {userSettings.base_currency}</span>
         </p>
       )}
-      <p style={{ fontSize: 13, fontWeight: 700, color: '#34d399', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 6, marginTop: 2 }}>
+      <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--positive)', borderTop: '1px solid var(--border)', paddingTop: 6, marginTop: 2 }}>
         Coste total real: {bd.totalReal.toFixed(2)} {userSettings.base_currency}
       </p>
     </div>

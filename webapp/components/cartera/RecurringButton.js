@@ -3,8 +3,8 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { computeNextDate, FREQ_OPTS } from '@/lib/recurring'
 
-const INPUT = { width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '9px 12px', color: '#c8d0e0', fontSize: 13, outline: 'none', boxSizing: 'border-box' }
-const LABEL = { fontSize: 11, color: '#4a5270', marginBottom: 5, display: 'block' }
+const INPUT = { width: '100%', background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }
+const LABEL = { fontSize: 11, color: 'var(--text-faint)', marginBottom: 5, display: 'block' }
 
 export function RecurringModal({ ticker, assetType = 'fund', currency = 'EUR', fundName, existing, onClose, onSaved }) {
   const [amount, setAmount]       = useState(existing ? String(existing.amount_eur) : '')
@@ -50,12 +50,12 @@ export function RecurringModal({ ticker, assetType = 'fund', currency = 'EUR', f
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#0d1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 22, width: '100%', maxWidth: 440 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 14, padding: 22, width: '100%', maxWidth: 440 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <p style={{ fontSize: 15, fontWeight: 800, color: '#c8d0e0' }}>⚡ Aportación periódica</p>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#4a5270', fontSize: 20, cursor: 'pointer' }}>×</button>
+          <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>⚡ Aportación periódica</p>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: 20, cursor: 'pointer' }}>×</button>
         </div>
-        {fundName && <p style={{ fontSize: 12, color: '#818cf8', marginBottom: 14 }}>{fundName}</p>}
+        {fundName && <p style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 14 }}>{fundName}</p>}
 
         <form onSubmit={submit} style={{ display: 'grid', gap: 14 }}>
           <div>
@@ -82,10 +82,10 @@ export function RecurringModal({ ticker, assetType = 'fund', currency = 'EUR', f
             <label style={LABEL}>Notas (opcional)</label>
             <input style={INPUT} placeholder="Plan de ahorro jubilación" value={notes} onChange={e => setNotes(e.target.value)} />
           </div>
-          {error && <p style={{ fontSize: 12, color: '#f87171' }}>{error}</p>}
+          {error && <p style={{ fontSize: 12, color: 'var(--negative)' }}>{error}</p>}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button type="button" onClick={onClose} style={{ padding: '9px 16px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#4a5270', cursor: 'pointer', fontSize: 13 }}>Cancelar</button>
-            <button type="submit" disabled={saving} style={{ padding: '9px 18px', background: 'rgba(99,102,241,0.85)', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
+            <button type="button" onClick={onClose} style={{ padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 8, color: 'var(--text-faint)', cursor: 'pointer', fontSize: 13 }}>Cancelar</button>
+            <button type="submit" disabled={saving} style={{ padding: '9px 18px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
               {saving ? 'Guardando…' : 'Guardar'}
             </button>
           </div>
@@ -101,7 +101,7 @@ export default function RecurringButton({ ticker, assetType = 'fund', currency =
     <>
       <button onClick={() => setOpen(true)} style={{
         padding: '10px 18px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.35)',
-        borderRadius: 9, color: '#818cf8', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+        borderRadius: 9, color: 'var(--accent)', fontSize: 13, fontWeight: 700, cursor: 'pointer',
       }}>
         ⚡ Configurar aportación periódica
       </button>

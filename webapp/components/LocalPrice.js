@@ -32,7 +32,7 @@ export default function LocalPrice({ price, currency, align = 'right', fontSize 
   return (
     <p
       title={`1 ${currency} = ${local.rate.toLocaleString('es-ES', { maximumFractionDigits: 4 })} ${local.base}`}
-      style={{ fontSize, color: '#4a5270', marginTop: 2, textAlign: align, cursor: 'help' }}
+      style={{ fontSize, color: 'var(--text-faint)', marginTop: 2, textAlign: align, cursor: 'help' }}
     >
       ≈ {formatCurrency(local.value, local.base)}
     </p>

@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Card, PageTitle, SectionTitle, StatusDot, fmtDateTime } from '@/components/dashboard/ui'
 
-const HEALTH_COL = { ok: '#34d399', warn: '#fbbf24', stale: '#f87171' }
+const HEALTH_COL = { ok: 'var(--positive)', warn: 'var(--warning)', stale: 'var(--negative)' }
 const HEALTH_TXT = { ok: 'al día', warn: 'con retraso', stale: 'obsoleto' }
 function ageLabel(age) {
   if (age == null) return 'sin datos'
@@ -23,24 +23,24 @@ function DataHealthCard() {
   }, [])
 
   const Row = ({ label, status, age }) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: 13 }}>
-      <span style={{ color: '#c8d0e0', display: 'flex', alignItems: 'center', gap: 7 }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: HEALTH_COL[status] || '#4a5270', flexShrink: 0 }} />
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--surface-2)', fontSize: 13 }}>
+      <span style={{ color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 7 }}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: HEALTH_COL[status] || 'var(--text-faint)', flexShrink: 0 }} />
         {label}
       </span>
-      <span style={{ color: HEALTH_COL[status] || '#4a5270', fontWeight: 600 }}>{ageLabel(age)} · {HEALTH_TXT[status] || '—'}</span>
+      <span style={{ color: HEALTH_COL[status] || 'var(--text-faint)', fontWeight: 600 }}>{ageLabel(age)} · {HEALTH_TXT[status] || '—'}</span>
     </div>
   )
 
   return (
     <Card style={{ marginBottom: 16 }}>
       <SectionTitle>Salud de los datos</SectionTitle>
-      {err && <p style={{ fontSize: 13, color: '#f87171' }}>{err}</p>}
-      {!health && !err && <p style={{ fontSize: 13, color: '#4a5270' }}>Comprobando…</p>}
+      {err && <p style={{ fontSize: 13, color: 'var(--negative)' }}>{err}</p>}
+      {!health && !err && <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>Comprobando…</p>}
       {health && (
         <div>
           {health.sources.map(s => <Row key={s.key} label={s.label} status={s.status} age={s.age} />)}
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '14px 0 4px' }}>Índices benchmark</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '14px 0 4px' }}>Índices benchmark</p>
           {health.benchmarks.map(b => <Row key={b.ticker} label={b.ticker} status={b.status} age={b.age} />)}
           {health.worst !== 'ok' && (
             <p style={{ fontSize: 12, color: HEALTH_COL[health.worst], marginTop: 12 }}>
@@ -123,19 +123,19 @@ export default function SistemaClient({ pingMs, pingOk, lastRun, logs, nextRun }
           <SectionTitle>Último run de yfinance</SectionTitle>
           {lastRun ? (
             <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
-              <Row k="Estado" v={<span style={{ color: lastRun.status === 'error' ? '#f87171' : '#34d399' }}><StatusDot status={lastRun.status} />{lastRun.status}</span>} />
+              <Row k="Estado" v={<span style={{ color: lastRun.status === 'error' ? 'var(--negative)' : 'var(--positive)' }}><StatusDot status={lastRun.status} />{lastRun.status}</span>} />
               <Row k="Fecha" v={fmtDateTime(lastRun.created_at)} />
               <Row k="Actualizadas" v={runDetails.updated ?? '—'} />
               <Row k="Errores" v={runDetails.failed ?? '—'} />
               {runDetails.duration && <Row k="Duración" v={runDetails.duration} />}
             </div>
-          ) : <p style={{ fontSize: 13, color: '#4a5270' }}>Sin registros de run todavía.</p>}
+          ) : <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>Sin registros de run todavía.</p>}
         </Card>
 
         <Card>
           <SectionTitle>Estado del sistema</SectionTitle>
           <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
-            <Row k="Supabase" v={<span style={{ color: pingOk ? '#34d399' : '#f87171' }}><StatusDot status={pingOk ? 'ok' : 'error'} />{pingOk ? 'Operativo' : 'Error'}</span>} />
+            <Row k="Supabase" v={<span style={{ color: pingOk ? 'var(--positive)' : 'var(--negative)' }}><StatusDot status={pingOk ? 'ok' : 'error'} />{pingOk ? 'Operativo' : 'Error'}</span>} />
             <Row k="Tiempo de respuesta" v={pingMs != null ? `${pingMs} ms` : '—'} />
             <Row k="Próximo run programado" v="Domingo 6:00 UTC" />
             <Row k="Fecha próximo run" v={fmtDateTime(nextRun)} />
@@ -147,12 +147,12 @@ export default function SistemaClient({ pingMs, pingOk, lastRun, logs, nextRun }
       <Card style={{ marginBottom: 16 }}>
         <SectionTitle>Acciones manuales</SectionTitle>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button onClick={trigger} disabled={busy} style={btn('#6366f1')}>Lanzar script yfinance ahora</button>
-          <button onClick={triggerPrices} disabled={busy} style={btn('#34d399', '#062b1f')}>Actualizar precios ahora</button>
-          <button onClick={cleanLogs} disabled={busy} style={btn('transparent', '#8090a8')}>Limpiar logs &gt;90 días</button>
-          <button onClick={exportLogs} style={btn('transparent', '#8090a8')}>Exportar logs CSV</button>
+          <button onClick={trigger} disabled={busy} style={btn('var(--accent)')}>Lanzar script yfinance ahora</button>
+          <button onClick={triggerPrices} disabled={busy} style={btn('var(--positive)', '#062b1f')}>Actualizar precios ahora</button>
+          <button onClick={cleanLogs} disabled={busy} style={btn('transparent', 'var(--text-muted)')}>Limpiar logs &gt;90 días</button>
+          <button onClick={exportLogs} style={btn('transparent', 'var(--text-muted)')}>Exportar logs CSV</button>
         </div>
-        {actionMsg && <p style={{ fontSize: 12, color: actionMsg.startsWith('✓') ? '#34d399' : actionMsg.startsWith('✗') ? '#f87171' : '#fbbf24', marginTop: 10 }}>{actionMsg}</p>}
+        {actionMsg && <p style={{ fontSize: 12, color: actionMsg.startsWith('✓') ? 'var(--positive)' : actionMsg.startsWith('✗') ? 'var(--negative)' : 'var(--warning)', marginTop: 10 }}>{actionMsg}</p>}
       </Card>
 
       {/* Log de eventos */}
@@ -172,20 +172,20 @@ export default function SistemaClient({ pingMs, pingOk, lastRun, logs, nextRun }
           </div>
         </div>
         {filtered.length === 0 ? (
-          <p style={{ fontSize: 13, color: '#4a5270' }}>Sin eventos registrados. El script de yfinance escribe aquí al terminar cada run.</p>
+          <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>Sin eventos registrados. El script de yfinance escribe aquí al terminar cada run.</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead><tr>{['Fecha', 'Tipo', 'Descripción', 'Estado'].map(h => (
-                <th key={h} style={{ padding: '6px 8px', textAlign: 'left', color: '#4a5270', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                <th key={h} style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-faint)', borderBottom: '1px solid var(--border)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
               ))}</tr></thead>
               <tbody>
                 {filtered.map(l => (
-                  <tr key={l.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '7px 8px', color: '#4a5270', whiteSpace: 'nowrap' }}>{fmtDateTime(l.created_at)}</td>
-                    <td style={{ padding: '7px 8px', color: '#818cf8' }}>{l.event_type}</td>
-                    <td style={{ padding: '7px 8px', color: '#c8d0e0' }}>{l.description}</td>
-                    <td style={{ padding: '7px 8px', color: l.status === 'error' ? '#f87171' : '#34d399' }}>{l.status}</td>
+                  <tr key={l.id} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                    <td style={{ padding: '7px 8px', color: 'var(--text-faint)', whiteSpace: 'nowrap' }}>{fmtDateTime(l.created_at)}</td>
+                    <td style={{ padding: '7px 8px', color: 'var(--accent)' }}>{l.event_type}</td>
+                    <td style={{ padding: '7px 8px', color: 'var(--text)' }}>{l.description}</td>
+                    <td style={{ padding: '7px 8px', color: l.status === 'error' ? 'var(--negative)' : 'var(--positive)' }}>{l.status}</td>
                   </tr>
                 ))}
               </tbody>
@@ -199,11 +199,11 @@ export default function SistemaClient({ pingMs, pingOk, lastRun, logs, nextRun }
 
 function Row({ k, v }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingBottom: 7, borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-      <span style={{ color: '#4a5270' }}>{k}</span>
-      <span style={{ color: '#c8d0e0', textAlign: 'right' }}>{v}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingBottom: 7, borderBottom: '1px solid var(--surface-2)' }}>
+      <span style={{ color: 'var(--text-faint)' }}>{k}</span>
+      <span style={{ color: 'var(--text)', textAlign: 'right' }}>{v}</span>
     </div>
   )
 }
-const btn = (bg, color = '#fff') => ({ fontSize: 12, fontWeight: 700, padding: '9px 16px', borderRadius: 8, cursor: 'pointer', border: bg === 'transparent' ? '1px solid rgba(255,255,255,0.1)' : 'none', background: bg === 'transparent' ? 'transparent' : bg, color })
-const sel = { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#c8d0e0', fontSize: 12, padding: '5px 8px' }
+const btn = (bg, color = '#fff') => ({ fontSize: 12, fontWeight: 700, padding: '9px 16px', borderRadius: 8, cursor: 'pointer', border: bg === 'transparent' ? '1px solid var(--border-strong)' : 'none', background: bg === 'transparent' ? 'transparent' : bg, color })
+const sel = { background: 'var(--surface-3)', border: '1px solid var(--border-strong)', borderRadius: 6, color: 'var(--text)', fontSize: 12, padding: '5px 8px' }

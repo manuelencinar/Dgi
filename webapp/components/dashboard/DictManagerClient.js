@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { Card, SectionTitle } from '@/components/dashboard/ui'
 
 const TYPES = ['general', 'banco', 'aseguradora', 'reit', 'bdc', 'utilities']
-const inputStyle = { background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '7px 9px', color: '#c8d0e0', fontSize: 12, outline: 'none', fontFamily: 'inherit' }
+const inputStyle = { background: 'rgba(0,0,0,0.25)', border: '1px solid var(--border-strong)', borderRadius: 6, padding: '7px 9px', color: 'var(--text)', fontSize: 12, outline: 'none', fontFamily: 'inherit' }
 
 export default function DictManagerClient() {
   const [data, setData] = useState(null)
@@ -46,12 +46,12 @@ export default function DictManagerClient() {
     <div style={{ maxWidth: 1100, display: 'grid', gap: 16, marginBottom: 24 }}>
       <Card>
         <SectionTitle>Gestión del listado de empresas (DICT)</SectionTitle>
-        <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 16 }}>
+        <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 16 }}>
           Oculta empresas fusionadas o desaparecidas, o añade tickers que no están en el listado. Los cambios son inmediatos (sin redeploy).
         </p>
 
         {/* Añadir */}
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#8090a8', marginBottom: 8 }}>Añadir empresa</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8 }}>Añadir empresa</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 10 }}>
           <input placeholder="Ticker *" value={add.ticker} onChange={e => setAdd({ ...add, ticker: e.target.value })} style={inputStyle} />
           <input placeholder="Nombre" value={add.name} onChange={e => setAdd({ ...add, name: e.target.value })} style={inputStyle} />
@@ -63,30 +63,30 @@ export default function DictManagerClient() {
             {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
-        <button onClick={submitAdd} disabled={busy} style={{ fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', background: '#6366f1', color: '#fff' }}>Añadir al DICT</button>
+        <button onClick={submitAdd} disabled={busy} style={{ fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'var(--accent)', color: '#fff' }}>Añadir al DICT</button>
 
         {/* Ocultar */}
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#8090a8', margin: '20px 0 8px' }}>Ocultar empresa (fusionada / desaparecida)</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', margin: '20px 0 8px' }}>Ocultar empresa (fusionada / desaparecida)</p>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <input placeholder="Ticker a ocultar" value={rmTicker} onChange={e => setRmTicker(e.target.value)} style={{ ...inputStyle, width: 160 }} />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#8090a8', cursor: 'pointer' }}>
-            <input type="checkbox" checked={purge} onChange={e => setPurge(e.target.checked)} style={{ accentColor: '#f87171' }} />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={purge} onChange={e => setPurge(e.target.checked)} style={{ accentColor: 'var(--negative)' }} />
             Borrar también sus datos financieros
           </label>
-          <button onClick={() => submitRemove(null, purge)} disabled={busy} style={{ fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(248,113,113,0.3)', cursor: 'pointer', background: 'rgba(248,113,113,0.1)', color: '#f87171' }}>Ocultar</button>
+          <button onClick={() => submitRemove(null, purge)} disabled={busy} style={{ fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(248,113,113,0.3)', cursor: 'pointer', background: 'rgba(248,113,113,0.1)', color: 'var(--negative)' }}>Ocultar</button>
         </div>
 
-        {msg && <p style={{ fontSize: 12, color: msg.type === 'ok' ? '#34d399' : '#f87171', marginTop: 12 }}>{msg.type === 'ok' ? '✓ ' : '✗ '}{msg.text}</p>}
+        {msg && <p style={{ fontSize: 12, color: msg.type === 'ok' ? 'var(--positive)' : 'var(--negative)', marginTop: 12 }}>{msg.type === 'ok' ? '✓ ' : '✗ '}{msg.text}</p>}
       </Card>
 
       {/* Huérfanos: con datos pero fuera del DICT */}
       {data?.orphans?.length > 0 && (
         <Card>
           <SectionTitle>Tickers con datos pero fuera del listado ({data.orphans.length})</SectionTitle>
-          <p style={{ fontSize: 12, color: '#4a5270', marginBottom: 12 }}>Tienen fila en company_fundamentals pero no aparecen en la app. Añádelos al DICT para que se vean.</p>
+          <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 12 }}>Tienen fila en company_fundamentals pero no aparecen en la app. Añádelos al DICT para que se vean.</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {data.orphans.slice(0, 100).map(o => (
-              <button key={o.ticker} onClick={() => quickAdd(o)} title={`${o.sector || ''} · ${o.country || ''}`} style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(99,102,241,0.3)', cursor: 'pointer', background: 'rgba(99,102,241,0.08)', color: '#818cf8' }}>
+              <button key={o.ticker} onClick={() => quickAdd(o)} title={`${o.sector || ''} · ${o.country || ''}`} style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(99,102,241,0.3)', cursor: 'pointer', background: 'rgba(99,102,241,0.08)', color: 'var(--accent)' }}>
                 + {o.ticker}
               </button>
             ))}
@@ -100,17 +100,17 @@ export default function DictManagerClient() {
           <SectionTitle>Cambios activos en el DICT</SectionTitle>
           <div style={{ display: 'grid', gap: 6 }}>
             {(data.added || []).map(o => (
-              <div key={'a' + o.ticker} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.12)', padding: '2px 7px', borderRadius: 5 }}>AÑADIDA</span>
-                <span style={{ color: '#c8d0e0', flex: 1 }}><b>{o.ticker}</b> {o.name} <span style={{ color: '#4a5270' }}>· {o.country} · {o.type}</span></span>
-                <button onClick={() => undo(o.ticker)} disabled={busy} style={{ fontSize: 11, color: '#8090a8', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Deshacer</button>
+              <div key={'a' + o.ticker} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, padding: '6px 0', borderBottom: '1px solid var(--surface-2)' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--positive)', background: 'rgba(52,211,153,0.12)', padding: '2px 7px', borderRadius: 5 }}>AÑADIDA</span>
+                <span style={{ color: 'var(--text)', flex: 1 }}><b>{o.ticker}</b> {o.name} <span style={{ color: 'var(--text-faint)' }}>· {o.country} · {o.type}</span></span>
+                <button onClick={() => undo(o.ticker)} disabled={busy} style={{ fontSize: 11, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Deshacer</button>
               </div>
             ))}
             {(data.removed || []).map(o => (
-              <div key={'r' + o.ticker} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#f87171', background: 'rgba(248,113,113,0.12)', padding: '2px 7px', borderRadius: 5 }}>OCULTA</span>
-                <span style={{ color: '#c8d0e0', flex: 1 }}><b>{o.ticker}</b> {o.name}</span>
-                <button onClick={() => undo(o.ticker)} disabled={busy} style={{ fontSize: 11, color: '#8090a8', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Restaurar</button>
+              <div key={'r' + o.ticker} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, padding: '6px 0', borderBottom: '1px solid var(--surface-2)' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--negative)', background: 'rgba(248,113,113,0.12)', padding: '2px 7px', borderRadius: 5 }}>OCULTA</span>
+                <span style={{ color: 'var(--text)', flex: 1 }}><b>{o.ticker}</b> {o.name}</span>
+                <button onClick={() => undo(o.ticker)} disabled={busy} style={{ fontSize: 11, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Restaurar</button>
               </div>
             ))}
           </div>

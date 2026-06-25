@@ -68,7 +68,7 @@ export default function PriceAlertButton({ ticker, name, currency = 'EUR', price
       <button onClick={openModal} title={active ? 'Alerta de precio activa' : 'Avisarme cuando baje a un precio'}
         style={{
           background: active ? 'rgba(251,191,36,0.16)' : 'transparent',
-          border: '1px solid ' + (active ? 'rgba(251,191,36,0.45)' : 'rgba(255,255,255,0.12)'),
+          border: '1px solid ' + (active ? 'rgba(251,191,36,0.45)' : 'var(--border-strong)'),
           borderRadius: 6, cursor: 'pointer', padding: '2px 6px', lineHeight: 1,
           fontSize: size, opacity: active ? 1 : 0.5, flexShrink: 0,
         }}>
@@ -77,31 +77,31 @@ export default function PriceAlertButton({ ticker, name, currency = 'EUR', price
 
       {open && (
         <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', padding: 16 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'rgba(13,20,36,1)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, width: '100%', maxWidth: 380 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'rgba(13,20,36,1)', border: '1px solid var(--border-strong)', borderRadius: 12, padding: 20, width: '100%', maxWidth: 380 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <p style={{ fontWeight: 700, color: '#c8d0e0', fontSize: 14 }}>🔔 Avisarme cuando baje</p>
-              <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#4a5270', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+              <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: 14 }}>🔔 Avisarme cuando baje</p>
+              <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
             </div>
-            <p style={{ fontSize: 12, color: '#8090a8', marginBottom: 4 }}>{name} <span style={{ color: '#3a4260' }}>{ticker}</span></p>
-            {price != null && <p style={{ fontSize: 11, color: '#4a5270', marginBottom: 12 }}>Precio actual: <span style={{ color: '#c8d0e0', fontWeight: 600 }}>{fmt(price, currency)}</span></p>}
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{name} <span style={{ color: 'var(--text-faintest)' }}>{ticker}</span></p>
+            {price != null && <p style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 12 }}>Precio actual: <span style={{ color: 'var(--text)', fontWeight: 600 }}>{fmt(price, currency)}</span></p>}
             <form onSubmit={save} style={{ display: 'grid', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 11, color: '#4a5270', marginBottom: 4, display: 'block' }}>Precio objetivo ({currency})</label>
+                <label style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4, display: 'block' }}>Precio objetivo ({currency})</label>
                 <input autoFocus type="number" step="any" value={target} onChange={e => setTarget(e.target.value)} placeholder="—"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '9px 12px', color: '#c8d0e0', fontSize: 14, outline: 'none', width: '100%', boxSizing: 'border-box' }} />
+                  style={{ background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '9px 12px', color: 'var(--text)', fontSize: 14, outline: 'none', width: '100%', boxSizing: 'border-box' }} />
               </div>
               {price != null && (
                 <div style={{ display: 'flex', gap: 6 }}>
                   {[5, 10, 15].map(p => (
-                    <button key={p} type="button" onClick={() => applyDrop(p)} style={{ flex: 1, fontSize: 11, padding: '6px 0', borderRadius: 7, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#8090a8', cursor: 'pointer', fontFamily: 'inherit' }}>−{p}%</button>
+                    <button key={p} type="button" onClick={() => applyDrop(p)} style={{ flex: 1, fontSize: 11, padding: '6px 0', borderRadius: 7, border: '1px solid var(--border-strong)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>−{p}%</button>
                   ))}
                 </div>
               )}
-              <div style={{ fontSize: 10.5, color: '#5a6480', lineHeight: 1.5, background: 'rgba(255,255,255,0.03)', borderRadius: 7, padding: '8px 10px' }}>
-                Cómo funciona: cuando el precio baje a tu objetivo te avisamos en la <span style={{ color: '#a5b4fc', fontWeight: 700 }}>🔔 campana de notificaciones</span> (dentro de la app){isPremium ? <> y por <span style={{ color: '#34d399', fontWeight: 700 }}>email</span></> : <> — el aviso por <span style={{ color: '#fbbf24', fontWeight: 700 }}>email es Premium</span></>}. Comprobamos los precios tras el cierre de cada mercado. La empresa se añade a tu watchlist.
+              <div style={{ fontSize: 10.5, color: 'var(--text-muted)', lineHeight: 1.5, background: 'var(--surface-2)', borderRadius: 7, padding: '8px 10px' }}>
+                Cómo funciona: cuando el precio baje a tu objetivo te avisamos en la <span style={{ color: '#a5b4fc', fontWeight: 700 }}>🔔 campana de notificaciones</span> (dentro de la app){isPremium ? <> y por <span style={{ color: 'var(--positive)', fontWeight: 700 }}>email</span></> : <> — el aviso por <span style={{ color: 'var(--warning)', fontWeight: 700 }}>email es Premium</span></>}. Comprobamos los precios tras el cierre de cada mercado. La empresa se añade a tu watchlist.
               </div>
-              {err && <p style={{ fontSize: 11, color: '#f87171' }}>{err}</p>}
-              <button type="submit" disabled={saving} style={{ padding: '9px 16px', background: 'rgba(251,191,36,0.9)', border: 'none', borderRadius: 8, color: '#0d1424', fontWeight: 800, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
+              {err && <p style={{ fontSize: 11, color: 'var(--negative)' }}>{err}</p>}
+              <button type="submit" disabled={saving} style={{ padding: '9px 16px', background: 'rgba(251,191,36,0.9)', border: 'none', borderRadius: 8, color: 'var(--bg-elev)', fontWeight: 800, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
                 {saving ? 'Guardando…' : 'Activar aviso'}
               </button>
             </form>
