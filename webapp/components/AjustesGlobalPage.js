@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import AlertsSettings from '@/components/cartera/AlertsSettings'
+import { useTheme } from '@/components/ThemeToggle'
 import { WHT_DEFAULTS } from '@/lib/sectors'
 import { COUNTRY_INFO } from '@/lib/helpers'
 import { exemptionThreshold, PERSONAL_EXEMPTION } from '@/lib/fiscal-es'
@@ -15,14 +16,14 @@ const WHT_COUNTRIES = ['US','GB','DE','FR','CH','NL','IT','ES','PT','BE','AT','I
 // ── Design tokens ──────────────────────────────────────────────────────────
 const ADMIN_EMAIL = 'vayaebookk@gmail.com'
 
-const CARD    = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 24, marginBottom: 20 }
-const INPUT   = { width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#c8d0e0', fontSize: 14, outline: 'none', boxSizing: 'border-box' }
-const LABEL   = { fontSize: 12, color: '#4a5270', marginBottom: 6, display: 'block' }
-const BTN     = { padding: '10px 22px', background: 'rgba(99,102,241,0.85)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }
-const BTN_RED = { ...BTN, background: 'rgba(248,113,113,0.8)' }
-const BTN_GHO = { ...BTN, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#4a5270' }
-const SEC_TIT = { fontSize: 11, fontWeight: 700, color: '#4a5270', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 18 }
-const H_LINE  = { borderTop: '1px solid rgba(255,255,255,0.06)', margin: '16px 0' }
+const CARD    = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 24, marginBottom: 20 }
+const INPUT   = { width: '100%', background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '10px 12px', color: 'var(--text)', fontSize: 14, outline: 'none', boxSizing: 'border-box' }
+const LABEL   = { fontSize: 12, color: 'var(--text-faint)', marginBottom: 6, display: 'block' }
+const BTN     = { padding: '10px 22px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }
+const BTN_RED = { ...BTN, background: 'var(--negative)' }
+const BTN_GHO = { ...BTN, background: 'transparent', border: '1px solid var(--border-strong)', color: 'var(--text-faint)' }
+const SEC_TIT = { fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 18 }
+const H_LINE  = { borderTop: '1px solid var(--border)', margin: '16px 0' }
 
 const CURRENCIES = ['EUR','USD','GBP','CHF','CAD','AUD','SEK','DKK','NOK','JPY']
 const COUNTRIES  = [
@@ -48,14 +49,14 @@ const BROKER_REFS = [
 
 function Toggle({ value, onChange, label, description }) {
   return (
-    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:'1px solid var(--surface-2)' }}>
       <div>
-        <p style={{ fontSize:13, color:'#c8d0e0', marginBottom: description ? 2 : 0 }}>{label}</p>
-        {description && <p style={{ fontSize:11, color:'#4a5270' }}>{description}</p>}
+        <p style={{ fontSize:13, color:'var(--text)', marginBottom: description ? 2 : 0 }}>{label}</p>
+        {description && <p style={{ fontSize:11, color:'var(--text-faint)' }}>{description}</p>}
       </div>
       <button type="button" onClick={() => onChange(!value)} style={{
         width:44, height:24, borderRadius:12, border:'none', cursor:'pointer', flexShrink:0,
-        background: value ? 'rgba(52,211,153,0.8)' : 'rgba(255,255,255,0.08)', position:'relative', transition:'background 0.2s',
+        background: value ? 'rgba(52,211,153,0.8)' : 'var(--surface-3)', position:'relative', transition:'background 0.2s',
       }}>
         <span style={{ position:'absolute', top:3, left: value ? 23 : 3, width:18, height:18, borderRadius:9, background:'#fff', transition:'left 0.2s' }} />
       </button>
@@ -74,8 +75,8 @@ function IncomeTaxBlock({ annualIncome, setAnnualIncome, children, setChildren, 
   const numStyle = { ...INPUT, maxWidth: 110 }
   return (
     <div style={{ marginBottom:14 }}>
-      <p style={{ fontSize:12, color:'#8090a8', marginBottom:12, lineHeight:1.55 }}>
-        Calculamos tu tipo del ahorro a partir de tus ingresos. Por debajo del <b style={{ color:'#c8d0e0' }}>umbral de exención</b> no pagas IRPF y la retención sobre tus dividendos españoles se devuelve en la renta. Como renta del ahorro contamos tus dividendos anuales (no tenemos datos de otros ahorros).
+      <p style={{ fontSize:12, color:'var(--text-muted)', marginBottom:12, lineHeight:1.55 }}>
+        Calculamos tu tipo del ahorro a partir de tus ingresos. Por debajo del <b style={{ color:'var(--text)' }}>umbral de exención</b> no pagas IRPF y la retención sobre tus dividendos españoles se devuelve en la renta. Como renta del ahorro contamos tus dividendos anuales (no tenemos datos de otros ahorros).
       </p>
       <div style={{ display:'flex', gap:14, flexWrap:'wrap', marginBottom:10 }}>
         <div style={{ maxWidth:200 }}>
@@ -91,15 +92,15 @@ function IncomeTaxBlock({ annualIncome, setAnnualIncome, children, setChildren, 
           <input style={numStyle} type="number" step="1" min="0" max={nChildren || 20} value={childrenU3} onChange={e => setChildrenU3(e.target.value)} />
         </div>
       </div>
-      <div style={{ background: exempt ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.03)', border:`1px solid ${exempt ? 'rgba(52,211,153,0.25)' : 'rgba(255,255,255,0.08)'}`, borderRadius:8, padding:'10px 12px' }}>
-        <p style={{ fontSize:12, color:'#c8d0e0' }}>
-          Umbral de exención: <b style={{ color:'#fbbf24' }}>{fmt(threshold)} €</b>
-          {nChildren > 0 && <span style={{ color:'#4a5270' }}> ({fmt(PERSONAL_EXEMPTION)} € + ajustes por hijos)</span>}
+      <div style={{ background: exempt ? 'rgba(52,211,153,0.08)' : 'var(--surface-2)', border:`1px solid ${exempt ? 'rgba(52,211,153,0.25)' : 'var(--surface-3)'}`, borderRadius:8, padding:'10px 12px' }}>
+        <p style={{ fontSize:12, color:'var(--text)' }}>
+          Umbral de exención: <b style={{ color:'var(--warning)' }}>{fmt(threshold)} €</b>
+          {nChildren > 0 && <span style={{ color:'var(--text-faint)' }}> ({fmt(PERSONAL_EXEMPTION)} € + ajustes por hijos)</span>}
         </p>
         {income != null && (
           exempt
-            ? <p style={{ fontSize:12, color:'#34d399', marginTop:4 }}>✓ Con {fmt(income)} € estás <b>exento</b>: tipo efectivo 0% sobre dividendos españoles (se devuelve la retención).</p>
-            : <p style={{ fontSize:12, color:'#8090a8', marginTop:4 }}>Con {fmt(income)} € no estás exento: se aplica la escala del ahorro (19% hasta 6.000 €, 21% hasta 50.000 €…) sobre tus dividendos.</p>
+            ? <p style={{ fontSize:12, color:'var(--positive)', marginTop:4 }}>✓ Con {fmt(income)} € estás <b>exento</b>: tipo efectivo 0% sobre dividendos españoles (se devuelve la retención).</p>
+            : <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:4 }}>Con {fmt(income)} € no estás exento: se aplica la escala del ahorro (19% hasta 6.000 €, 21% hasta 50.000 €…) sobre tus dividendos.</p>
         )}
       </div>
     </div>
@@ -107,8 +108,8 @@ function IncomeTaxBlock({ annualIncome, setAnnualIncome, children, setChildren, 
 }
 
 function SaveFeedback({ saved, error }) {
-  if (saved)  return <span style={{ fontSize:12, color:'#34d399', marginLeft:12 }}>✓ Guardado</span>
-  if (error)  return <span style={{ fontSize:12, color:'#f87171', marginLeft:12 }}>{error}</span>
+  if (saved)  return <span style={{ fontSize:12, color:'var(--positive)', marginLeft:12 }}>✓ Guardado</span>
+  if (error)  return <span style={{ fontSize:12, color:'var(--negative)', marginLeft:12 }}>{error}</span>
   return null
 }
 
@@ -141,6 +142,7 @@ function useSave(fields, supabase) {
 export default function AjustesGlobalPage() {
   const router = useRouter()
   const sb     = createClient()
+  const themePref = useTheme()
 
   const [user,     setUser]     = useState(null)
   const [loading,  setLoading]  = useState(true)
@@ -282,18 +284,29 @@ export default function AjustesGlobalPage() {
     router.push('/')
   }
 
-  if (loading) return <div style={{ padding:40, textAlign:'center', color:'#4a5270' }}>Cargando ajustes…</div>
+  if (loading) return <div style={{ padding:40, textAlign:'center', color:'var(--text-faint)' }}>Cargando ajustes…</div>
 
   const isPremium = plan === 'premium' && (!premiumUntil || new Date(premiumUntil) >= new Date())
 
   return (
     <div style={{ maxWidth:680, margin:'0 auto', padding:'24px 16px 80px' }}>
-      <h1 style={{ fontSize:22, fontWeight:900, color:'#e0e8f0', marginBottom: loadError ? 12 : 28 }}>Ajustes</h1>
+      <h1 style={{ fontSize:22, fontWeight:900, color:'var(--text-strong)', marginBottom: loadError ? 12 : 28 }}>Ajustes</h1>
       {loadError && (
         <div style={{ marginBottom: 20, padding: '10px 14px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)', borderRadius: 8 }}>
-          <p style={{ fontSize: 12, color: '#f87171' }}>{loadError}</p>
+          <p style={{ fontSize: 12, color: 'var(--negative)' }}>{loadError}</p>
         </div>
       )}
+
+      {/* ── SECCIÓN APARIENCIA: tema claro/oscuro ────────────────────────── */}
+      <div style={CARD}>
+        <p style={SEC_TIT}>Apariencia</p>
+        <Toggle
+          value={themePref.theme === 'light'}
+          onChange={v => themePref.setTheme(v ? 'light' : 'dark')}
+          label="Modo claro"
+          description="Alterna entre el tema oscuro (por defecto) y el claro. También está en el icono ☀ / 🌙 del menú superior."
+        />
+      </div>
 
       {/* ── SECCIÓN 1: Perfil y preferencias ─────────────────────────────── */}
       <div style={CARD}>
@@ -304,14 +317,14 @@ export default function AjustesGlobalPage() {
             <select style={INPUT} value={baseCurrency} onChange={e => setBaseCurrency(e.target.value)}>
               {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <p style={{ fontSize:11, color:'#4a5270', marginTop:4 }}>Todos los importes de la cartera se muestran en esta divisa</p>
+            <p style={{ fontSize:11, color:'var(--text-faint)', marginTop:4 }}>Todos los importes de la cartera se muestran en esta divisa</p>
           </div>
           <div>
             <label style={LABEL}>País de residencia fiscal</label>
             <select style={INPUT} value={country} onChange={e => setCountry(e.target.value)}>
               {COUNTRIES.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
             </select>
-            <p style={{ fontSize:11, color:'#4a5270', marginTop:4 }}>Afecta al cálculo de retenciones en origen</p>
+            <p style={{ fontSize:11, color:'var(--text-faint)', marginTop:4 }}>Afecta al cálculo de retenciones en origen</p>
           </div>
         </div>
         <div style={{ marginBottom:18 }}>
@@ -335,14 +348,14 @@ export default function AjustesGlobalPage() {
           <div>
             <label style={LABEL}>Umbral de alerta (€)</label>
             <input style={INPUT} type="number" step="1" min="0" placeholder="10" value={fxThreshold} onChange={e => setFxThreshold(e.target.value)} />
-            <p style={{ fontSize:11, color:'#4a5270', marginTop:4 }}>Avisa cuando la comisión de una operación supere este importe</p>
+            <p style={{ fontSize:11, color:'var(--text-faint)', marginTop:4 }}>Avisa cuando la comisión de una operación supere este importe</p>
           </div>
         </div>
-        <p style={{ fontSize:12, color:'#8090a8', marginBottom:12 }}>
+        <p style={{ fontSize:12, color:'var(--text-muted)', marginBottom:12 }}>
           Esta comisión se aplica cuando compras o vendes activos en una divisa diferente a la tuya. Consúltala en las tarifas de tu broker.
         </p>
 
-        <button type="button" onClick={() => setShowBrokerTable(v => !v)} style={{ fontSize:12, color:'#818cf8', background:'none', border:'none', cursor:'pointer', padding:0, marginBottom: showBrokerTable ? 12 : 0 }}>
+        <button type="button" onClick={() => setShowBrokerTable(v => !v)} style={{ fontSize:12, color:'var(--accent)', background:'none', border:'none', cursor:'pointer', padding:0, marginBottom: showBrokerTable ? 12 : 0 }}>
           {showBrokerTable ? '▲ Ocultar' : '▼ Ver'} comisiones típicas por broker
         </button>
         {showBrokerTable && (
@@ -351,15 +364,15 @@ export default function AjustesGlobalPage() {
               <thead>
                 <tr>
                   {['Broker','Comisión habitual'].map(h => (
-                    <th key={h} style={{ padding:'6px 10px', textAlign:'left', color:'#4a5270', borderBottom:'1px solid rgba(255,255,255,0.06)', fontWeight:600 }}>{h}</th>
+                    <th key={h} style={{ padding:'6px 10px', textAlign:'left', color:'var(--text-faint)', borderBottom:'1px solid var(--border)', fontWeight:600 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {BROKER_REFS.map(b => (
-                  <tr key={b.broker} style={{ borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding:'6px 10px', color:'#c8d0e0' }}>{b.broker}</td>
-                    <td style={{ padding:'6px 10px', color:'#8090a8' }}>{b.range}</td>
+                  <tr key={b.broker} style={{ borderBottom:'1px solid var(--surface-2)' }}>
+                    <td style={{ padding:'6px 10px', color:'var(--text)' }}>{b.broker}</td>
+                    <td style={{ padding:'6px 10px', color:'var(--text-muted)' }}>{b.range}</td>
                   </tr>
                 ))}
               </tbody>
@@ -382,9 +395,9 @@ export default function AjustesGlobalPage() {
           {[['fixed','Tipo fijo'],['income','Calcular según mis ingresos']].map(([k,lbl]) => (
             <button key={k} type="button" onClick={() => setTaxMode(k)} style={{
               fontSize:12, fontWeight:700, padding:'7px 14px', borderRadius:8, cursor:'pointer',
-              color: taxMode===k ? '#fff' : '#8090a8',
-              background: taxMode===k ? 'rgba(99,102,241,0.85)' : 'rgba(255,255,255,0.04)',
-              border: `1px solid ${taxMode===k ? 'rgba(99,102,241,0.9)' : 'rgba(255,255,255,0.1)'}`,
+              color: taxMode===k ? '#fff' : 'var(--text-muted)',
+              background: taxMode===k ? 'var(--accent)' : 'var(--surface-2)',
+              border: `1px solid ${taxMode===k ? 'rgba(99,102,241,0.9)' : 'var(--border-strong)'}`,
             }}>{lbl}</button>
           ))}
         </div>
@@ -393,7 +406,7 @@ export default function AjustesGlobalPage() {
           <div style={{ marginBottom:14, maxWidth:280 }}>
             <label style={LABEL}>Impuesto del ahorro (destino, %)</label>
             <input style={INPUT} type="number" step="0.5" min="0" max="60" placeholder="19" value={destWht} onChange={e => setDestWht(e.target.value)} />
-            <p style={{ fontSize:11, color:'#4a5270', marginTop:4 }}>Tipo del ahorro de tu residencia fiscal (España: 19% el primer tramo).</p>
+            <p style={{ fontSize:11, color:'var(--text-faint)', marginTop:4 }}>Tipo del ahorro de tu residencia fiscal (España: 19% el primer tramo).</p>
           </div>
         ) : (
           <IncomeTaxBlock
@@ -403,10 +416,10 @@ export default function AjustesGlobalPage() {
             LABEL={LABEL} INPUT={INPUT}
           />
         )}
-        <p style={{ fontSize:12, color:'#8090a8', marginBottom:10, lineHeight:1.55 }}>
-          La <b style={{ color:'#c8d0e0' }}>retención en origen</b> depende del país y de tu bróker: algunos (p.ej. Interactive Brokers) aplican el tipo reducido del convenio, otros retienen el tipo completo. Ajusta aquí el tuyo por país si difiere del estándar. Recuerda que, por doble imposición, en España solo se acredita hasta el 15% (el exceso no es deducible).
+        <p style={{ fontSize:12, color:'var(--text-muted)', marginBottom:10, lineHeight:1.55 }}>
+          La <b style={{ color:'var(--text)' }}>retención en origen</b> depende del país y de tu bróker: algunos (p.ej. Interactive Brokers) aplican el tipo reducido del convenio, otros retienen el tipo completo. Ajusta aquí el tuyo por país si difiere del estándar. Recuerda que, por doble imposición, en España solo se acredita hasta el 15% (el exceso no es deducible).
         </p>
-        <button type="button" onClick={() => setShowWhtTable(v => !v)} style={{ fontSize:12, color:'#818cf8', background:'none', border:'none', cursor:'pointer', padding:0, marginBottom: showWhtTable ? 12 : 0 }}>
+        <button type="button" onClick={() => setShowWhtTable(v => !v)} style={{ fontSize:12, color:'var(--accent)', background:'none', border:'none', cursor:'pointer', padding:0, marginBottom: showWhtTable ? 12 : 0 }}>
           {showWhtTable ? '▲ Ocultar' : '▼ Personalizar'} retención en origen por país
         </button>
         {showWhtTable && (
@@ -416,11 +429,11 @@ export default function AjustesGlobalPage() {
               const def = WHT_DEFAULTS[code] ?? WHT_DEFAULTS.OTHER
               const val = whtOverrides[code]
               return (
-                <div key={code} style={{ background:'rgba(255,255,255,0.02)', borderRadius:8, padding:'7px 9px', display:'flex', alignItems:'center', gap:7 }}>
+                <div key={code} style={{ background:'var(--surface)', borderRadius:8, padding:'7px 9px', display:'flex', alignItems:'center', gap:7 }}>
                   <span style={{ fontSize:15 }}>{info.flag || '🏳'}</span>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <p style={{ fontSize:11, color:'#c8d0e0', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{info.name || code}</p>
-                    <p style={{ fontSize:9, color:'#4a5270' }}>def. {def}%</p>
+                    <p style={{ fontSize:11, color:'var(--text)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{info.name || code}</p>
+                    <p style={{ fontSize:9, color:'var(--text-faint)' }}>def. {def}%</p>
                   </div>
                   <input
                     type="number" step="0.5" min="0" max="60"
@@ -435,7 +448,7 @@ export default function AjustesGlobalPage() {
                         return next
                       })
                     }}
-                    style={{ width:52, background:'#0d1220', border:'1px solid rgba(255,255,255,0.10)', borderRadius:6, color:'#e2e8f5', fontSize:12, padding:'5px 6px', textAlign:'right' }}
+                    style={{ width:52, background:'var(--bg-elev)', border:'1px solid var(--border-strong)', borderRadius:6, color:'var(--text)', fontSize:12, padding:'5px 6px', textAlign:'right' }}
                   />
                 </div>
               )
@@ -456,7 +469,7 @@ export default function AjustesGlobalPage() {
           <select style={INPUT} value={benchmark} onChange={e => setBenchmark(e.target.value)}>
             {BENCHMARKS.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
-          <p style={{ fontSize:11, color:'#4a5270', marginTop:4 }}>Se usa para comparar el rendimiento de tu cartera DGI</p>
+          <p style={{ fontSize:11, color:'var(--text-faint)', marginTop:4 }}>Se usa para comparar el rendimiento de tu cartera DGI</p>
         </div>
         <Toggle
           value={showOriginal}
@@ -505,16 +518,16 @@ export default function AjustesGlobalPage() {
         <p style={SEC_TIT}>Suscripción</p>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16, flexWrap:'wrap', gap:10 }}>
           <div>
-            <p style={{ fontSize:15, fontWeight:700, color: isPremium ? '#fbbf24' : '#c8d0e0', marginBottom:4 }}>
+            <p style={{ fontSize:15, fontWeight:700, color: isPremium ? 'var(--warning)' : 'var(--text)', marginBottom:4 }}>
               Plan {isPremium ? 'Premium' : 'Gratuito'}
             </p>
             {isPremium && premiumUntil && (
-              <p style={{ fontSize:12, color:'#4a5270' }}>
+              <p style={{ fontSize:12, color:'var(--text-faint)' }}>
                 Renueva el {new Date(premiumUntil).toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' })}
               </p>
             )}
             {!isPremium && (
-              <p style={{ fontSize:12, color:'#4a5270' }}>Acceso básico permanente sin tarjeta</p>
+              <p style={{ fontSize:12, color:'var(--text-faint)' }}>Acceso básico permanente sin tarjeta</p>
             )}
           </div>
           {isPremium ? (
@@ -529,21 +542,21 @@ export default function AjustesGlobalPage() {
           <div style={{ background:'rgba(99,102,241,0.06)', border:'1px solid rgba(99,102,241,0.15)', borderRadius:10, padding:'14px 16px' }}>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
               <div style={{ textAlign:'center', padding:10 }}>
-                <p style={{ fontSize:11, color:'#4a5270', marginBottom:4 }}>Plan mensual</p>
-                <p style={{ fontSize:22, fontWeight:900, color:'#818cf8' }}>9,99€</p>
-                <p style={{ fontSize:11, color:'#4a5270' }}>al mes</p>
+                <p style={{ fontSize:11, color:'var(--text-faint)', marginBottom:4 }}>Plan mensual</p>
+                <p style={{ fontSize:22, fontWeight:900, color:'var(--accent)' }}>9,99€</p>
+                <p style={{ fontSize:11, color:'var(--text-faint)' }}>al mes</p>
               </div>
-              <div style={{ textAlign:'center', padding:10, borderLeft:'1px solid rgba(255,255,255,0.06)' }}>
-                <p style={{ fontSize:11, color:'#4a5270', marginBottom:4 }}>Plan anual</p>
-                <p style={{ fontSize:22, fontWeight:900, color:'#818cf8' }}>59,90€</p>
-                <p style={{ fontSize:11, color:'#34d399' }}>4,99€/mes · ahorra 50%</p>
+              <div style={{ textAlign:'center', padding:10, borderLeft:'1px solid var(--border)' }}>
+                <p style={{ fontSize:11, color:'var(--text-faint)', marginBottom:4 }}>Plan anual</p>
+                <p style={{ fontSize:22, fontWeight:900, color:'var(--accent)' }}>59,90€</p>
+                <p style={{ fontSize:11, color:'var(--positive)' }}>4,99€/mes · ahorra 50%</p>
               </div>
             </div>
           </div>
         )}
         {isPremium && (
           <div style={{ marginTop: 14, textAlign: 'right' }}>
-            <Link href="/cancelar" style={{ fontSize: 12, color: '#4a5270', textDecoration: 'underline' }}>Cancelar suscripción</Link>
+            <Link href="/cancelar" style={{ fontSize: 12, color: 'var(--text-faint)', textDecoration: 'underline' }}>Cancelar suscripción</Link>
           </div>
         )}
       </div>
@@ -553,8 +566,8 @@ export default function AjustesGlobalPage() {
         <p style={SEC_TIT}>Cuenta</p>
 
         <div style={{ marginBottom:16 }}>
-          <p style={{ fontSize:12, color:'#4a5270', marginBottom:2 }}>Email de la cuenta</p>
-          <p style={{ fontSize:14, color:'#c8d0e0' }}>{user?.email}</p>
+          <p style={{ fontSize:12, color:'var(--text-faint)', marginBottom:2 }}>Email de la cuenta</p>
+          <p style={{ fontSize:14, color:'var(--text)' }}>{user?.email}</p>
         </div>
 
         <div style={H_LINE} />
@@ -568,16 +581,16 @@ export default function AjustesGlobalPage() {
 
         {!deleteConfirm ? (
           <div>
-            <p style={{ fontSize:12, color:'#4a5270', marginBottom:10 }}>
+            <p style={{ fontSize:12, color:'var(--text-faint)', marginBottom:10 }}>
               Eliminar tu cuenta borrará permanentemente todas tus posiciones, transacciones y datos. Esta acción no se puede deshacer.
             </p>
             <button onClick={() => setDeleteConfirm(true)} style={BTN_RED}>Eliminar cuenta</button>
           </div>
         ) : (
           <div style={{ background:'rgba(248,113,113,0.06)', border:'1px solid rgba(248,113,113,0.2)', borderRadius:10, padding:'16px' }}>
-            <p style={{ fontSize:13, fontWeight:700, color:'#f87171', marginBottom:8 }}>¿Seguro que quieres eliminar tu cuenta?</p>
-            <p style={{ fontSize:12, color:'#8090a8', marginBottom:12 }}>
-              Escribe <strong style={{ color:'#f87171' }}>eliminar</strong> para confirmar. Se borrarán todos tus datos de forma permanente.
+            <p style={{ fontSize:13, fontWeight:700, color:'var(--negative)', marginBottom:8 }}>¿Seguro que quieres eliminar tu cuenta?</p>
+            <p style={{ fontSize:12, color:'var(--text-muted)', marginBottom:12 }}>
+              Escribe <strong style={{ color:'var(--negative)' }}>eliminar</strong> para confirmar. Se borrarán todos tus datos de forma permanente.
             </p>
             <input
               style={{ ...INPUT, marginBottom:12, borderColor:'rgba(248,113,113,0.3)' }}

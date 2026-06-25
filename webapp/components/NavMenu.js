@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import NotificationBell from '@/components/NotificationBell'
 import GlobalSearch from '@/components/GlobalSearch'
+import ThemeToggle from '@/components/ThemeToggle'
 
 // Menú principal
 const PRIMARY = [
@@ -27,15 +28,15 @@ export default function NavMenu({ active, sessionUser }) {
     fontSize: secondary ? 12 : 13,
     fontWeight: secondary ? 400 : 500,
     padding: '6px 12px', borderRadius: 7, textDecoration: 'none',
-    color: active === href ? '#818cf8' : secondary ? '#2e3a55' : '#4a5270',
-    background: active === href ? 'rgba(99,102,241,0.12)' : 'transparent',
+    color: active === href ? 'var(--accent)' : secondary ? 'var(--text-faintest)' : 'var(--text-faint)',
+    background: active === href ? 'var(--accent-bg)' : 'transparent',
   })
 
   return (
     <nav style={{
       position: 'sticky', top: 0, zIndex: 50,
-      background: 'rgba(8,11,20,0.92)', backdropFilter: 'blur(12px)',
-      borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 16px',
+      background: 'var(--nav-bg)', backdropFilter: 'blur(12px)',
+      borderBottom: '1px solid var(--border)', padding: '0 16px',
     }}>
       <style>{`
         .nav-desktop { display: none; }
@@ -48,7 +49,7 @@ export default function NavMenu({ active, sessionUser }) {
       `}</style>
 
       <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', height: 52, gap: 0 }}>
-        <Link href="/" style={{ fontSize: 14, fontWeight: 900, color: '#e0e8f0', textDecoration: 'none', marginRight: 28, flexShrink: 0 }}>
+        <Link href="/" style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-strong)', textDecoration: 'none', marginRight: 28, flexShrink: 0 }}>
           Mi Índice DGI
         </Link>
 
@@ -62,24 +63,25 @@ export default function NavMenu({ active, sessionUser }) {
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <GlobalSearch />
+          <ThemeToggle />
           {sessionUser ? (
             <>
               <NotificationBell />
               <Link href="/ajustes" title="Ajustes" style={{
-                fontSize: 17, color: active === '/ajustes' ? '#818cf8' : '#4a5270',
+                fontSize: 17, color: active === '/ajustes' ? 'var(--accent)' : 'var(--text-faint)',
                 textDecoration: 'none', padding: '4px 7px', borderRadius: 7, lineHeight: 1,
-                background: active === '/ajustes' ? 'rgba(99,102,241,0.12)' : 'transparent',
+                background: active === '/ajustes' ? 'var(--accent-bg)' : 'transparent',
               }}>⚙</Link>
             </>
           ) : (
             <>
-              <Link href="/login" style={{ fontSize: 12, color: '#4a5270', textDecoration: 'none', padding: '6px 12px' }}>Acceder</Link>
+              <Link href="/login" style={{ fontSize: 12, color: 'var(--text-faint)', textDecoration: 'none', padding: '6px 12px' }}>Acceder</Link>
               <Link href="/register" style={{ fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '6px 14px', background: 'rgba(99,102,241,0.8)', borderRadius: 8 }}>Registro gratis</Link>
             </>
           )}
           {/* Botón hamburguesa (solo móvil) */}
           <button className="nav-burger" onClick={() => setOpen(o => !o)} aria-label="Menú" style={{
-            background: 'none', border: 'none', color: '#c8d0e0', fontSize: 20, cursor: 'pointer',
+            background: 'none', border: 'none', color: 'var(--text)', fontSize: 20, cursor: 'pointer',
             padding: '4px 6px', lineHeight: 1, alignItems: 'center',
           }}>{open ? '✕' : '☰'}</button>
         </div>
@@ -94,7 +96,7 @@ export default function NavMenu({ active, sessionUser }) {
           {PRIMARY.map(l => (
             <Link key={l.href} href={l.href} onClick={() => setOpen(false)} style={{ ...linkStyle(l.href), padding: '10px 12px', fontSize: 15 }}>{l.label}</Link>
           ))}
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '8px 12px' }} />
+          <div style={{ height: 1, background: 'var(--border)', margin: '8px 12px' }} />
           {SECONDARY.map(l => (
             <Link key={l.href} href={l.href} onClick={() => setOpen(false)} style={{ ...linkStyle(l.href, true), padding: '8px 12px', fontSize: 13 }}>{l.label}</Link>
           ))}
