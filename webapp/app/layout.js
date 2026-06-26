@@ -51,6 +51,28 @@ export default function RootLayout({ children }) {
           .recharts-surface,.recharts-surface:focus,.recharts-surface:focus-visible,
           .recharts-wrapper svg:focus,.recharts-wrapper *:focus,.recharts-wrapper *:focus-visible,
           .recharts-sector:focus,.recharts-layer:focus,.recharts-pie:focus{outline:none!important;}
+          /* var() NO se resuelve en atributos de presentación SVG (fill=/stroke=) en
+             algunos navegadores → cae a negro (gráficos oscuros en modo claro). Estas
+             reglas CSS, que SÍ resuelven var() y ganan al atributo, tematizan todos los
+             SVG (recharts y custom) sin tocar los componentes. */
+          [fill="var(--bg)"]{fill:var(--bg)}[stroke="var(--bg)"]{stroke:var(--bg)}
+          [fill="var(--bg-elev)"]{fill:var(--bg-elev)}[stroke="var(--bg-elev)"]{stroke:var(--bg-elev)}
+          [fill="var(--surface)"]{fill:var(--surface)}[stroke="var(--surface)"]{stroke:var(--surface)}
+          [fill="var(--surface-2)"]{fill:var(--surface-2)}[stroke="var(--surface-2)"]{stroke:var(--surface-2)}
+          [fill="var(--surface-3)"]{fill:var(--surface-3)}[stroke="var(--surface-3)"]{stroke:var(--surface-3)}
+          [fill="var(--border)"]{fill:var(--border)}[stroke="var(--border)"]{stroke:var(--border)}
+          [fill="var(--border-strong)"]{fill:var(--border-strong)}[stroke="var(--border-strong)"]{stroke:var(--border-strong)}
+          [fill="var(--text-strong)"]{fill:var(--text-strong)}[stroke="var(--text-strong)"]{stroke:var(--text-strong)}
+          [fill="var(--text)"]{fill:var(--text)}[stroke="var(--text)"]{stroke:var(--text)}
+          [fill="var(--text-muted)"]{fill:var(--text-muted)}[stroke="var(--text-muted)"]{stroke:var(--text-muted)}
+          [fill="var(--text-faint)"]{fill:var(--text-faint)}[stroke="var(--text-faint)"]{stroke:var(--text-faint)}
+          [fill="var(--text-faintest)"]{fill:var(--text-faintest)}[stroke="var(--text-faintest)"]{stroke:var(--text-faintest)}
+          [fill="var(--accent)"]{fill:var(--accent)}[stroke="var(--accent)"]{stroke:var(--accent)}
+          [fill="var(--positive)"]{fill:var(--positive)}[stroke="var(--positive)"]{stroke:var(--positive)}
+          [fill="var(--positive-soft)"]{fill:var(--positive-soft)}[stroke="var(--positive-soft)"]{stroke:var(--positive-soft)}
+          [fill="var(--negative)"]{fill:var(--negative)}[stroke="var(--negative)"]{stroke:var(--negative)}
+          [fill="var(--warning)"]{fill:var(--warning)}[stroke="var(--warning)"]{stroke:var(--warning)}
+          [stop-color="var(--accent)"]{stop-color:var(--accent)}
         ` }} />
       </head>
       <body className={figtree.className} style={{background:"var(--bg)",color:"var(--text)",margin:0,padding:0,WebkitFontSmoothing:"antialiased"}} suppressHydrationWarning>
