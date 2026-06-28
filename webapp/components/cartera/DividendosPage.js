@@ -30,6 +30,7 @@ export default function DividendosPage({ isPremium }) {
   const [funds, setFunds] = useState({})
   const [config, setConfig] = useState({})
   const [destWHT, setDestWHT] = useState(19)
+  const [dividendsToCash, setDividendsToCash] = useState(false)
   const [year, setYear] = useState(new Date().getFullYear())
   const [notice, setNotice] = useState(null)
   const showNotice = useCallback((msg) => { setNotice(msg); setTimeout(() => setNotice(null), 8000) }, [])
@@ -46,11 +47,12 @@ export default function DividendosPage({ isPremium }) {
     const [{ data: pos }, { data: cfg }, { data: settings }] = await Promise.all([
       sb.from('positions').select('*').eq('user_id', user.id),
       sb.from('dividend_config').select('*').eq('user_id', user.id),
-      sb.from('user_settings').select('dest_wht').eq('user_id', user.id).maybeSingle(),
+      sb.from('user_settings').select('*').eq('user_id', user.id).maybeSingle(),
     ])
     setPositions(pos || [])
     setConfig(Object.fromEntries((cfg || []).map(c => [c.ticker, c])))
     setDestWHT(settings?.dest_wht != null ? Number(settings.dest_wht) : 19)
+    setDividendsToCash(!!settings?.dividends_to_cash)
     const tickers = [...new Set((pos || []).map(p => p.ticker))]
     if (tickers.length) {
       const { data: f } = await sb.from('company_fundamentals').select('ticker, country, current_price, dps, div_history, dividend_events, next_ex_date, next_pay_date').in('ticker', tickers)
@@ -102,7 +104,7 @@ export default function DividendosPage({ isPremium }) {
         ))}
       </div>
 
-      {tab === 'cobros' && <Cobros sb={sb} records={records} setRecords={setRecords} positions={positions} funds={funds} year={year} setYear={setYear} destWHT={destWHT} refresh={refresh} showNotice={showNotice} />}
+      {tab === 'cobros' && <Cobros sb={sb} records={records} setRecords={setRecords} positions={positions} funds={funds} year={year} setYear={setYear} destWHT={destWHT} dividendsToCash={dividendsToCash} refresh={refresh} showNotice={showNotice} />}
       {tab === 'calendario' && <Calendario records={records} year={year} setYear={setYear} />}
       {tab === 'config' && <Configuracion sb={sb} positions={positions} setPositions={setPositions} funds={funds} config={config} setConfig={setConfig} reload={recalc} />}
     </div>
@@ -110,7 +112,17 @@ export default function DividendosPage({ isPremium }) {
 }
 
 // ───────────────────────── COBROS ─────────────────────────
-function Cobros({ sb, records, setRecords, positions, funds, year, setYear, destWHT = 19, refresh, showNotice }) {
+function Cobros({ sb, records, setRecords, positions, funds, year, setYear, destWHT = 19, dividendsToCash = false, refresh, showNotice }) {
+  // Al confirmar un cobro en efectivo, si está activo el toggle, su neto entra en el
+  // fondo de oportunidad (liquidez). Tolerante a que la tabla aún no exista.
+  const routeToCash = async (r, net, date) => {
+    if (!dividendsToCash || !(net > 0)) return
+    try {
+      const { data: { user } } = await sb.auth.getUser()
+      if (!user) return
+      await sb.from('cash_movements').insert({ user_id: user.id, type: 'dividend', amount: Math.round(net * 100) / 100, date, note: `Dividendo ${nameOf(r.ticker)}` })
+    } catch {}
+  }
   const methodByTicker = useMemo(() => Object.fromEntries(positions.map(p => [p.ticker, p.dividend_payment_method || 'cash'])), [positions])
   const [filter, setFilter] = useState('all')
   const [editId, setEditId] = useState(null)
@@ -180,7 +192,10 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
     if (confDraft.mode === 'stock') return doConfirmStock(r)
     const newNet = num(confDraft.amount_net), newDate = confDraft.date
     const changed = newNet !== num(r.amount_net) || newDate !== (r.payment_date_estimated || r.date)
-    if (await patch(r.id, { status: 'received', amount_net: newNet, date: newDate, source: changed ? 'manual' : r.source })) setConfirmId(null)
+    if (await patch(r.id, { status: 'received', amount_net: newNet, date: newDate, source: changed ? 'manual' : r.source })) {
+      await routeToCash(r, newNet, newDate)
+      setConfirmId(null)
+    }
   }
   // Cobro en acciones: 3 operaciones atómicas (con rollback si alguna falla).
   const doConfirmStock = async (r) => {

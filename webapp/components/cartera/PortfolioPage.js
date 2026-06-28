@@ -227,6 +227,34 @@ function SummarySection({ summary, netIncomeEUR }) {
   )
 }
 
+// ── Fondo de oportunidad (liquidez) — tarjeta resumen ──────────────────────
+// Saldo del fondo + patrimonio total (invertido + liquidez). Se carga aparte.
+function CashFundCard({ investedEUR }) {
+  const [balance, setBalance] = useState(null)
+  useEffect(() => {
+    let cancel = false
+    fetch('/api/cartera/liquidez').then(r => r.ok ? r.json() : null).then(d => {
+      if (cancel || !d) return
+      setBalance(Number(d.balance) || 0)
+    }).catch(() => {})
+    return () => { cancel = true }
+  }, [])
+  if (balance == null) return null
+  const total = (investedEUR || 0) + balance
+  return (
+    <div style={{ ...CARD, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <div>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Fondo de oportunidad</p>
+        <p style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)' }}>{fmtEUR(balance, 0)} <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-faint)' }}>de liquidez</span></p>
+        <p style={{ fontSize: 11, color: 'var(--text-faintest)', marginTop: 3 }}>Patrimonio total (invertido + liquidez): <b style={{ color: 'var(--text-muted)' }}>{fmtEUR(total, 0)}</b></p>
+      </div>
+      <Link href="/cartera/liquidez" style={{ padding: '9px 16px', background: 'var(--surface-3)', border: '1px solid var(--border-strong)', borderRadius: 8, color: 'var(--text)', fontSize: 13, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+        Gestionar →
+      </Link>
+    </div>
+  )
+}
+
 // ── Meta de renta pasiva (estrella polar) ──────────────────────────────────
 // Renta anual actual vs objetivo, progreso y ETA solo con el crecimiento del
 // dividendo (sin nuevas aportaciones → estimación conservadora).
@@ -939,6 +967,9 @@ export default function PortfolioPage({ isPremium }) {
 
       {/* Section 1: Summary */}
       {enriched.length > 0 && <SummarySection summary={summary} netIncomeEUR={netIncomeEUR} />}
+
+      {/* Fondo de oportunidad — saldo de liquidez + patrimonio total */}
+      {enriched.length > 0 && <CashFundCard investedEUR={summary.totalValueEUR} />}
 
       {/* Meta de renta pasiva — estrella polar */}
       {enriched.length > 0 && <IncomeGoalCard currentIncome={summary.totalIncomeEUR} goal={incomeGoal} growthPct={dividendGrowth?.g5y ?? 0} onSave={saveGoal} />}

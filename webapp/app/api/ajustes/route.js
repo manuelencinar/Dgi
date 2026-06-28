@@ -14,6 +14,8 @@ const ALLOWED = new Set([
   'investor_profile',
   // Meta de renta pasiva anual (estrella polar de la cartera)
   'income_goal',
+  // Fondo de oportunidad (liquidez): TAE del banco + si los dividendos entran al fondo
+  'cash_interest_rate', 'dividends_to_cash',
   // Fiscalidad: retención de destino (España) y overrides de retención en origen por país
   'dest_wht', 'wht_overrides',
   // Fiscalidad personalizada por ingresos (IRPF español)
@@ -50,6 +52,7 @@ const READABLE = [
   'benchmark_index', 'show_returns_original',
   'monthly_summary_active', 'alerts_email_active', 'recurring_email_active',
   'investor_profile', 'income_goal', 'dest_wht', 'wht_overrides',
+  'cash_interest_rate', 'dividends_to_cash',
   'tax_mode', 'annual_income', 'children', 'children_under3',
   'plan', 'premium_until', 'subscription_paused', 'pause_end_date', 'retention_discount_used',
 ]
@@ -95,6 +98,8 @@ export async function POST(request) {
   if ('tax_mode' in updates) updates.tax_mode = updates.tax_mode === 'income' ? 'income' : 'fixed'
   if ('annual_income' in updates) { const n = Number(updates.annual_income); updates.annual_income = (!isNaN(n) && n >= 0 && n <= 100_000_000) ? n : null }
   if ('income_goal' in updates) { const n = Number(updates.income_goal); updates.income_goal = (!isNaN(n) && n > 0 && n <= 100_000_000) ? n : null }
+  if ('cash_interest_rate' in updates) { const n = Number(updates.cash_interest_rate); updates.cash_interest_rate = (!isNaN(n) && n >= 0 && n <= 20) ? Math.round(n * 1000) / 1000 : 0 }
+  if ('dividends_to_cash' in updates) updates.dividends_to_cash = !!updates.dividends_to_cash
   if ('children' in updates) { const n = Math.round(Number(updates.children)); updates.children = (!isNaN(n) && n >= 0 && n <= 20) ? n : 0 }
   if ('children_under3' in updates) { const n = Math.round(Number(updates.children_under3)); updates.children_under3 = (!isNaN(n) && n >= 0 && n <= 20) ? n : 0 }
   if (!Object.keys(updates).length) {

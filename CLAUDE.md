@@ -52,6 +52,7 @@ Implementado en tres partes. Páginas:
 - `/cartera/calendario` — calendario de dividendos personal (vista calendario y lista)
 - `/cartera/simulador` — what-if: añadir posición, recorte de dividendo, reinversión DRIP, independencia financiera
 - `/cartera/historial` — operaciones, dividendos cobrados, yield on cost histórico (export CSV)
+- `/cartera/liquidez` — **Fondo de oportunidad** (ver sección propia)
 - `/cartera/alertas` — alertas personalizadas configurables + toggles de email y resumen mensual
 
 Lógica en `lib/portfolio.js`, `lib/portfolio-calc.js`, `lib/dgi-score.js`, `lib/valuation.js`.
@@ -64,6 +65,15 @@ Orden actual: **Posiciones arriba del todo** (lo clave) → FX (tarjeta estrecha
 - **Próximos cobros** (`components/cartera/UpcomingDividends.js`): widget que reutiliza `buildDividendCalendar` y muestra los próximos 5 cobros (fecha, empresa, importe neto, confirmado/estimado).
 - **Score DGI de la cartera** (`PortfolioDGIScore`): compacto — solo el ponderado por valor a la izquierda + las 4 categorías a su derecha en pequeño (misma altura); benchmark plegado en `<details>`.
 - Eliminado el bloque "Simular un recorte de dividendo" de `/cartera` (el simulador completo sigue en `/cartera/simulador`).
+- **Fondo de oportunidad** (`CashFundCard` en `/cartera`): tarjeta con el saldo de liquidez + patrimonio total (invertido + liquidez), enlace a `/cartera/liquidez`. Se carga aparte vía `/api/cartera/liquidez`.
+
+### Fondo de oportunidad (liquidez) — `/cartera/liquidez`
+"Pólvora seca": la liquidez disponible para nuevas inversiones. `components/cartera/LiquidezPage.js` + `app/cartera/liquidez/page.js` + API `app/api/cartera/liquidez/route.js` (GET/POST/DELETE, RLS por usuario). Lógica pura en `lib/cash-fund.js` (testeada).
+- Tabla `cash_movements` (SQL `cash_fund.sql`, **pendiente de ejecutar**): apuntes con importe CON SIGNO (+ entra, − sale); saldo = suma. `type`: deposit/withdraw/dividend/interest/investment. RLS por `auth.uid()=user_id`.
+- **Intereses**: el usuario fija la **TAE** del banco (`user_settings.cash_interest_rate`, vía `/api/ajustes`). El GET del API **devenga automáticamente** (patrón del prefill de dividendos) el interés de cada mes CERRADO que falte: interés = saldo a fin de mes × TAE/12, capitalizado (compuesto), apuntado como movimiento `interest`. `pendingInterest`/`balanceOf`/`monthlyRate`/`estimateMonth|AnnualInterest` en `lib/cash-fund.js`.
+- **Dividendos → fondo**: toggle `user_settings.dividends_to_cash`. Si está activo, al confirmar un cobro EN EFECTIVO en `/cartera/dividendos` (`routeToCash` en `DividendosPage`), su neto se inserta como movimiento `dividend` en `cash_movements`. (Los dividendos en acciones van a la cartera, no al fondo.)
+- **Intereses APARTE**: no suman a la meta de renta por dividendos (decisión del usuario; renta de otra naturaleza, no DGI).
+- Whitelist de `/api/ajustes`: `cash_interest_rate` (0–20%), `dividends_to_cash` (bool).
 
 ### Dividendos en riesgo — SECTOR-AWARE (`calcDividendRisks` en lib/portfolio.js)
 Cada señal muestra el **valor, el umbral y el porqué** (no solo una etiqueta). Las señales son sector-aware (`riskSector` local):
@@ -357,7 +367,7 @@ Se eliminó el shell legacy NO montado: `DgiApp`+`IndexTab`+`CarteraTab`+`Settin
 ## SQL pendiente de ejecutar en Supabase (todos los ficheros en webapp/sql/)
 Estado: el usuario ya ejecutó admin.sql, valuation_columns.sql, roic_columns.sql, cartera_parte3.sql, funds.sql, recurring.sql, fx_and_settings.sql, daily_prices.sql, `investor_profile.sql`, `taxonomy_locked.sql`, y (esta sesión) `watchlist_buyzone.sql`, `income_goal.sql`, `report_dates.sql` y `payout_affo_nii.sql` (estos 4 confirmados ejecutados + backfills corridos).
 Ficheros que el usuario PUEDE tener aún pendientes de ejecutar (confirmar en entorno nuevo):
-`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), `yield_avg.sql` (columnas yield_avg + yield_avg_years), `ma200.sql` (columna MM200), `score_history.sql` (tabla de histórico del Score DGI), `canibales.sql` (columnas shares_reduced_pct + shares_base_year), `compounders.sql` (columna capex_cfo_pct), `bank_metrics.sql` (tabla bank_metrics_manual — NPL/overrides bancarios por trimestre), `analyst_estimates.sql` (columnas analyst_estimates + _status + _at — necesario antes de correr fetch_analyst_estimates.mjs/workflow), y el ALTER de `premium_until` en user_settings. NOTA: el bucket de Storage `company-logos` ya está creado por `fetch_logos.mjs` (no es SQL).
+`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), `yield_avg.sql` (columnas yield_avg + yield_avg_years), `ma200.sql` (columna MM200), `score_history.sql` (tabla de histórico del Score DGI), `canibales.sql` (columnas shares_reduced_pct + shares_base_year), `compounders.sql` (columna capex_cfo_pct), `bank_metrics.sql` (tabla bank_metrics_manual — NPL/overrides bancarios por trimestre), `analyst_estimates.sql` (columnas analyst_estimates + _status + _at — necesario antes de correr fetch_analyst_estimates.mjs/workflow), `positions_commission.sql` (columna positions.commission — override de comisión por posición desde el editor de la cartera), `cash_fund.sql` (tabla cash_movements + columnas user_settings.cash_interest_rate/dividends_to_cash — Fondo de oportunidad), y el ALTER de `premium_until` en user_settings. NOTA: el bucket de Storage `company-logos` ya está creado por `fetch_logos.mjs` (no es SQL).
 Si se monta un entorno nuevo, ejecutar en orden todos los ficheros de webapp/sql/.
 
 ## Planes y precios
