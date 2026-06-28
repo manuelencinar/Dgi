@@ -10,7 +10,7 @@ import { isSecondary } from '@/lib/listings'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Máquinas de Compounding | Mi Índice DGI',
+  title: 'Máquinas de Compounding | EverDiv',
   description: 'Ranking de empresas capital-light de máxima calidad: ROIC alto y sostenido, poca necesidad de CapEx y crecimiento estable. El santo grial del compounding.',
 }
 

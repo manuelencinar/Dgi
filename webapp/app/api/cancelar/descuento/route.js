@@ -49,7 +49,7 @@ export async function POST() {
     retention_discount_date: new Date().toISOString().slice(0, 10),
   }).eq('user_id', user.id)
 
-  await sendEmail(user.email, 'Descuento aplicado — Mi Índice DGI', emailShell(
+  await sendEmail(user.email, 'Descuento aplicado — EverDiv', emailShell(
     'Tu descuento está activo',
     `<p style="color:#e0e8f0;font-size:16px;margin:0 0 16px">¡Gracias por seguir con nosotros!</p>
      <p style="color:#c8d0e0;font-size:14px;margin:0 0 8px">Hemos aplicado un <strong style="color:#34d399">50% de descuento durante los próximos 3 meses</strong> a tu suscripción Premium. El descuento aparecerá automáticamente en tus próximas facturas.</p>

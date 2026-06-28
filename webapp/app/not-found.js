@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-export const metadata = { title: 'Página no encontrada — Mi Índice DGI' }
+export const metadata = { title: 'Página no encontrada — EverDiv' }
 
 // 404 con la marca. Antes una ruta inexistente caía en el 404 genérico de Next.
 export default function NotFound() {

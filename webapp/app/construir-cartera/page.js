@@ -7,7 +7,7 @@ import { resolveDestWHT } from '@/lib/fiscal-es'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Construir cartera desde cero | Mi Índice DGI',
+  title: 'Construir cartera desde cero | EverDiv',
   description: 'Responde 4 preguntas y obtén un plan de 10-15 empresas DGI ordenadas por prioridad de entrada, con asignación mensual sugerida.',
 }
 

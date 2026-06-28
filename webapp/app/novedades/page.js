@@ -7,7 +7,7 @@ import { parseQuarterlyNews, daysSince, splitFeatured, effectiveReportDate } fro
 
 export const dynamic = 'force-dynamic'
 export const metadata = {
-  title: 'Novedades — Mi Índice DGI',
+  title: 'Novedades — EverDiv',
   description: 'Resultados recientes de las empresas, cambios destacados y eventos de tu cartera.',
 }
 

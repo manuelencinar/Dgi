@@ -6,7 +6,7 @@ import CancelarClient from '@/components/CancelarClient'
 import { enrichPositions, calcSummary, FX } from '@/lib/portfolio'
 import { getStripe } from '@/lib/stripe'
 
-export const metadata = { title: 'Cancelar suscripción — Mi Índice DGI' }
+export const metadata = { title: 'Cancelar suscripción — EverDiv' }
 export const dynamic  = 'force-dynamic'
 
 const ADMIN_EMAIL  = 'vayaebookk@gmail.com'

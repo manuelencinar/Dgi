@@ -3,8 +3,8 @@
 // <link rel="manifest"> automáticamente.
 export default function manifest() {
   return {
-    name: 'Mi Índice DGI',
-    short_name: 'Índice DGI',
+    name: 'EverDiv',
+    short_name: 'EverDiv',
     description: 'Análisis de dividendos crecientes (DGI): screener, valoración, cartera, rankings y alertas.',
     start_url: '/',
     display: 'standalone',

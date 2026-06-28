@@ -10,7 +10,7 @@ export default function GlobalError({ error, reset, unstable_retry }) {
   return (
     <html lang="es">
       <body style={{ background: 'var(--bg)', color: 'var(--text)', margin: 0, fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif' }}>
-        <title>Error — Mi Índice DGI</title>
+        <title>Error — EverDiv</title>
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 24, gap: 14 }}>
           <div style={{ fontSize: 40 }}>⚠️</div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-strong)', margin: 0 }}>Algo ha fallado</h2>

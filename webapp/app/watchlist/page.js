@@ -8,7 +8,7 @@ import { buildWatchlistRows, sortByProximity } from '@/lib/watchlist-enrich'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Tu Watchlist — Mi Índice DGI',
+  title: 'Tu Watchlist — EverDiv',
   description: 'Empresas que sigues — te avisamos cuando llegan a tu precio objetivo.',
 }
 

@@ -271,7 +271,7 @@ export async function generateMetadata({ params }) {
   const entry = DICT.find(d => d[1] === t)
   const name = entry?.[0] ?? t
   return {
-    title: `${name} — Análisis DGI | Mi Índice DGI`,
+    title: `${name} — Análisis DGI | EverDiv`,
     description: `Análisis completo de dividendos, Score DGI, foso económico y valoración de ${name}.`,
   }
 }

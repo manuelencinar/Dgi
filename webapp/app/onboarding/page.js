@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as serviceClient } from '@supabase/supabase-js'
 import OnboardingClient from '@/components/OnboardingClient'
 
-export const metadata = { title: 'Bienvenido — Mi Índice DGI' }
+export const metadata = { title: 'Bienvenido — EverDiv' }
 export const dynamic  = 'force-dynamic'
 
 export default async function OnboardingPage() {

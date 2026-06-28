@@ -49,7 +49,7 @@ export default function NavMenu({ active, sessionUser }) {
 
       <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', height: 52, gap: 0 }}>
         <Link href="/" style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-strong)', textDecoration: 'none', marginRight: 28, flexShrink: 0 }}>
-          Mi Índice DGI
+          EverDiv
         </Link>
 
         {/* Desktop: solo los tres principales */}

@@ -1,4 +1,6 @@
-# Mi Índice DGI — Contexto del proyecto
+# EverDiv — Contexto del proyecto
+
+(Antes "Mi Índice DGI"; renombrada a **EverDiv** en jun-2026. Dominio: everdiv.com.)
 
 ## Qué es esta app
 Plataforma web freemium de análisis DGI (Dividend Growth Investing).

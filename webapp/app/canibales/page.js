@@ -11,7 +11,7 @@ import { resolveDestWHT } from '@/lib/fiscal-es'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Caníbales de acciones | Mi Índice DGI',
+  title: 'Caníbales de acciones | EverDiv',
   description: 'Ranking de empresas que más han reducido sus acciones en circulación desde 2022 — recompra neta real medida en número de acciones.',
 }
 

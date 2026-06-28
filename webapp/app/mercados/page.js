@@ -7,7 +7,7 @@ import { getEffectiveMarkets } from '@/lib/markets-overrides'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Mercados globales — Mi Índice DGI',
+  title: 'Mercados globales — EverDiv',
   description: '43 mercados globales analizados con metodología DGI. Score de calidad, yield real y radar de oportunidades.',
 }
 

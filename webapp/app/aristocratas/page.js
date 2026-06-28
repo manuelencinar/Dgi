@@ -11,7 +11,7 @@ import { resolveDestWHT } from '@/lib/fiscal-es'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Reyes, Aristócratas y Aspirantes del dividendo | Mi Índice DGI',
+  title: 'Reyes, Aristócratas y Aspirantes del dividendo | EverDiv',
   description: 'Empresas clasificadas por su racha de años consecutivos subiendo el dividendo: Reyes (50+ años), Aristócratas (25+) y Aspirantes (10–24) de 43 mercados globales.',
 }
 

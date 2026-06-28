@@ -59,7 +59,7 @@ export async function POST(request) {
 
   // Email de confirmación (best-effort)
   const fechaBonita = resumeDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
-  await sendEmail(user.email, 'Suscripción pausada — Mi Índice DGI', emailShell(
+  await sendEmail(user.email, 'Suscripción pausada — EverDiv', emailShell(
     'Tu suscripción está en pausa',
     `<p style="color:#e0e8f0;font-size:16px;margin:0 0 16px">Hemos pausado tu suscripción.</p>
      <p style="color:#c8d0e0;font-size:14px;margin:0 0 8px">No se realizará ningún cobro hasta el <strong style="color:#34d399">${fechaBonita}</strong>. Mantienes acceso Premium completo durante la pausa.</p>

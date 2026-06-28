@@ -17,7 +17,7 @@ async function getPlan() {
   } catch { return null }
 }
 
-export const metadata = { title: 'Proyección de cartera — Mi Índice DGI' }
+export const metadata = { title: 'Proyección de cartera — EverDiv' }
 export const dynamic  = 'force-dynamic'
 
 export default async function Page() {

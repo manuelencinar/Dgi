@@ -5,7 +5,7 @@ const APP_URL = 'https://invest-dgi.vercel.app'
 
 export async function sendEmail(to, subject, html) {
   const apiKey = process.env.RESEND_API_KEY
-  const from   = process.env.RESEND_FROM || 'Mi Índice DGI <noreply@miindicedgi.com>'
+  const from   = process.env.RESEND_FROM || 'EverDiv <noreply@everdiv.com>'
   if (!apiKey) return { skipped: true, reason: 'RESEND_API_KEY no configurada' }
   try {
     const res = await fetch('https://api.resend.com/emails', {
@@ -28,7 +28,7 @@ export function emailShell(title, bodyHTML) {
 <tr><td align="center">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#0d1424;border-radius:14px;padding:28px">
   <tr><td>
-    <p style="color:#818cf8;font-size:18px;font-weight:bold;margin:0 0 4px">Mi Índice DGI</p>
+    <p style="color:#818cf8;font-size:18px;font-weight:bold;margin:0 0 4px">EverDiv</p>
     <p style="color:#4a5270;font-size:13px;margin:0 0 20px">${title}</p>
     ${bodyHTML}
   </td></tr>

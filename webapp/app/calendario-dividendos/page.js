@@ -8,7 +8,7 @@ import { payMonthsFromEvents } from '@/lib/dividend-calendar'
 
 export const revalidate = 3600   // cálculo pesado (eventos de dividendo) → cacheado 1h
 export const metadata = {
-  title: 'Calendario de dividendos | Mi Índice DGI',
+  title: 'Calendario de dividendos | EverDiv',
   description: 'En qué meses paga dividendo cada empresa del universo DGI. Planifica tus ingresos a lo largo del año.',
 }
 

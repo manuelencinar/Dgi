@@ -20,7 +20,7 @@ async function getContext() {
   } catch { return null }
 }
 
-export const metadata = { title: 'Fiscalidad — Mi Índice DGI' }
+export const metadata = { title: 'Fiscalidad — EverDiv' }
 export const dynamic  = 'force-dynamic'
 
 export default async function Page() {

@@ -37,7 +37,7 @@ export default function DashboardSidebar() {
 
   const header = (
     <div style={{ marginBottom: 24 }}>
-      <p style={{ fontSize: 15, fontWeight: 900, color: 'var(--text-strong)' }}>Mi Índice DGI</p>
+      <p style={{ fontSize: 15, fontWeight: 900, color: 'var(--text-strong)' }}>EverDiv</p>
       <p style={{ fontSize: 10, fontWeight: 700, color: '#fb923c', letterSpacing: '0.1em', marginTop: 2 }}>ADMIN</p>
     </div>
   )
@@ -60,7 +60,7 @@ export default function DashboardSidebar() {
         padding: '12px 16px', borderBottom: '1px solid var(--border)',
         position: 'sticky', top: 0, background: 'var(--nav-bg)', backdropFilter: 'blur(12px)', zIndex: 60,
       }}>
-        <p style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-strong)' }}>Admin · Mi Índice DGI</p>
+        <p style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-strong)' }}>Admin · EverDiv</p>
         <button onClick={() => setOpen(o => !o)} style={{ background: 'none', border: 'none', color: 'var(--text)', fontSize: 22, cursor: 'pointer' }}>≡</button>
       </div>
 

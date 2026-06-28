@@ -69,7 +69,7 @@ export default function LoginPage() {
   return (
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
       <div style={{width:"100%",maxWidth:380,background:"var(--surface-2)",border:"1px solid var(--surface-3)",borderRadius:16,padding:"32px 28px"}}>
-        <h1 style={{fontSize:22,fontWeight:800,color:"var(--text-strong)",marginBottom:6}}>Mi Índice DGI</h1>
+        <h1 style={{fontSize:22,fontWeight:800,color:"var(--text-strong)",marginBottom:6}}>EverDiv</h1>
         <p style={{fontSize:13,color:"var(--text-faint)",marginBottom:24}}>Inicia sesión para acceder a tu cartera</p>
 
         {notice && (

@@ -30,7 +30,7 @@ function distByYear(history) {
 export async function generateMetadata({ params }) {
   const { ticker } = await params
   const t = decodeURIComponent(ticker)
-  return { title: `${t} — ETF / Fondo | Mi Índice DGI` }
+  return { title: `${t} — ETF / Fondo | EverDiv` }
 }
 
 const Card = ({ children, style }) => (

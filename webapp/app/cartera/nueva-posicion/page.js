@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/PublicNav'
 import NewPositionPage from '@/components/cartera/NewPositionPage'
 
-export const metadata = { title: 'Añadir posición — Mi Índice DGI' }
+export const metadata = { title: 'Añadir posición — EverDiv' }
 export const dynamic  = 'force-dynamic'
 
 export default async function NuevaPosicionPage() {

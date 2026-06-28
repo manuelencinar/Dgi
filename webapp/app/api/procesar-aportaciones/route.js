@@ -14,7 +14,7 @@ function sb() {
 async function sendAportacionEmail(to, data) {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return { skipped: true }
-  const from = process.env.RESEND_FROM || 'Mi Índice DGI <noreply@miindicedgi.com>'
+  const from = process.env.RESEND_FROM || 'EverDiv <noreply@everdiv.com>'
   const html = `<div style="font-family:Arial,sans-serif;background:#080b14;padding:24px;color:#c8d0e0">
     <h2 style="color:#818cf8">Aportación periódica ejecutada</h2>
     <p><strong>${data.name}</strong></p>

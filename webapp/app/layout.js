@@ -8,7 +8,7 @@ const figtree = Figtree({
 })
 
 export const metadata = {
-  title: 'Mi Índice DGI',
+  title: 'EverDiv',
   description: 'Plataforma para inversores de dividendos crecientes',
 }
 

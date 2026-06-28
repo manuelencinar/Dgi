@@ -116,7 +116,7 @@ export default function OnboardingClient({ initial, hasPositions }) {
         <div style={fade} key="s0">
           <div style={{ textAlign: 'center', maxWidth: 460 }}>
             <div style={{ fontSize: 44, marginBottom: 16 }}>📈</div>
-            <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 28 }}>Bienvenido a Mi Índice DGI</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 28 }}>Bienvenido a EverDiv</h1>
             <div style={{ display: 'grid', gap: 16, marginBottom: 36, textAlign: 'left' }}>
               {[
                 ['📊', '43 mercados globales analizados con criterios DGI'],

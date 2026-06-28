@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/PublicNav'
 import AjustesGlobalPage from '@/components/AjustesGlobalPage'
 
-export const metadata = { title: 'Ajustes — Mi Índice DGI' }
+export const metadata = { title: 'Ajustes — EverDiv' }
 export const dynamic  = 'force-dynamic'
 
 export default async function Page() {

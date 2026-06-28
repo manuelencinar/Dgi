@@ -39,9 +39,9 @@ async function getUserPlan() {
 export async function generateMetadata({ params }) {
   const { symbol } = await params
   const market = MARKETS.find(m => m.symbol === decodeURIComponent(symbol))
-  if (!market) return { title: 'Mercado — Mi Índice DGI' }
+  if (!market) return { title: 'Mercado — EverDiv' }
   return {
-    title: `${market.name} — análisis DGI | Mi Índice DGI`,
+    title: `${market.name} — análisis DGI | EverDiv`,
     description: `Empresas del ${market.name} (${market.country}) analizadas con criterios de Dividend Growth Investing: Score DGI, yield real, racha de dividendo y zona de compra.`,
   }
 }

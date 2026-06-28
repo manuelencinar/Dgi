@@ -8,7 +8,7 @@ import { resolveDestWHT } from '@/lib/fiscal-es'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Screener DGI avanzado | Mi Índice DGI',
+  title: 'Screener DGI avanzado | EverDiv',
   description: 'Filtra casi 2000 empresas de 43 mercados por yield, Score DGI, ROIC, foso, valoración y proyección de renta a 10 años.',
 }
 

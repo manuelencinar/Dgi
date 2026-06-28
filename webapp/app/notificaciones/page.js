@@ -6,7 +6,7 @@ import NotificationsClient from '@/components/NotificationsClient'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Notificaciones — Mi Índice DGI',
+  title: 'Notificaciones — EverDiv',
 }
 
 export default async function NotificacionesPage() {

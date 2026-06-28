@@ -6,7 +6,7 @@ import { buildComparadorCompanies } from '@/lib/comparador'
 import { resolveDestWHT } from '@/lib/fiscal-es'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Comparador de empresas | Mi Índice DGI', description: 'Compara hasta 5 empresas DGI lado a lado: radar multidimensional, métricas, proyección de renta a 10 años y valoración.' }
+export const metadata = { title: 'Comparador de empresas | EverDiv', description: 'Compara hasta 5 empresas DGI lado a lado: radar multidimensional, métricas, proyección de renta a 10 años y valoración.' }
 
 const ADMIN_EMAIL = 'vayaebookk@gmail.com'
 

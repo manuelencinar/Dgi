@@ -4,7 +4,7 @@ import EtfsClient from '@/components/EtfsClient'
 
 export const dynamic = 'force-dynamic'
 export const metadata = {
-  title: 'ETFs DGI | Mi Índice DGI',
+  title: 'ETFs DGI | EverDiv',
   description: 'ETFs de dividendos de referencia: SCHD, VIG, VHYL y más. TER, yield y distribuciones.',
 }
 

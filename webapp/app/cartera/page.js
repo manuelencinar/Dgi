@@ -21,7 +21,7 @@ async function getUserPlan() {
 }
 
 export const metadata = {
-  title: 'Mi cartera — Mi Índice DGI',
+  title: 'Mi cartera — EverDiv',
   description: 'Seguimiento de tu cartera DGI: posiciones, rentabilidad, dividendos y análisis de concentración.',
 }
 

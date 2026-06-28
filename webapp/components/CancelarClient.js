@@ -140,7 +140,7 @@ export default function CancelarClient({ summary, accessUntil, discountUsed, mon
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 16px 64px' }}>
       {/* PASO 1 — Resumen de uso */}
       <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 6 }}>Antes de irte, mira lo que has construido</h1>
-      <p style={{ fontSize: 13, color: 'var(--text-faint)', marginBottom: 24 }}>Tu actividad como miembro Premium de Mi Índice DGI.</p>
+      <p style={{ fontSize: 13, color: 'var(--text-faint)', marginBottom: 24 }}>Tu actividad como miembro Premium de EverDiv.</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
         {cards.map(c => (

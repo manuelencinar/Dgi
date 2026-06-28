@@ -6,7 +6,7 @@ import LandingFaq from '@/components/LandingFaq'
 import PublicNav from '@/components/PublicNav'
 
 export const metadata = {
-  title: 'Mi Índice DGI — Invierte en dividendos con criterio',
+  title: 'EverDiv — Invierte en dividendos con criterio',
   description: 'El único screener que analiza 43 mercados globales con metodología DGI real. Score de calidad, radar de oportunidades y salud financiera actualizada. Empieza gratis.',
 }
 
@@ -125,7 +125,7 @@ function Hero() {
                 ))}
               </div>
               <div style={{ flex: 1, background: 'var(--border)', borderRadius: 5, padding: '3px 10px', fontSize: 10, color: 'var(--text-faintest)' }}>
-                miindicedgi.com/mercados
+                everdiv.com/mercados
               </div>
             </div>
             {/* Header */}
@@ -736,7 +736,7 @@ function Footer() {
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, marginBottom: 32 }}>
           <div>
-            <p style={{ fontSize: 16, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 6 }}>Mi Índice DGI</p>
+            <p style={{ fontSize: 16, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 6 }}>EverDiv</p>
             <p style={{ fontSize: 12, color: 'var(--text-faintest)', maxWidth: 280, lineHeight: 1.65 }}>
               Herramienta de análisis para inversores de dividendos crecientes. 43 mercados globales. Datos fundamentales reales.
             </p>
@@ -750,7 +750,7 @@ function Footer() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Link href="/register" style={{ fontSize: 13, color: 'var(--text-faintest)', textDecoration: 'none' }}>Registro</Link>
               <Link href="/login" style={{ fontSize: 13, color: 'var(--text-faintest)', textDecoration: 'none' }}>Acceder</Link>
-              <a href="mailto:hola@miindicedgi.com" style={{ fontSize: 13, color: 'var(--text-faintest)', textDecoration: 'none' }}>Contacto</a>
+              <a href="mailto:hola@everdiv.com" style={{ fontSize: 13, color: 'var(--text-faintest)', textDecoration: 'none' }}>Contacto</a>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Link href="/privacidad" style={{ fontSize: 13, color: 'var(--text-faintest)', textDecoration: 'none' }}>Política de privacidad</Link>
@@ -759,7 +759,7 @@ function Footer() {
           </div>
         </div>
         <div style={{ borderTop: '1px solid var(--surface-3)', paddingTop: 20, display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center' }}>
-          <p style={{ fontSize: 11, color: 'var(--bg-elev)' }}>© 2025 Mi Índice DGI</p>
+          <p style={{ fontSize: 11, color: 'var(--bg-elev)' }}>© 2025 EverDiv</p>
           <p style={{ fontSize: 11, color: 'var(--bg-elev)', maxWidth: 500, textAlign: 'right' }}>
             La información proporcionada no constituye asesoramiento financiero. Invertir implica riesgos. Consulta a un asesor antes de tomar decisiones de inversión.
           </p>

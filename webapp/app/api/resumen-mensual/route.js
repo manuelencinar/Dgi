@@ -137,7 +137,7 @@ function buildEmailHTML(email, data) {
 <tr><td align="center">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#0d1424;border-radius:14px;padding:28px">
   <tr><td>
-    <p style="color:#818cf8;font-size:18px;font-weight:bold;margin:0 0 4px">Mi Índice DGI</p>
+    <p style="color:#818cf8;font-size:18px;font-weight:bold;margin:0 0 4px">EverDiv</p>
     <p style="color:#4a5270;font-size:13px;margin:0 0 20px">Tu resumen de ${monthName}</p>
 
     <p style="color:#e0e8f0;font-size:16px;margin:0 0 16px">Hola ${name},</p>
@@ -181,7 +181,7 @@ function buildEmailHTML(email, data) {
 
 async function sendEmail(to, subject, html) {
   const apiKey = process.env.RESEND_API_KEY
-  const from   = process.env.RESEND_FROM || 'Mi Índice DGI <noreply@miindicedgi.com>'
+  const from   = process.env.RESEND_FROM || 'EverDiv <noreply@everdiv.com>'
   if (!apiKey) return { skipped: true, reason: 'RESEND_API_KEY no configurada' }
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -209,7 +209,7 @@ export async function GET(request) {
   if (!settings?.length) return NextResponse.json({ processed: 0, message: 'Sin usuarios suscritos' })
 
   const now = new Date()
-  const subject = `Tu resumen DGI de ${MESES[now.getMonth()]} — Mi Índice DGI`
+  const subject = `Tu resumen DGI de ${MESES[now.getMonth()]} — EverDiv`
 
   let sent = 0, skipped = 0, errors = 0
   const results = []

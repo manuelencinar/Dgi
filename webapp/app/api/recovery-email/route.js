@@ -62,12 +62,12 @@ export async function GET(request) {
       const html = emailShell('Te echamos de menos', `
         <p style="color:#e0e8f0;font-size:16px;margin:0 0 16px">Ha pasado un mes desde que te fuiste.</p>
         ${carteraLine}
-        <p style="color:#c8d0e0;font-size:14px;margin:0 0 8px">Seguimos mejorando Mi Índice DGI con nuevas funciones de análisis DGI, cartera y seguimiento de dividendos.</p>
+        <p style="color:#c8d0e0;font-size:14px;margin:0 0 8px">Seguimos mejorando EverDiv con nuevas funciones de análisis DGI, cartera y seguimiento de dividendos.</p>
         <p style="color:#34d399;font-size:15px;font-weight:bold;margin:16px 0 0">Si vuelves esta semana, tu primer mes es al 50%.</p>
         ${emailButton(`${APP_URL}/pricing`, 'Volver a Premium')}
       `)
 
-      const r = await sendEmail(email, 'Te echamos de menos — Mi Índice DGI', html)
+      const r = await sendEmail(email, 'Te echamos de menos — EverDiv', html)
       if (r.sent) sent++
       else { skipped++ }
     } catch {
