@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-const CARD = { background: 'rgba(13,20,36,1)', border: '1px solid var(--border-strong)', borderRadius: 12, padding: 20 }
+const CARD = { background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 12, padding: 20 }
 const INPUT = { background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '9px 12px', color: 'var(--text)', fontSize: 13, outline: 'none', width: '100%', boxSizing: 'border-box' }
 
 function Toggle({ label, value, onChange }) {

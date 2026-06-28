@@ -2,6 +2,7 @@ import { createClient as svcClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import PublicNav from '@/components/PublicNav'
 import NovedadesClient from '@/components/NovedadesClient'
+import PortfolioHome from '@/components/PortfolioHome'
 import { DICT } from '@/data/dict'
 import { parseQuarterlyNews, daysSince, splitFeatured, effectiveReportDate } from '@/lib/novedades'
 
@@ -90,6 +91,7 @@ export default async function NovedadesPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav active="/novedades" />
+      {user && <PortfolioHome />}
       <NovedadesClient featured={slim(featured)} rest={slim(rest)} events={events} userCC={userCC} hasUser={!!user} />
     </div>
   )

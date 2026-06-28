@@ -77,7 +77,7 @@ export default function PriceAlertButton({ ticker, name, currency = 'EUR', price
 
       {open && (
         <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', padding: 16 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'rgba(13,20,36,1)', border: '1px solid var(--border-strong)', borderRadius: 12, padding: 20, width: '100%', maxWidth: 380 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 12, padding: 20, width: '100%', maxWidth: 380 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: 14 }}>🔔 Avisarme cuando baje</p>
               <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
