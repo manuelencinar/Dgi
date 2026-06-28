@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import {
   ResponsiveContainer, BarChart, ComposedChart, Bar, Line, XAxis, YAxis,
   Tooltip, Legend, Cell, CartesianGrid,
@@ -131,7 +131,6 @@ function ChartCard({ title, data, children }) {
 export default function StatementCharts({ income, cashflow, balance, type, bankNpl }) {
   const isBank = Array.isArray(bankNpl)
   const nplData = isBank ? bankNpl.map(h => ({ period: h.period, npl: h.value })) : []
-  const [period, setPeriod] = useState(8)
   const isUtility = type === 'utilities'
 
   const { results, fcf, bal } = useMemo(() => {
@@ -174,14 +173,12 @@ export default function StatementCharts({ income, cashflow, balance, type, bankN
     return { results, fcf, bal }
   }, [income, cashflow, balance, isUtility])
 
-  const slice = arr => period === 'max' ? arr : arr.slice(-period)
-  const rData = slice(results), fData = slice(fcf), bData = slice(bal)
+  // Mostramos todos los años disponibles (la BD guarda 4 ejercicios anuales).
+  const rData = results, fData = fcf, bData = bal
 
   const rUnit = chartUnit([...rData.map(d => d.revenue), ...rData.map(d => d.net_income)])
   const fUnit = chartUnit([...fData.map(d => d.cfo), ...fData.map(d => d.fcf)])
   const bUnit = chartUnit([...bData.map(d => d.assets), ...bData.map(d => d.liabilities), ...bData.map(d => d.equity)])
-
-  const PERIODS = [{ k: 4, l: '4A' }, { k: 8, l: '8A' }, { k: 'max', l: 'Máx' }]
 
   return (
     <div>
@@ -194,15 +191,6 @@ export default function StatementCharts({ income, cashflow, balance, type, bankN
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
         <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Evolución financiera</p>
-        <div style={{ display: 'flex', gap: 3, background: 'var(--surface-2)', borderRadius: 8, padding: 3 }}>
-          {PERIODS.map(p => (
-            <button key={p.l} onClick={() => setPeriod(p.k)} style={{
-              fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
-              background: period === p.k ? 'rgba(99,102,241,0.2)' : 'transparent',
-              color: period === p.k ? 'var(--accent)' : 'var(--text-faint)',
-            }}>{p.l}</button>
-          ))}
-        </div>
       </div>
 
       <div className="stmt-grid">

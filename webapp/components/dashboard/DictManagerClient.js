@@ -8,6 +8,8 @@ const inputStyle = { background: 'rgba(0,0,0,0.25)', border: '1px solid var(--bo
 export default function DictManagerClient() {
   const [data, setData] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [searching, setSearching] = useState(false)
+  const [found, setFound] = useState(false)   // se ha buscado y prerrellenado
   const [msg, setMsg] = useState(null)
   const [add, setAdd] = useState({ ticker: '', name: '', country: '', currency: 'USD', sector: '', subsector: '', type: 'general' })
   const [rmTicker, setRmTicker] = useState('')
@@ -28,10 +30,35 @@ export default function DictManagerClient() {
     finally { setBusy(false) }
   }
 
+  // Buscar el ticker en Yahoo: comprueba si ya está en la app, guarda sus datos
+  // financieros (escalares) y prerrellena el formulario con nombre/divisa/país/sector.
+  async function searchTicker() {
+    const t = add.ticker.trim().toUpperCase()
+    if (!t) { setMsg({ type: 'err', text: 'Escribe un ticker para buscar' }); return }
+    setSearching(true); setMsg(null); setFound(false)
+    try {
+      const res = await fetch('/api/admin/fetch-ticker', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticker: t }) })
+      const j = await res.json()
+      if (!res.ok) { setMsg({ type: 'err', text: j.error || 'No se encontró en Yahoo. Revisa el ticker.' }); return }
+      if (j.inDict) { setMsg({ type: 'ok', text: `${j.ticker} ya está en la app. Sus datos se han actualizado.` }); load(); return }
+      const m = j.meta || {}
+      setAdd(a => ({
+        ...a, ticker: j.ticker,
+        name: m.name || a.name, currency: m.currency || a.currency,
+        country: m.countryCC || a.country, sector: m.sector || a.sector,
+        subsector: m.industry || a.subsector, type: m.typeGuess || a.type,
+      }))
+      setFound(true)
+      setMsg({ type: 'ok', text: `Encontrada en Yahoo: ${m.name || j.ticker}. Revisa los datos y pulsa "Añadir al DICT". Sus datos financieros ya se han guardado.` })
+    } catch (e) {
+      setMsg({ type: 'err', text: String(e.message || e) })
+    } finally { setSearching(false) }
+  }
+
   async function submitAdd() {
     if (!add.ticker.trim()) { setMsg({ type: 'err', text: 'El ticker es obligatorio' }); return }
     const ok = await call('POST', { action: 'add', ...add })
-    if (ok) { setMsg({ type: 'ok', text: `${add.ticker.toUpperCase()} añadida al DICT` }); setAdd({ ticker: '', name: '', country: '', currency: 'USD', sector: '', subsector: '', type: 'general' }) }
+    if (ok) { setMsg({ type: 'ok', text: `${add.ticker.toUpperCase()} añadida al DICT` }); setAdd({ ticker: '', name: '', country: '', currency: 'USD', sector: '', subsector: '', type: 'general' }); setFound(false) }
   }
   async function submitRemove(ticker, purgeData) {
     const t = (ticker || rmTicker).trim()
@@ -47,18 +74,28 @@ export default function DictManagerClient() {
       <Card>
         <SectionTitle>Gestión del listado de empresas (DICT)</SectionTitle>
         <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 16 }}>
-          Oculta empresas fusionadas o desaparecidas, o añade tickers que no están en el listado. Los cambios son inmediatos (sin redeploy).
+          Añade un ticker nuevo: escríbelo y pulsa <b>Buscar</b>. Si está en Yahoo, se rellenan sus datos (nombre, divisa, país, sector) y se guardan sus financieros; revísalos y pulsa <b>Añadir al DICT</b>. También puedes ocultar empresas fusionadas o desaparecidas. Los cambios son inmediatos (sin redeploy).
         </p>
 
-        {/* Añadir */}
+        {/* Buscar ticker */}
         <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8 }}>Añadir empresa</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 10 }}>
-          <input placeholder="Ticker *" value={add.ticker} onChange={e => setAdd({ ...add, ticker: e.target.value })} style={inputStyle} />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
+          <input placeholder="Ticker de Yahoo (AAPL, IBE.MC…)" value={add.ticker}
+            onChange={e => { setAdd({ ...add, ticker: e.target.value }); setFound(false) }}
+            onKeyDown={e => { if (e.key === 'Enter') searchTicker() }}
+            style={{ ...inputStyle, width: 230 }} />
+          <button onClick={searchTicker} disabled={searching || busy} style={{ fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border-strong)', cursor: 'pointer', background: 'var(--surface-3)', color: 'var(--text)' }}>
+            {searching ? 'Buscando…' : '🔎 Buscar'}
+          </button>
+        </div>
+
+        {/* Datos (prerrellenados tras buscar; editables) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 10, opacity: found ? 1 : 0.65 }}>
           <input placeholder="Nombre" value={add.name} onChange={e => setAdd({ ...add, name: e.target.value })} style={inputStyle} />
           <input placeholder="País (ES, US…)" value={add.country} onChange={e => setAdd({ ...add, country: e.target.value })} style={inputStyle} />
           <input placeholder="Divisa" value={add.currency} onChange={e => setAdd({ ...add, currency: e.target.value })} style={inputStyle} />
           <input placeholder="Sector" value={add.sector} onChange={e => setAdd({ ...add, sector: e.target.value })} style={inputStyle} />
-          <input placeholder="Subsector" value={add.subsector} onChange={e => setAdd({ ...add, subsector: e.target.value })} style={inputStyle} />
+          <input placeholder="Subsector / industria" value={add.subsector} onChange={e => setAdd({ ...add, subsector: e.target.value })} style={inputStyle} />
           <select value={add.type} onChange={e => setAdd({ ...add, type: e.target.value })} style={inputStyle}>
             {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
           </select>

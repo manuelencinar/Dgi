@@ -72,6 +72,24 @@ def load_dict_tickers():
     text = DICT_PATH.read_text(encoding="utf-8")
     return re.findall(r'\["[^"]*","([^"]+)"', text)
 
+def load_override_tickers(sb):
+    """Tickers añadidos/ocultados a mano desde el panel admin (tabla dict_overrides).
+    Así las empresas añadidas manualmente también reciben el run semanal completo."""
+    added, removed = [], set()
+    try:
+        rows = sb.table("dict_overrides").select("ticker, action").execute().data or []
+        for r in rows:
+            t = (r.get("ticker") or "").upper()
+            if not t:
+                continue
+            if r.get("action") == "add":
+                added.append(t)
+            elif r.get("action") == "remove":
+                removed.add(t)
+    except Exception as e:
+        print(f"  (aviso: no se pudieron leer dict_overrides: {e})")
+    return added, removed
+
 # ── Sanitize ──────────────────────────────────────────────────────────────
 
 def sanitize(obj):
@@ -1764,7 +1782,12 @@ def main():
         tickers = [args.ticker.upper()]
     else:
         tickers = load_dict_tickers()
-        print(f"  {len(tickers)} tickers en el DICT")
+        added, removed = load_override_tickers(sb)
+        tickers = [t for t in tickers if t not in removed]
+        for t in added:
+            if t not in tickers:
+                tickers.append(t)
+        print(f"  {len(tickers)} tickers (DICT + {len(added)} añadidos por overrides, −{len(removed)} ocultados)")
 
     print(f"\nProcesando {len(tickers)} tickers (TTL={args.ttl}d, force={args.force})…\n")
 
