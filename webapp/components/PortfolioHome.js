@@ -8,6 +8,7 @@ import { resolveDestWHT } from '@/lib/fiscal-es'
 import { buildDividendCalendar, MONTHS_ES } from '@/lib/dividend-calendar'
 import { estimateMonthInterest } from '@/lib/cash-fund'
 import { getLatestExchangeRate } from '@/lib/currency'
+import { computeMilestones, newlyReached, tierLabel } from '@/lib/milestones'
 
 const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 20 }
 const LABEL = { fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.09em' }
@@ -154,6 +155,7 @@ export default function PortfolioHome() {
         monthlyNet, nextPayment: cal.nextPayment,
         events: events.slice(0, 10),
         currentMonth: now.getMonth(),
+        companies: enriched.length,
       })
       setExpDraft(monthlyExpenses ? String(monthlyExpenses) : '')
     })().catch(() => { if (!cancel) setState({ empty: true }) })
@@ -250,6 +252,9 @@ export default function PortfolioHome() {
         </div>
       </div>
 
+      {/* ── LOGROS / HITOS ── */}
+      <MilestoneBadges value={s.totalValue} income={s.netAnnual} freedom={freedomPct} companies={s.companies} />
+
       <div className="home-grid2">
         {/* ── 2. PÓLVORA SECA ── */}
         <div style={CARD}>
@@ -323,6 +328,72 @@ export default function PortfolioHome() {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// Badges de hitos: celebra el progreso del usuario (interés compuesto a largo plazo).
+function MilestoneBadges({ value, income, freedom, companies }) {
+  const { groups, reachedIds } = useMemo(() => computeMilestones({ value, income, freedom, companies }), [value, income, freedom, companies])
+  const reachedKey = reachedIds.join(',')
+  const [celebrate, setCelebrate] = useState(null)
+
+  useEffect(() => {
+    try {
+      const KEY = 'everdiv:milestones:v1'
+      const existing = localStorage.getItem(KEY)
+      if (existing == null) { localStorage.setItem(KEY, JSON.stringify(reachedIds)); return }  // 1ª vez: no celebra lo histórico
+      const seen = JSON.parse(existing)
+      const fresh = newlyReached(reachedIds, seen)
+      if (fresh) setCelebrate(fresh)
+      localStorage.setItem(KEY, JSON.stringify(Array.from(new Set([...seen, ...reachedIds]))))
+    } catch {}
+  }, [reachedKey])   // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fmtRemaining = g => {
+    if (g.next == null) return ''
+    if (g.type === 'eur') return `${g.remaining.toLocaleString('es-ES')} €`
+    if (g.type === 'pct') return `${Math.ceil(g.remaining)} pts`
+    return `${g.remaining}`
+  }
+
+  return (
+    <div style={{ ...CARD }}>
+      {celebrate && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(90deg, rgba(52,211,153,0.18), rgba(99,102,241,0.12))', border: '1px solid rgba(52,211,153,0.4)', borderRadius: 11, padding: '12px 14px', marginBottom: 16 }}>
+          <span style={{ fontSize: 24 }}>🎉</span>
+          <p style={{ flex: 1, fontSize: 13.5, fontWeight: 700, color: 'var(--text-strong)' }}>¡Enhorabuena! {celebrate.message}</p>
+          <button onClick={() => setCelebrate(null)} aria-label="Cerrar" style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: 16, cursor: 'pointer' }}>✕</button>
+        </div>
+      )}
+      <p style={{ ...LABEL, marginBottom: 14 }}>🏆 Tus logros</p>
+      <div className="ms-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+        <style>{`@media(min-width:760px){.ms-grid{grid-template-columns:repeat(4,1fr)!important}}`}</style>
+        {groups.map(g => {
+          const reached = g.current != null
+          return (
+            <div key={g.key} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 11, padding: '12px 13px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+                <span style={{ fontSize: 18, filter: reached ? 'none' : 'grayscale(1)', opacity: reached ? 1 : 0.45 }}>{g.icon}</span>
+                <span style={{ fontSize: 10, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{g.title}</span>
+              </div>
+              <p style={{ fontSize: 15, fontWeight: 900, color: reached ? 'var(--text-strong)' : 'var(--text-faint)', marginBottom: 8 }}>
+                {reached ? tierLabel(g, g.current) : 'Sin desbloquear'}
+              </p>
+              {g.next != null ? (
+                <>
+                  <div style={{ height: 6, background: 'var(--surface-3)', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: Math.round(g.progress * 100) + '%', background: 'linear-gradient(90deg, var(--accent), var(--positive))', borderRadius: 4 }} />
+                  </div>
+                  <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 5 }}>Próximo {tierLabel(g, g.next)} · faltan {fmtRemaining(g)}</p>
+                </>
+              ) : (
+                <p style={{ fontSize: 10.5, color: 'var(--positive)', fontWeight: 700 }}>¡Nivel máximo!</p>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
