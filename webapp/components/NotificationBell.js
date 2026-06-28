@@ -84,7 +84,7 @@ export default function NotificationBell() {
                   borderBottom: '1px solid var(--surface-2)',
                   background: n.read ? 'transparent' : 'rgba(99,102,241,0.06)',
                 }}>
-                  <span style={{ fontSize: 15, flexShrink: 0 }}>{ICON[n.type] || '🔔'}</span>
+                  <span style={{ fontSize: 15, flexShrink: 0, color: 'var(--text)', display: 'inline-flex', alignItems: 'center' }}>{ICON[n.type] || <BellIcon size={15} />}</span>
                   <div style={{ minWidth: 0 }}>
                     <p style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.4 }}>{n.message}</p>
                     <p style={{ fontSize: 10, color: 'var(--text-faint)', marginTop: 2 }}>{timeAgo(n.created_at)}</p>

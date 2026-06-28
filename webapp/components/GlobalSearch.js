@@ -16,8 +16,11 @@ export default function GlobalSearch() {
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [active, setActive] = useState(0)
+  // Término para el que YA tenemos respuesta definitiva: solo con él se puede afirmar
+  // "sin resultados". Mientras no coincida con lo escrito, seguimos buscando.
+  const [searchedTerm, setSearchedTerm] = useState('')
   const inputRef = useRef(null)
-  const abortRef = useRef(null)
+  const reqRef = useRef(0)
   const router = useRouter()
 
   // Lista plana de resultados (para navegación con teclado)
@@ -28,6 +31,7 @@ export default function GlobalSearch() {
     setQ('')
     setResults([])
     setActive(0)
+    setSearchedTerm('')
   }, [])
 
   // Atajo de teclado para abrir: Cmd/Ctrl + K
@@ -48,23 +52,26 @@ export default function GlobalSearch() {
     if (open && inputRef.current) inputRef.current.focus()
   }, [open])
 
-  // Búsqueda con debounce
+  // Búsqueda con debounce. Cada petición lleva un id incremental; solo la ÚLTIMA
+  // aplica resultados/estado (las respuestas obsoletas se ignoran). Así no se mezcla
+  // el loading de una petición vieja con resultados de otra → nunca parpadea un
+  // "sin resultados" falso mientras la búsqueda buena sigue en camino.
   useEffect(() => {
     if (!open) return
     const term = q.trim()
     if (term.length < 1) {
       setResults([])
       setLoading(false)
+      setSearchedTerm('')
       return
     }
     setLoading(true)
+    const myReq = ++reqRef.current
     const id = setTimeout(async () => {
       try {
-        if (abortRef.current) abortRef.current.abort()
-        const ctrl = new AbortController()
-        abortRef.current = ctrl
-        const res = await fetch(`/api/search?q=${encodeURIComponent(term)}`, { signal: ctrl.signal })
+        const res = await fetch(`/api/search?q=${encodeURIComponent(term)}`)
         const data = await res.json()
+        if (myReq !== reqRef.current) return   // respuesta obsoleta → ignora
         const merged = [
           ...(data.companies || []),
           ...(data.indices || []),
@@ -72,9 +79,12 @@ export default function GlobalSearch() {
         ]
         setResults(merged)
         setActive(0)
-      } catch (e) {
-        if (e?.name !== 'AbortError') setResults([])
-      } finally {
+        setSearchedTerm(term)
+        setLoading(false)
+      } catch {
+        if (myReq !== reqRef.current) return
+        setResults([])
+        setSearchedTerm(term)
         setLoading(false)
       }
     }, 180)
@@ -127,7 +137,7 @@ export default function GlobalSearch() {
           >
             {/* Input */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
-              <span style={{ fontSize: 16, opacity: 0.6 }}>🔍</span>
+              <span style={{ color: 'var(--text-faint)', display: 'inline-flex' }}><SearchIcon size={17} /></span>
               <input
                 ref={inputRef}
                 value={q}
@@ -145,7 +155,18 @@ export default function GlobalSearch() {
 
             {/* Resultados */}
             <div style={{ maxHeight: '52vh', overflowY: 'auto' }}>
-              {q.trim().length >= 1 && !loading && flat.length === 0 && (
+              {/* Buscando: mientras la respuesta del término actual no haya llegado
+                  (debounce + red). Nunca mostramos "sin resultados" aquí. */}
+              {q.trim().length >= 1 && (loading || searchedTerm !== q.trim()) && flat.length === 0 && (
+                <div style={{ padding: '26px 16px', textAlign: 'center', color: 'var(--text-faint)', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <span style={{ width: 14, height: 14, border: '2px solid var(--border-strong)', borderTopColor: 'var(--accent)', borderRadius: '50%', display: 'inline-block', animation: 'gs-spin 0.7s linear infinite' }} />
+                  Buscando “{q.trim()}”…
+                  <style>{`@keyframes gs-spin{to{transform:rotate(360deg)}}`}</style>
+                </div>
+              )}
+              {/* Sin resultados: SOLO cuando el término escrito ya tiene respuesta
+                  definitiva y está vacía → la empresa de verdad no está en la app. */}
+              {q.trim().length >= 1 && !loading && searchedTerm === q.trim() && flat.length === 0 && (
                 <div style={{ padding: '26px 16px', textAlign: 'center', color: 'var(--text-faint)', fontSize: 13 }}>
                   Sin resultados para “{q.trim()}”
                 </div>
