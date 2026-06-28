@@ -12,6 +12,17 @@ export function toEUR(amount, currency) {
   return amount * (FX[currency] || 1.0)
 }
 
+// Las acciones de la Bolsa de Londres (.L) cotizan en PENIQUES (GBp), pero Yahoo las
+// etiqueta como GBP. El usuario introduce el precio de compra en LIBRAS y el tipo de
+// cambio es GBP→EUR, así que el precio y el dividendo que vienen de Yahoo (en peniques)
+// hay que pasarlos a libras (÷100) para que casen con avg_cost y el FX. Solo acciones
+// .L en GBP (los ETF/fondos .L se evalúan por su rama propia y pueden estar en libras/USD).
+export function penceToPounds(ticker) { return /\.L$/i.test(ticker || '') }
+export function normalizeGbp(value, ticker, currency) {
+  if (value == null) return value
+  return (currency === 'GBP' && penceToPounds(ticker)) ? value / 100 : value
+}
+
 // ── Geography ─────────────────────────────────────────────────────────────
 
 const ZONE = {
@@ -112,8 +123,9 @@ export function enrichPositions(rawPositions, fundamentalsMap, fundsMap = {}) {
     const type        = dictEntry?.[6] ?? 'general'
 
     const currency      = pos.currency || dictCurr
-    const currentPrice  = fund.current_price  ?? null
-    const dps           = fund.dps             ?? 0
+    // .L cotiza en peniques → a libras para casar con avg_cost (libras) y el FX GBP→EUR.
+    const currentPrice  = normalizeGbp(fund.current_price ?? null, pos.ticker, currency)
+    const dps           = normalizeGbp(fund.dps ?? 0, pos.ticker, currency) ?? 0
 
     const valueEUR      = currentPrice != null ? toEUR(currentPrice * pos.shares, currency) : null
     const costEUR       = toEUR(pos.avg_cost * pos.shares, currency)

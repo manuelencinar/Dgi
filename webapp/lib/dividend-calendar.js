@@ -159,8 +159,12 @@ export function buildDividendCalendar(enriched, fundamentalsMap, fxToEUR, destWH
         cycleDates = countryMonths(code).map(m => new Date(year, m - 1, 15, 12))
       }
       if (!freq || !cycleDates.length) return
-      curAnnual   = dpsTTM > 0 ? dpsTTM : lastFullYearDPS(divHist, year)
-      priorAnnual = priorYearDPS(divHist, year) ?? lastFullYearDPS(divHist, year)
+      // div_history viene crudo de Yahoo: las .L están en peniques → a libras (÷100)
+      // para casar con pos.dps (ya normalizado) y el FX GBP→EUR. pos.dps NO se reescala.
+      const penceAdj = (currency === 'GBP' && /\.L$/i.test(pos.ticker)) ? 0.01 : 1
+      curAnnual   = dpsTTM > 0 ? dpsTTM : (lastFullYearDPS(divHist, year) ?? 0) * penceAdj
+      const prior = priorYearDPS(divHist, year) ?? lastFullYearDPS(divHist, year)
+      priorAnnual = prior != null ? prior * penceAdj : null
       if (!curAnnual || curAnnual <= 0) return
     }
 
