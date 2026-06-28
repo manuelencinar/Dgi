@@ -294,11 +294,28 @@ function IncomeGoalCard({ currentIncome, goal, growthPct, onSave }) {
 }
 
 // ── Section 2: Positions table ─────────────────────────────────────────────
-function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
+// Dato compacto para la ficha móvil expandida de cada posición.
+function MobileStat({ label, value, sub, color }) {
+  return (
+    <div>
+      <p style={{ fontSize: 10, color: 'var(--text-faint)', marginBottom: 1 }}>{label}</p>
+      <p style={{ fontSize: 12.5, fontWeight: 700, color: color || 'var(--text)' }}>{value}</p>
+      {sub ? <p style={{ fontSize: 10, color: 'var(--accent)' }}>{sub}</p> : null}
+    </div>
+  )
+}
+
+function PositionsTable({ enriched, isPremium, onEdit, onDelete }) {
   const FREE_LIMIT = 10
+  const [openId, setOpenId] = useState(null)
 
   return (
     <div style={{ ...CARD, marginBottom: 16 }}>
+      {/* En móvil ocultamos la tabla ancha y mostramos fichas plegables sin scroll horizontal. */}
+      <style>{`
+        @media(max-width:760px){ .pos-desktop{display:none!important;} }
+        @media(min-width:761px){ .pos-mobile{display:none!important;} }
+      `}</style>
       <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Posiciones</p>
       {enriched.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
@@ -312,12 +329,13 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
               Añadir posición
             </Link>
             <Link href="/cartera/importar" style={{ padding: '10px 20px', background: 'var(--surface-3)', border: '1px solid var(--border-strong)', borderRadius: 8, color: 'var(--text)', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-              ⭳ Importar de ING
+              ↓ Importar de ING
             </Link>
           </div>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+       <>
+        <div className="pos-desktop" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 860 }}>
             <thead>
               <tr>
@@ -373,7 +391,6 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
                   </td>
                   <td style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid var(--surface-2)', whiteSpace: 'nowrap' }}>
                     <button onClick={() => onEdit(p)} title="Editar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 14, padding: '2px 4px' }}>✏</button>
-                    <button onClick={() => onDividend(p)} title="Registrar dividendo" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--positive)', fontSize: 14, padding: '2px 4px' }}>$</button>
                     <button onClick={() => onDelete(p.id)} title="Eliminar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--negative)', fontSize: 14, padding: '2px 4px' }}>🗑</button>
                   </td>
                 </tr>
@@ -381,6 +398,57 @@ function PositionsTable({ enriched, isPremium, onEdit, onDividend, onDelete }) {
             </tbody>
           </table>
         </div>
+
+        {/* Móvil: fichas plegables — nombre · valor · plusvalía; al pulsar se ve el resto */}
+        <div className="pos-mobile">
+          {enriched.map(p => {
+            const open = openId === p.id
+            const yoc = p.yieldOnCostReal ?? p.yieldOnCost
+            return (
+              <div key={p.id} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                <button onClick={() => setOpenId(open ? null : p.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 2px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                  <CompanyLogo ticker={p.ticker} name={p.name} size={30} rounded={!p.isFund} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {p.name}
+                      {p.assetType === 'etf' && <span style={{ fontSize: 9, fontWeight: 700, color: '#60a5fa', background: 'rgba(96,165,250,0.14)', padding: '1px 5px', borderRadius: 4 }}>ETF</span>}
+                      {p.assetType === 'fund' && <span style={{ fontSize: 9, fontWeight: 700, color: '#a78bfa', background: 'rgba(167,139,250,0.14)', padding: '1px 5px', borderRadius: 4 }}>Fondo</span>}
+                    </p>
+                    <p style={{ fontSize: 10, color: 'var(--text-faint)' }}>{p.ticker} · {p.currency}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{p.valueEUR != null ? fmtEUR(p.valueEUR) : '—'}</p>
+                    <p style={{ fontSize: 11.5, fontWeight: 700, color: gainCol(p.gainPct) }}>
+                      {p.gainPct != null ? `${fmtPct(p.gainPct)} · ${p.gainEUR >= 0 ? '+' : ''}${fmtEUR(p.gainEUR)}` : '—'}
+                    </p>
+                  </div>
+                  <span style={{ color: 'var(--text-faint)', fontSize: 11, width: 12, textAlign: 'center' }}>{open ? '▾' : '▸'}</span>
+                </button>
+                {open && (
+                  <div style={{ padding: '2px 2px 14px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px 12px' }}>
+                      <MobileStat label="Acciones" value={fmt(p.shares, 4)} />
+                      <MobileStat label="P. Medio" value={`${fmt(p.avg_cost)} ${p.currency}`} />
+                      <MobileStat label="Coste real" value={p.avgCostReal != null ? `${fmt(p.avgCostReal)} ${p.currency}` : '—'} />
+                      <MobileStat label="P. Actual" value={p.currentPrice != null ? `${fmt(p.currentPrice)} ${p.currency}` : '—'} />
+                      <MobileStat label="YoC" value={yoc != null ? yoc.toFixed(2) + '%' : '—'} color="var(--accent)" />
+                      <MobileStat label="Yield" value={p.currentYield != null ? p.currentYield.toFixed(2) + '%' : '—'} color="var(--positive)" />
+                      <MobileStat label="Renta/año" value={p.annualIncomeEUR != null ? fmtEUR(p.annualIncomeEUR) : '—'} color="var(--warning)" />
+                      <MobileStat label="Cobrado" value={p.dividendsCollectedEUR > 0 ? fmtEUR(p.dividendsCollectedEUR) : '—'} color={p.dividendsCollectedEUR > 0 ? 'var(--positive)' : undefined} />
+                      <MobileStat label="Coste neto" value={p.netCostEUR != null ? fmtEUR(Math.max(0, p.netCostEUR)) : '—'} color={p.netCostEUR != null && p.netCostEUR <= 0 ? 'var(--positive)' : undefined} sub={p.yoCNet == null ? '' : p.yoCNet === Infinity ? '✓ recuperada' : `YoC ${p.yoCNet.toFixed(2)}%`} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                      <Link href={p.isFund ? `/fondo/${encodeURIComponent(p.ticker)}` : `/empresa/${encodeURIComponent(p.ticker)}`} style={{ flex: 1, textAlign: 'center', padding: '8px 0', background: 'var(--surface-3)', border: '1px solid var(--border-strong)', borderRadius: 7, color: 'var(--text)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>Ver ficha</Link>
+                      <button onClick={() => onEdit(p)} style={{ flex: 1, padding: '8px 0', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 7, color: 'var(--accent)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✏ Editar</button>
+                      <button onClick={() => onDelete(p.id)} style={{ flex: 1, padding: '8px 0', background: 'none', border: '1px solid var(--border-strong)', borderRadius: 7, color: 'var(--negative)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>🗑 Eliminar</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+       </>
       )}
 
       <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end' }}>
@@ -596,12 +664,13 @@ function FiscalSection({ fiscal, country, onCountryChange, isPremium, exempt = f
 function EditModal({ position, onClose, onSave }) {
   const [shares,  setShares]  = useState(String(position.shares))
   const [avgCost, setAvgCost] = useState(String(position.avg_cost))
+  const [commission, setCommission] = useState(position.buyCommission != null ? String(position.buyCommission) : '')
   const [saving, setSaving]   = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
     setSaving(true)
-    await onSave(position.id, parseFloat(shares), parseFloat(avgCost))
+    await onSave(position.id, parseFloat(shares), parseFloat(avgCost), commission === '' ? null : (parseFloat(commission) || 0))
     setSaving(false)
     onClose()
   }
@@ -617,53 +686,15 @@ function EditModal({ position, onClose, onSave }) {
           <label style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4, display: 'block' }}>Precio medio compra ({position.currency})</label>
           <input style={INPUT} type="number" step="any" value={avgCost} onChange={e => setAvgCost(e.target.value)} required />
         </div>
+        <div>
+          <label style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4, display: 'block' }}>Comisiones de compra ({position.currency})</label>
+          <input style={INPUT} type="number" step="any" min="0" placeholder="0.00" value={commission} onChange={e => setCommission(e.target.value)} />
+          <p style={{ fontSize: 11, color: 'var(--text-faintest)', marginTop: 5 }}>Comisión total de compraventa + canon de bolsa. Ajusta el coste real y el YoC real de esta posición.</p>
+        </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button type="button" onClick={onClose} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 7, color: 'var(--text-faint)', cursor: 'pointer', fontSize: 12 }}>Cancelar</button>
           <button type="submit" disabled={saving} style={{ padding: '8px 16px', background: 'var(--accent)', border: 'none', borderRadius: 7, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>
             {saving ? 'Guardando…' : 'Guardar'}
-          </button>
-        </div>
-      </form>
-    </Modal>
-  )
-}
-
-// ── Dividend modal ─────────────────────────────────────────────────────────
-function DividendModal({ position, onClose, onSave }) {
-  const [amount,    setAmount]    = useState('')
-  const [amountNet, setAmountNet] = useState('')
-  const [date,      setDate]      = useState(new Date().toISOString().slice(0, 10))
-  const [saving, setSaving]       = useState(false)
-
-  const submit = async (e) => {
-    e.preventDefault()
-    setSaving(true)
-    await onSave(position.ticker, parseFloat(amount), amountNet ? parseFloat(amountNet) : null, date)
-    setSaving(false)
-    onClose()
-  }
-
-  return (
-    <Modal onClose={onClose} title={`Dividendo cobrado — ${position.name}`}>
-      <form onSubmit={submit} style={{ display: 'grid', gap: 14 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <div>
-            <label style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4, display: 'block' }}>Importe bruto ({position.currency})</label>
-            <input style={INPUT} type="number" step="any" min="0" placeholder="120.00" value={amount} onChange={e => setAmount(e.target.value)} required />
-          </div>
-          <div>
-            <label style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4, display: 'block' }}>Importe neto (opcional)</label>
-            <input style={INPUT} type="number" step="any" min="0" placeholder="97.00" value={amountNet} onChange={e => setAmountNet(e.target.value)} />
-          </div>
-        </div>
-        <div>
-          <label style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4, display: 'block' }}>Fecha de cobro</label>
-          <input style={INPUT} type="date" value={date} onChange={e => setDate(e.target.value)} required />
-        </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button type="button" onClick={onClose} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 7, color: 'var(--text-faint)', cursor: 'pointer', fontSize: 12 }}>Cancelar</button>
-          <button type="submit" disabled={saving} style={{ padding: '8px 16px', background: 'rgba(52,211,153,0.8)', border: 'none', borderRadius: 7, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>
-            {saving ? 'Guardando…' : 'Registrar'}
           </button>
         </div>
       </form>
@@ -692,7 +723,6 @@ export default function PortfolioPage({ isPremium }) {
   const [enriched, setEnriched]       = useState([])
   const [loading, setLoading]         = useState(true)
   const [editPos,   setEditPos]       = useState(null)
-  const [divPos,    setDivPos]        = useState(null)
   const [deleteId,  setDeleteId]      = useState(null)
   const [fiscalCountry, setFiscal]    = useState('ES')
 
@@ -768,7 +798,9 @@ export default function PortfolioPage({ isPremium }) {
 
     // Coste real por acción (incluye comisiones de compra) + YoC sobre coste real
     const enr = enrichPositions(positions, fundMap, fundsMap).map(p => {
-      const comm = commByTicker[p.ticker] || 0
+      // Comisión: el override manual de la posición (editado desde la cartera)
+      // prevalece sobre la suma de comisiones de las transacciones.
+      const comm = (p.commission != null && p.commission !== '') ? Number(p.commission) : (commByTicker[p.ticker] || 0)
       const shares = Number(p.shares) || 0
       const avgCostReal = shares > 0 ? (Number(p.avg_cost) * shares + comm) / shares : p.avg_cost
       const yieldOnCostReal = (avgCostReal > 0 && p.dps != null) ? p.dps / avgCostReal * 100 : null
@@ -794,15 +826,17 @@ export default function PortfolioPage({ isPremium }) {
 
   useEffect(() => { load() }, [])
 
-  const handleEdit = async (id, shares, avg_cost) => {
+  const handleEdit = async (id, shares, avg_cost, commission) => {
     const { data: { user } } = await sb.auth.getUser()
-    await sb.from('positions').update({ shares, avg_cost, updated_at: new Date().toISOString() }).eq('id', id).eq('user_id', user.id)
+    const patch = { shares, avg_cost, updated_at: new Date().toISOString() }
+    if (commission !== undefined) patch.commission = commission
+    // Tolerante a que la columna positions.commission aún no exista en BD: reintenta sin ella.
+    let res = await sb.from('positions').update(patch).eq('id', id).eq('user_id', user.id)
+    if (res.error && /commission/.test(res.error.message || '')) {
+      const { commission: _omit, ...rest } = patch
+      await sb.from('positions').update(rest).eq('id', id).eq('user_id', user.id)
+    }
     load()
-  }
-
-  const handleDividend = async (ticker, amount, amount_net, date) => {
-    const { data: { user } } = await sb.auth.getUser()
-    await sb.from('dividends_received').insert({ user_id: user.id, ticker, amount, amount_net, date })
   }
 
   const handleDelete = async (id) => {
@@ -881,7 +915,7 @@ export default function PortfolioPage({ isPremium }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <PricesFreshnessIndicator />
           <Link href="/cartera/importar" style={{ padding: '9px 16px', background: 'var(--surface-3)', border: '1px solid var(--border-strong)', borderRadius: 8, color: 'var(--text)', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-            ⭳ Importar
+            ↓ Importar
           </Link>
           {enriched.length > 0 && (
             <Link href="/cartera/nueva-posicion" style={{ padding: '9px 18px', background: 'var(--accent)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
@@ -895,7 +929,6 @@ export default function PortfolioPage({ isPremium }) {
       <PositionsTable
         enriched={enriched} isPremium={isPremium}
         onEdit={setEditPos}
-        onDividend={setDivPos}
         onDelete={setDeleteId}
       />
 
@@ -954,7 +987,6 @@ export default function PortfolioPage({ isPremium }) {
 
       {/* Modals */}
       {editPos  && <EditModal     position={editPos}    onClose={() => setEditPos(null)}  onSave={handleEdit} />}
-      {divPos   && <DividendModal position={divPos}     onClose={() => setDivPos(null)}   onSave={handleDividend} />}
       {deleteId && <DeleteModal   positionId={deleteId} onClose={() => setDeleteId(null)} onConfirm={handleDelete} />}
     </div>
   )
