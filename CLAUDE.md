@@ -115,6 +115,7 @@ Cada señal muestra el **valor, el umbral y el porqué** (no solo una etiqueta).
 - `lib/currency.js`: `getExchangeRate(from, to, date)` (mira hasta 5 días hábiles atrás, null si no hay), `getLatestExchangeRate`, `getExchangeRateChange`, `convertAmount`, `formatCurrency`. Crea el cliente supabase de navegador internamente.
 - Usado en alta de operación, posiciones, historial, ajustes (widget FX + alerta de comisión + análisis de divisa).
 - El script de precios también puebla exchange_rates.
+- **Peniques (GBp) de la Bolsa de Londres**: las acciones `.L` cotizan en PENIQUES y Yahoo las etiqueta como GBP, pero el usuario introduce el precio de compra en LIBRAS y el FX es GBP→EUR. `normalizeGbp(value, ticker, currency)`/`penceToPounds(ticker)` en `lib/portfolio.js` dividen /100 el `current_price` y el `dps` de las acciones `.L` en GBP dentro de `enrichPositions` → casan con `avg_cost` (libras) y el cambio. Sin esto el YoC salía ×100 (caso 4imprint FOUR.L: ~1033%) y el valor/ganancia inflados. `lib/dividend-calendar.js` también /100 los respaldos desde `div_history` (crudo, peniques) para `.L` (`pos.dps` ya viene normalizado de enrichPositions, NO se reescala). Solo afecta a la cartera (la ficha/screener usan peniques de forma consistente). Test `webapp/test/gbp-pence.test.mjs`.
 
 ## Sistema de valoración (lib/valuation.js) — sector-aware
 - Valor intrínseco sector-aware. `computeValuation(data, moatWidth, type, currency)` y `recomputeValuation(engine, params, price)` (modo personalizado en cliente). Motores (`engine`): `dcf`, `epb`, `affo`, `ddm` (legacy, conservado para params guardados).
@@ -278,7 +279,8 @@ Cada señal muestra el **valor, el umbral y el porqué** (no solo una etiqueta).
 ## Panel de administración (`/dashboard`)
 - Protección en `proxy.js` (Next.js 16 usa proxy, no middleware): solo `role='admin'` en user_settings (o email admin hardcodeado), redirección silenciosa a `/`.
 - Páginas: Resumen, Datos (carga manual/CSV), Usuarios (métricas+gráfico), Índices (cobertura 43 mercados), Sistema (logs+acciones).
-- API admin: `/api/admin/fetch-ticker`, `/api/admin/trigger-github-action`, `/api/admin/clean-logs`.
+- **Conceder/revocar Premium con fecha de fin** (Usuarios → "Ver detalle" → "Gestionar premium"): datepicker "premium hasta" + casilla "sin caducidad" (permanente) + botones conceder/actualizar/revocar. API `/api/admin/grant-premium` (POST, admin-guarded, service_role: `{email, premiumUntil, revoke}`). La caducidad se respeta sola (la app marca free si `premium_until < hoy`).
+- API admin: `/api/admin/fetch-ticker`, `/api/admin/trigger-github-action`, `/api/admin/clean-logs`, `/api/admin/grant-premium`.
 - Tabla `admin_logs` + columna `user_settings.role` (SQL en `webapp/sql/admin.sql`). Lógica en `lib/admin.js`, `lib/admin-stats.js`.
 - Requiere env var `GITHUB_TOKEN` (ya configurada en Vercel) para disparar el workflow.
 - IMPORTANTE: paginar consultas a company_fundamentals (límite 1000 de PostgREST) con `.range()`.
@@ -306,6 +308,26 @@ Nota PREDICTIVA del riesgo de recorte (complementa al detector reactivo y al Sco
 ## Analítica de producto — PostHog (`components/Analytics.js` + `lib/analytics.js`)
 Snippet oficial de PostHog cargado SOLO si existe `NEXT_PUBLIC_POSTHOG_KEY` (no-op total si falta → no rompe local/preview). Autocapture (pageviews + clics). `track(event, props)`/`identify` para eventos clave; se marca `upgrade_click` en el inicio de checkout (`PricingClient`). Host EU por defecto (`NEXT_PUBLIC_POSTHOG_HOST`). Montado en `app/layout.js`. PENDIENTE: poner la key en Vercel.
 
+## Tema claro/oscuro
+- **Oscuro por defecto**; toggle SOLO en **Ajustes → Apariencia** (no en el menú, por decisión del usuario). Persiste en `localStorage` (`theme`), funciona para anónimos.
+- **Variables de tema** en el `<style>` inline de `app/layout.js` (NO en globals.css, que está SIN importar = código muerto): `:root` = oscuro, `[data-theme="light"]` = claro. Tokens: `--bg`, `--bg-elev`, `--surface`(-2/-3), `--border`(-strong), `--text-strong`/`--text`/`--text-muted`/`--text-faint`/`--text-faintest`, `--accent`(-bg), `--positive`/`--positive-soft`/`--negative`/`--warning`, `--nav-bg`, `--scrollbar`.
+- **Anti-parpadeo**: script inline en `<head>` fija `data-theme` antes del primer paint. `components/ThemeToggle.js` exporta `useTheme()` + `applyTheme()`.
+- **Regla al escribir UI nueva**: usar `var(--token)` para chrome (fondos/bordes/textos); en oscuro las variables = valores originales (sin regresión). Acentos de datos de gráficos (p.ej. `#60a5fa`) y emails (`app/api/*`) se dejan en hex. La migración masiva se hizo con un codemod (hex/rgba→var) que excluye `layout.js`/`manifest.js`/`ThemeToggle.js`.
+- **`var()` NO se resuelve en atributos de presentación SVG** (`fill=`/`stroke=`) en algunos navegadores → caía a negro (gráficos oscuros en claro). Solución: reglas CSS `[fill="var(--x)"]{fill:var(--x)}` (y stroke) en el layout, que SÍ resuelven var() y ganan al atributo → tematiza todos los SVG sin tocar componentes. **html2canvas tampoco resuelve var()** → en exports (ComparadorClient) se lee el valor real con `getComputedStyle`.
+
+## Logos de empresa (auto-alojados)
+- Bucket público de Supabase Storage **`company-logos`** (`{ticker}.png`), poblado por `scripts/fetch_logos.mjs` (descarga del CDN de FMP `images.financialmodelingprep.com/symbol/{toFmpSymbol}.png`, valida PNG, salta secundarias; ~2128/2490 = ~88% cubiertas, ~15-20 MB). Re-ejecutable.
+- Componente **`components/CompanyLogo.js`** (`<img>` desde el bucket; `onError` → monograma circular con iniciales + color del nombre, nunca icono roto; logo sobre chip blanco para verse en ambos temas). **OJO**: `NEXT_PUBLIC_SUPABASE_URL` en Vercel tenía espacios al final → se sanea con `.trim()`.
+- Integrado en: cabecera de la **ficha**, tabla de **posiciones** de la cartera, **recomendación de empresas** (CompanyDetector) y **watchlist**.
+
+## Estimaciones de analistas + diagrama Sankey (pestaña Finanzas de la ficha)
+- **Estimaciones de analistas (FMP)** (`components/empresa/AnalystEstimates.js` + `lib/analyst-estimates.js` + `app/api/empresa/[ticker]/estimates`): tabla + gráfico combinado (barras de ingresos + línea de BPA, real sólido / estimado discontinuo) con un continuo años reales (de `income_statement_annual`) → estimados (consenso FMP). Ingresos en millones (M), como el resto de la app. La **fuente (FMP) se oculta** a propósito en la UI.
+  - **Endpoint**: API "stable" `/stable/analyst-estimates?symbol=…&period=annual` (la v3 legacy da **403** a cuentas creadas tras 31-ago-2025). Campos `revenueAvg`/`epsAvg`/`numAnalystsEps`. `toFmpSymbol` convierte el ticker Yahoo→FMP.
+  - **Plan free de FMP cubre CASI SOLO EE.UU.**: no-US (p.ej. `CLNX.MC`) devuelve **HTTP 402** → no es bug, es el plan. `fetchFmpEstimatesResult` discrimina `ok`/`unsupported`(402)/`error`(transitorio).
+  - **Precarga por lotes**: `scripts/fetch_analyst_estimates.mjs` (+ workflow diario `fetch_analyst_estimates.yml`, 7:00 UTC, cap 200/día → cubre la app en ~10 días) rellena `analyst_estimates`/`_status`/`_at` en company_fundamentals. `unsupported`/vacío → `none` (no se reconsulta); `error` → reintento. La ruta lee de BD primero (0 llamadas) y solo hace fetch en vivo si `status` es null. SQL `webapp/sql/analyst_estimates.sql`. `FMP_API_KEY` en Vercel (3 entornos) **y** como secret de GitHub Actions.
+  - **Decisión editorial**: NO mostramos precio objetivo de analistas (cortoplacista, choca con DGI) — hay un párrafo explicándolo al pie de la pestaña Valoración. FMP sí lo daría (price-target/grades, solo US).
+- **Diagrama Sankey del estado de resultados** (`components/empresa/IncomeSankey.js`): "¿A dónde va el dinero?" — SVG propio con layout determinista (beneficio arriba / coste-gasto abajo en todas las columnas → sin cruces; recharts Sankey se descartó por entremezclar flujos). Ingresos → Coste de ventas + Beneficio bruto → Beneficio neto + Gastos → I+D / Ventas y marketing / G&A / Impuestos y otros. **Selector de periodo** arriba (años; trimestres si hay datos = premium). Solo estructura clásica con beneficio positivo (banca/seguros/REIT y pérdidas → no se muestra).
+
 ## PWA / instalable
 `app/manifest.js` (Next sirve `/manifest.webmanifest` y enlaza solo) + iconos SVG de marca: `app/icon.svg` (favicon), `public/icon.svg` + `public/icon-maskable.svg` (manifest), `app/apple-icon.svg`. "Añadir a pantalla de inicio" con arranque propio.
 
@@ -314,7 +336,7 @@ Snippet oficial de PostHog cargado SOLO si existe `NEXT_PUBLIC_POSTHOG_KEY` (no-
 - `app/sitemap.js` (~2000 fichas sin secundarias + índices + páginas públicas) y `app/robots.js` (bloquea `/api` y páginas privadas/de app). `generateMetadata` en `/mercados/[symbol]`.
 
 ## Tests + CI — runner nativo de Node (cero dependencias)
-`npm test` → `node --import ./test/register-alias.mjs --test "test/**/*.test.mjs"`. `test/alias-resolver.mjs` mapea el alias `@/` e imports relativos sin extensión para cargar los `lib/` sin Next. Cubre la lógica financiera crítica: `fiscal-es` (tramos/exención/resolveDestWHT), `screener.effectiveDivTax` (doble imposición 15%), `helpers` (tiers/dividendTrend), `metrics.calculateROIC`, `dividend-safety`, `novedades`, `portfolio.calcDividendRisks` (sector-aware). CI en `.github/workflows/test.yml`.
+`npm test` → `node --import ./test/register-alias.mjs --test "test/**/*.test.mjs"`. `test/alias-resolver.mjs` mapea el alias `@/` e imports relativos sin extensión para cargar los `lib/` sin Next. Cubre la lógica financiera crítica: `fiscal-es` (tramos/exención/resolveDestWHT), `screener.effectiveDivTax` (doble imposición 15%), `helpers` (tiers/dividendTrend), `metrics.calculateROIC`, `dividend-safety`, `novedades`, `portfolio.calcDividendRisks` (sector-aware), `analyst-estimates` (toFmpSymbol/buildEstimateSeries), `gbp-pence` (normalización peniques `.L`). 56 tests. CI en `.github/workflows/test.yml`.
 
 ## Healthcheck de frescura de datos (Dashboard → Sistema)
 `/api/admin/data-health` + tarjeta "Salud de los datos": comprueba cada fuente y **cada benchmark por separado** (el indicador global no detectaba una serie congelada — caso ^GSPC parado 13 meses). Verde/ámbar/rojo por antigüedad según cadencia. NOTA: los índices benchmark (`^GSPC`…) se reincorporaron a `update_prices.py` (`BENCHMARK_TICKERS`) — `get_all_tickers()` no los incluía y dejaron de actualizarse.
@@ -333,7 +355,7 @@ Se eliminó el shell legacy NO montado: `DgiApp`+`IndexTab`+`CarteraTab`+`Settin
 ## SQL pendiente de ejecutar en Supabase (todos los ficheros en webapp/sql/)
 Estado: el usuario ya ejecutó admin.sql, valuation_columns.sql, roic_columns.sql, cartera_parte3.sql, funds.sql, recurring.sql, fx_and_settings.sql, daily_prices.sql, `investor_profile.sql`, `taxonomy_locked.sql`, y (esta sesión) `watchlist_buyzone.sql`, `income_goal.sql`, `report_dates.sql` y `payout_affo_nii.sql` (estos 4 confirmados ejecutados + backfills corridos).
 Ficheros que el usuario PUEDE tener aún pendientes de ejecutar (confirmar en entorno nuevo):
-`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), `yield_avg.sql` (columnas yield_avg + yield_avg_years), `ma200.sql` (columna MM200), `score_history.sql` (tabla de histórico del Score DGI), `canibales.sql` (columnas shares_reduced_pct + shares_base_year), `compounders.sql` (columna capex_cfo_pct), `bank_metrics.sql` (tabla bank_metrics_manual — NPL/overrides bancarios por trimestre), y el ALTER de `premium_until` en user_settings.
+`roic_display.sql`, `funds_returns.sql` (incl. benchmark_name), `cancellations.sql`, `onboarding.sql`, `watchlist.sql` (tablas watchlist + notifications), `yield_avg.sql` (columnas yield_avg + yield_avg_years), `ma200.sql` (columna MM200), `score_history.sql` (tabla de histórico del Score DGI), `canibales.sql` (columnas shares_reduced_pct + shares_base_year), `compounders.sql` (columna capex_cfo_pct), `bank_metrics.sql` (tabla bank_metrics_manual — NPL/overrides bancarios por trimestre), `analyst_estimates.sql` (columnas analyst_estimates + _status + _at — necesario antes de correr fetch_analyst_estimates.mjs/workflow), y el ALTER de `premium_until` en user_settings. NOTA: el bucket de Storage `company-logos` ya está creado por `fetch_logos.mjs` (no es SQL).
 Si se monta un entorno nuevo, ejecutar en orden todos los ficheros de webapp/sql/.
 
 ## Planes y precios
@@ -385,6 +407,7 @@ current_ratio, revenue_cagr5, pe_trailing, pe_forward, ev_ebitda, beta,
 week52_high, week52_low, yield_avg, yield_avg_years, ma200, shares_reduced_pct, shares_base_year, capex_cfo_pct, market_cap_m, sector, industry, taxonomy_locked, country,
 income_statement_annual, balance_sheet_annual, cashflow_annual,
 income_statement_quarterly, balance_sheet_quarterly, cashflow_quarterly,
+analyst_estimates (jsonb), analyst_estimates_status ('ok'/'none'), analyst_estimates_at,
 updated_at
 
 ## Scripts Python (scripts/) — YA CREADOS
@@ -404,10 +427,13 @@ updated_at
 - `fix_dps_from_history.mjs` (Node) — recalcula `dps` = dividendo del último año completo de `div_history` (misma unidad que el precio) para empresas que pagan. Corrige yields mal calculados por `info.dividendRate` (unidad libras/peniques en `.L`, specials). `--write`. Ya ejecutado (1133 empresas).
 - `fix_bad_yield.mjs` (Node) — descarta el dividendo (o cae al último año completo) cuando el yield es absurdo (>40%, special/precio en céntimos). `--write`. Ya ejecutado (5 empresas). `fix_yield_trend.mjs` fue una versión previa (reconciliación por tendencia), englobada por `fix_dps_from_history.mjs`.
 - `backfill_yield_avg_yahoo.py` (Python) — backfill de **cobertura total** de `yield_avg`/`yield_avg_years`: reutiliza el `div_history` ya en BD y descarga SOLO el histórico de precios de Yahoo en bloque (`yf.download` por lotes), sin correr el pipeline completo. Misma lógica que `compute_yield_avg`. Para poblar ya sin esperar al run semanal o re-poblar periódicamente. `--write` (upsert por bloques de 500), `--limit N`, `--ticker X`. Requiere `yield_avg.sql` ejecutado. (Nota: `daily_prices` NO sirve de fuente porque solo tiene profundidad para tickers charteados — `update_prices.py --history` no está cableado.)
+- `fetch_analyst_estimates.mjs` (Node) — precarga `analyst_estimates`/`_status`/`_at` desde FMP (API stable), por capitalización, cap diario (`--limit`, def. 200). Marca `none` lo sin cobertura (402/vacío, no reconsulta), reintenta los `error` transitorios. `--recheck` reconsulta las `none`. Requiere `FMP_API_KEY` + `analyst_estimates.sql`. Workflow diario.
+- `fetch_logos.mjs` (Node) — descarga logos del CDN de FMP al bucket público `company-logos` de Supabase Storage. Concurrencia 8, valida PNG, salta secundarias. `--limit N`, `--ticker X`. Ya ejecutado (~2128 logos).
 
 ## GitHub Actions (.github/workflows/) — YA CREADOS
 - `update_fundamentals.yml` — domingos 6:00 UTC + manual. Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
 - Workflow de precios para `update_prices.py`.
+- `fetch_analyst_estimates.yml` — diario 7:00 UTC + manual (input `limit`). Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, **FMP_API_KEY** (este último también añadido como secret de GitHub Actions).
 
 ## Email de bienvenida — pendiente de configurar
 - Servicio: Resend (requiere dominio propio verificado — pendiente de comprar dominio)
@@ -437,4 +463,7 @@ updated_at
 - **Hay tests** (`cd webapp && npm test`, runner nativo de Node, cero deps). Al tocar lógica pura de `lib/` (fiscalidad, scoring, valoración, riesgos, seguridad del dividendo) añadir/actualizar el test correspondiente en `webapp/test/`. CI los corre en cada push (`.github/workflows/test.yml`).
 
 ## Ficheros lib clave
-`lib/metrics.js` (ROIC), `lib/valuation.js`, `lib/screener.js`, `lib/screener-companies.js` (motor + `selectFreeSample`), `lib/comparador.js`, `lib/currency.js` (FX), `lib/prices.js`, `lib/company-chart.js`, `lib/portfolio.js`, `lib/portfolio-calc.js`, `lib/dgi-score.js`, `lib/bank-metrics.js` (métricas y scoring de banca), `lib/supersectors.js` (3 supersectores + perfiles), `lib/taxonomy.js` (3 niveles sector/industria), `lib/build-plan.js`, `lib/index-constituents.js`, `lib/fund-fetch.js`, `lib/recurring.js`, `lib/admin.js`, `lib/admin-stats.js`, `lib/email.js`, `lib/dividend-safety.js` (seguridad 0–100), `lib/reit-metrics.js` (FFO/AFFO/payout), `lib/novedades.js`, `lib/analytics.js` (PostHog).
+`lib/metrics.js` (ROIC), `lib/valuation.js`, `lib/screener.js`, `lib/screener-companies.js` (motor + `selectFreeSample`), `lib/comparador.js`, `lib/currency.js` (FX), `lib/prices.js`, `lib/company-chart.js`, `lib/portfolio.js` (incl. `normalizeGbp`/`penceToPounds`), `lib/portfolio-calc.js`, `lib/dgi-score.js`, `lib/bank-metrics.js` (métricas y scoring de banca), `lib/supersectors.js` (3 supersectores + perfiles), `lib/taxonomy.js` (3 niveles sector/industria), `lib/build-plan.js`, `lib/index-constituents.js`, `lib/fund-fetch.js`, `lib/recurring.js`, `lib/admin.js`, `lib/admin-stats.js`, `lib/email.js`, `lib/dividend-safety.js` (seguridad 0–100), `lib/reit-metrics.js` (FFO/AFFO/payout), `lib/novedades.js`, `lib/analytics.js` (PostHog), `lib/analyst-estimates.js` (FMP).
+
+## Componentes UI clave (sesión reciente)
+`components/ThemeToggle.js` (tema claro/oscuro), `components/CompanyLogo.js` (logos auto-alojados + fallback monograma), `components/empresa/AnalystEstimates.js` (estimaciones FMP), `components/empresa/IncomeSankey.js` (Sankey del estado de resultados).
