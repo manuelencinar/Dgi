@@ -57,7 +57,7 @@ const grid = <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-2)" vert
 
 function tipBox(title, rows, note) {
   return (
-    <div style={{ background: 'rgba(13,20,36,0.97)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '8px 11px', fontSize: 11.5, lineHeight: 1.6 }}>
+    <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '8px 11px', fontSize: 11.5, lineHeight: 1.6, boxShadow: '0 4px 16px rgba(0,0,0,0.18)' }}>
       <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: 4 }}>{title}</p>
       {rows.map((r, i) => (
         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 14 }}>

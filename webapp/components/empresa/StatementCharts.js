@@ -56,7 +56,7 @@ function fmtPct(v, d = 1) { return v == null ? '—' : (v > 0 ? '+' : '') + v.to
 
 function box(children) {
   return (
-    <div style={{ background: 'rgba(13,20,36,0.97)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '8px 11px', fontSize: 11.5, lineHeight: 1.6 }}>
+    <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '8px 11px', fontSize: 11.5, lineHeight: 1.6, boxShadow: '0 4px 16px rgba(0,0,0,0.18)' }}>
       {children}
     </div>
   )
