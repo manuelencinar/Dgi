@@ -50,6 +50,33 @@ test('computeAutoDividends — acción española: solo impuesto español, sin de
   assert.ok(Math.abs(r.amount_net - 81) < 1e-9, `net=${r.amount_net}`)
 })
 
+test('computeAutoDividends — NO estima dividendos pagados antes de la compra', () => {
+  const out = computeAutoDividends({
+    positions: [{ ticker: 'KO', shares: 100, avg_cost: 50, currency: 'USD', asset_type: 'stock' }],
+    // Comprada el 1 de mayo de 2026.
+    transactions: [{ ticker: 'KO', type: 'buy', shares: 100, date: '2026-05-01' }],
+    fundamentals: { KO: { dps: 2.0, country: 'United States' } },
+    config: { KO: { frequency: 2, months: [3, 9] } },   // marzo (pre-compra) y septiembre
+    destWHT: 19, today: new Date('2026-06-15T12:00:00'),
+  })
+  // Marzo (antes de la compra) se omite; septiembre (futuro) se incluye.
+  assert.equal(out.length, 1)
+  assert.equal(out[0].period, '2026-09')
+})
+
+test('computeAutoDividends — SÍ estima un pago pasado posterior a la compra', () => {
+  const out = computeAutoDividends({
+    positions: [{ ticker: 'KO', shares: 100, avg_cost: 50, currency: 'USD', asset_type: 'stock' }],
+    transactions: [{ ticker: 'KO', type: 'buy', shares: 100, date: '2026-02-01' }],
+    fundamentals: { KO: { dps: 2.0, country: 'United States' } },
+    config: { KO: { frequency: 1, months: [3] } },      // marzo, ya pasado pero tras la compra
+    destWHT: 19, today: new Date('2026-06-15T12:00:00'),
+  })
+  assert.equal(out.length, 1)
+  assert.equal(out[0].period, '2026-03')
+  assert.equal(out[0].shares, 100)
+})
+
 test('computeAutoDividends — .L: el dividendo en peniques se pasa a libras y a EUR', () => {
   const [r] = computeAutoDividends({
     positions: [{ ticker: 'FOUR.L', shares: 10, avg_cost: 36, currency: 'GBP', asset_type: 'stock' }],

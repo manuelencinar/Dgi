@@ -108,11 +108,11 @@ export function computeAutoDividends({ positions, transactions, fundamentals, co
           exDate = realEx
           payDate = realPay && realPay >= realEx ? realPay : addDays(realEx, 14)
         }
-        // Acciones: la posición ACTUAL para pagos futuros (igual que la cartera);
-        // reconstrucción por transacciones para meses ya pasados, con respaldo a la
-        // posición si el histórico de operaciones no la cubre (evita importes a 0).
-        let shares = exDate > today ? posShares : sharesBefore(txs, exDate)
-        if (shares <= 1e-9) shares = posShares
+        // Acciones: la posición ACTUAL para pagos FUTUROS (igual que la cartera);
+        // reconstrucción por transacciones para meses ya PASADOS. No se estima un
+        // pago anterior a la compra: si la reconstrucción da 0 en una fecha pasada,
+        // el dividendo se cobró antes de tener las acciones → se omite.
+        const shares = exDate > today ? posShares : sharesBefore(txs, exDate)
         if (shares <= 1e-9) continue
         const amount = Math.round(shares * perDpsEur * 100) / 100
         // Retención de origen + impuesto de España residual tras el crédito (el
