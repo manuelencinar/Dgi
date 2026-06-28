@@ -9,6 +9,7 @@ import {
   enrichPositions, calcSummary, calcConcentration, calcAlerts,
   calcDiversificationScore, calcDividendRisks, calcFiscal, calcSectorBreakdown, calcGeoBreakdown, calcProfileFit, calcDividendGrowth,
 } from '@/lib/portfolio'
+import { projectIncome } from '@/lib/portfolio-calc'
 import { DEFAULT_PROFILE, INVESTOR_PROFILES } from '@/lib/supersectors'
 import { resolveDestWHT, isExemptUser } from '@/lib/fiscal-es'
 import SectorBreakdown, { DonutBreakdown } from '@/components/cartera/SectorBreakdown'
@@ -121,18 +122,19 @@ function lastDivGrowth(hist) {
   return last && last.growth != null && !isNaN(last.growth) ? Number(last.growth) * 100 : null
 }
 
-// ── Renta REAL por dividendos por año (cobrado + estimado del año en curso) ──
-function IncomeProjectionCard({ enriched, isPremium }) {
+// ── Renta neta por dividendos: Previsión (año actual real + 9 años proyectados) y
+//    Años anteriores (solo lo cobrado en el pasado) ──
+function IncomeProjectionCard({ enriched, taxRate, whtOverrides, isPremium }) {
+  const [view, setView] = useState('forecast')   // 'forecast' | 'past'
   const [byYear, setByYear] = useState(null)
   const sb = createClient()
 
   const growth = useMemo(() => calcDividendGrowth(enriched), [enriched])
-  const curYear = String(new Date().getFullYear())
+  const proj = useMemo(() => enriched.length ? projectIncome(enriched, { horizon: 10, taxRate, whtOverrides }) : null, [enriched, taxRate, whtOverrides])
+  const curYear = new Date().getFullYear()
 
-  // Renta REAL por año natural desde dividends_received (los mismos registros que la
-  // pestaña Dividendos, con prefill que respeta la fecha de compra). Cada año refleja
-  // lo que de verdad se cobra ese año — sin proyección de crecimiento. El año en curso
-  // = cobrado + lo que resta por cobrar este año con las acciones ACTUALES.
+  // Renta REAL por año natural desde dividends_received (mismos registros que la
+  // pestaña Dividendos, con prefill que respeta la fecha de compra).
   useEffect(() => {
     let cancel = false
     ;(async () => {
@@ -160,41 +162,98 @@ function IncomeProjectionCard({ enriched, isPremium }) {
   if (!isPremium) return <PremiumGate />
   if (byYear == null) return <div style={{ ...CARD, marginBottom: 16, height: 120, opacity: 0.5 }} />
 
+  // PREVISIÓN: año en curso REAL (cobrado + estimado del año) + los 9 años siguientes
+  // PROYECTADOS (ritmo anualizado creciendo con el CAGR real de cada empresa).
+  const curReal = byYear.find(r => r.year === String(curYear))
+  const forecastData = [{
+    year: String(curYear),
+    received: curReal?.received ?? 0,
+    pending: curReal?.pending ?? (curReal ? 0 : Math.round(proj?.base?.[0]?.net ?? 0)),
+    projected: 0,
+    total: curReal?.total ?? Math.round(proj?.base?.[0]?.net ?? 0),
+  }]
+  ;(proj?.base || []).slice(1).forEach((d, i) => {
+    forecastData.push({ year: String(curYear + 1 + i), received: 0, pending: 0, projected: Math.round(d.net), total: Math.round(d.net) })
+  })
+
+  // AÑOS ANTERIORES: solo lo realmente COBRADO en años pasados.
+  const pastData = byYear.filter(r => Number(r.year) < curYear && r.received > 0)
+    .map(r => ({ year: r.year, received: r.received, total: r.received }))
+
+  const TabBtn = ({ k, label }) => (
+    <button onClick={() => setView(k)} style={{
+      fontSize: 12, fontWeight: 700, padding: '5px 13px', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit',
+      border: '1px solid ' + (view === k ? 'rgba(52,211,153,0.5)' : 'var(--border-strong)'),
+      background: view === k ? 'rgba(52,211,153,0.18)' : 'transparent', color: view === k ? 'var(--positive)' : 'var(--text-muted)',
+    }}>{label}</button>
+  )
   const Stat = ({ label, value, color }) => (
     <div style={{ flex: 1, minWidth: 150, background: `${color}12`, border: `1px solid ${color}30`, borderRadius: 10, padding: '12px 14px' }}>
       <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{label}</p>
       <p style={{ fontSize: 22, fontWeight: 800, color }}>{value}</p>
     </div>
   )
+  const lblFmt = v => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : Math.round(v)
+  const axisProps = {
+    xaxis: { dataKey: 'year', stroke: 'var(--text-muted)', fontSize: 11, tickLine: false, axisLine: { stroke: 'var(--border-strong)' }, height: 24 },
+    yaxis: { stroke: 'var(--text-faint)', fontSize: 10, tickLine: false, axisLine: false, tickFormatter: v => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v, width: 34 },
+  }
 
   return (
     <div style={{ ...CARD, marginBottom: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Renta neta por dividendos, € (real por año)</p>
-        <Link href="/cartera/proyeccion" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>Proyección y escenarios →</Link>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Renta neta por dividendos, €</p>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <TabBtn k="forecast" label="Previsión" />
+          <TabBtn k="past" label="Años anteriores" />
+        </div>
       </div>
 
-      {byYear.length === 0 ? (
-        <p style={{ fontSize: 12.5, color: 'var(--text-faint)', padding: '30px 0', textAlign: 'center' }}>Aún no hay dividendos registrados. Configura tus posiciones (e impórtalos de tu bróker) para ver tu renta real por año.</p>
+      {view === 'forecast' ? (
+        <>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={forecastData} margin={{ top: 22, right: 6, left: 2, bottom: 0 }}>
+              <XAxis {...axisProps.xaxis} />
+              <YAxis {...axisProps.yaxis} />
+              <Tooltip contentStyle={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12 }} cursor={{ fill: 'var(--surface-2)' }}
+                formatter={(v, n) => v > 0 ? [fmtEUR(v), n === 'pending' ? 'Estimado del año' : n === 'projected' ? 'Previsión' : 'Cobrado'] : [null, null]} labelFormatter={l => `Año ${l}`} />
+              <Bar dataKey="received" stackId="d" fill="var(--positive)" maxBarSize={48} />
+              <Bar dataKey="pending" stackId="d" fill="var(--positive)" fillOpacity={0.38} radius={[3, 3, 0, 0]} maxBarSize={48} />
+              <Bar dataKey="projected" stackId="d" fill="var(--accent)" fillOpacity={0.55} radius={[3, 3, 0, 0]} maxBarSize={48}>
+                <LabelList dataKey="total" position="top" fill="var(--text)" fontSize={9.5} fontWeight={700} formatter={lblFmt} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 2, marginBottom: 14, flexWrap: 'wrap' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-muted)' }}><span style={{ width: 11, height: 11, background: 'var(--positive)', borderRadius: 2 }} />Cobrado</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-muted)' }}><span style={{ width: 11, height: 11, background: 'var(--positive)', opacity: 0.38, borderRadius: 2 }} />Estimado {curYear}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-muted)' }}><span style={{ width: 11, height: 11, background: 'var(--accent)', opacity: 0.55, borderRadius: 2 }} />Previsión (crece con el CAGR real)</span>
+            <Link href="/cartera/proyeccion" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', marginLeft: 'auto' }}>Escenarios →</Link>
+          </div>
+        </>
       ) : (
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={byYear} margin={{ top: 22, right: 6, left: 2, bottom: 0 }}>
-            <XAxis dataKey="year" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={{ stroke: 'var(--border-strong)' }} height={24} />
-            <YAxis stroke="var(--text-faint)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v} width={34} />
-            <Tooltip contentStyle={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12 }} cursor={{ fill: 'var(--surface-2)' }}
-              formatter={(v, n) => [fmtEUR(v), n === 'pending' ? 'Estimado del año' : 'Cobrado']} labelFormatter={l => `Año ${l}`} />
-            <Bar dataKey="received" stackId="d" fill="var(--positive)" maxBarSize={54} />
-            <Bar dataKey="pending" stackId="d" fill="var(--positive)" fillOpacity={0.38} radius={[3, 3, 0, 0]} maxBarSize={54}>
-              <LabelList dataKey="total" position="top" fill="var(--text)" fontSize={10} fontWeight={700} formatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : Math.round(v)} />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        <>
+          {pastData.length === 0 ? (
+            <p style={{ fontSize: 12.5, color: 'var(--text-faint)', padding: '40px 0', textAlign: 'center' }}>Aún no hay dividendos cobrados de años anteriores. Cuando registres o importes cobros pasados, aparecerán aquí.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={pastData} margin={{ top: 22, right: 6, left: 2, bottom: 0 }}>
+                <XAxis {...axisProps.xaxis} />
+                <YAxis {...axisProps.yaxis} />
+                <Tooltip contentStyle={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12 }} cursor={{ fill: 'var(--surface-2)' }}
+                  formatter={v => [fmtEUR(v), 'Cobrado']} labelFormatter={l => `Año ${l}`} />
+                <Bar dataKey="received" fill="var(--positive)" radius={[3, 3, 0, 0]} maxBarSize={54}>
+                  <LabelList dataKey="received" position="top" fill="var(--text)" fontSize={10} fontWeight={700} formatter={lblFmt} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 2, marginBottom: 14 }}>
+            <span style={{ width: 11, height: 11, background: 'var(--positive)', borderRadius: 2 }} />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Cobrado neto realmente en cada año pasado</span>
+          </div>
+        </>
       )}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 2, marginBottom: 14, flexWrap: 'wrap' }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-muted)' }}><span style={{ width: 11, height: 11, background: 'var(--positive)', borderRadius: 2 }} />Cobrado (neto)</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-muted)' }}><span style={{ width: 11, height: 11, background: 'var(--positive)', opacity: 0.38, borderRadius: 2 }} />Estimado del año en curso</span>
-        <span style={{ fontSize: 10.5, color: 'var(--text-faintest)', marginLeft: 'auto' }}>Cada año refleja lo realmente cobrado · {curYear} con tus acciones actuales</span>
-      </div>
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <Stat label="Crecimiento del dividendo · últimos 12 meses" value={growth.g1y != null ? `${growth.g1y >= 0 ? '+' : ''}${growth.g1y.toFixed(1)}%` : '—'} color="var(--positive)" />
@@ -973,7 +1032,7 @@ export default function PortfolioPage({ isPremium }) {
       {/* Meta de renta pasiva — estrella polar */}
       {enriched.length > 0 && <IncomeGoalCard currentIncome={summary.totalIncomeEUR} goal={incomeGoal} growthPct={dividendGrowth?.g5y ?? 0} onSave={saveGoal} />}
 
-      {enriched.length > 0 && <IncomeProjectionCard enriched={enriched} isPremium={isPremium} />}
+      {enriched.length > 0 && <IncomeProjectionCard enriched={enriched} taxRate={destWHT} whtOverrides={whtOverrides} isPremium={isPremium} />}
 
       {/* Evolución del patrimonio — debajo del resumen, antes de las posiciones */}
       {enriched.length > 0 && <PortfolioEvolution isPremium={isPremium} summary={summary} />}
