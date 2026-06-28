@@ -421,7 +421,9 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
 }
 
 function DeleteConfirm({ r, onDelete, onCancel }) {
-  const [noRegen, setNoRegen] = useState(false)
+  // En los automáticos, por defecto NO regenerar (al borrarlo el usuario espera que
+  // no vuelva a aparecer). Puede desmarcar para que se vuelva a estimar en el futuro.
+  const [noRegen, setNoRegen] = useState(true)
   return (
     <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
       <span style={{ fontSize: 12, color: 'var(--warning)' }}>¿Eliminar este registro?</span>

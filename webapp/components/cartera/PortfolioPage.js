@@ -9,7 +9,6 @@ import {
   enrichPositions, calcSummary, calcConcentration, calcAlerts,
   calcDiversificationScore, calcDividendRisks, calcFiscal, calcSectorBreakdown, calcGeoBreakdown, calcProfileFit, calcDividendGrowth,
 } from '@/lib/portfolio'
-import { projectIncome } from '@/lib/portfolio-calc'
 import { DEFAULT_PROFILE, INVESTOR_PROFILES } from '@/lib/supersectors'
 import { resolveDestWHT, isExemptUser } from '@/lib/fiscal-es'
 import SectorBreakdown, { DonutBreakdown } from '@/components/cartera/SectorBreakdown'
@@ -122,79 +121,79 @@ function lastDivGrowth(hist) {
   return last && last.growth != null && !isNaN(last.growth) ? Number(last.growth) * 100 : null
 }
 
-// ── Renta por dividendos: anual (pasado cobrado / futuro estimado) + crecimiento ──
-function IncomeProjectionCard({ enriched, taxRate, whtOverrides, isPremium }) {
-  const [dir, setDir] = useState('fwd')         // 'bwd' (cobrado) | 'fwd' (estimado)
-  const [received, setReceived] = useState(null)
+// ── Renta REAL por dividendos por año (cobrado + estimado del año en curso) ──
+function IncomeProjectionCard({ enriched, isPremium }) {
+  const [byYear, setByYear] = useState(null)
   const sb = createClient()
 
-  const proj = useMemo(() => enriched.length ? projectIncome(enriched, { horizon: 10, taxRate, whtOverrides }) : null, [enriched, taxRate, whtOverrides])
   const growth = useMemo(() => calcDividendGrowth(enriched), [enriched])
-  const yr0 = new Date().getFullYear()
-  const fwdData = (proj?.base || []).map(d => ({ year: String(yr0 + d.year - 1), income: d.net }))
+  const curYear = String(new Date().getFullYear())
 
-  // Histórico cobrado por año (para BWD) — se carga al pulsar Pasado.
+  // Renta REAL por año natural desde dividends_received (los mismos registros que la
+  // pestaña Dividendos, con prefill que respeta la fecha de compra). Cada año refleja
+  // lo que de verdad se cobra ese año — sin proyección de crecimiento. El año en curso
+  // = cobrado + lo que resta por cobrar este año con las acciones ACTUALES.
   useEffect(() => {
-    if (dir !== 'bwd' || received != null) return
     let cancel = false
-    sb.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { setReceived([]); return }
-      return sb.from('dividends_received').select('amount, amount_net, date').eq('user_id', user.id).then(({ data }) => {
-        if (cancel) return
-        const byYear = {}
-        for (const d of data || []) { const y = d.date ? String(d.date).slice(0, 4) : null; const net = d.amount_net ?? d.amount; if (y && net != null) byYear[y] = (byYear[y] || 0) + Number(net) }
-        setReceived(Object.entries(byYear).sort((a, b) => a[0] < b[0] ? -1 : 1).map(([year, income]) => ({ year, income: Math.round(income) })))
-      })
-    })
+    ;(async () => {
+      const { data: { user } } = await sb.auth.getUser()
+      if (!user) { if (!cancel) setByYear([]); return }
+      try { await fetch('/api/dividends/prefill', { method: 'POST' }) } catch {}
+      const { data } = await sb.from('dividends_received').select('amount, amount_net, date, status').eq('user_id', user.id)
+      if (cancel) return
+      const map = {}
+      for (const d of data || []) {
+        const y = d.date ? String(d.date).slice(0, 4) : null
+        const net = Number(d.amount_net ?? d.amount) || 0
+        if (!y || !net) continue
+        if (!map[y]) map[y] = { year: y, received: 0, pending: 0 }
+        if (d.status === 'received') map[y].received += net
+        else map[y].pending += net
+      }
+      const arr = Object.values(map).sort((a, b) => a.year < b.year ? -1 : 1)
+        .map(r => ({ year: r.year, received: Math.round(r.received), pending: Math.round(r.pending), total: Math.round(r.received + r.pending) }))
+      if (!cancel) setByYear(arr)
+    })().catch(() => { if (!cancel) setByYear([]) })
     return () => { cancel = true }
-  }, [dir, received, sb])
+  }, [sb])
 
-  if (!fwdData.length) return null
   if (!isPremium) return <PremiumGate />
+  if (byYear == null) return <div style={{ ...CARD, marginBottom: 16, height: 120, opacity: 0.5 }} />
 
-  const data = dir === 'bwd' ? (received || []) : fwdData
-  const legend = dir === 'bwd' ? 'Cobrado' : 'Estimado'
   const Stat = ({ label, value, color }) => (
     <div style={{ flex: 1, minWidth: 150, background: `${color}12`, border: `1px solid ${color}30`, borderRadius: 10, padding: '12px 14px' }}>
       <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{label}</p>
       <p style={{ fontSize: 22, fontWeight: 800, color }}>{value}</p>
     </div>
   )
-  const TogBtn = ({ k, label }) => (
-    <button onClick={() => setDir(k)} style={{
-      fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit',
-      border: '1px solid ' + (dir === k ? 'rgba(52,211,153,0.5)' : 'var(--border-strong)'),
-      background: dir === k ? 'rgba(52,211,153,0.18)' : 'transparent', color: dir === k ? 'var(--positive)' : 'var(--text-muted)',
-    }}>{label}</button>
-  )
+
   return (
     <div style={{ ...CARD, marginBottom: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Renta anual neta por dividendos, €</p>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <TogBtn k="bwd" label="Pasado" />
-          <TogBtn k="fwd" label="Futuro" />
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Renta neta por dividendos, € (real por año)</p>
+        <Link href="/cartera/proyeccion" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>Proyección y escenarios →</Link>
       </div>
 
-      {dir === 'bwd' && received != null && received.length === 0 ? (
-        <p style={{ fontSize: 12.5, color: 'var(--text-faint)', padding: '30px 0', textAlign: 'center' }}>Aún no hay dividendos cobrados registrados. Regístralos o impórtalos de tu bróker para ver tu historial de renta.</p>
+      {byYear.length === 0 ? (
+        <p style={{ fontSize: 12.5, color: 'var(--text-faint)', padding: '30px 0', textAlign: 'center' }}>Aún no hay dividendos registrados. Configura tus posiciones (e impórtalos de tu bróker) para ver tu renta real por año.</p>
       ) : (
         <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={data} margin={{ top: 22, right: 6, left: 2, bottom: 0 }}>
-            <XAxis dataKey="year" stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={{ stroke: 'var(--border-strong)' }} angle={-90} textAnchor="end" height={42} interval={0} />
+          <BarChart data={byYear} margin={{ top: 22, right: 6, left: 2, bottom: 0 }}>
+            <XAxis dataKey="year" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={{ stroke: 'var(--border-strong)' }} height={24} />
             <YAxis stroke="var(--text-faint)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v} width={34} />
-            <Tooltip contentStyle={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12 }} formatter={v => [fmtEUR(v), dir === 'bwd' ? 'Cobrado' : 'Estimado']} labelFormatter={l => l} cursor={{ fill: 'var(--surface-2)' }} />
-            <Bar dataKey="income" fill="var(--text)" radius={[3, 3, 0, 0]} maxBarSize={46}>
-              <LabelList dataKey="income" position="top" fill="var(--text)" fontSize={10} fontWeight={700} formatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : Math.round(v)} />
+            <Tooltip contentStyle={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12 }} cursor={{ fill: 'var(--surface-2)' }}
+              formatter={(v, n) => [fmtEUR(v), n === 'pending' ? 'Estimado del año' : 'Cobrado']} labelFormatter={l => `Año ${l}`} />
+            <Bar dataKey="received" stackId="d" fill="var(--positive)" maxBarSize={54} />
+            <Bar dataKey="pending" stackId="d" fill="var(--positive)" fillOpacity={0.38} radius={[3, 3, 0, 0]} maxBarSize={54}>
+              <LabelList dataKey="total" position="top" fill="var(--text)" fontSize={10} fontWeight={700} formatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : Math.round(v)} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       )}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 2, marginBottom: 14 }}>
-        <span style={{ width: 11, height: 11, background: 'var(--text)', borderRadius: 2 }} />
-        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{legend} (neto){dir === 'fwd' ? ' · escenario base, CAGR real de cada empresa' : ''}</span>
-        <Link href="/cartera/proyeccion" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', marginLeft: 'auto' }}>Detalle y escenarios →</Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 2, marginBottom: 14, flexWrap: 'wrap' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-muted)' }}><span style={{ width: 11, height: 11, background: 'var(--positive)', borderRadius: 2 }} />Cobrado (neto)</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-muted)' }}><span style={{ width: 11, height: 11, background: 'var(--positive)', opacity: 0.38, borderRadius: 2 }} />Estimado del año en curso</span>
+        <span style={{ fontSize: 10.5, color: 'var(--text-faintest)', marginLeft: 'auto' }}>Cada año refleja lo realmente cobrado · {curYear} con tus acciones actuales</span>
       </div>
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -974,7 +973,7 @@ export default function PortfolioPage({ isPremium }) {
       {/* Meta de renta pasiva — estrella polar */}
       {enriched.length > 0 && <IncomeGoalCard currentIncome={summary.totalIncomeEUR} goal={incomeGoal} growthPct={dividendGrowth?.g5y ?? 0} onSave={saveGoal} />}
 
-      {enriched.length > 0 && <IncomeProjectionCard enriched={enriched} taxRate={destWHT} whtOverrides={whtOverrides} isPremium={isPremium} />}
+      {enriched.length > 0 && <IncomeProjectionCard enriched={enriched} isPremium={isPremium} />}
 
       {/* Evolución del patrimonio — debajo del resumen, antes de las posiciones */}
       {enriched.length > 0 && <PortfolioEvolution isPremium={isPremium} summary={summary} />}

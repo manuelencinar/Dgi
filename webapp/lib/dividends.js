@@ -127,7 +127,11 @@ export function computeAutoDividends({ positions, transactions, fundamentals, co
           withholding_dest_pct: Math.round(Math.max(0, effTotalPct - whtPct) * 100) / 100, withholding_dest: destW,
           amount_net: Math.round((amount - originW - destW) * 100) / 100,
           ex_dividend_date: iso(exDate), payment_date_estimated: iso(payDate),
-          period: `${y}-${String(m).padStart(2, '0')}`,
+          // period = mes de PAGO (igual que payment_date_estimated). Debe coincidir
+          // con cómo el prefill calcula `taken`/exclusiones (periodOf(payment_date_
+          // estimated)); si usáramos el mes ex y pago cae en otro mes, las
+          // exclusiones y el dedup fallan y el dividendo reaparece tras borrarlo.
+          period: `${payDate.getFullYear()}-${String(payDate.getMonth() + 1).padStart(2, '0')}`,
         })
       }
     }
