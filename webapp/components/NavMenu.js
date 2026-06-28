@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import NotificationBell from '@/components/NotificationBell'
 import GlobalSearch from '@/components/GlobalSearch'
+import { GearIcon } from '@/components/NavIcons'
 
 // Menú principal
 const PRIMARY = [
@@ -65,11 +66,12 @@ export default function NavMenu({ active, sessionUser }) {
           {sessionUser ? (
             <>
               <NotificationBell />
-              <Link href="/ajustes" title="Ajustes" style={{
-                fontSize: 17, color: active === '/ajustes' ? 'var(--accent)' : 'var(--text-faint)',
-                textDecoration: 'none', padding: '4px 7px', borderRadius: 7, lineHeight: 1,
+              <Link href="/ajustes" title="Ajustes" aria-label="Ajustes" style={{
+                color: 'var(--text-strong)',
+                textDecoration: 'none', padding: '5px 7px', borderRadius: 7, lineHeight: 0,
+                display: 'inline-flex', alignItems: 'center',
                 background: active === '/ajustes' ? 'var(--accent-bg)' : 'transparent',
-              }}>⚙</Link>
+              }}><GearIcon /></Link>
             </>
           ) : (
             <>

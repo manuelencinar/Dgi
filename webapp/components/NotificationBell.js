@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { BellIcon } from '@/components/NavIcons'
 
 const ICON = { watchlist_price: '🎯', watchlist_yield: '🎯', watchlist_buyzone: '🟢', dividend_cut: '⚠️', dividend_increase: '📈', recurring: '💰' }
 
@@ -49,9 +50,10 @@ export default function NotificationBell() {
     <div ref={ref} style={{ position: 'relative' }}>
       <button onClick={() => setOpen(o => !o)} aria-label="Notificaciones" style={{
         position: 'relative', background: 'none', border: 'none', cursor: 'pointer',
-        fontSize: 16, color: 'var(--text-faint)', padding: '4px 6px', lineHeight: 1,
+        color: 'var(--text-strong)', padding: '5px 7px', lineHeight: 0,
+        display: 'inline-flex', alignItems: 'center',
       }}>
-        🔔
+        <BellIcon />
         {unread > 0 && (
           <span style={{
             position: 'absolute', top: -2, right: -2, minWidth: 15, height: 15, padding: '0 3px',

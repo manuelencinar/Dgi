@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { SearchIcon } from '@/components/NavIcons'
 
 const TYPE_META = {
   company: { icon: '🏢', label: 'Empresa', color: 'var(--accent)' },
@@ -100,11 +101,11 @@ export default function GlobalSearch() {
         aria-label="Buscar"
         title="Buscar (Ctrl/⌘ K)"
         style={{
-          background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: 16,
-          cursor: 'pointer', padding: '5px 7px', borderRadius: 7, lineHeight: 1,
+          background: 'none', border: 'none', color: 'var(--text-strong)',
+          cursor: 'pointer', padding: '5px 7px', borderRadius: 7, lineHeight: 0,
           display: 'inline-flex', alignItems: 'center',
         }}
-      >🔍</button>
+      ><SearchIcon /></button>
 
       {open && (
         <div
