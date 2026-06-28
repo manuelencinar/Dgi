@@ -1,6 +1,7 @@
 // Portfolio calculation utilities — projections, calendar, DRIP, FI
 
 import { FX, toEUR } from '@/lib/portfolio'
+import { getWHT, effectiveDivTax } from '@/lib/screener'
 
 const MAX_CAGR = 0.20
 
@@ -18,27 +19,34 @@ function fadedGrowth(g0, k) {   // g0 = CAGR inicial (decimal), k = índice de a
 
 // ── Projection ────────────────────────────────────────────────────────────
 
-export function projectIncome(enriched, { horizon, monthly = 0, monthlyGrowthPct = 0, reinvest = false, taxRate = 19 }) {
+// taxRate = retención de destino del usuario (%). whtOverrides = overrides de retención
+// en origen por país. El NETO se calcula POR PAÍS con la doble imposición (igual que
+// calcFiscal) → el año 1 de la proyección coincide exactamente con la "Renta anual
+// neta" del resumen. El crecimiento del dividendo se aplica a partir del año 2 (el
+// año 1 es el ritmo ACTUAL, no proyectado).
+export function projectIncome(enriched, { horizon, monthly = 0, monthlyGrowthPct = 0, reinvest = false, taxRate = 19, whtOverrides = null }) {
   function scenario(mult) {
-    let positions = enriched.map(p => ({
-      ticker: p.ticker,
-      shares: p.shares,
-      dps: p.dps || 0,
-      cagr: Math.min(Math.max((p.div_cagr5 || 3) / 100 * mult, 0), MAX_CAGR),
-      price: Math.max(p.currentPrice || p.avg_cost || 1, 0.01),
-      currency: p.currency || 'EUR',
-    }))
+    let positions = enriched.map(p => {
+      const code = (p.countryCode || '').toUpperCase()
+      const effTax = effectiveDivTax(getWHT(code, whtOverrides), taxRate, code === 'ES') / 100
+      return {
+        ticker: p.ticker,
+        shares: p.shares,
+        dps: p.dps || 0,
+        cagr: Math.min(Math.max((p.div_cagr5 || 3) / 100 * mult, 0), MAX_CAGR),
+        price: Math.max(p.currentPrice || p.avg_cost || 1, 0.01),
+        currency: p.currency || 'EUR',
+        netFactor: 1 - effTax,            // neto = bruto × netFactor (impuesto por país)
+      }
+    })
 
     const data = []
     let yearlyContrib = monthly * 12
 
     for (let y = 1; y <= horizon; y++) {
-      // Grow dividends — el CAGR se modera año a año hacia la tasa terminal
-      positions = positions.map(p => ({ ...p, dps: p.dps * (1 + fadedGrowth(p.cagr, y - 1)) }))
-
-      // Annual income
+      // Renta anual del año con el dps vigente (año 1 = ritmo actual, sin crecer aún)
       const income = positions.reduce((s, p) => s + toEUR(p.dps * p.shares, p.currency), 0)
-      const net    = income * (1 - taxRate / 100)
+      const net    = positions.reduce((s, p) => s + toEUR(p.dps * p.shares, p.currency) * p.netFactor, 0)
 
       // Reinvestment — proportional by value
       if (reinvest && net > 0) {
@@ -70,6 +78,9 @@ export function projectIncome(enriched, { horizon, monthly = 0, monthlyGrowthPct
       yearlyContrib *= (1 + monthlyGrowthPct / 100)
 
       data.push({ year: y, income: Math.round(income), net: Math.round(net) })
+
+      // Crecer el dividendo para el SIGUIENTE año (el CAGR se modera hacia la terminal)
+      positions = positions.map(p => ({ ...p, dps: p.dps * (1 + fadedGrowth(p.cagr, y - 1)) }))
     }
     return data
   }

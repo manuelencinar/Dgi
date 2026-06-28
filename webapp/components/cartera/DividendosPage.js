@@ -287,7 +287,7 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
         <Sum label={`Cobrado en ${year}`} value={fmtEUR(cobrado, 0)} col={GREEN} sub="Neto confirmado" />
         <Sum label="Pendiente de confirmar" value={fmtEUR(pendientePasado, 0)} col={ORANGE} sub="Neto · ya debería estar cobrado" />
         <Sum label="Esperado resto del año" value={fmtEUR(esperado, 0)} col={BLUE} sub="Neto · pagos futuros" />
-        <Sum label={`Renta neta estimada ${year}`} value={fmtEUR(totalAnual, 0)} col="var(--text-strong)" sub="Cobrado + pendiente + esperado" />
+        <Sum label={`Total año natural ${year}`} value={fmtEUR(totalAnual, 0)} col="var(--text-strong)" sub="Cobrado + estimado de este año (puede ser menor que el ritmo anual si compraste a mitad de año)" />
       </div>
 
       <div style={{ ...CARD }}>

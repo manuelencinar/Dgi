@@ -118,6 +118,14 @@ Cada señal muestra el **valor, el umbral y el porqué** (no solo una etiqueta).
 - `scripts/update_prices.py`: descarga masiva de Yahoo a daily_prices + tipos de cambio. Incluye `BENCHMARK_TICKERS = ["^GSPC","^STOXX","URTH","^NDX","^FTSE","^GDAXI","^N225"]`.
 - Cartera y comparador refrescan precios stale vía `/api/precios` (antes salían desactualizados hasta visitar la ficha de la empresa).
 
+## Renta de dividendos — base ÚNICA de cálculo (unificada)
+Todos los cálculos de renta de dividendos comparten la MISMA base: **DPS × acciones × FX estático (`toEUR`) × (1 − impuesto efectivo POR PAÍS)** (`effectiveDivTax(getWHT(code, overrides), destWHT, isDomestic)`).
+- `calcFiscal` (lib/portfolio.js) — **renta anual neta a ritmo actual** (tarjeta "Renta anual neta" del resumen + `netAnnual` de la home). Es la fuente canónica.
+- `projectIncome` (lib/portfolio-calc.js) — proyección a 10 años; **el año 1 == `calcFiscal`** (impuesto por país, sin crecer todavía; el CAGR se aplica desde el año 2). Acepta `whtOverrides`. Alimenta el gráfico "Renta anual neta por dividendos" de `/cartera`.
+- `buildDividendCalendar` (lib/dividend-calendar.js) — **distribución por meses** del año (home, `/cartera/calendario`, próximos cobros). Ya NO descarta posiciones sin FX real (respaldo a la tabla estática `FX`, igual que `toEUR`).
+- `computeAutoDividends` (lib/dividends.js) — **año NATURAL** (cobrado + estimado, *con gating por fecha de compra*: no incluye pagos anteriores a la compra). Por eso para compras a mitad de año es legítimamente MENOR que el ritmo anual (no es un descuadre, es otra ventana temporal). Etiqueta de la pestaña Dividendos: "Total año natural {year}".
+- Test: `webapp/test/portfolio-income.test.mjs` fija que `projectIncome` año 1 == `calcFiscal`.
+
 ## Fiscalidad de dividendos — retención en origen + doble imposición
 - **Retención en origen por país**: `WHT_DEFAULTS` (ISO-2 → %) en `lib/sectors.js`, fuente única. Cubre los 36 países del universo (TR, MX, CL, PL, CZ, GR, AR, IN, KR, HU, TW, LU, EG… antes caían a 0). `getWHT(country, overrides)` en `lib/screener.js`.
 - **Overrides por usuario/bróker**: `user_settings.wht_overrides` (jsonb `{CODE:%}`) — algunos brókers (IB) aplican el tipo de convenio, otros el completo. Se editan en **Ajustes → Fiscalidad** (`AjustesGlobalPage.js`, sección "retenciones") junto al impuesto de destino `dest_wht`. SQL: `webapp/sql/wht_overrides.sql` (**pendiente de ejecutar**: `wht_overrides` + `dest_wht`). Guardado vía `/api/ajustes` (whitelist + `sanitizeWhtOverrides`, 0-60%).

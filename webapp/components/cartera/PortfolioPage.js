@@ -123,12 +123,12 @@ function lastDivGrowth(hist) {
 }
 
 // ── Renta por dividendos: anual (pasado cobrado / futuro estimado) + crecimiento ──
-function IncomeProjectionCard({ enriched, taxRate, isPremium }) {
+function IncomeProjectionCard({ enriched, taxRate, whtOverrides, isPremium }) {
   const [dir, setDir] = useState('fwd')         // 'bwd' (cobrado) | 'fwd' (estimado)
   const [received, setReceived] = useState(null)
   const sb = createClient()
 
-  const proj = useMemo(() => enriched.length ? projectIncome(enriched, { horizon: 10, taxRate }) : null, [enriched, taxRate])
+  const proj = useMemo(() => enriched.length ? projectIncome(enriched, { horizon: 10, taxRate, whtOverrides }) : null, [enriched, taxRate, whtOverrides])
   const growth = useMemo(() => calcDividendGrowth(enriched), [enriched])
   const yr0 = new Date().getFullYear()
   const fwdData = (proj?.base || []).map(d => ({ year: String(yr0 + d.year - 1), income: d.net }))
@@ -974,7 +974,7 @@ export default function PortfolioPage({ isPremium }) {
       {/* Meta de renta pasiva — estrella polar */}
       {enriched.length > 0 && <IncomeGoalCard currentIncome={summary.totalIncomeEUR} goal={incomeGoal} growthPct={dividendGrowth?.g5y ?? 0} onSave={saveGoal} />}
 
-      {enriched.length > 0 && <IncomeProjectionCard enriched={enriched} taxRate={destWHT} isPremium={isPremium} />}
+      {enriched.length > 0 && <IncomeProjectionCard enriched={enriched} taxRate={destWHT} whtOverrides={whtOverrides} isPremium={isPremium} />}
 
       {/* Evolución del patrimonio — debajo del resumen, antes de las posiciones */}
       {enriched.length > 0 && <PortfolioEvolution isPremium={isPremium} summary={summary} />}

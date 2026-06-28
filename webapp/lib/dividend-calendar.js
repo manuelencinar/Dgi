@@ -8,6 +8,7 @@
 // Importes convertidos a EUR con tipos reales (exchange_rates) pasados en fxToEUR.
 
 import { getWHT, effectiveDivTax } from '@/lib/screener'
+import { FX } from '@/lib/portfolio'
 
 export const MONTHS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 export const MONTHS_ES_LONG = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
@@ -116,7 +117,10 @@ export function buildDividendCalendar(enriched, fundamentalsMap, fxToEUR, destWH
   const year  = opts.year || new Date().getFullYear()
   const whtOverrides = opts.whtOverrides || null
   const today = new Date()
-  const fx    = c => (c === 'EUR' ? 1 : (fxToEUR?.[c] ?? null))
+  // Tipo de cambio a EUR: real (exchange_rates) y, si falta, respaldo a la tabla
+  // estática FX (igual que toEUR de la cartera: 1 para divisas no listadas). Así
+  // NUNCA se descarta una posición por FX → cuadra con la "Renta anual neta".
+  const fx    = c => (c === 'EUR' ? 1 : (fxToEUR?.[c] ?? FX[c] ?? 1))
 
   const months = Array.from({ length: 12 }, (_, i) => ({
     month: i + 1, monthName: MONTHS_ES[i], year,
