@@ -41,11 +41,14 @@ export default function PortfolioHome() {
       const { data: { user } } = await sb.auth.getUser()
       if (!user) { if (!cancel) setState({ empty: true }); return }
 
-      const [{ data: positions }, { data: divsRec }] = await Promise.all([
+      const [{ data: positions }, { data: divsRec }, { data: txs }, cashMovesRes] = await Promise.all([
         sb.from('positions').select('*').eq('user_id', user.id),
         sb.from('dividends_received').select('ticker, amount_net, amount, date, status').eq('user_id', user.id).eq('status', 'received').order('date', { ascending: false }).limit(8),
+        sb.from('transactions').select('ticker, type, shares, price, date').eq('user_id', user.id).order('date', { ascending: false }).limit(12),
+        sb.from('cash_movements').select('type, amount, date, note').eq('user_id', user.id).order('date', { ascending: false }).limit(12),
       ])
       if (!positions?.length) { if (!cancel) setState({ empty: true, hasUser: true }); return }
+      const cashMoves = cashMovesRes?.data || []   // tolerante si la tabla aún no existe
 
       const stockTickers = [...new Set(positions.filter(p => (p.asset_type || 'stock') === 'stock').map(p => p.ticker))]
       const fundTickers = [...new Set(positions.filter(p => (p.asset_type || 'stock') !== 'stock').map(p => p.ticker))]
@@ -111,6 +114,22 @@ export default function PortfolioHome() {
         if (!['dividend_increase', 'dividend_cut', 'watchlist_buyzone'].includes(n.type)) return
         events.push({ kind: n.type, date: new Date(n.created_at), ticker: n.ticker, name: nameByTicker[n.ticker] || n.ticker, message: n.message })
       })
+      // Compras y ventas (operaciones)
+      ;(txs || []).forEach(t => {
+        if (!t.date) return
+        const date = new Date(t.date + 'T12:00:00')
+        const shares = Number(t.shares) || 0
+        if (t.type === 'sell') events.push({ kind: 'sell', date, ticker: t.ticker, name: nameByTicker[t.ticker] || t.ticker, shares })
+        else if (t.type === 'buy' || t.type === 'buy_recurring') events.push({ kind: 'buy', date, ticker: t.ticker, name: nameByTicker[t.ticker] || t.ticker, shares })
+      })
+      // Ingresos y retiradas de liquidez del fondo de oportunidad
+      cashMoves.forEach(m => {
+        if (!m.date) return
+        const date = new Date(String(m.date).slice(0, 10) + 'T12:00:00')
+        const amt = Math.abs(Number(m.amount) || 0)
+        if (m.type === 'deposit') events.push({ kind: 'cash_in', date, amount: amt })
+        else if (m.type === 'withdraw') events.push({ kind: 'cash_out', date, amount: amt })
+      })
       // Ex-dividend próximos (acciones en cartera, ≤10 días)
       const tIn = new Date(now); tIn.setDate(tIn.getDate() + 10)
       enriched.forEach(p => {
@@ -133,7 +152,7 @@ export default function PortfolioHome() {
         netAnnual, thisMonthDiv, monthlyInterest, thisMonthPassive, avgMonthlyPassive,
         monthlyExpenses, cashBalance, cashRate,
         monthlyNet, nextPayment: cal.nextPayment,
-        events: events.slice(0, 8),
+        events: events.slice(0, 10),
         currentMonth: now.getMonth(),
       })
       setExpDraft(monthlyExpenses ? String(monthlyExpenses) : '')
@@ -295,9 +314,9 @@ export default function PortfolioHome() {
 
         {/* ── 4. FEED DE EVENTOS DGI ── */}
         <div style={CARD}>
-          <p style={{ ...LABEL, marginBottom: 14 }}>⚡ Tu actividad DGI</p>
+          <p style={{ ...LABEL, marginBottom: 14 }}>⚡ Tu actividad</p>
           {s.events.length === 0 ? (
-            <p style={{ fontSize: 12.5, color: 'var(--text-faint)', padding: '8px 0' }}>Sin eventos recientes. Cuando cobres dividendos o una empresa los suba, aparecerá aquí.</p>
+            <p style={{ fontSize: 12.5, color: 'var(--text-faint)', padding: '8px 0' }}>Sin movimientos recientes. Tus compras, ventas, cobros y movimientos de liquidez aparecerán aquí.</p>
           ) : (
             <div style={{ display: 'grid', gap: 0 }}>
               {s.events.map((e, i) => <EventRow key={i} e={e} last={i === s.events.length - 1} />)}
@@ -333,6 +352,10 @@ function PayoutThermometer({ payout }) {
 function EventRow({ e, last }) {
   const meta = {
     cobro:            { icon: '💰', color: 'var(--positive)' },
+    buy:              { icon: '🛒', color: 'var(--accent)' },
+    sell:             { icon: '📤', color: 'var(--text-muted)' },
+    cash_in:          { icon: '🏦', color: 'var(--positive)' },
+    cash_out:         { icon: '🏦', color: 'var(--warning)' },
     dividend_increase:{ icon: '📈', color: 'var(--positive)' },
     dividend_cut:     { icon: '⚠️', color: 'var(--negative)' },
     watchlist_buyzone:{ icon: '🟢', color: 'var(--accent)' },
@@ -347,9 +370,15 @@ function EventRow({ e, last }) {
   )
 }
 
+const fmtShares = v => Number(v || 0).toLocaleString('es-ES', { maximumFractionDigits: 2 })
+
 function buildEventText(e) {
   const when = relDay(e.date)
   if (e.kind === 'cobro') return <>{when} cobraste <b style={{ color: 'var(--positive)' }}>{fmtEUR(e.amount, 2)}</b> de {e.name}</>
+  if (e.kind === 'buy') return <>{when} compraste <b>{fmtShares(e.shares)}</b> {e.shares === 1 ? 'acción' : 'acciones'} de {e.name}</>
+  if (e.kind === 'sell') return <>{when} vendiste <b>{fmtShares(e.shares)}</b> {e.shares === 1 ? 'acción' : 'acciones'} de {e.name}</>
+  if (e.kind === 'cash_in') return <>{when} añadiste <b style={{ color: 'var(--positive)' }}>{fmtEUR(e.amount, 2)}</b> al fondo de oportunidad</>
+  if (e.kind === 'cash_out') return <>{when} retiraste <b style={{ color: 'var(--warning)' }}>{fmtEUR(e.amount, 2)}</b> del fondo de oportunidad</>
   if (e.kind === 'exdiv') return <>{when} es la fecha límite para comprar <b>{e.name}</b> con derecho a dividendo</>
   // increase / cut / buyzone → usa el mensaje de la notificación
   return e.message || e.name
