@@ -56,10 +56,10 @@ export default function DividendosPage({ isPremium }) {
       const { data: f } = await sb.from('company_fundamentals').select('ticker, country, current_price, dps, div_history, dividend_events, next_ex_date, next_pay_date').in('ticker', tickers)
       setFunds(Object.fromEntries((f || []).map(x => [x.ticker, x])))
     }
-    let recs = await fetchRecords(user.id)
-    if (!recs.length) {
-      try { await fetch('/api/dividends/prefill', { method: 'POST' }); recs = await fetchRecords(user.id) } catch {}
-    }
+    // Regenera las estimaciones automáticas (pendientes) con el dividendo y las
+    // acciones actuales cada vez que se entra, y luego carga todo.
+    try { await fetch('/api/dividends/prefill', { method: 'POST' }) } catch {}
+    await fetchRecords(user.id)
     setLoading(false)
   }, [sb, router, fetchRecords])
 
@@ -133,9 +133,13 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
   }).sort((a, b) => new Date(a.payment_date_estimated || a.date) - new Date(b.payment_date_estimated || b.date)), [records, year])
 
   const today = todayStr()
-  const cobrado = yearRecs.filter(r => r.status === 'received').reduce((s, r) => s + num(r.amount_net), 0)
-  const pendientePasado = yearRecs.filter(r => r.status === 'pending' && (r.payment_date_estimated || r.date) <= today).reduce((s, r) => s + num(r.amount), 0)
-  const esperado = yearRecs.filter(r => r.status === 'pending' && (r.payment_date_estimated || r.date) > today).reduce((s, r) => s + num(r.amount), 0)
+  // Todos los totales en NETO (tras retenciones) para cuadrar con la "Renta anual
+  // neta" del resumen de la cartera. Respaldo a amount si no hay neto calculado.
+  const netOf = r => num(r.amount_net != null ? r.amount_net : r.amount)
+  const cobrado = yearRecs.filter(r => r.status === 'received').reduce((s, r) => s + netOf(r), 0)
+  const pendientePasado = yearRecs.filter(r => r.status === 'pending' && (r.payment_date_estimated || r.date) <= today).reduce((s, r) => s + netOf(r), 0)
+  const esperado = yearRecs.filter(r => r.status === 'pending' && (r.payment_date_estimated || r.date) > today).reduce((s, r) => s + netOf(r), 0)
+  const totalAnual = cobrado + pendientePasado + esperado
 
   const filtered = yearRecs.filter(r => filter === 'all' || (filter === 'received' ? r.status === 'received' : r.status === 'pending'))
 
@@ -266,8 +270,9 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 18 }}>
         <Sum label={`Cobrado en ${year}`} value={fmtEUR(cobrado, 0)} col={GREEN} sub="Neto confirmado" />
-        <Sum label="Pendiente de confirmar" value={fmtEUR(pendientePasado, 0)} col={ORANGE} sub="Ya debería estar cobrado" />
-        <Sum label="Esperado resto del año" value={fmtEUR(esperado, 0)} col={BLUE} sub="Pagos futuros" />
+        <Sum label="Pendiente de confirmar" value={fmtEUR(pendientePasado, 0)} col={ORANGE} sub="Neto · ya debería estar cobrado" />
+        <Sum label="Esperado resto del año" value={fmtEUR(esperado, 0)} col={BLUE} sub="Neto · pagos futuros" />
+        <Sum label={`Renta neta estimada ${year}`} value={fmtEUR(totalAnual, 0)} col="var(--text-strong)" sub="Cobrado + pendiente + esperado" />
       </div>
 
       <div style={{ ...CARD }}>
@@ -442,7 +447,7 @@ function Calendario({ records, year, setYear }) {
       const d = new Date(ds); if (d.getFullYear() !== year) return
       const m = d.getMonth()
       if (r.status === 'received') arr[m].received += num(r.amount_net)
-      else arr[m].pending += num(r.amount)
+      else arr[m].pending += num(r.amount_net != null ? r.amount_net : r.amount)
       arr[m].entries.push(r)
     })
     return arr

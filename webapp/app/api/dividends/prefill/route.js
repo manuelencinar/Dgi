@@ -17,6 +17,14 @@ export async function POST() {
     const { data: { user } } = await sb.auth.getUser()
     if (!user) return NextResponse.json({ error: 'no auth' }, { status: 401 })
 
+    // Regenera las estimaciones: borra las automáticas PENDIENTES del año en curso en
+    // adelante para recalcularlas con el dividendo y las acciones actuales. No toca
+    // las confirmadas ('received') ni las introducidas a mano ('manual').
+    const yearStartIso = `${new Date().getFullYear()}-01-01`
+    await sb.from('dividends_received').delete()
+      .eq('user_id', user.id).eq('source', 'auto').eq('status', 'pending')
+      .gte('payment_date_estimated', yearStartIso)
+
     const [{ data: positions }, { data: transactions }, { data: existing }, { data: excl }, { data: cfgRows }, { data: settings }] = await Promise.all([
       sb.from('positions').select('*').eq('user_id', user.id),
       sb.from('transactions').select('ticker, type, shares, date').eq('user_id', user.id),
@@ -27,6 +35,7 @@ export async function POST() {
     ])
     const config = Object.fromEntries((cfgRows || []).map(c => [c.ticker, c]))
     const destWHT = resolveDestWHT(settings)
+    const whtOverrides = (settings?.wht_overrides && typeof settings.wht_overrides === 'object') ? settings.wht_overrides : null
     if (!positions?.length) return NextResponse.json({ inserted: 0 })
 
     const tickers = [...new Set(positions.map(p => p.ticker))]
@@ -45,7 +54,7 @@ export async function POST() {
     })
     ;(excl || []).forEach(e => taken.add(`${e.ticker}|${e.period}`))
 
-    const auto = computeAutoDividends({ positions, transactions: transactions || [], fundamentals, config, destWHT })
+    const auto = computeAutoDividends({ positions, transactions: transactions || [], fundamentals, config, destWHT, whtOverrides })
     const toInsert = auto
       .filter(d => !taken.has(`${d.ticker}|${d.period}`))
       .map(d => ({
