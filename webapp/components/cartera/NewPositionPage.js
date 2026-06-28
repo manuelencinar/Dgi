@@ -46,6 +46,10 @@ export default function NewPositionPage() {
   // Ajustes del usuario
   const [userSettings, setUserSettings] = useState({ base_currency: 'EUR', fx_commission_pct: 0 })
 
+  // Fondo de oportunidad: saldo disponible + si se paga la compra con esa liquidez
+  const [fundBalance, setFundBalance] = useState(null)
+  const [payFromFund, setPayFromFund] = useState(false)
+
   // FX en tiempo real
   const [fxInfo,       setFxInfo]       = useState(null)  // { rate, rateDate, loading, notFound }
   const [fxManualRate, setFxManualRate] = useState('')
@@ -64,6 +68,16 @@ export default function NewPositionPage() {
     }
     loadSettings()
   }, [sb])
+
+  // Saldo del fondo de oportunidad (para ofrecer pagar la compra con esa liquidez)
+  useEffect(() => {
+    let cancel = false
+    fetch('/api/cartera/liquidez').then(r => r.ok ? r.json() : null).then(d => {
+      if (cancel || !d || d.ready === false) return
+      setFundBalance(Number(d.balance) || 0)
+    }).catch(() => {})
+    return () => { cancel = true }
+  }, [])
 
   // Prefill desde query params
   useEffect(() => {
@@ -214,6 +228,11 @@ export default function NewPositionPage() {
 
     // Coste real total = (acciones × precio) + comisión broker + comisión de cambio (EUR)
     const totalCost = totalOrig + commission + (fxFields.fx_commission_eur || 0)
+    // Coste en EUR (para el fondo de oportunidad): en divisa extranjera todo se pasa
+    // a EUR con el tipo de cambio; en EUR es directo.
+    const eurCost = needsFx
+      ? ((fxBreakdown?.totalReal ?? totalOrig * (effectiveRate || 1)) + commission * (effectiveRate || 1))
+      : totalOrig + commission
 
     const baseTx = {
       user_id: user.id, ticker: selected.ticker, type: form.type,
@@ -251,6 +270,18 @@ export default function NewPositionPage() {
     if (posErr) {
       const hint = /asset_type/.test(posErr.message) ? ' (falta ejecutar el SQL que añade asset_type a positions)' : ''
       setError('Error al guardar la posición: ' + posErr.message + hint); setSaving(false); return
+    }
+
+    // Si se paga desde el fondo de oportunidad, registra la salida de liquidez
+    // (movimiento 'investment' con importe negativo). Tolerante si la tabla no existe.
+    if (form.type === 'buy' && payFromFund && eurCost > 0) {
+      try {
+        await sb.from('cash_movements').insert({
+          user_id: user.id, type: 'investment',
+          amount: -Math.round(eurCost * 100) / 100,
+          date: form.date, note: `Compra ${selected.name}`,
+        })
+      } catch {}
     }
 
     // Primera vez que se añade esta empresa (acción): preguntar método de cobro.
@@ -464,6 +495,19 @@ export default function NewPositionPage() {
             <label style={LABEL}>Notas (opcional)</label>
             <textarea style={{ ...INPUT, minHeight: 64, resize: 'vertical' }} value={form.notes} onChange={e => field('notes', e.target.value)} />
           </div>
+
+          {/* Pagar desde el fondo de oportunidad (solo compra, si hay liquidez) */}
+          {form.type === 'buy' && fundBalance > 0 && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, cursor: 'pointer', background: 'rgba(52,211,153,0.05)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 8, padding: '11px 13px' }}>
+              <input type="checkbox" checked={payFromFund} onChange={e => setPayFromFund(e.target.checked)} style={{ marginTop: 2 }} />
+              <span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Pagar desde el fondo de oportunidad</span>
+                <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                  Disponible: <b style={{ color: 'var(--positive)' }}>{fundBalance.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €</b>. Se descontará el coste de esta compra de tu liquidez.
+                </span>
+              </span>
+            </label>
+          )}
 
           {error && <p style={{ fontSize: 12, color: 'var(--negative)' }}>{error}</p>}
 
