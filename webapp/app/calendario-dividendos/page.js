@@ -18,7 +18,7 @@ async function buildCalendar() {
   try {
     for (let from = 0; ; from += 1000) {
       const { data, error } = await sb.from('company_fundamentals')
-        .select('ticker, dividend_events, dps, current_price, pays_dividend').range(from, from + 999)
+        .select('ticker, dividend_events, dps, current_price, pays_dividend, market_cap_m').range(from, from + 999)
       if (error || !data?.length) break
       for (const f of data) fund[f.ticker] = f
       if (data.length < 1000) break
@@ -41,10 +41,11 @@ async function buildCalendar() {
     const y = dps / price * 100
     if (y <= 0 || y > 20) continue   // saneo (penny / artefacto)
     const ct = getCountry(country)
-    const entry = { t: ticker, n: name, flag: ct.flag, cont: getContinent(country), cur: currency, s: sector || '—', y: Math.round(y * 10) / 10, freq: months.length }
+    const entry = { t: ticker, n: name, flag: ct.flag, cont: getContinent(country), cur: currency, s: sector || '—', y: Math.round(y * 10) / 10, freq: months.length, mcap: Number(f.market_cap_m) || 0 }
     for (const m of months) byMonth[m - 1].push(entry)
   }
-  byMonth.forEach(arr => arr.sort((a, b) => b.y - a.y))
+  // Orden: las empresas MÁS IMPORTANTES (mayor capitalización) primero.
+  byMonth.forEach(arr => arr.sort((a, b) => (b.mcap - a.mcap) || (b.y - a.y)))
   return byMonth
 }
 

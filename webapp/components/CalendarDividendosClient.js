@@ -5,7 +5,7 @@ import { MONTHS_ES_LONG } from '@/lib/dividend-calendar'
 
 const ZONAS = ['Todas', 'América', 'Europa', 'Asia', 'Oceanía', 'África']
 const CURS = ['Todas', 'EUR', 'USD', 'GBP', 'CHF', 'CAD', 'JPY']
-const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 14 }
+const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 14, overflow: 'hidden', minWidth: 0 }
 
 function Chips({ label, opts, value, onChange }) {
   return (
@@ -40,7 +40,7 @@ function MonthCard({ month, entries }) {
       ) : (
         <div style={{ display: 'grid', gap: 2 }}>
           {list.map(e => (
-            <Link key={e.t} href={`/empresa/${e.t}`} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '4px 6px', borderRadius: 6, textDecoration: 'none' }} className="cd-row">
+            <Link key={e.t} href={`/empresa/${e.t}`} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '4px 6px', borderRadius: 6, textDecoration: 'none', minWidth: 0 }} className="cd-row">
               <span style={{ fontSize: 13, flexShrink: 0 }}>{e.flag}</span>
               <span style={{ fontSize: 12, color: 'var(--text)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.n}</span>
               <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--positive)', flexShrink: 0 }}>{e.y.toFixed(1)}%</span>
@@ -80,8 +80,12 @@ export default function CalendarDividendosClient({ byMonth }) {
         <Chips label="Divisa" opts={CURS} value={cur} onChange={setCur} />
       </div>
 
-      <style>{`.cd-row:hover{background:var(--surface-2)}`}</style>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 250px), 1fr))', gap: 14 }}>
+      <style>{`
+        .cd-row:hover{background:var(--surface-2)}
+        .cd-grid{display:grid;grid-template-columns:1fr;gap:14}
+        @media(min-width:560px){.cd-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}}
+      `}</style>
+      <div className="cd-grid">
         {filtered.map((entries, i) => <MonthCard key={i} month={i} entries={entries} />)}
       </div>
 
