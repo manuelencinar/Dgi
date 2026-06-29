@@ -353,10 +353,12 @@ function MilestoneBadges({ value, income, freedom, companies }) {
 
   const fmtRemaining = g => {
     if (g.next == null) return ''
-    if (g.type === 'eur') return `${g.remaining.toLocaleString('es-ES')} €`
-    if (g.type === 'pct') return `${Math.ceil(g.remaining)} pts`
-    return `${g.remaining}`
+    if (g.type === 'eur') return `${Math.round(g.remaining).toLocaleString('es-ES')} €`
+    if (g.type === 'pct') return `${Math.ceil(g.remaining)} puntos`
+    return `${Math.round(g.remaining)}`
   }
+  // Todas las insignias ya conseguidas (todos los escalones de todos los grupos).
+  const earned = groups.flatMap(g => g.reachedTiers.map(t => ({ key: g.key, icon: g.icon, label: tierLabel(g, t) })))
 
   return (
     <div style={{ ...CARD }}>
@@ -386,7 +388,7 @@ function MilestoneBadges({ value, income, freedom, companies }) {
                   <div style={{ height: 6, background: 'var(--surface-3)', borderRadius: 4, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: Math.round(g.progress * 100) + '%', background: 'linear-gradient(90deg, var(--accent), var(--positive))', borderRadius: 4 }} />
                   </div>
-                  <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 5 }}>Próximo {tierLabel(g, g.next)} · faltan {fmtRemaining(g)}</p>
+                  <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 5 }}>Te faltan {fmtRemaining(g)} para {tierLabel(g, g.next)}</p>
                 </>
               ) : (
                 <p style={{ fontSize: 10.5, color: 'var(--positive)', fontWeight: 700 }}>¡Nivel máximo!</p>
@@ -395,6 +397,20 @@ function MilestoneBadges({ value, income, freedom, companies }) {
           )
         })}
       </div>
+
+      {/* Colección de insignias conseguidas */}
+      {earned.length > 0 && (
+        <div style={{ marginTop: 16, borderTop: '1px solid var(--surface-2)', paddingTop: 14 }}>
+          <p style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Conseguidos ({earned.length})</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            {earned.map((b, i) => (
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 700, color: 'var(--text)', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 20, padding: '4px 11px' }}>
+                <span style={{ fontSize: 13 }}>{b.icon}</span>{b.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

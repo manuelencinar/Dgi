@@ -44,7 +44,7 @@ export function computeMilestones({ value = 0, income = 0, freedom = null, compa
     const prev = current ?? 0
     const progress = next != null ? Math.max(0, Math.min(1, (cur - prev) / (next - prev))) : 1
     const remaining = next != null ? Math.max(0, next - cur) : 0
-    return { key: g.key, title: g.title, icon: g.icon, type: g.type, current, next, value: cur, progress, remaining, reachedCount: reachedTiers.length }
+    return { key: g.key, title: g.title, icon: g.icon, type: g.type, current, next, value: cur, progress, remaining, reachedTiers, reachedCount: reachedTiers.length }
   })
   return { groups, reachedIds }
 }
