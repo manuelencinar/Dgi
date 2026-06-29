@@ -81,7 +81,7 @@ export default function CalendarDividendosClient({ byMonth }) {
       </div>
 
       <style>{`.cd-row:hover{background:var(--surface-2)}`}</style>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 250px), 1fr))', gap: 14 }}>
         {filtered.map((entries, i) => <MonthCard key={i} month={i} entries={entries} />)}
       </div>
 

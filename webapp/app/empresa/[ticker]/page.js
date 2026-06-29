@@ -321,8 +321,11 @@ export default async function EmpresaPage({ params, searchParams }) {
       .then(r => r.data || []).catch(() => []),
   ])
 
-  const isPremium = plan === 'premium'
-  const destWHT   = resolveDestWHT(settingsRow)
+  // Los Reyes del dividendo (racha ≥ 50 años) tienen la ficha COMPLETA gratis: un
+  // escaparate para que el usuario free vea todo el análisis antes de suscribirse.
+  const isKingFree = (detail?.div_streak ?? 0) >= 50 && plan !== 'premium'
+  const isPremium  = plan === 'premium' || isKingFree
+  const destWHT    = resolveDestWHT(settingsRow)
 
   // Otras cotizaciones de la misma empresa (mercado · precio · ticker pequeño).
   const otherTickers = otherListings(t)
@@ -506,6 +509,14 @@ export default async function EmpresaPage({ params, searchParams }) {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav />
+      {isKingFree && (
+        <div style={{ background: 'linear-gradient(90deg, rgba(251,191,36,0.14), rgba(99,102,241,0.10))', borderBottom: '1px solid rgba(251,191,36,0.3)', padding: '9px 16px', textAlign: 'center' }}>
+          <p style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 600, lineHeight: 1.5 }}>
+            👑 Estás viendo la ficha <b>completa gratis</b> por ser un <b>Rey del dividendo</b>. Así es el análisis Premium de las casi 2.000 empresas.{' '}
+            <a href="/fundador" style={{ color: 'var(--accent)', fontWeight: 800, textDecoration: 'none' }}>Hazte fundador →</a>
+          </p>
+        </div>
+      )}
       <CompanyDetailPage
         ticker={t}
         name={name}

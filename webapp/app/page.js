@@ -772,11 +772,11 @@ function Footer() {
 
 function BetaBanner() {
   return (
-    <Link href="/register" style={{ textDecoration: 'none', display: 'block' }}>
+    <Link href="/fundador" style={{ textDecoration: 'none', display: 'block' }}>
       <div style={{ background: 'linear-gradient(90deg, rgba(99,102,241,0.2), rgba(52,211,153,0.14))', borderBottom: '1px solid rgba(99,102,241,0.3)', padding: '10px 16px', textAlign: 'center' }}>
         <p style={{ fontSize: 13, color: 'var(--text-strong)', fontWeight: 600, lineHeight: 1.5 }}>
-          🚀 <b>Oferta fundadores</b>: los <b>100 primeros</b> usuarios de la beta bloquean{' '}
-          <b style={{ color: 'var(--accent)' }}>20&nbsp;€/año de por vida</b>.{' '}
+          🚀 Conviértete en uno de los <b>100 primeros suscriptores</b> y disfruta de un precio de{' '}
+          <b style={{ color: 'var(--accent)' }}>20&nbsp;€ al año para siempre</b>.{' '}
           <span style={{ color: 'var(--accent)', fontWeight: 800 }}>Reclama tu plaza →</span>
         </p>
       </div>
@@ -885,7 +885,7 @@ function BetaOffer() {
             </span>
           ))}
         </div>
-        <Link href="/register" style={{ fontSize: 15, fontWeight: 800, color: '#fff', textDecoration: 'none', padding: '13px 30px', background: 'var(--accent)', borderRadius: 10, boxShadow: '0 4px 24px rgba(99,102,241,0.4)', display: 'inline-block' }}>
+        <Link href="/fundador" style={{ fontSize: 15, fontWeight: 800, color: '#fff', textDecoration: 'none', padding: '13px 30px', background: 'var(--accent)', borderRadius: 10, boxShadow: '0 4px 24px rgba(99,102,241,0.4)', display: 'inline-block' }}>
           Reclamar mi plaza de fundador →
         </Link>
         <p style={{ fontSize: 11, color: 'var(--text-faintest)', marginTop: 14 }}>Plazas limitadas. Cuando se agoten, el precio vuelve a la tarifa normal.</p>
