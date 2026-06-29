@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { findDictEntry } from '@/lib/dict'
 import { toFmpSymbol, fetchFmpEstimates, extractRealHistory, buildEstimateSeries } from '@/lib/analyst-estimates'
+import { fetchYahooEstimates } from '@/lib/yahoo-estimates'
 
 export const dynamic     = 'force-dynamic'
 export const maxDuration = 20
@@ -42,9 +43,16 @@ export async function GET(request, { params }) {
     if (row?.analyst_estimates_status === 'ok' && Array.isArray(row.analyst_estimates)) {
       estRows = row.analyst_estimates
     } else if (row?.analyst_estimates_status === 'none') {
-      estRows = null                                  // sin cobertura confirmada → no llamar
+      estRows = null                                  // sin cobertura confirmada (FMP) → no llamar a FMP
     } else {
       estRows = await fetchFmpEstimates(toFmpSymbol(t))   // aún sin procesar → fallback en vivo
+    }
+
+    // FMP free apenas cubre fuera de EE. UU. → si no hay estimaciones, las pedimos a
+    // Yahoo (earningsTrend), que sí cubre muchas empresas no-US (año en curso + siguiente).
+    if (!estRows || !estRows.length) {
+      const y = await fetchYahooEstimates(t).catch(() => null)
+      if (y && y.length) estRows = y
     }
 
     if ((realRows && realRows.length) || (estRows && estRows.length)) {
