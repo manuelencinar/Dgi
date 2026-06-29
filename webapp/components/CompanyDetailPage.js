@@ -1178,7 +1178,7 @@ function DGIScoreCard({ dgiScore, isPremium, compact, scoreHistory }) {
   const content = (
     <Card>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-        <SectionTitle>Score DGI detallado</SectionTitle>
+        <SectionTitle>Score DGI</SectionTitle>
         <span style={{ fontSize: 36, fontWeight: 900, color: scoreColor(dgiScore.total), lineHeight: 1 }}>{dgiScore.total ?? '—'}</span>
       </div>
       {!dgiScore.hasData && <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 12 }}>Datos insuficientes para calcular el score.</p>}
@@ -1189,62 +1189,41 @@ function DGIScoreCard({ dgiScore, isPremium, compact, scoreHistory }) {
       </p>
       <ScoreHistory data={scoreHistory} />
 
-      <div style={{ display: 'grid', gap: 16 }}>
+      {/* Solo las 4 dimensiones con su nota — sin el desglose métrica a métrica ni
+          los pesos exactos (metodología propietaria, no se expone). */}
+      <div style={{ display: 'grid', gap: 12 }}>
         {dgiScore.categories?.map(cat => (
           <div key={cat.key}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)' }}>{cat.name}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 10, color: 'var(--text-faint)' }}>{Math.round(cat.weight * 100)}%</span>
-                <span style={{ fontSize: 14, fontWeight: 800, color: scoreColor(cat.score) }}>{cat.score?.toFixed(1) ?? '—'}</span>
-              </div>
+              <span style={{ fontSize: 14, fontWeight: 800, color: scoreColor(cat.score) }}>{cat.score?.toFixed(1) ?? '—'}</span>
             </div>
-            <div style={{ height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden', marginBottom: 8 }}>
+            <div style={{ height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: cat.score != null ? `${(cat.score/10)*100}%` : '0%', background: scoreColor(cat.score), borderRadius: 2 }} />
             </div>
-            <div style={{ paddingLeft: 8, borderLeft: '2px solid var(--surface-2)' }}>
-              {cat.noDividend ? (
-                <p style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
-                  Esta empresa no reparte dividendo — la categoría puntúa 0.
-                </p>
-              ) : (
-                <>
-                  {cat.metrics?.filter(m => m.available).map(m => <MetricRow key={m.key} m={m} />)}
-                  {cat.metrics?.filter(m => !m.available).length > 0 && (
-                    <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 2 }}>
-                      {cat.metrics.filter(m => !m.available).length} métrica(s) sin datos — peso redistribuido
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
+            {cat.noDividend && (
+              <p style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 5 }}>Esta empresa no reparte dividendo — la categoría puntúa 0.</p>
+            )}
           </div>
         ))}
       </div>
 
       {dgiScore.penalties?.length > 0 && (
         <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--negative)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Penalizaciones</p>
+          <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--negative)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Riesgos que penalizan la nota</p>
           {dgiScore.penalties.map((p, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--negative)', marginBottom: 4 }}>
-              <span>{p.reason}</span><span style={{ flexShrink: 0, marginLeft: 8 }}>−{p.amount.toFixed(1)}</span>
-            </div>
+            <div key={i} style={{ fontSize: 11, color: 'var(--negative)', marginBottom: 4 }}>· {p.reason}</div>
           ))}
         </div>
       )}
 
       {dgiScore.bonuses?.length > 0 && (
         <div style={{ marginTop: 14, padding: '12px 14px', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.18)', borderRadius: 8 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--positive)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Bonificaciones por tendencia positiva</p>
+          <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--positive)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Tendencias positivas que suman</p>
           {dgiScore.bonuses.map((b, i) => (
-            <div key={i} title={b.tooltip} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: '#8fe9c4', marginBottom: 4, cursor: 'help' }}>
-              <span>↑ {b.label}</span><span style={{ flexShrink: 0, marginLeft: 8, fontWeight: 700, color: 'var(--positive)' }}>+{b.amount.toFixed(1)}</span>
-            </div>
+            <div key={i} title={b.tooltip} style={{ fontSize: 11.5, color: '#8fe9c4', marginBottom: 4 }}>↑ {b.label}</div>
           ))}
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--positive)', fontWeight: 800, marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(52,211,153,0.18)' }}>
-            <span>Total bonificaciones</span><span>+{dgiScore.bonusTotal.toFixed(1)}</span>
-          </div>
-          <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 8 }}>Las bonificaciones premian tendencias positivas sostenidas — señales de que el negocio está mejorando estructuralmente.</p>
+          <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 8 }}>Señales de que el negocio está mejorando estructuralmente.</p>
         </div>
       )}
       {dgiScore.noDividend && (

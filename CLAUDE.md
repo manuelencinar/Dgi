@@ -172,6 +172,9 @@ Todos los cálculos de renta de dividendos comparten la MISMA base: **DPS × acc
 - `scripts/recalc_roic.mjs` — script Node de una vez para recalcular ROIC en BD desde los estados financieros ya guardados (sin yfinance). Ejecutar con `--write`. SQL de la columna: `webapp/sql/roic_display.sql`.
 - Resultados de referencia tras el fix: Edenred ~17,6%, ADP ~36%, MA ~61%, KO ~16,7%, JNJ ~17,7%.
 
+## Opacidad del Score DGI (anti-copia del algoritmo)
+La ficha (`DGIScoreCard` en `CompanyDetailPage.js`) muestra la nota total + las 4 dimensiones (Calidad/Dividendo/Solidez/Valoración) con su nota, PERO **ya NO expone** el desglose métrica a métrica (`MetricRow`), los **pesos exactos** de cada dimensión, ni los **±puntos** de penalizaciones/bonificaciones. Penalizaciones/bonificaciones se muestran solo como motivo cualitativo (sin el número). Objetivo: que no se pueda reproducir la fórmula. Los datos por métrica siguen calculándose en `lib/dgi-score.js` (no cambia el cálculo), solo se ocultan en la UI.
+
 ## Sistema de bonificaciones por tendencia positiva (scoring DGI)
 - Adicionales al scoring base: NO modifican umbrales ni penalizaciones, solo suman puntos extra por tendencias positivas sostenidas. Cap total **+1.0**; la nota final nunca supera 10. Requieren ≥3 años de histórico (si falta, se ignora la bonificación sin penalizar).
 - Lógica única en `lib/bonuses.js` (`computeBonuses(data, sectorType)`), integrada en `lib/dgi-score.js` (`computeDGIScore` suma `bonus.total` tras penalizaciones y devuelve `bonuses`/`bonusTotal`). **Replicada en `scripts/update_fundamentals.py`** (`compute_bonus_fields`, deben coincidir) usando los jsonb anuales ya descargados.
