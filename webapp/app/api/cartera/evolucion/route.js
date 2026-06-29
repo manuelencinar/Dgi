@@ -40,11 +40,16 @@ export async function GET(req) {
     const sb = svc()
     const [{ data: txs }, { data: divs }, { data: positions }] = await Promise.all([
       sb.from('transactions').select('*').eq('user_id', user.id),
-      sb.from('dividends_received').select('ticker, amount, date').eq('user_id', user.id),
+      sb.from('dividends_received').select('ticker, amount, amount_net, date, status').eq('user_id', user.id),
       sb.from('positions').select('ticker, currency, shares, avg_cost, asset_type').eq('user_id', user.id),
     ])
     const transactions = txs || []
-    const dividends = divs || []
+    // Solo dividendos realmente COBRADOS (status received) y en NETO (amount_net),
+    // para que cuadre con "Cobrado" de la pestaña Dividendos y el gráfico de renta
+    // neta. Importe = neto (con respaldo a amount si no hubiera neto).
+    const dividends = (divs || [])
+      .filter(d => d.status === 'received')
+      .map(d => ({ ...d, amount: Number(d.amount_net ?? d.amount) || 0 }))
     const posList = (positions || []).filter(p => n(p.shares) > 0)
 
     // Años disponibles
