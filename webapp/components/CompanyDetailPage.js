@@ -1140,17 +1140,18 @@ function SafetyCard({ safety, isPremium }) {
         Estima el <strong style={{ color: 'var(--text-muted)' }}>riesgo de recorte</strong> del dividendo de forma anticipada, ponderando payout, solidez del balance, historial y tendencia (con umbrales por sector).
         <span style={{ color: 'var(--text-faintest)' }}> Verde ≥70 · amarillo 50–70 · rojo &lt;50.</span>
       </p>
+      {/* Dimensiones de la seguridad sin exponer pesos, umbrales ni la subnota
+          exacta (metodología propietaria). */}
       <div style={{ display: 'grid', gap: 11 }}>
         {factors.map(f => (
           <div key={f.label}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>{f.label} <span style={{ color: 'var(--text-faintest)', fontWeight: 500 }}>· {Math.round(f.weight * 100)}%</span></span>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: safetyBarColor(f.score) }}>{f.score}</span>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>{f.label}</span>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: safetyBarColor(f.score) }}>{f.score >= 70 ? 'Sólido' : f.score >= 50 ? 'Vigilar' : 'Riesgo'}</span>
             </div>
             <div style={{ height: 5, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
               <div style={{ width: `${f.score}%`, height: '100%', background: safetyBarColor(f.score), borderRadius: 3 }} />
             </div>
-            <p style={{ fontSize: 10, color: 'var(--text-faint)', marginTop: 3 }}>{f.detail}</p>
           </div>
         ))}
       </div>
