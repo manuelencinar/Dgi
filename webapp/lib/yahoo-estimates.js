@@ -5,7 +5,8 @@
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
 const raw = v => (v && typeof v === 'object' && 'raw' in v) ? v.raw : (typeof v === 'number' ? v : null)
 
-async function crumb() {
+// Crumb + cookie de Yahoo (se puede reutilizar en un lote para no repetir el handshake).
+export async function getYahooCrumb() {
   const c = await fetch('https://fc.yahoo.com', { headers: { 'User-Agent': UA }, cache: 'no-store' })
   const a3 = (c.headers.get('set-cookie') || '').match(/A3=([^;]+)/)
   const cookie = a3 ? `A3=${a3[1]}` : ''
@@ -21,9 +22,10 @@ const yearOf = ed => {
   return (y && y > 1990 && y < 2100) ? y : null
 }
 
-export async function fetchYahooEstimates(ticker) {
+// creds opcional ({cr, cookie}) para reutilizar el crumb en un lote (el script).
+export async function fetchYahooEstimates(ticker, creds = null) {
   let cr, cookie
-  try { ({ cr, cookie } = await crumb()) } catch { return null }
+  try { ({ cr, cookie } = creds || await getYahooCrumb()) } catch { return null }
   const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=earningsTrend&crumb=${encodeURIComponent(cr)}`
   let trend
   try {

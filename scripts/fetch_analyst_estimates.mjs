@@ -3,8 +3,11 @@
 // con ~200 llamadas/día cubre toda la app (~2000 empresas) en ~10 días.
 //
 //   · Prioriza por capitalización (las más visitadas primero).
-//   · Marca analyst_estimates_status='ok' (con datos) | 'none' (sin cobertura de FMP).
-//     Las 'none' NO se vuelven a consultar (no malgastan llamadas) salvo --recheck.
+//   · FMP cubre EE.UU.; si no da datos (no-US/402), FALLBACK a Yahoo earningsTrend
+//     (cubre muchas empresas no-US). Crumb de Yahoo compartido para todo el lote.
+//   · Marca analyst_estimates_status='ok' (con datos, de FMP o Yahoo) | 'none' (sin cobertura).
+//     Las 'none' NO se vuelven a consultar salvo --recheck. Para backfillear las no-US
+//     marcadas 'none' por runs FMP-only anteriores → corre una vez con --recheck.
 //   · Un fallo transitorio (red / HTTP no-200) NO marca nada → se reintenta otro día.
 //   · Salta cotizaciones secundarias (la ficha redirige a la matriz).
 //
@@ -19,6 +22,7 @@
 import { readFileSync } from 'fs'
 import { createRequire } from 'module'
 import { toFmpSymbol, fetchFmpEstimatesResult } from '../webapp/lib/analyst-estimates.js'
+import { fetchYahooEstimates, getYahooCrumb } from '../webapp/lib/yahoo-estimates.js'
 import { isSecondary } from '../webapp/lib/listings.js'
 const require = createRequire(new URL('../webapp/package.json', import.meta.url))
 const { createClient } = require('@supabase/supabase-js')
@@ -82,7 +86,11 @@ async function run() {
 
   console.log(`Candidatas esta ejecución: ${candidates.length}${WRITE ? '' : '  [dry-run]'}\n`)
 
-  let ok = 0, none = 0, fail = 0
+  // Crumb de Yahoo compartido para todo el lote (fallback de las no-US que FMP no cubre).
+  let yCreds = null
+  try { yCreds = await getYahooCrumb() } catch { console.log('  (aviso: no se pudo obtener crumb de Yahoo; sin fallback)') }
+
+  let ok = 0, okY = 0, noneNew = 0, fail = 0
   for (const r of candidates) {
     const t = r.ticker
     const { status, rows } = await fetchFmpEstimatesResult(toFmpSymbol(t))
@@ -95,23 +103,30 @@ async function run() {
       continue
     }
 
-    // 'unsupported' (402) o 200 con datos vacíos → sin cobertura → 'none' (no reconsultar).
-    const hasData = status === 'ok' && rows && rows.length > 0
+    // FMP da datos (US). Si no (no-US/402 o vacío), probamos Yahoo earningsTrend.
+    let finalRows = (status === 'ok' && rows && rows.length > 0) ? rows : null
+    let src = finalRows ? 'fmp' : null
+    if (!finalRows && yCreds) {
+      const y = await fetchYahooEstimates(t, yCreds).catch(() => null)
+      if (y && y.length) { finalRows = y; src = 'yahoo' }
+    }
+
+    const hasData = !!(finalRows && finalRows.length)
     const upd = {
       ticker: t,
-      analyst_estimates: hasData ? rows : null,
+      analyst_estimates: hasData ? finalRows : null,
       analyst_estimates_status: hasData ? 'ok' : 'none',
       analyst_estimates_at: new Date().toISOString(),
     }
-    if (hasData) ok++; else none++
+    if (hasData) { ok++; if (src === 'yahoo') okY++ } else noneNew++
     if (WRITE) {
       const { error } = await sb.from('company_fundamentals').upsert(upd, { onConflict: 'ticker' })
       if (error) console.error(`  upsert ${t}:`, error.message)
     }
-    console.log(`  ${t.padEnd(12)} ${hasData ? `ok (${rows.length} años)` : `sin cobertura (${status}) → none`}`)
+    console.log(`  ${t.padEnd(12)} ${hasData ? `ok (${finalRows.length} años · ${src})` : `sin cobertura → none`}`)
     await sleep(DELAY_MS)
   }
 
-  console.log(`\nResultado: ok=${ok} · sin-cobertura=${none} · fallos=${fail}${WRITE ? '' : '  [dry-run, usa --write]'}`)
+  console.log(`\nResultado: ok=${ok} (${okY} vía Yahoo) · sin-cobertura=${noneNew} · fallos=${fail}${WRITE ? '' : '  [dry-run, usa --write]'}`)
 }
 run()
