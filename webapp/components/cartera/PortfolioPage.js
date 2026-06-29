@@ -18,6 +18,7 @@ import PortfolioDGIScore from '@/components/cartera/PortfolioDGIScore'
 import PortfolioEvolution from '@/components/cartera/PortfolioEvolution'
 import CompanyDetector from '@/components/cartera/CompanyDetector'
 import RecurringSection from '@/components/cartera/RecurringSection'
+import OperationsCard from '@/components/cartera/OperationsCard'
 import FxRatesWidget from '@/components/cartera/FxRatesWidget'
 import CurrencyAnalysis from '@/components/cartera/CurrencyAnalysis'
 import PricesFreshnessIndicator from '@/components/PricesFreshnessIndicator'
@@ -144,10 +145,12 @@ function IncomeProjectionCard({ enriched, taxRate, whtOverrides, isPremium }) {
       const { data } = await sb.from('dividends_received').select('amount, amount_net, date, status').eq('user_id', user.id)
       if (cancel) return
       const map = {}
+      const maxYear = new Date().getFullYear() + 12
       for (const d of data || []) {
         const y = d.date ? String(d.date).slice(0, 4) : null
+        const yn = Number(y)
         const net = Number(d.amount_net ?? d.amount) || 0
-        if (!y || !net) continue
+        if (!y || !net || !yn || yn < 2000 || yn > maxYear) continue   // descarta fechas absurdas
         if (!map[y]) map[y] = { year: y, received: 0, pending: 0 }
         if (d.status === 'received') map[y].received += net
         else map[y].pending += net
@@ -1051,6 +1054,9 @@ export default function PortfolioPage({ isPremium }) {
 
       {/* Aportaciones periódicas */}
       <RecurringSection />
+
+      {/* Operaciones + comisiones (antes en la pestaña Historial) */}
+      <OperationsCard isPremium={isPremium} />
 
       {enriched.length > 0 && (
         <>

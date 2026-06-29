@@ -51,7 +51,7 @@ Implementado en tres partes. Páginas:
 - `/cartera/proyeccion` — proyección de renta con CAGR real por empresa (3 escenarios) + análisis DRIP
 - `/cartera/calendario` — calendario de dividendos personal (vista calendario y lista)
 - `/cartera/simulador` — what-if: añadir posición, recorte de dividendo, reinversión DRIP, independencia financiera
-- `/cartera/historial` — operaciones, dividendos cobrados, yield on cost histórico (export CSV)
+- (Eliminada la página `/cartera/historial`) — las **operaciones** y las **comisiones** viven ahora dentro de `/cartera` en `components/cartera/OperationsCard.js`: tarjeta con el **resumen de comisiones SIEMPRE visible** (broker + cambio + total + media/operación, lo que cuesta operar) y un **desplegable "Operaciones"** con la tabla completa (filtros, export CSV premium, resumen por empresa con precio medio + realizado, borrar operación con recálculo de la posición). `/cartera/historial` redirige a `/cartera`. Dividendos cobrados y yield-on-cost histórico se quitaron (los dividendos se gestionan en `/cartera/dividendos`).
 - `/cartera/liquidez` — **Fondo de oportunidad** (ver sección propia)
 - `/cartera/alertas` — alertas personalizadas configurables + toggles de email y resumen mensual
 

@@ -6,7 +6,7 @@ import { isSecondary } from '@/lib/listings'
 // Sitemap para que Google descubra y priorice las ~2000 fichas de empresa y los
 // índices (el canal de tráfico orgánico principal). Las páginas privadas/de app
 // quedan fuera (ver robots.js).
-const BASE = 'https://invest-dgi.vercel.app'
+const BASE = 'https://everdiv.com'
 
 export const revalidate = 86400 // 1 día
 
