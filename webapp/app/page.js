@@ -7,7 +7,7 @@ import PublicNav from '@/components/PublicNav'
 
 export const metadata = {
   title: 'EverDiv — Invierte en dividendos con criterio',
-  description: 'El único screener que analiza 43 mercados globales con metodología DGI real. Score de calidad, radar de oportunidades y salud financiera actualizada. Empieza gratis.',
+  description: 'La plataforma DGI completa: screener de 43 mercados, ficha de empresa con Score y salud financiera, cartera con seguimiento de dividendos, calendario, fondo de oportunidad y contador de libertad financiera. Empieza gratis.',
 }
 
 // Cachear la landing y revalidar el contador 1 vez al día (no penaliza cada visita)
@@ -85,8 +85,9 @@ function Hero() {
             <span style={{ color: 'var(--accent)' }}>con criterio real.</span>
           </h1>
           <p style={{ fontSize: 16, color: 'var(--text-faint)', lineHeight: 1.7, marginBottom: 32, maxWidth: 480 }}>
-            El único screener que analiza 43 mercados globales con metodología DGI —
-            score de calidad, radar de oportunidades y salud financiera actualizada.
+            La plataforma DGI completa: screener de 43 mercados, análisis de empresa con
+            Score y salud financiera, y una cartera que sigue tus dividendos, tu fondo de
+            oportunidad y tu camino hacia la libertad financiera.
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Link href="/register" style={{
@@ -508,20 +509,20 @@ function PlatformMetrics({ companyCount }) {
 function Pricing() {
   const freeFeatures = [
     '43 mercados con Score DGI',
-    'Termómetro DGI y yield del índice',
-    'Ranking comparativo de mercados',
     'Screener con filtros básicos (yield, zona, sector)',
-    'Hasta 10 empresas en tu cartera personal',
+    'Ficha de empresa: precio, yield e historial básico',
+    'Cartera hasta 10 empresas + seguimiento de dividendos',
+    'Watchlist hasta 10 empresas',
   ]
   const premiumFeatures = [
     'Todo lo del plan gratuito',
-    'Radar de oportunidades de compra',
-    'Mapa de salud financiera del índice',
-    'Desglose completo del Score DGI',
-    'Evolución histórica del índice',
-    'Filtros premium en el screener (score, racha, CAGR…)',
-    'Empresas ilimitadas en cartera',
-    'Exportar / importar datos',
+    'Screener completo + radar de oportunidades de compra',
+    'Análisis completo de empresa (salud, DCF, Sankey, estimaciones)',
+    'Cartera ilimitada: dividendos, calendario, proyección y fondo de oportunidad',
+    'Contador de libertad financiera y logros',
+    'Comparador y rankings (Caníbales, Compounding)',
+    'Watchlist ilimitada con alertas de precio y de dividendo',
+    'Importa de tu bróker y exporta a CSV',
   ]
   return (
     <section id="precios" style={{ padding: '80px 24px', borderBottom: '1px solid var(--surface-3)' }}>
@@ -759,13 +760,137 @@ function Footer() {
           </div>
         </div>
         <div style={{ borderTop: '1px solid var(--surface-3)', paddingTop: 20, display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center' }}>
-          <p style={{ fontSize: 11, color: 'var(--bg-elev)' }}>© 2025 EverDiv</p>
+          <p style={{ fontSize: 11, color: 'var(--bg-elev)' }}>© 2026 EverDiv</p>
           <p style={{ fontSize: 11, color: 'var(--bg-elev)', maxWidth: 500, textAlign: 'right' }}>
             La información proporcionada no constituye asesoramiento financiero. Invertir implica riesgos. Consulta a un asesor antes de tomar decisiones de inversión.
           </p>
         </div>
       </div>
     </footer>
+  )
+}
+
+function BetaBanner() {
+  return (
+    <Link href="/register" style={{ textDecoration: 'none', display: 'block' }}>
+      <div style={{ background: 'linear-gradient(90deg, rgba(99,102,241,0.2), rgba(52,211,153,0.14))', borderBottom: '1px solid rgba(99,102,241,0.3)', padding: '10px 16px', textAlign: 'center' }}>
+        <p style={{ fontSize: 13, color: 'var(--text-strong)', fontWeight: 600, lineHeight: 1.5 }}>
+          🚀 <b>Oferta fundadores</b>: los <b>100 primeros</b> usuarios de la beta bloquean{' '}
+          <b style={{ color: 'var(--accent)' }}>20&nbsp;€/año de por vida</b>.{' '}
+          <span style={{ color: 'var(--accent)', fontWeight: 800 }}>Reclama tu plaza →</span>
+        </p>
+      </div>
+    </Link>
+  )
+}
+
+// Mockup de la cartera / home (novedades): valor, libertad financiera, próximo cobro, logros.
+function CarteraMockup() {
+  return (
+    <div style={{ background: 'rgba(13,18,32,0.95)', border: '1px solid var(--border-strong)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 24px 48px rgba(0,0,0,0.5)' }}>
+      <div style={{ background: 'var(--surface-2)', padding: '9px 13px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 5 }}>{['var(--negative)','var(--warning)','var(--positive)'].map((c,i)=><div key={i} style={{ width: 9, height: 9, borderRadius: '50%', background: c, opacity: 0.6 }} />)}</div>
+        <div style={{ flex: 1, background: 'var(--border)', borderRadius: 5, padding: '3px 10px', fontSize: 9.5, color: 'var(--text-faintest)' }}>everdiv.com/novedades</div>
+      </div>
+      <div style={{ padding: 14 }}>
+        {/* Hero card */}
+        <div style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.16), var(--surface) 60%)', border: '1px solid var(--border-strong)', borderRadius: 11, padding: '13px 14px', marginBottom: 11 }}>
+          <p style={{ fontSize: 9, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Valor total de la cartera</p>
+          <p style={{ fontSize: 26, fontWeight: 900, color: 'var(--text-strong)', lineHeight: 1.1, margin: '2px 0 10px' }}>24.350 €</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ fontSize: 9, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Libertad financiera</span>
+            <span style={{ fontSize: 13, fontWeight: 900, color: 'var(--accent)' }}>18%</span>
+          </div>
+          <div style={{ height: 8, background: 'var(--surface-2)', borderRadius: 5, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: '18%', background: 'linear-gradient(90deg, var(--accent), var(--positive))', borderRadius: 5 }} />
+          </div>
+        </div>
+        {/* Próximo payday */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(52,211,153,0.07)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 10, padding: '9px 12px', marginBottom: 11 }}>
+          <span style={{ fontSize: 18 }}>📅</span>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 8.5, color: 'var(--text-faint)' }}>Próximo cobro</p>
+            <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--text)' }}>Faltan 3 días para cobrar <span style={{ color: 'var(--positive)' }}>45 €</span> de Realty Income</p>
+          </div>
+        </div>
+        {/* Badges */}
+        <p style={{ fontSize: 8.5, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>🏆 Tus logros</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {['💼 10.000 €','🔥 10%','🏢 12 empresas','💸 500 €/año'].map(b => (
+            <span key={b} style={{ fontSize: 10, fontWeight: 700, color: 'var(--text)', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 16, padding: '3px 9px' }}>{b}</span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PlatformShowcase() {
+  const feats = [
+    ['📊', 'Cartera con seguimiento de dividendos', 'Posiciones, coste neto, YoC real, dividendos en riesgo y diversificación por sector y país. Importa de tu bróker.'],
+    ['🔥', 'Contador de libertad financiera', 'Qué porcentaje de tus gastos cubren ya tus ingresos pasivos, con barra de progreso y logros que celebran cada hito.'],
+    ['📅', 'Calendario de dividendos', 'Cuándo y cuánto cobras cada mes, con próximos pagos confirmados y estimados, neto tras retenciones.'],
+    ['🪙', 'Fondo de oportunidad', 'Tu pólvora seca para comprar en caídas, con los intereses que te paga el banco capitalizándose mes a mes.'],
+    ['⚖️', 'Comparador y rankings', 'Compara empresas lado a lado y explora Reyes, Aristócratas, Caníbales de acciones y máquinas de compounding.'],
+    ['📈', 'Análisis completo de empresa', 'Valor intrínseco sector-aware, diagrama Sankey de resultados, estimaciones de analistas y proyección de renta.'],
+  ]
+  return (
+    <section style={{ padding: '80px 24px', borderBottom: '1px solid var(--surface-3)' }}>
+      <style>{`
+        .plat-grid { display: grid; grid-template-columns: 1fr; gap: 44px; align-items: center; max-width: 1040px; margin: 0 auto; }
+        @media (min-width: 880px) { .plat-grid { grid-template-columns: 0.92fr 1fr; } }
+        .plat-feats { display: grid; grid-template-columns: 1fr; gap: 18px; }
+        @media (min-width: 520px) { .plat-feats { grid-template-columns: 1fr 1fr; } }
+      `}</style>
+      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 14 }}>Mucho más que un screener</p>
+        <h2 style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-strong)', marginBottom: 10 }}>Tu cartera DGI, de principio a fin</h2>
+        <p style={{ fontSize: 14, color: 'var(--text-faint)', maxWidth: 560, margin: '0 auto' }}>
+          Del análisis a la decisión y al seguimiento: una plataforma completa para construir y vivir de tus dividendos.
+        </p>
+      </div>
+      <div className="plat-grid">
+        <CarteraMockup />
+        <div className="plat-feats">
+          {feats.map(([icon, t, d]) => (
+            <div key={t}>
+              <div style={{ fontSize: 22, marginBottom: 7 }}>{icon}</div>
+              <h3 style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text-strong)', marginBottom: 5, lineHeight: 1.3 }}>{t}</h3>
+              <p style={{ fontSize: 12, color: 'var(--text-faint)', lineHeight: 1.6 }}>{d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ textAlign: 'center', marginTop: 12, fontSize: 12.5, color: 'var(--text-faintest)' }}>
+        + watchlist con alertas de precio · notificaciones de subidas y recortes de dividendo · simulador de independencia financiera · app instalable
+      </div>
+    </section>
+  )
+}
+
+function BetaOffer() {
+  const perks = ['Acceso completo a todo Premium', 'Precio bloqueado de por vida', 'Solo 100 plazas de fundador']
+  return (
+    <section style={{ padding: '70px 24px 0' }}>
+      <div style={{ maxWidth: 820, margin: '0 auto', background: 'linear-gradient(135deg, rgba(99,102,241,0.14), rgba(52,211,153,0.10))', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 18, padding: '32px 26px', textAlign: 'center' }}>
+        <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--accent)', background: 'rgba(99,102,241,0.18)', padding: '5px 14px', borderRadius: 20, letterSpacing: '0.08em' }}>🚀 BETA FUNDADORES · SOLO 100 PLAZAS</span>
+        <h2 style={{ fontSize: 32, fontWeight: 900, color: 'var(--text-strong)', margin: '18px 0 6px' }}>20&nbsp;€/año. <span style={{ color: 'var(--accent)' }}>Para siempre.</span></h2>
+        <p style={{ fontSize: 14.5, color: 'var(--text-muted)', maxWidth: 560, margin: '0 auto 20px', lineHeight: 1.6 }}>
+          Los <b style={{ color: 'var(--text-strong)' }}>100 primeros</b> usuarios de la beta consiguen todo el plan Premium por <b style={{ color: 'var(--text-strong)' }}>solo 20&nbsp;€ al año, con el precio bloqueado de por vida</b> — pase lo que pase con los precios futuros.
+        </p>
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 24 }}>
+          {perks.map(p => (
+            <span key={p} style={{ fontSize: 12.5, color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ color: 'var(--positive)', fontWeight: 800 }}>✓</span>{p}
+            </span>
+          ))}
+        </div>
+        <Link href="/register" style={{ fontSize: 15, fontWeight: 800, color: '#fff', textDecoration: 'none', padding: '13px 30px', background: 'var(--accent)', borderRadius: 10, boxShadow: '0 4px 24px rgba(99,102,241,0.4)', display: 'inline-block' }}>
+          Reclamar mi plaza de fundador →
+        </Link>
+        <p style={{ fontSize: 11, color: 'var(--text-faintest)', marginTop: 14 }}>Plazas limitadas. Cuando se agoten, el precio vuelve a la tarifa normal.</p>
+      </div>
+    </section>
   )
 }
 
@@ -780,15 +905,18 @@ export default async function LandingPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav />
+      <BetaBanner />
       <Hero />
       <ForWhom />
       <CompanyShowcase data={showcase} />
+      <PlatformShowcase />
       <Benefits />
       <DualRanking />
       <UseCase />
       <HowItWorks />
       <MarketsSection markets={markets} />
       <PlatformMetrics companyCount={companyCount} />
+      <BetaOffer />
       <Pricing />
       <FaqSection />
       <Footer />

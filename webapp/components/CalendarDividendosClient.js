@@ -42,7 +42,7 @@ function MonthCard({ month, entries }) {
           {list.map(e => (
             <Link key={e.t} href={`/empresa/${e.t}`} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '4px 6px', borderRadius: 6, textDecoration: 'none' }} className="cd-row">
               <span style={{ fontSize: 13, flexShrink: 0 }}>{e.flag}</span>
-              <span style={{ fontSize: 12, color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.n}</span>
+              <span style={{ fontSize: 12, color: 'var(--text)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.n}</span>
               <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--positive)', flexShrink: 0 }}>{e.y.toFixed(1)}%</span>
             </Link>
           ))}
