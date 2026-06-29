@@ -351,11 +351,12 @@ function MilestoneBadges({ value, income, freedom, companies }) {
     } catch {}
   }, [reachedKey])   // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fmtRemaining = g => {
+  const progressText = g => {
     if (g.next == null) return ''
-    if (g.type === 'eur') return `${Math.round(g.remaining).toLocaleString('es-ES')} €`
-    if (g.type === 'pct') return `${Math.ceil(g.remaining)} puntos`
-    return `${Math.round(g.remaining)}`
+    const r = Math.round(g.remaining)
+    if (g.type === 'eur') return `Te faltan ${r.toLocaleString('es-ES')} € para ${tierLabel(g, g.next)}`
+    if (g.type === 'pct') return `Te faltan ${Math.ceil(g.remaining)} puntos para ${g.next}%`
+    return `Te faltan ${r} ${r === 1 ? 'empresa' : 'empresas'} para ${g.next}`
   }
   // Todas las insignias ya conseguidas (todos los escalones de todos los grupos).
   const earned = groups.flatMap(g => g.reachedTiers.map(t => ({ key: g.key, icon: g.icon, label: tierLabel(g, t) })))
@@ -388,7 +389,7 @@ function MilestoneBadges({ value, income, freedom, companies }) {
                   <div style={{ height: 6, background: 'var(--surface-3)', borderRadius: 4, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: Math.round(g.progress * 100) + '%', background: 'linear-gradient(90deg, var(--accent), var(--positive))', borderRadius: 4 }} />
                   </div>
-                  <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 5 }}>Te faltan {fmtRemaining(g)} para {tierLabel(g, g.next)}</p>
+                  <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 5 }}>{progressText(g)}</p>
                 </>
               ) : (
                 <p style={{ fontSize: 10.5, color: 'var(--positive)', fontWeight: 700 }}>¡Nivel máximo!</p>
