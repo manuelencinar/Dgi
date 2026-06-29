@@ -47,7 +47,7 @@ export default function EtfsClient({ initialFunds }) {
     try {
       const res = await fetch('/api/fund/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticker: tk, assetType: 'etf' }) })
       const data = await res.json()
-      if (!res.ok) { setLookupState('idle'); setLookupMsg('No encontrado en Yahoo Finance.'); return }
+      if (!res.ok) { setLookupState('idle'); setLookupMsg('No se ha encontrado el ticker.'); return }
       const f = data.fund
       setFunds(prev => prev.some(x => x.ticker === f.ticker) ? prev.map(x => x.ticker === f.ticker ? f : x) : [...prev, f])
       setLookupState('idle'); setLookupMsg(`✓ ${f.name} añadido a la lista`)
@@ -68,7 +68,7 @@ export default function EtfsClient({ initialFunds }) {
           style={{ flex: 1, minWidth: 220, background: 'var(--surface-2)', border: '1px solid var(--surface-3)', borderRadius: 9, padding: '10px 14px', color: 'var(--text-strong)', fontSize: 13, outline: 'none' }} />
         {filtered.length === 0 && search.trim() && (
           <button onClick={searchYahoo} disabled={lookupState === 'loading'} style={{ padding: '10px 18px', background: 'var(--accent)', border: 'none', borderRadius: 9, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
-            {lookupState === 'loading' ? 'Buscando…' : 'Buscar en Yahoo'}
+            {lookupState === 'loading' ? 'Buscando…' : 'Buscar'}
           </button>
         )}
       </div>

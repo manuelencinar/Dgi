@@ -22,7 +22,7 @@ export async function POST(request) {
   } catch {}
 
   const res = await fetchAndStoreFund(ticker, assetType)
-  if (res.error) return NextResponse.json({ error: res.error.includes('No encontrado') ? 'No encontrado en Yahoo Finance — puedes introducir los datos manualmente' : res.error }, { status: res.error.includes('No encontrado') ? 404 : 500 })
+  if (res.error) return NextResponse.json({ error: res.error.includes('No encontrado') ? 'No encontrado — puedes introducir los datos manualmente' : res.error }, { status: res.error.includes('No encontrado') ? 404 : 500 })
   return NextResponse.json({ fund: res.fund, source: 'yahoo' })
 }
 

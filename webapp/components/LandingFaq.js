@@ -12,7 +12,7 @@ const ITEMS = [
   },
   {
     q: '¿Los datos son en tiempo real?',
-    a: 'No, y a propósito: el DGI es inversión a largo plazo, no trading. Las cotizaciones se actualizan dos veces al día (cierre de Europa y cierre de EEUU) y los fundamentales (yield, payout, ROIC, deuda, estados financieros) se refrescan semanalmente desde Yahoo Finance. Los Scores DGI se recalculan tras cada actualización.',
+    a: 'No, y a propósito: el DGI es inversión a largo plazo, no trading. Las cotizaciones se actualizan dos veces al día (cierre de Europa y cierre de EEUU) y los fundamentales (yield, payout, ROIC, deuda, estados financieros) se refrescan semanalmente. Los Scores DGI se recalculan tras cada actualización.',
   },
   {
     q: '¿En qué se diferencia de Simply Safe Dividends o Dividend.com?',
@@ -32,7 +32,7 @@ const ITEMS = [
   },
   {
     q: '¿Con qué frecuencia se actualizan los datos?',
-    a: 'Las cotizaciones de los índices se actualizan diariamente. Los fundamentales de las empresas (yield, payout, PE, EPS) se refrescan cada 7 días desde Yahoo Finance. Los Scores DGI se recalculan automáticamente tras cada actualización de fundamentales.',
+    a: 'Las cotizaciones de los índices se actualizan diariamente. Los fundamentales de las empresas (yield, payout, PE, EPS) se refrescan cada 7 días. Los Scores DGI se recalculan automáticamente tras cada actualización de fundamentales.',
   },
   {
     q: '¿Para qué tipo de inversor es esta herramienta?',

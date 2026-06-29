@@ -74,6 +74,20 @@ export async function getInsiders(ticker) {
   else if (sells.length && sellValue >= buyValue * 1.2) verdict = 'vendedores'
   else if (buys.length || sells.length) verdict = 'mixto'
 
+  // Volumen comprado/vendido por tramos de 3 meses (0–3, 3–6, 6–9, 9–12) para el
+  // gráfico — solo operaciones de mercado (buy/sell) de los últimos 12 meses.
+  const MONTH_MS = YEAR_MS / 12
+  const volume = [[0, 3], [3, 6], [6, 9], [9, 12]].map(([lo, hi]) => ({ label: `${lo}–${hi}`, bought: 0, sold: 0, boughtValue: 0, soldValue: 0 }))
+  for (const t of tx) {
+    if (t.ms == null || (t.kind !== 'buy' && t.kind !== 'sell')) continue
+    const ageM = (now - t.ms) / MONTH_MS
+    if (ageM < 0 || ageM >= 12) continue
+    const idx = Math.min(3, Math.floor(ageM / 3))
+    const sh = Math.abs(t.shares || 0), val = Math.abs(t.value || 0)
+    if (t.kind === 'buy') { volume[idx].bought += sh; volume[idx].boughtValue += val }
+    else { volume[idx].sold += sh; volume[idx].soldValue += val }
+  }
+
   const a = r.netSharePurchaseActivity
   const summary6m = a ? {
     period: a.period || '6m',
@@ -86,6 +100,7 @@ export async function getInsiders(ticker) {
   return {
     summary6m,
     net12m: { buyers, sellers, buyValue, sellValue, netValue: buyValue - sellValue, buyCount: buys.length, sellCount: sells.length, verdict },
+    volume,
     transactions: tx.slice(0, 12),
     hasData: tx.length > 0 || (summary6m && (summary6m.buyCount || summary6m.sellCount)),
   }

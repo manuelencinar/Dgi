@@ -407,7 +407,7 @@ export default function NewPositionPage() {
             </div>
           ) : (
             <div>
-              <label style={LABEL}>{assetType === 'etf' ? 'Ticker de Yahoo Finance (ej: SCHD, VHYL.L, TDIV.AS)' : 'ISIN o ticker de Yahoo Finance'}</label>
+              <label style={LABEL}>{assetType === 'etf' ? 'Ticker del ETF (ej: SCHD, VHYL.L, TDIV.AS)' : 'ISIN o ticker del fondo'}</label>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input style={INPUT} placeholder={assetType === 'etf' ? 'SCHD' : 'IE00B...'} value={lookupTicker} onChange={e => setLookupTicker(e.target.value)} />
                 <button type="button" onClick={doLookup} disabled={lookupState === 'loading'} style={{ ...BTN_PRIMARY, padding: '10px 18px', flexShrink: 0 }}>
@@ -429,7 +429,7 @@ export default function NewPositionPage() {
               {lookupState === 'notfound' && (
                 <div style={{ marginTop: 10 }}>
                   <p style={{ fontSize: 12, color: 'var(--warning)', marginBottom: assetType === 'fund' ? 10 : 0 }}>
-                    No encontrado en Yahoo Finance{assetType === 'fund' ? ' — introduce los datos manualmente:' : '. Verifica el ticker.'}
+                    No encontrado{assetType === 'fund' ? ' — introduce los datos manualmente:' : '. Verifica el ticker.'}
                   </p>
                   {assetType === 'fund' && (
                     <div style={{ display: 'grid', gap: 8, padding: '12px', background: 'var(--surface)', borderRadius: 8 }}>

@@ -770,7 +770,7 @@ export default function MarketDetail({ market, quote, initialChartData, stats, r
         </div>
         {(!stats || Object.values(stats).every(v => v == null)) && (
           <p style={{ fontSize: 11, color: 'var(--text-faintest)', marginTop: 8 }}>
-            Yahoo Finance no expone estadísticas para este índice concreto.
+            No hay estadísticas disponibles para este índice concreto.
           </p>
         )}
       </div>

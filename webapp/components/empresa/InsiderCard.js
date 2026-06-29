@@ -81,7 +81,7 @@ export default function InsiderCard({ ticker, isPremium }) {
         </div>
       </div>
 
-      {/* Resumen 6m de Yahoo */}
+      {/* Resumen de los últimos 6 meses */}
       {data.summary6m && (data.summary6m.buyCount > 0 || data.summary6m.sellCount > 0) && (
         <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginBottom: 14, fontSize: 12, color: 'var(--text-muted)' }}>
           <span>Compras 6m: <b style={{ color: 'var(--positive)' }}>{data.summary6m.buyCount}</b> ({fmtSh(data.summary6m.buyShares)} acc.)</span>
@@ -119,7 +119,35 @@ export default function InsiderCard({ ticker, isPremium }) {
           </table>
         </div>
       )}
-      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 12 }}>Fuente: Yahoo Finance. Las ventas de directivos no siempre son una señal negativa (impuestos, diversificación); las compras en mercado abierto son la señal de convicción más fiable.</p>
+      {/* Volumen de compras/ventas por tramos de 3 meses (12 meses) — estilo diverging */}
+      {data.volume && data.volume.some(b => b.bought || b.sold) && (() => {
+        const maxV = Math.max(1, ...data.volume.flatMap(b => [b.bought, b.sold]))
+        return (
+          <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Volumen de compras y ventas · últimos 12 meses</p>
+            <div style={{ display: 'flex', fontSize: 9.5, fontWeight: 700, marginBottom: 8 }}>
+              <span style={{ width: 52 }} />
+              <span style={{ flex: 1, textAlign: 'right', color: 'var(--warning)', paddingRight: 8 }}>Vendidas</span>
+              <span style={{ flex: 1, color: 'var(--positive)', paddingLeft: 8 }}>Compradas</span>
+            </div>
+            {data.volume.map((b, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ width: 52, fontSize: 10, color: 'var(--text-muted)' }}>{b.label}<span style={{ color: 'var(--text-faintest)', fontSize: 8.5 }}> m</span></span>
+                <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6, paddingRight: 8 }}>
+                  {b.sold > 0 && <span style={{ fontSize: 9.5, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{fmtSh(b.sold)}</span>}
+                  <div style={{ width: `${(b.sold / maxV) * 100}%`, minWidth: b.sold > 0 ? 3 : 0, height: 13, background: 'var(--warning)', borderRadius: '3px 0 0 3px' }} />
+                </div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 8 }}>
+                  <div style={{ width: `${(b.bought / maxV) * 100}%`, minWidth: b.bought > 0 ? 3 : 0, height: 13, background: 'var(--positive)', borderRadius: '0 3px 3px 0' }} />
+                  {b.bought > 0 && <span style={{ fontSize: 9.5, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{fmtSh(b.bought)}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      })()}
+
+      <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 14 }}>Las ventas de directivos no siempre son una señal negativa (impuestos, diversificación); las compras en mercado abierto son la señal de convicción más fiable.</p>
     </div>
   )
 }

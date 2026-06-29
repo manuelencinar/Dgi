@@ -498,6 +498,8 @@ updated_at
 - **DICT** (`data/dict.js`): formato `[nombre, ticker_real, paisISO2, divisa, superSector, sectorName, type]`. NO meter entradas con el nombre como número ni el ticker como nombre de empresa (hubo basura de Dow Jones Global Titans: 53 filas DICT + 52 stubs en company_fundamentals + 1 override, ya eliminadas). Los tickers reales no llevan espacios.
 - Mostrar guión en lugar de número cuando no hay dato disponible — nunca romper la página por datos ausentes
 - No tocar ninguna otra página ni componente que no se haya pedido explícitamente
+- **NO exponer la fuente de datos** (Yahoo/FMP/etc.) en NINGÚN texto visible al usuario (FAQ, hints, mensajes de error, notas de ficha). Se eliminaron todas las menciones a "Yahoo Finance" de la UI de usuario (quedan solo comentarios de código y el panel admin). Las nuevas cadenas no deben nombrar la fuente.
+- **Insiders** (`components/empresa/InsiderCard.js` + `lib/insiders.js`): operaciones de directivos (premium). Veredicto 12m + tabla de operaciones + **gráfico de volumen comprado/vendido por tramos de 3 meses** (0–3/3–6/6–9/9–12), estilo diverging (vendidas ámbar a la izq., compradas verde a la der.). Cobertura sobre todo EE.UU.; fuera → la sección no se muestra. La fuente NO se nombra.
 - Email admin: vayaebookk@gmail.com
 - Los commits terminan con: `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`
 - webapp/AGENTS.md: esta versión de Next.js (16) tiene breaking changes; consultar `node_modules/next/dist/docs/` antes de escribir código de framework
