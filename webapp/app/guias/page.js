@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import PublicNav from '@/components/PublicNav'
-import { GUIAS } from '@/data/guias'
+import { listPublishedGuias } from '@/lib/guias-db'
 
 const BASE = 'https://everdiv.com'
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Guías de inversión en dividendos (DGI) | EverDiv',
@@ -12,7 +13,8 @@ export const metadata = {
 
 const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 22 }
 
-export default function GuiasIndex() {
+export default async function GuiasIndex() {
+  const GUIAS = await listPublishedGuias()
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav />
@@ -27,6 +29,9 @@ export default function GuiasIndex() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
           <style>{`@media(min-width:680px){.guias-grid{grid-template-columns:1fr 1fr!important}}`}</style>
+          {GUIAS.length === 0 && (
+            <p style={{ fontSize: 14, color: 'var(--text-faint)', textAlign: 'center', padding: '30px 0' }}>Pronto publicaremos nuevas guías.</p>
+          )}
           <div className="guias-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
             {GUIAS.map(g => (
               <Link key={g.slug} href={`/guias/${g.slug}`} style={{ ...CARD, textDecoration: 'none', display: 'flex', flexDirection: 'column' }}>
