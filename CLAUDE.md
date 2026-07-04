@@ -364,6 +364,9 @@ Snippet oficial de PostHog cargado SOLO si existe `NEXT_PUBLIC_POSTHOG_KEY` (no-
   - **Decisión editorial**: NO mostramos precio objetivo de analistas (cortoplacista, choca con DGI) — hay un párrafo explicándolo al pie de la pestaña Valoración. FMP sí lo daría (price-target/grades, solo US).
 - **Diagrama Sankey del estado de resultados** (`components/empresa/IncomeSankey.js`): "¿A dónde va el dinero?" — SVG propio con layout determinista (beneficio arriba / coste-gasto abajo en todas las columnas → sin cruces; recharts Sankey se descartó por entremezclar flujos). Ingresos → Coste de ventas + Beneficio bruto → Beneficio neto + Gastos → I+D / Ventas y marketing / G&A / Impuestos y otros. **Selector de periodo** arriba (años; trimestres si hay datos = premium). Solo estructura clásica con beneficio positivo (banca/seguros/REIT y pérdidas → no se muestra).
 
+## Guías SEO (contenido en español DGI)
+Sección de guías educativas para tráfico orgánico: `/guias` (índice) + `/guias/[slug]` (artículo). Contenido en `data/guias.js` (bloques h2/p/ul/callout/cta con markdown inline mínimo `[texto](/url)` y `**negrita**`), renderizado por `components/GuiaContent.js`. Cada artículo lleva `generateMetadata` (title/description/canonical/openGraph) + JSON-LD `Article` + relacionadas + CTA de registro, y enlaza internamente a screener/aristocratas/cartera. En el `sitemap.js` y en el footer de la landing. 4 guías iniciales (DGI, fiscalidad ES, Reyes/Aristócratas, métricas). Añadir más = una entrada en `GUIAS`.
+
 ## PWA / instalable
 `app/manifest.js` (Next sirve `/manifest.webmanifest` y enlaza solo) + iconos SVG de marca: `app/icon.svg` (favicon), `public/icon.svg` + `public/icon-maskable.svg` (manifest), `app/apple-icon.svg`. "Añadir a pantalla de inicio" con arranque propio.
 

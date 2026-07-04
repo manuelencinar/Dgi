@@ -2,6 +2,7 @@ import { DICT } from '@/data/dict'
 import { MARKETS } from '@/lib/markets'
 import { getEffectiveMarkets } from '@/lib/markets-overrides'
 import { isSecondary } from '@/lib/listings'
+import { GUIAS } from '@/data/guias'
 
 // Sitemap para que Google descubra y priorice las ~2000 fichas de empresa y los
 // índices (el canal de tráfico orgánico principal). Las páginas privadas/de app
@@ -24,8 +25,14 @@ export default async function sitemap() {
     ['/etfs', 0.6, 'weekly'],
     ['/calendario-dividendos', 0.5, 'weekly'],
     ['/construir-cartera', 0.6, 'monthly'],
+    ['/guias', 0.7, 'weekly'],
     ['/pricing', 0.5, 'monthly'],
   ].map(([p, priority, changeFrequency]) => ({ url: BASE + p, lastModified: now, changeFrequency, priority }))
+
+  const guiaRoutes = GUIAS.map(g => ({
+    url: `${BASE}/guias/${g.slug}`,
+    lastModified: g.updated ? new Date(g.updated) : now, changeFrequency: 'monthly', priority: 0.6,
+  }))
 
   let markets = MARKETS
   try { const eff = await getEffectiveMarkets(); if (eff?.length) markets = eff } catch {}
@@ -48,5 +55,5 @@ export default async function sitemap() {
     })
   }
 
-  return [...staticRoutes, ...marketRoutes, ...companyRoutes]
+  return [...staticRoutes, ...guiaRoutes, ...marketRoutes, ...companyRoutes]
 }

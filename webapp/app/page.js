@@ -746,6 +746,7 @@ function Footer() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Link href="/mercados" style={{ fontSize: 13, color: 'var(--text-faintest)', textDecoration: 'none' }}>Mercados</Link>
               <Link href="/screener" style={{ fontSize: 13, color: 'var(--text-faintest)', textDecoration: 'none' }}>Screener</Link>
+              <Link href="/guias" style={{ fontSize: 13, color: 'var(--text-faintest)', textDecoration: 'none' }}>Guías</Link>
               <Link href="/pricing" style={{ fontSize: 13, color: 'var(--text-faintest)', textDecoration: 'none' }}>Precios</Link>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
