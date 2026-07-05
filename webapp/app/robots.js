@@ -1,6 +1,6 @@
 // Permite indexar las páginas públicas (landing, mercados, screener, fichas,
 // rankings) y bloquea las privadas/de app y las APIs.
-const BASE = 'https://everdiv.com'
+const BASE = 'https://www.everdiv.com'
 
 export default function robots() {
   return {

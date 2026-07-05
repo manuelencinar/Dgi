@@ -2,7 +2,7 @@ import Link from 'next/link'
 import PublicNav from '@/components/PublicNav'
 import { listPublishedGuias } from '@/lib/guias-db'
 
-const BASE = 'https://everdiv.com'
+const BASE = 'https://www.everdiv.com'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {

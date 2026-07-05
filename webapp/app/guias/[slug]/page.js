@@ -5,7 +5,7 @@ import GuiaContent from '@/components/GuiaContent'
 import { getPublishedGuia, listPublishedGuias } from '@/lib/guias-db'
 import { mdToBlocks } from '@/lib/markdown-blocks'
 
-const BASE = 'https://everdiv.com'
+const BASE = 'https://www.everdiv.com'
 export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }) {
