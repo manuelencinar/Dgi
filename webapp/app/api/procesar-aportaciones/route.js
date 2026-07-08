@@ -15,12 +15,12 @@ async function sendAportacionEmail(to, data) {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return { skipped: true }
   const from = process.env.RESEND_FROM || 'EverDiv <noreply@everdiv.com>'
-  const html = `<div style="font-family:Arial,sans-serif;background:#080b14;padding:24px;color:#c8d0e0">
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0"><div style="font-family:Arial,sans-serif;background:#080b14;padding:24px;color:#c8d0e0">
     <h2 style="color:#818cf8">Aportación periódica ejecutada</h2>
     <p><strong>${data.name}</strong></p>
     <p>Fecha: ${data.date}<br>Importe: ${data.amount} €<br>Precio del día: ${data.price} ${data.currency}<br>
     Participaciones compradas: ${data.shares}<br>Total acumulado en este fondo: ${data.totalShares} participaciones</p>
-    <a href="https://www.everdiv.com/cartera" style="color:#818cf8">Ver mi cartera</a></div>`
+    <a href="https://www.everdiv.com/cartera" style="color:#818cf8">Ver mi cartera</a></div></body></html>`
   try {
     await fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },

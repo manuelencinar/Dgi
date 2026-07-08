@@ -22,7 +22,7 @@ export async function sendEmail(to, subject, html) {
 
 // Envoltorio de email con el estilo de la app (fondo oscuro, índigo).
 export function emailShell(title, bodyHTML) {
-  return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#080b14;font-family:Arial,sans-serif">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#080b14;padding:24px 0">
 <tr><td align="center">

@@ -131,7 +131,7 @@ function buildEmailHTML(email, data) {
   const motivHTML = data.incomeGrowth != null
     ? `<p style="color:#34d399;font-size:15px;font-weight:bold;margin:16px 0 0">Tu renta anual ha crecido un ${data.incomeGrowth.toFixed(1)}% en los últimos 12 meses 🚀</p>` : ''
 
-  return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#080b14;font-family:Arial,sans-serif">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#080b14;padding:24px 0">
 <tr><td align="center">
