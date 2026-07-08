@@ -33,8 +33,16 @@ async function findUserId(sb, data) {
 
 async function setPremium(sb, userId, patch) {
   const { data: existing } = await sb.from('user_settings').select('user_id').eq('user_id', userId).maybeSingle()
-  if (existing) await sb.from('user_settings').update(patch).eq('user_id', userId)
-  else await sb.from('user_settings').insert({ user_id: userId, dest_wht: 19, ...patch })
+  const write = async p => existing
+    ? sb.from('user_settings').update(p).eq('user_id', userId)
+    : sb.from('user_settings').insert({ user_id: userId, dest_wht: 19, ...p })
+  let res = await write(patch)
+  // Tolerante a que aún no se haya ejecutado paddle.sql: reintenta sin las columnas paddle_*.
+  if (res.error && /paddle_/.test(res.error.message || '')) {
+    const { paddle_subscription_id, paddle_customer_id, ...rest } = patch
+    res = await write(rest)
+  }
+  if (res.error) throw new Error(res.error.message)
 }
 
 export async function POST(request) {
