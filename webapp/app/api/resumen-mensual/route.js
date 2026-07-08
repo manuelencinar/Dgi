@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { enrichPositions, calcSummary, calcDividendRisks } from '@/lib/portfolio'
+import { enrichPositions, calcSummary, calcDividendRisks, calcFiscal } from '@/lib/portfolio'
+import { resolveDestWHT } from '@/lib/fiscal-es'
 import { computeDGIScore } from '@/lib/dgi-score'
 import { getYahooCrumb, fetchYahooEarningsDate } from '@/lib/yahoo-estimates'
 import { DICT } from '@/data/dict'
@@ -43,6 +44,13 @@ async function buildSummary(sb, userId) {
   const enriched = enrichPositions(positions, fundMap)
   const summary  = calcSummary(enriched)
   const nameOf = Object.fromEntries(enriched.map(p => [p.ticker, p.name]))
+
+  // Renta anual NETA (misma base que la tarjeta "Renta anual neta" de /cartera):
+  // calcFiscal con el tipo de destino resuelto por los ajustes fiscales del usuario.
+  const { data: uset } = await sb.from('user_settings').select('*').eq('user_id', userId).maybeSingle()
+  const whtOverrides = (uset?.wht_overrides && typeof uset.wht_overrides === 'object') ? uset.wht_overrides : null
+  const destWHT = resolveDestWHT(uset, summary.totalIncomeEUR)
+  const netAnnual = calcFiscal(enriched, whtOverrides, destWHT).reduce((s, r) => s + (r.net || 0), 0)
 
   const now = new Date()
 
@@ -142,7 +150,7 @@ async function buildSummary(sb, userId) {
 
   return {
     totalValue: summary.totalValueEUR,
-    annualIncome: summary.totalIncomeEUR,
+    annualIncome: netAnnual,
     collectedThisMonth, collectedThisMonthTotal,
     recurContributions, recurTotal,
     raised, atRisk, earnings, nextMonthName: MESES[nextStart.getMonth()],
@@ -200,7 +208,7 @@ function buildEmailHTML(email, data) {
     <table width="100%" style="background:rgba(255,255,255,0.03);border-radius:10px;padding:16px;margin-bottom:16px">
       <tr>
         <td style="color:#4a5270;font-size:12px">Valor de la cartera</td>
-        <td style="color:#4a5270;font-size:12px;text-align:right">Renta anual estimada</td>
+        <td style="color:#4a5270;font-size:12px;text-align:right">Renta anual neta</td>
       </tr>
       <tr>
         <td style="color:#e0e8f0;font-size:22px;font-weight:bold">${fmtEUR(data.totalValue)}</td>
