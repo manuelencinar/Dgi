@@ -11,7 +11,7 @@ const sections = [
   {
     h: 'Responsable del tratamiento',
     body: [
-      'El responsable del tratamiento de los datos recogidos a través de <strong>EverDiv</strong> (everdiv.com) es <strong>[NOMBRE DEL TITULAR / RAZÓN SOCIAL]</strong>, con NIF <strong>[NIF/DNI]</strong> y domicilio en <strong>[DOMICILIO]</strong>.',
+      'El responsable del tratamiento de los datos recogidos a través de <strong>EverDiv</strong> (everdiv.com) es <strong>Manuel Herrero</strong>, con NIF <strong>70889796R</strong> y domicilio en <strong>Calle Huertos 30, Parada de Rubiales (Salamanca), España</strong>.',
       'Correo de contacto en materia de protección de datos: <a href="mailto:soporte@everdiv.com">soporte@everdiv.com</a>.',
     ],
   },
