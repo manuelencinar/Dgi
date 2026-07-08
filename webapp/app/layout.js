@@ -1,5 +1,6 @@
 import { Figtree } from 'next/font/google'
 import Analytics from '@/components/Analytics'
+import CookieNotice from '@/components/CookieNotice'
 
 const figtree = Figtree({
   subsets: ['latin'],
@@ -77,6 +78,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className={figtree.className} style={{background:"var(--bg)",color:"var(--text)",margin:0,padding:0,WebkitFontSmoothing:"antialiased"}} suppressHydrationWarning>
         {children}
+        <CookieNotice />
         <Analytics />
       </body>
     </html>

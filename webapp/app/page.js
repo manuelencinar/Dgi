@@ -757,6 +757,7 @@ function Footer() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Link href="/privacidad" style={{ fontSize: 13, color: 'var(--text-faintest)', textDecoration: 'none' }}>Política de privacidad</Link>
               <Link href="/terminos" style={{ fontSize: 13, color: 'var(--text-faintest)', textDecoration: 'none' }}>Términos de uso</Link>
+              <Link href="/cookies" style={{ fontSize: 13, color: 'var(--text-faintest)', textDecoration: 'none' }}>Política de cookies</Link>
             </div>
           </div>
         </div>

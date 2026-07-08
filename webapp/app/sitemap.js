@@ -27,6 +27,9 @@ export default async function sitemap() {
     ['/construir-cartera', 0.6, 'monthly'],
     ['/guias', 0.7, 'weekly'],
     ['/pricing', 0.5, 'monthly'],
+    ['/privacidad', 0.2, 'yearly'],
+    ['/terminos', 0.2, 'yearly'],
+    ['/cookies', 0.2, 'yearly'],
   ].map(([p, priority, changeFrequency]) => ({ url: BASE + p, lastModified: now, changeFrequency, priority }))
 
   let guias = []

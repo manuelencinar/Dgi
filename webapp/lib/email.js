@@ -1,7 +1,7 @@
 // Envío de emails vía Resend. Best-effort: si no hay RESEND_API_KEY configurada
 // (pendiente de dominio propio), no rompe — devuelve { skipped: true }.
 
-const APP_URL = 'https://invest-dgi.vercel.app'
+const APP_URL = 'https://www.everdiv.com'
 
 export async function sendEmail(to, subject, html) {
   const apiKey = process.env.RESEND_API_KEY

@@ -8,7 +8,7 @@ import { DICT } from '@/data/dict'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-const APP_URL = 'https://invest-dgi.vercel.app'
+const APP_URL = 'https://www.everdiv.com'
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
 
 function serviceClient() {

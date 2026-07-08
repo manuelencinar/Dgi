@@ -20,7 +20,7 @@ async function sendAportacionEmail(to, data) {
     <p><strong>${data.name}</strong></p>
     <p>Fecha: ${data.date}<br>Importe: ${data.amount} €<br>Precio del día: ${data.price} ${data.currency}<br>
     Participaciones compradas: ${data.shares}<br>Total acumulado en este fondo: ${data.totalShares} participaciones</p>
-    <a href="https://invest-dgi.vercel.app/cartera" style="color:#818cf8">Ver mi cartera</a></div>`
+    <a href="https://www.everdiv.com/cartera" style="color:#818cf8">Ver mi cartera</a></div>`
   try {
     await fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
