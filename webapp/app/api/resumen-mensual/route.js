@@ -205,6 +205,26 @@ export async function GET(request) {
   }
 
   const sb = serviceClient()
+
+  // Modo prueba: ?email=<addr> → genera y envía SOLO a ese usuario (para previsualizar
+  // el resumen con datos reales). Requiere el CRON_SECRET (ya exigido arriba).
+  const testEmail = new URL(request.url).searchParams.get('email')
+  if (testEmail) {
+    let user = null
+    for (let page = 1; page <= 10 && !user; page++) {
+      const { data: list } = await sb.auth.admin.listUsers({ page, perPage: 200 })
+      user = (list?.users || []).find(u => u.email?.toLowerCase() === testEmail.toLowerCase())
+      if (!list?.users?.length) break
+    }
+    if (!user) return NextResponse.json({ error: 'usuario no encontrado', email: testEmail }, { status: 404 })
+    const data = await buildSummary(sb, user.id)
+    if (!data) return NextResponse.json({ error: 'el usuario no tiene posiciones', email: testEmail }, { status: 200 })
+    const now2 = new Date()
+    const html = buildEmailHTML(testEmail, data)
+    const r = await sendEmail(testEmail, `Tu resumen DGI de ${MESES[now2.getMonth()]} — EverDiv (prueba)`, html)
+    return NextResponse.json({ test: true, to: testEmail, ...r })
+  }
+
   const { data: settings } = await sb.from('user_settings').select('user_id').eq('monthly_summary', true)
   if (!settings?.length) return NextResponse.json({ processed: 0, message: 'Sin usuarios suscritos' })
 
