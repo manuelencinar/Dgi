@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { enrichPositions, calcSummary } from '@/lib/portfolio'
-import { buildCalendar } from '@/lib/portfolio-calc'
+import { enrichPositions, calcSummary, calcDividendRisks } from '@/lib/portfolio'
 import { computeDGIScore } from '@/lib/dgi-score'
+import { getYahooCrumb, fetchYahooEarningsDate } from '@/lib/yahoo-estimates'
 import { DICT } from '@/data/dict'
 
 export const dynamic = 'force-dynamic'
@@ -20,6 +20,14 @@ function fmtEUR(v) {
   return v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' €'
 }
 
+// 'YYYY-MM-DD' → 'DD/MM' con día de la semana (p.ej. "mar 12/08")
+function fmtDate(iso) {
+  const d = new Date(iso + 'T00:00:00')
+  if (isNaN(d)) return iso
+  const dow = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][d.getDay()]
+  return `${dow} ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
 // ── Build per-user summary ─────────────────────────────────────────────────
 
 async function buildSummary(sb, userId) {
@@ -28,25 +36,35 @@ async function buildSummary(sb, userId) {
 
   const tickers = [...new Set(positions.map(p => p.ticker))]
   const { data: funds } = await sb.from('company_fundamentals')
-    .select('ticker,current_price,dps,div_cagr5,div_streak,div_history,sector,industry,country,roic,gross_margin,operating_margin,net_margin,roe,roa,revenue_cagr5,fcf_cagr5,debt_ebitda,net_debt_ebitda,current_ratio,interest_coverage,pe_trailing,pe_forward,ev_ebitda,price_to_book,eps_trailing,fcf_per_share,payout_fcf,payout_eps,market_cap_m,income_statement_annual,balance_sheet_annual,cashflow_annual,net_income_history,fcf_history')
+    .select('ticker,current_price,dps,div_cagr5,div_streak,div_history,sector,industry,country,roic,gross_margin,operating_margin,net_margin,roe,roa,revenue_cagr5,fcf_cagr5,debt_ebitda,net_debt_ebitda,current_ratio,interest_coverage,pe_trailing,pe_forward,ev_ebitda,price_to_book,eps_trailing,fcf_per_share,payout_fcf,payout_eps,payout_affo,payout_nii,market_cap_m,income_statement_annual,balance_sheet_annual,cashflow_annual,net_income_history,fcf_history')
     .in('ticker', tickers)
   const fundMap = Object.fromEntries((funds || []).map(f => [f.ticker, f]))
 
   const enriched = enrichPositions(positions, fundMap)
   const summary  = calcSummary(enriched)
-  const { months } = buildCalendar(enriched)
+  const nameOf = Object.fromEntries(enriched.map(p => [p.ticker, p.name]))
 
   const now = new Date()
-  const thisMonthEntries = months[now.getMonth()].entries
 
-  // Dividendos cobrados mes anterior
-  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-  const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
-  const { data: divsReceived } = await sb.from('dividends_received').select('amount,date').eq('user_id', userId)
-    .gte('date', prevMonth.toISOString().slice(0, 10)).lte('date', prevMonthEnd.toISOString().slice(0, 10))
-  const collectedLastMonth = (divsReceived || []).reduce((s, d) => s + Number(d.amount), 0)
+  // Dividendos COBRADOS este mes (mes natural en curso), netos, agrupados por empresa
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  const { data: divsMonth } = await sb.from('dividends_received').select('ticker, amount, amount_net, date').eq('user_id', userId)
+    .gte('date', monthStart.toISOString().slice(0, 10)).lte('date', monthEnd.toISOString().slice(0, 10))
+  const collectedMap = {}
+  for (const d of (divsMonth || [])) {
+    const net = d.amount_net != null ? Number(d.amount_net) : Number(d.amount)
+    if (!Number.isFinite(net)) continue
+    collectedMap[d.ticker] = (collectedMap[d.ticker] || 0) + net
+  }
+  const collectedThisMonth = Object.entries(collectedMap)
+    .map(([ticker, amount]) => ({ name: nameOf[ticker] || ticker, amount }))
+    .sort((a, b) => b.amount - a.amount)
+  const collectedThisMonthTotal = collectedThisMonth.reduce((s, e) => s + e.amount, 0)
 
   // Aportaciones periódicas ejecutadas el mes anterior
+  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
   const { data: recurTx } = await sb.from('transactions').select('ticker, shares, price, date').eq('user_id', userId).eq('type', 'buy_recurring')
     .gte('date', prevMonth.toISOString().slice(0, 10)).lte('date', prevMonthEnd.toISOString().slice(0, 10))
   let recurFundsMap = {}
@@ -90,13 +108,44 @@ async function buildSummary(sb, userId) {
   const cagrs = enriched.map(p => fundMap[p.ticker]?.div_cagr5).filter(v => v != null)
   const incomeGrowth = cagrs.length ? cagrs.reduce((a, b) => a + b, 0) / cagrs.length : null
 
+  // Empresas con el dividendo en peligro: recorte reciente + señales de riesgo
+  // (payout/deuda/cobertura/FCF, sector-aware). Se unifican en una sola lista.
+  const riskRows = calcDividendRisks(enriched, summary.totalIncomeEUR)
+  const atRisk = []
+  const seen = new Set()
+  for (const name of cut) {   // recortes recientes primero
+    atRisk.push({ name, reason: 'Ha recortado el dividendo', level: 'alto' })
+    seen.add(name)
+  }
+  for (const r of riskRows) {
+    if (seen.has(r.name)) continue
+    atRisk.push({ name: r.name, reason: r.risks[0].label, level: r.worst })
+    seen.add(r.name)
+  }
+
+  // Empresas que presentan resultados el MES SIGUIENTE (fecha exacta, en vivo desde el
+  // calendario de resultados). Best-effort: si falla la consulta, la empresa se omite.
+  const nextStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  const nextEnd   = new Date(now.getFullYear(), now.getMonth() + 2, 0)
+  let earnings = []
+  try {
+    const creds = await getYahooCrumb()
+    const results = await Promise.allSettled(
+      enriched.map(p => fetchYahooEarningsDate(p.ticker, creds).then(d => ({ name: p.name, date: d })))
+    )
+    earnings = results
+      .filter(r => r.status === 'fulfilled' && r.value.date)
+      .map(r => r.value)
+      .filter(e => { const d = new Date(e.date); return d >= nextStart && d <= nextEnd })
+      .sort((a, b) => a.date.localeCompare(b.date))
+  } catch { earnings = [] }
+
   return {
     totalValue: summary.totalValueEUR,
     annualIncome: summary.totalIncomeEUR,
-    thisMonthEntries,
-    collectedLastMonth,
+    collectedThisMonth, collectedThisMonthTotal,
     recurContributions, recurTotal,
-    raised, cut,
+    raised, atRisk, earnings, nextMonthName: MESES[nextStart.getMonth()],
     portfolioScore, incomeGrowth,
   }
 }
@@ -108,17 +157,23 @@ function buildEmailHTML(email, data) {
   const monthName = MESES[now.getMonth()]
   const name = email.split('@')[0]
 
-  const divList = data.thisMonthEntries.length
-    ? data.thisMonthEntries.map(e => `<tr><td style="padding:4px 0;color:#8090a8;font-size:14px">${e.name}</td><td style="padding:4px 0;color:#34d399;font-size:14px;text-align:right">${fmtEUR(e.amount)}</td></tr>`).join('')
-    : `<tr><td style="color:#4a5270;font-size:13px">Sin dividendos estimados este mes</td></tr>`
+  const divList = data.collectedThisMonth.length
+    ? data.collectedThisMonth.map(e => `<tr><td style="padding:4px 0;color:#8090a8;font-size:14px">${e.name}</td><td style="padding:4px 0;color:#34d399;font-size:14px;text-align:right">${fmtEUR(e.amount)}</td></tr>`).join('')
+      + `<tr><td style="padding:8px 0 0;color:#c8d0e0;font-size:14px;font-weight:bold;border-top:1px solid rgba(255,255,255,0.06)">Total cobrado</td><td style="padding:8px 0 0;color:#34d399;font-size:14px;font-weight:bold;text-align:right;border-top:1px solid rgba(255,255,255,0.06)">${fmtEUR(data.collectedThisMonthTotal)}</td></tr>`
+    : `<tr><td style="color:#4a5270;font-size:13px">Aún no has cobrado dividendos este mes</td></tr>`
 
   const raisedHTML = data.raised.length
     ? `<p style="color:#34d399;font-size:14px;margin:4px 0">↑ Subieron dividendo: ${data.raised.join(', ')}</p>` : ''
-  const cutHTML = data.cut.length
-    ? `<p style="color:#f87171;font-size:14px;margin:4px 0">↓ Recortaron dividendo: ${data.cut.join(', ')}</p>` : ''
 
-  const collectedHTML = data.collectedLastMonth > 0
-    ? `<p style="color:#c8d0e0;font-size:14px;margin:8px 0">Cobraste <strong style="color:#34d399">${fmtEUR(data.collectedLastMonth)}</strong> en dividendos el mes pasado.</p>` : ''
+  // Dividendo en peligro: recortes + señales de riesgo (una fila por empresa, con el motivo)
+  const riskHTML = data.atRisk?.length
+    ? `<p style="color:#c8d0e0;font-size:14px;font-weight:bold;margin:18px 0 6px">⚠️ Dividendo en peligro</p>
+       <table width="100%">${data.atRisk.map(r => `<tr><td style="padding:3px 0;color:${r.level === 'alto' ? '#f87171' : '#fbbf24'};font-size:13px">${r.name}</td><td style="padding:3px 0;color:#8090a8;font-size:13px;text-align:right">${r.reason}</td></tr>`).join('')}</table>` : ''
+
+  // Resultados que se publican el mes siguiente (fecha exacta)
+  const earningsHTML = data.earnings?.length
+    ? `<p style="color:#c8d0e0;font-size:14px;font-weight:bold;margin:18px 0 6px">📅 Presentan resultados en ${data.nextMonthName}</p>
+       <table width="100%">${data.earnings.map(e => `<tr><td style="padding:3px 0;color:#8090a8;font-size:13px">${e.name}</td><td style="padding:3px 0;color:#818cf8;font-size:13px;text-align:right">${fmtDate(e.date)}</td></tr>`).join('')}</table>` : ''
 
   const recurHTML = data.recurContributions?.length
     ? `<p style="color:#c8d0e0;font-size:14px;font-weight:bold;margin:16px 0 6px">Aportaciones periódicas del mes</p>
@@ -153,13 +208,13 @@ function buildEmailHTML(email, data) {
       </tr>
     </table>
 
-    <p style="color:#c8d0e0;font-size:14px;font-weight:bold;margin:16px 0 8px">Dividendos estimados este mes</p>
+    <p style="color:#c8d0e0;font-size:14px;font-weight:bold;margin:16px 0 8px">Dividendos cobrados este mes</p>
     <table width="100%">${divList}</table>
 
-    ${collectedHTML}
+    ${riskHTML}
+    ${earningsHTML}
     ${recurHTML}
     ${raisedHTML}
-    ${cutHTML}
     ${scoreHTML}
     ${motivHTML}
 

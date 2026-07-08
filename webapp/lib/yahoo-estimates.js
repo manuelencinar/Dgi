@@ -16,6 +16,24 @@ export async function getYahooCrumb() {
   return { cr, cookie }
 }
 
+// Próxima fecha de publicación de resultados desde el módulo calendarEvents de Yahoo.
+// Devuelve la primera fecha FUTURA (ISO 'YYYY-MM-DD') o null. creds reutilizable en lote.
+export async function fetchYahooEarningsDate(ticker, creds = null) {
+  let cr, cookie
+  try { ({ cr, cookie } = creds || await getYahooCrumb()) } catch { return null }
+  const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=calendarEvents&crumb=${encodeURIComponent(cr)}`
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': UA, Cookie: cookie }, cache: 'no-store' })
+    if (!res.ok) return null
+    const dates = (await res.json())?.quoteSummary?.result?.[0]?.calendarEvents?.earnings?.earningsDate
+    if (!Array.isArray(dates) || !dates.length) return null
+    const now = Date.now()
+    const future = dates.map(d => raw(d)).filter(t => t != null).map(t => t * 1000).filter(ms => ms >= now - 2 * 864e5).sort((a, b) => a - b)
+    if (!future.length) return null
+    return new Date(future[0]).toISOString().slice(0, 10)
+  } catch { return null }
+}
+
 const yearOf = ed => {
   const s = typeof ed === 'string' ? ed : ed?.fmt
   const y = s ? parseInt(String(s).slice(0, 4)) : null
