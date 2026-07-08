@@ -8,11 +8,10 @@ export const metadata = {
 export const dynamic = 'force-dynamic'
 
 export default function FundadorPage() {
-  const bizumPhone = process.env.NEXT_PUBLIC_BIZUM_PHONE || '—'
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav />
-      <FundadorClient bizumPhone={bizumPhone} />
+      <FundadorClient />
     </div>
   )
 }

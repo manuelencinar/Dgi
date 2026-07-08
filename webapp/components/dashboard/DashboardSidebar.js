@@ -7,7 +7,6 @@ const LINKS = [
   { href: '/dashboard',          label: 'Resumen',  icon: '▦', exact: true },
   { href: '/dashboard/datos',    label: 'Datos',    icon: '⛁' },
   { href: '/dashboard/usuarios', label: 'Usuarios', icon: '👥' },
-  { href: '/dashboard/beta',     label: 'Fundadores (Bizum)', icon: '🚀' },
   { href: '/dashboard/guias',    label: 'Guías (blog)', icon: '✍️' },
   { href: '/dashboard/indices',  label: 'Índices',  icon: '🌐' },
   { href: '/dashboard/sistema',  label: 'Sistema',  icon: '⚙' },
