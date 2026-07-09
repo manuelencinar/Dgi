@@ -1760,7 +1760,7 @@ export default function CompanyDetailPage(props) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                 <MiniMetric label="Yield" value={yld != null ? fmtPct(yld) : '—'} sub={yldNet != null ? `Neto ~${yldNet.toFixed(2)}%` : null} color="var(--positive)" />
                 <MiniMetric label="CAGR div. 5a" value={cagr != null ? (cagr * 100).toFixed(1) + '%' : '—'} />
-                <MiniMetric label="Margen seg." value={dcf?.mos != null ? (dcf.mos > 0 ? '+' : '') + (dcf.mos * 100).toFixed(0) + '%' : '—'} color={dcf?.mos != null ? (dcf.mos > 0.1 ? 'var(--positive)' : dcf.mos > -0.1 ? 'var(--warning)' : 'var(--negative)') : null} />
+                <MiniMetric label="Margen seg." value={dcf?.mos != null ? (dcf.mos > 0 ? '+' : '') + (dcf.mos * 100).toFixed(0) + '%' : '—'} sub={dcf?.mos != null ? (dcf.mos >= 0 ? `precio ${(dcf.mos * 100).toFixed(0)}% por debajo del valor` : `precio ${Math.abs(dcf.mos * 100).toFixed(0)}% por encima del valor`) : null} color={dcf?.mos != null ? (dcf.mos > 0.1 ? 'var(--positive)' : dcf.mos > -0.1 ? 'var(--warning)' : 'var(--negative)') : null} />
               </div>
 
               {moat && (

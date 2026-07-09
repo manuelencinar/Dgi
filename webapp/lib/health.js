@@ -185,11 +185,13 @@ export function buildSemaforo(detail, sectorKey, paysDividend) {
     rows.push(row('margenes', 'Márgenes', c, 'margenes', fmtVal(opM, '%')))
   }
 
-  // 5 · Crecimiento (FCF CAGR → revenue CAGR)
+  // 5 · Crecimiento (FCF CAGR → revenue CAGR). Etiqueta explícita de QUÉ mide y la
+  // ventana, para no confundir con el crecimiento de ingresos/beneficios de las fortalezas.
   {
     const g = fcfC ?? revC
     const c = classify(g, 2, 8, true)
-    rows.push(row('crecimiento', 'Crecimiento', c, 'crecimiento', fmtVal(g, '%')))
+    const label = fcfC != null ? 'Crecimiento del FCF (5 años)' : 'Crecimiento de ingresos (5 años)'
+    rows.push(row('crecimiento', label, c, 'crecimiento', fmtVal(g, '%')))
   }
 
   return rows

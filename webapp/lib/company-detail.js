@@ -592,7 +592,7 @@ export function buildInsights(data, streak, cagr, dcf, livePrice = null) {
   }
 
   if (fcfPos === false) add('mercado', 'negative', 'Flujo de caja libre negativo — el dividendo podría no estar cubierto por generación de caja.')
-  if (fcfCagr != null && fcfCagr > 12) add('mercado', 'positive', `FCF creciendo al ${fcfCagr.toFixed(1)}% anual — la capacidad de generar caja se acelera.`)
+  if (fcfCagr != null && fcfCagr > 12) add('mercado', 'positive', `FCF creciendo al ${fcfCagr.toFixed(1)}% anual (media 5 años) — la capacidad de generar caja se acelera.`)
 
   // Crecimiento vía adquisiciones
   const acq = detectAcquisitions(data)
@@ -603,10 +603,10 @@ export function buildInsights(data, streak, cagr, dcf, livePrice = null) {
 
   if (rg != null)  {
     if      (rg < -8)   add('mercado', 'negative', `Ingresos cayendo (${rg.toFixed(1)}% interanual) — presión sobre los dividendos futuros.`)
-    else if (rg >  12)  add('mercado', 'positive', `Ingresos creciendo al ${rg.toFixed(1)}% — momentum top-line sólido.`)
+    else if (rg >  12)  add('mercado', 'positive', `Ingresos creciendo al ${rg.toFixed(1)}% (interanual) — momentum top-line sólido.`)
   }
 
-  if (eg != null && eg > 15)   add('mercado', 'positive', `Beneficios creciendo al ${eg.toFixed(1)}% — momentum positivo en la cuenta de resultados.`)
+  if (eg != null && eg > 15)   add('mercado', 'positive', `Beneficios creciendo al ${eg.toFixed(1)}% (interanual) — momentum positivo en la cuenta de resultados.`)
   if (eg != null && eg < -15)  add('mercado', 'negative', `Beneficios cayendo el ${Math.abs(eg).toFixed(1)}% — deterioro de la rentabilidad.`)
 
   if (beta != null) {

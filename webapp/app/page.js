@@ -692,6 +692,9 @@ function CompanyShowcase({ data = {} }) {
                 </span>
               ))}
             </div>
+            <p style={{ fontSize: 9.5, color: 'var(--text-faintest)', marginTop: 10, lineHeight: 1.4 }}>
+              Así se ve la ficha completa en un 👑 Rey del dividendo (gratis). En el resto de empresas, el desglose por categoría del Score es Premium.
+            </p>
           </div>
         </div>
         {/* Lista de lo que incluye */}
@@ -904,6 +907,7 @@ export default async function LandingPage() {
   let markets
   try { markets = await getEffectiveMarkets() } catch {}
   if (!markets?.length) markets = MARKETS
+  markets = markets.filter(m => m.active !== false)   // solo activos (cuadra el "43" del copy)
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav />
