@@ -45,36 +45,47 @@ async function buildSummary(sb, userId) {
   const summary  = calcSummary(enriched)
   const nameOf = Object.fromEntries(enriched.map(p => [p.ticker, p.name]))
 
-  // Renta anual NETA (misma base que la tarjeta "Renta anual neta" de /cartera):
-  // calcFiscal con el tipo de destino resuelto por los ajustes fiscales del usuario.
   const { data: uset } = await sb.from('user_settings').select('*').eq('user_id', userId).maybeSingle()
   const whtOverrides = (uset?.wht_overrides && typeof uset.wht_overrides === 'object') ? uset.wht_overrides : null
   const destWHT = resolveDestWHT(uset, summary.totalIncomeEUR)
-  const fiscalRows = calcFiscal(enriched, whtOverrides, destWHT)
-  const netAnnual = fiscalRows.reduce((s, r) => s + (r.net || 0), 0)
-  const _debug = {
-    destWHT, grossAnnual: Math.round(summary.totalIncomeEUR), netAnnual: Math.round(netAnnual),
-    taxMode: uset?.tax_mode ?? null, dest_wht: uset?.dest_wht ?? null,
-    rows: fiscalRows.map(r => ({ name: r.name, country: r.companyCountry, gross: Math.round(r.gross), originRate: r.sourceRate, effRate: Math.round(r.effectiveRate), net: Math.round(r.net) })),
-  }
 
   const now = new Date()
+  const year = now.getFullYear()
+  const netOf = r => { const v = r.amount_net != null ? Number(r.amount_net) : Number(r.amount); return Number.isFinite(v) ? v : 0 }
 
-  // Dividendos COBRADOS este mes (mes natural en curso), netos, agrupados por empresa
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-  const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-  const { data: divsMonth } = await sb.from('dividends_received').select('ticker, amount, amount_net, date').eq('user_id', userId)
-    .gte('date', monthStart.toISOString().slice(0, 10)).lte('date', monthEnd.toISOString().slice(0, 10))
+  // Todos los dividendos registrados del usuario (tabla ya prellenada al usar la app).
+  const { data: allDivs } = await sb.from('dividends_received')
+    .select('ticker, amount, amount_net, date, payment_date_estimated, status').eq('user_id', userId)
+
+  // Renta neta del AÑO NATURAL en curso: MISMA cifra que "Total año natural {year}" de
+  // la pestaña Dividendos y el gráfico por año (cobrado + pendiente del año, neto).
+  // Gatea por fecha de compra vía el prefill (no incluye pagos previos a la compra).
+  const yearNet = (allDivs || [])
+    .filter(r => new Date(r.payment_date_estimated || r.date).getFullYear() === year)
+    .reduce((s, r) => s + netOf(r), 0)
+
+  // Dividendos COBRADOS este mes (status recibido, fecha de cobro en el mes en curso).
+  const monthStart = new Date(year, now.getMonth(), 1), monthEnd = new Date(year, now.getMonth() + 1, 0)
   const collectedMap = {}
-  for (const d of (divsMonth || [])) {
-    const net = d.amount_net != null ? Number(d.amount_net) : Number(d.amount)
-    if (!Number.isFinite(net)) continue
-    collectedMap[d.ticker] = (collectedMap[d.ticker] || 0) + net
+  for (const d of (allDivs || [])) {
+    if (d.status !== 'received') continue
+    const dt = new Date(d.date)
+    if (dt < monthStart || dt > monthEnd) continue
+    collectedMap[d.ticker] = (collectedMap[d.ticker] || 0) + netOf(d)
   }
   const collectedThisMonth = Object.entries(collectedMap)
     .map(([ticker, amount]) => ({ name: nameOf[ticker] || ticker, amount }))
     .sort((a, b) => b.amount - a.amount)
   const collectedThisMonthTotal = collectedThisMonth.reduce((s, e) => s + e.amount, 0)
+
+  // Debug: comparativa de la renta del año (natural) vs el ritmo anual (calcFiscal).
+  const fiscalRows = calcFiscal(enriched, whtOverrides, destWHT)
+  const netRunRate = fiscalRows.reduce((s, r) => s + (r.net || 0), 0)
+  const _debug = {
+    year, yearNet: Math.round(yearNet), netRunRate: Math.round(netRunRate),
+    grossRunRate: Math.round(summary.totalIncomeEUR), destWHT, taxMode: uset?.tax_mode ?? null,
+    divRowsThisYear: (allDivs || []).filter(r => new Date(r.payment_date_estimated || r.date).getFullYear() === year).length,
+  }
 
   // Aportaciones periódicas ejecutadas el mes anterior
   const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -156,7 +167,7 @@ async function buildSummary(sb, userId) {
 
   return {
     totalValue: summary.totalValueEUR,
-    annualIncome: netAnnual,
+    annualIncome: yearNet, year,
     collectedThisMonth, collectedThisMonthTotal,
     recurContributions, recurTotal,
     raised, atRisk, earnings, nextMonthName: MESES[nextStart.getMonth()],
@@ -214,7 +225,7 @@ function buildEmailHTML(email, data) {
     <table width="100%" style="background:rgba(255,255,255,0.03);border-radius:10px;padding:16px;margin-bottom:16px">
       <tr>
         <td style="color:#4a5270;font-size:12px">Valor de la cartera</td>
-        <td style="color:#4a5270;font-size:12px;text-align:right">Renta anual neta</td>
+        <td style="color:#4a5270;font-size:12px;text-align:right">Renta neta ${data.year}</td>
       </tr>
       <tr>
         <td style="color:#e0e8f0;font-size:22px;font-weight:bold">${fmtEUR(data.totalValue)}</td>
