@@ -1751,7 +1751,7 @@ export default function CompanyDetailPage(props) {
                   <SectionTitle>Salud financiera</SectionTitle>
                   <button onClick={() => goTab('salud')} style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>Ver detalle →</button>
                 </div>
-                <Semaforo rows={healthPanel?.semaforo} />
+                <Semaforo rows={healthPanel?.semaforo} onDebtDetail={() => goTab('finanzas')} />
               </Card>
             </div>
 
@@ -1763,11 +1763,16 @@ export default function CompanyDetailPage(props) {
                 <MiniMetric label="Margen seg." value={dcf?.mos != null ? (dcf.mos > 0 ? '+' : '') + (dcf.mos * 100).toFixed(0) + '%' : '—'} sub={dcf?.mos != null ? (dcf.mos >= 0 ? `precio ${(dcf.mos * 100).toFixed(0)}% por debajo del valor` : `precio ${Math.abs(dcf.mos * 100).toFixed(0)}% por encima del valor`) : null} color={dcf?.mos != null ? (dcf.mos > 0.1 ? 'var(--positive)' : dcf.mos > -0.1 ? 'var(--warning)' : 'var(--negative)') : null} />
               </div>
 
-              {moat && (
-                <Card>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <SectionTitle>Foso económico</SectionTitle>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: { wide: 'var(--positive)', narrow: 'var(--warning)', none: 'var(--text-faint)' }[moat.width] || 'var(--text-faint)' }}>{moat.label}</span>
+              {moat && (() => {
+                const wc = { wide: 'var(--positive)', narrow: 'var(--warning)', none: 'var(--text-faint)' }[moat.width] || 'var(--text-faint)'
+                return (
+                <Card style={{ borderLeft: `3px solid ${wc}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: moat.signals?.length ? 12 : 4 }}>
+                    <span style={{ fontSize: 26, lineHeight: 1, flexShrink: 0 }}>🏰</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Foso económico · ventaja competitiva</p>
+                      <p style={{ fontSize: 19, fontWeight: 900, color: wc, lineHeight: 1.15 }}>{moat.label}</p>
+                    </div>
                   </div>
                   {moat.signals?.slice(0, 3).map((s, i) => (
                     <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12, color: 'var(--text-muted)', marginBottom: 5 }}><span style={{ color: 'var(--positive)' }}>+</span>{s}</div>
@@ -1775,7 +1780,8 @@ export default function CompanyDetailPage(props) {
                   {!moat.signals?.length && <p style={{ fontSize: 12, color: 'var(--text-faint)' }}>Datos insuficientes para detectar foso.</p>}
                   <button onClick={() => goTab('salud')} style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', marginTop: 6, padding: 0 }}>Ver análisis completo →</button>
                 </Card>
-              )}
+                )
+              })()}
 
               <ResumenProjection yld={yld} cagr={cagr} country={country} currency={currency} destWHT={destWHT} />
 
@@ -1923,7 +1929,7 @@ export default function CompanyDetailPage(props) {
         {/* ═══ SALUD FINANCIERA ═══ */}
         {tab === 'salud' && (
           <div style={{ display: 'grid', gap: 16 }}>
-            <HealthTwoLevel panel={healthPanel} isPremium={isPremium} ticker={ticker} sectorLabel={healthPanel?.sectorLabel} />
+            <HealthTwoLevel panel={healthPanel} isPremium={isPremium} ticker={ticker} sectorLabel={healthPanel?.sectorLabel} onDebtDetail={() => goTab('finanzas')} />
             <MoatSection moat={moat} isPremium={isPremium} />
             <InsightsSection insights={insights} isPremium={isPremium} />
             <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} scoreHistory={scoreHistory} />

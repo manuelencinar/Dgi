@@ -5,7 +5,7 @@ import Link from 'next/link'
 // ── NIVEL 1 — SEMÁFORO ──────────────────────────────────────────────────────
 // 5 filas compactas: círculo de color · categoría · diagnóstico · valor.
 
-export function Semaforo({ rows }) {
+export function Semaforo({ rows, onDebtDetail }) {
   if (!rows?.length) {
     return <p style={{ fontSize: 13, color: 'var(--text-faint)' }}>Sin datos suficientes para el diagnóstico.</p>
   }
@@ -25,6 +25,11 @@ export function Semaforo({ rows }) {
             </span>
           </div>
           {r.note && <p style={{ fontSize: 10.5, color: 'var(--warning)', margin: '4px 0 0 21px', lineHeight: 1.4 }}>{r.note}</p>}
+          {r.key === 'deuda' && onDebtDetail && (
+            <button onClick={onDebtDetail} style={{ fontSize: 10.5, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', margin: '4px 0 0 21px', padding: 0, fontWeight: 600 }}>
+              Ver deuda y flujo de caja →
+            </button>
+          )}
         </div>
       ))}
     </div>
@@ -141,7 +146,7 @@ export function HealthCards({ cards, isPremium }) {
 // Nivel 2 colapsado por defecto; recuerda el estado en localStorage por empresa.
 // Default: desktop expandido · móvil colapsado.
 
-export default function HealthTwoLevel({ panel, isPremium, ticker, sectorLabel }) {
+export default function HealthTwoLevel({ panel, isPremium, ticker, sectorLabel, onDebtDetail }) {
   const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
@@ -170,7 +175,7 @@ export default function HealthTwoLevel({ panel, isPremium, ticker, sectorLabel }
         )}
       </div>
 
-      <Semaforo rows={panel?.semaforo} />
+      <Semaforo rows={panel?.semaforo} onDebtDetail={onDebtDetail} />
 
       {panel?.cards?.length > 0 && (
         <>
