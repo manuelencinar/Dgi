@@ -95,8 +95,14 @@ export async function buildComparadorCompanies(tickers, destWHT = 19) {
     // Precio: daily_prices (fresco) con fallback a current_price
     const price = freshPrice[ticker] ?? num(f.current_price)
     // Margen de seguridad recalculado con el precio usado
-    const intrinsic = num(f.intrinsic_value)
-    const mos = (intrinsic != null && price != null && price > 0) ? Math.round((intrinsic - price) / price * 1000) / 10 : null
+    const intrinsicRaw = num(f.intrinsic_value)
+    let mos = (intrinsicRaw != null && price != null && price > 0) ? Math.round((intrinsicRaw - price) / price * 1000) / 10 : null
+    // Valoración no fiable (DCF roto por artefactos, p.ej. FCF CAGR de un año valle como
+    // en KO): ocultamos MoS y valor intrínseco (evita el "-86%" inverosímil) y no dejamos
+    // que hunda el sub-score de valoración.
+    const valUnreliable = mos != null && (mosUnreliable(f) || mos > 80 || mos < -85)
+    if (valUnreliable) mos = null
+    const intrinsic = valUnreliable ? null : intrinsicRaw
     const radar = scoreRadar(f)
     const subs = subScores(f, radar, mos)
 

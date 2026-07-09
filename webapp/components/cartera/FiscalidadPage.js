@@ -172,9 +172,16 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
     const grossDiv = divs.reduce((s, e) => s + num(e.gross_amount), 0)
     // Retención total = origen + destino
     const retTotal = divs.reduce((s, e) => s + num(e.withholding_origin) + num(e.withholding_dest), 0)
-    // Casilla 0031 (retenciones en España): la retención de origen de las españolas
-    // (que ya es la española) + la retención de destino de las extranjeras.
-    const retSpain = divs.reduce((s, e) => s + (e.country === 'ES' ? num(e.withholding_origin) : num(e.withholding_dest)), 0)
+    // Casilla 0031 (retenciones practicadas en España): el componente de retención
+    // ESPAÑOLA de cada dividendo. En el modelo, esa retención vive en `withholding_dest`
+    // (Spain = país de destino) tanto para españolas (el 19% en origen ya es español)
+    // como para extranjeras (retención del bróker español). Respaldo a `withholding_origin`
+    // solo en españolas introducidas a mano que lo guardaran ahí. La retención EXTRANJERA
+    // en origen NO va aquí: es deducible por doble imposición (casilla 0588).
+    const retSpain = divs.reduce((s, e) => {
+      const dest = num(e.withholding_dest)
+      return s + (e.country === 'ES' ? (dest || num(e.withholding_origin)) : dest)
+    }, 0)
     // Casilla 0588 (doble imposición): retención de origen extranjera deducible (≤15%).
     const deductible = divs.filter(e => e.country !== 'ES').reduce((s, e) => s + Math.min(num(e.withholding_origin), num(e.gross_amount) * 0.15), 0)
     const gainsSum = gains.filter(e => num(e.gain_loss) > 0).reduce((s, e) => s + num(e.gain_loss), 0)
@@ -303,9 +310,9 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
       {/* Indicador de confirmación global */}
       <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8, background: t.allConfirmed ? 'rgba(52,211,153,0.06)' : 'rgba(251,191,36,0.06)', border: `1px solid ${t.allConfirmed ? 'rgba(52,211,153,0.2)' : 'rgba(251,191,36,0.2)'}` }}>
         <p style={{ fontSize: 12, color: t.allConfirmed ? 'var(--positive)' : 'var(--warning)' }}>
-          {t.total === 0 ? 'Sin entradas fiscales todavía para este ejercicio.'
-            : t.allConfirmed ? `✓ Resumen basado en ${t.confirmed} entradas confirmadas`
-            : `⚠ ${t.total - t.confirmed} entradas pendientes de confirmar — los importes pueden variar`}
+          {t.total === 0 ? 'Dividendos cerrados automáticamente. No tienes transmisiones (ventas) registradas en este ejercicio.'
+            : t.allConfirmed ? `✓ Dividendos cerrados · ${t.confirmed} transmisiones confirmadas`
+            : `⚠ Los dividendos ya están cerrados. Quedan ${t.total - t.confirmed} transmisiones (plusvalías) por confirmar abajo — solo esos importes pueden variar`}
         </p>
       </div>
 
@@ -447,13 +454,13 @@ export default function FiscalidadPage({ isPremium, countryResidence }) {
               </table>
             </div>
             <p style={{ fontSize: 11.5, color: t.allConfirmed ? 'var(--positive)' : 'var(--warning)', marginTop: 10 }}>
-              {t.allConfirmed ? `✓ Basado en ${t.confirmed} entradas confirmadas` : `⚠ ${t.total - t.confirmed} entradas pendientes de confirmar — los importes pueden variar`}
+              {t.total === 0 ? '✓ Dividendos cerrados automáticamente' : t.allConfirmed ? `✓ Dividendos cerrados · ${t.confirmed} transmisiones confirmadas` : `⚠ Dividendos cerrados; ${t.total - t.confirmed} transmisiones (plusvalías) por confirmar — solo esos importes pueden variar`}
             </p>
             <div style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
               <button onClick={() => window.print()} style={{ padding: '9px 16px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Exportar como PDF</button>
               <button onClick={exportBoxesCSV} style={{ padding: '9px 16px', background: 'var(--surface-3)', border: '1px solid var(--border-strong)', borderRadius: 8, color: 'var(--text)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Exportar como CSV</button>
             </div>
-            <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 12 }}>Las casillas son las vigentes para el ejercicio 2024-2025. Verifica que las casillas corresponden al ejercicio que estás declarando.</p>
+            <p style={{ fontSize: 10, color: 'var(--text-faintest)', marginTop: 12 }}>Numeración de casillas orientativa (modelo reciente de la Renta). Verifica que se corresponden con el ejercicio {year} que estás declarando, ya que la AEAT puede renumerarlas cada año.</p>
           </div>
         </>
       )}

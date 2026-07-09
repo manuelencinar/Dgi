@@ -122,7 +122,7 @@ const TABLE_GROUPS = [
     ['Racha años', co => co.streak, 'high', co => co.streak != null ? co.streak + 'a' : '—'],
     ['CAGR div 5a', co => co.cagr, 'high', co => pct(co.cagr)],
     ['Payout FCF', co => co.payout, 'low', co => pct(co.payout, 0)],
-    ['Regla 10/10', co => co.rule1010 ? 1 : 0, 'high', co => co.rule1010 ? '⚡' : '—'],
+    ['Regla 10/10', co => co.rule1010 ? 1 : 0, 'high', co => co.rule1010 ? '⚡' : '—', false, 'Regla 10/10: yield actual + crecimiento del dividendo (CAGR 5a) ≥ 10. ⚡ = la cumple. Señala empresas con buen equilibrio entre renta hoy y crecimiento futuro.'],
   ]},
   { group: 'Calidad del negocio', rows: [
     ['ROIC', co => co.roic, 'high', co => pct(co.roic)],
@@ -171,13 +171,13 @@ function MetricsTable({ companies }) {
           {TABLE_GROUPS.map(g => (
             <Fragment key={g.group}>
               <tr><td colSpan={companies.length + 1} style={{ padding: '7px 8px', fontSize: 10, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em', background: 'rgba(99,102,241,0.05)' }}>{g.group}</td></tr>
-              {g.rows.map(([label, get, better, fmt, big]) => {
+              {g.rows.map(([label, get, better, fmt, big, tip]) => {
                 const vals = companies.map(get).filter(v => v != null && !isNaN(v))
                 const best = better === 'high' ? Math.max(...vals) : better === 'low' ? Math.min(...vals) : null
                 const worst = better === 'high' ? Math.min(...vals) : better === 'low' ? Math.max(...vals) : null
                 return (
                   <tr key={label} style={{ borderBottom: '1px solid var(--surface-2)' }}>
-                    <td style={{ padding: '7px 8px', color: 'var(--text-muted)', position: 'sticky', left: 0, background: 'var(--bg)' }}>{label}</td>
+                    <td style={{ padding: '7px 8px', color: 'var(--text-muted)', position: 'sticky', left: 0, background: 'var(--bg)' }} title={tip || undefined}>{label}{tip && <span style={{ marginLeft: 4, fontSize: 9, color: 'var(--text-faint)', cursor: 'help' }}>ⓘ</span>}</td>
                     {companies.map((co, i) => {
                       const v = get(co)
                       const isBest = better && vals.length > 1 && v != null && v === best
@@ -466,8 +466,11 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
             </div>
             <div style={{ ...card }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <p style={{ ...cardTitle, marginBottom: 0 }}>Renta acumulada a 10 años</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ ...cardTitle, marginBottom: 2 }}>Renta acumulada a 10 años</p>
+                  <p style={{ fontSize: 10.5, color: 'var(--text-faintest)', margin: 0, lineHeight: 1.3 }}>Solo dividendos netos reinvertidos — sin contar la revalorización del precio. "No se recupera" ≠ pérdida.</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                   <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>Inversión</span>
                   <input type="number" value={investAmt} onChange={e => setInvestAmt(Math.max(0, parseInt(e.target.value) || 0))} style={{ width: 80, padding: '5px 8px', background: 'var(--surface-2)', border: '1px solid var(--border-strong)', borderRadius: 6, color: 'var(--text)', fontSize: 12, outline: 'none' }} />
                   <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>€</span>
