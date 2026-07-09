@@ -394,9 +394,44 @@ function MobileStat({ label, value, sub, color }) {
   )
 }
 
+// Accesor por columna para ordenar la tabla de posiciones (escritorio). '' (acciones) no ordena.
+const POS_SORT = {
+  'Empresa':    p => (p.name || '').toLowerCase(),
+  'Acciones':   p => p.shares,
+  'P. Medio':   p => p.avg_cost,
+  'Coste real': p => p.avgCostReal,
+  'P. Actual':  p => p.currentPrice,
+  'Valor':      p => p.valueEUR,
+  'Rentab.':    p => p.gainPct,
+  'YoC':        p => (p.yieldOnCostReal ?? p.yieldOnCost),
+  'Yield':      p => p.currentYield,
+  'Renta/año':  p => p.annualIncomeEUR,
+  'Cobrado':    p => p.dividendsCollectedEUR,
+  'Coste neto': p => p.netCostEUR,
+}
+
 function PositionsTable({ enriched, isPremium, onEdit, onDelete }) {
   const FREE_LIMIT = 10
   const [openId, setOpenId] = useState(null)
+  const [sort, setSort] = useState({ key: null, dir: 'desc' })
+
+  const onSort = (h) => {
+    if (!POS_SORT[h]) return
+    setSort(s => s.key === h ? { key: h, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key: h, dir: h === 'Empresa' ? 'asc' : 'desc' })
+  }
+  const sortedRows = useMemo(() => {
+    if (!sort.key || !POS_SORT[sort.key]) return enriched
+    const acc = POS_SORT[sort.key], dir = sort.dir === 'asc' ? 1 : -1
+    return [...enriched].sort((a, b) => {
+      const va = acc(a), vb = acc(b)
+      const na = va == null || (typeof va === 'number' && Number.isNaN(va))
+      const nb = vb == null || (typeof vb === 'number' && Number.isNaN(vb))
+      if (na && nb) return 0
+      if (na) return 1          // sin dato → siempre al final
+      if (nb) return -1
+      return (typeof va === 'string' ? va.localeCompare(vb) : va - vb) * dir
+    })
+  }, [enriched, sort])
 
   return (
     <div style={{ ...CARD, marginBottom: 16 }}>
@@ -428,17 +463,21 @@ function PositionsTable({ enriched, isPremium, onEdit, onDelete }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 860 }}>
             <thead>
               <tr>
-                {['Empresa','Acciones','P. Medio','Coste real','P. Actual','Valor','Rentab.','YoC','Yield','Renta/año','Cobrado','Coste neto',''].map(h => (
-                  <th key={h} style={{ padding: '6px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: 'var(--text-faint)', fontWeight: 600, borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }} title={
+                {['Empresa','Acciones','P. Medio','Coste real','P. Actual','Valor','Rentab.','YoC','Yield','Renta/año','Cobrado','Coste neto',''].map(h => {
+                  const sortable = !!POS_SORT[h], active = sort.key === h
+                  return (
+                  <th key={h} onClick={() => onSort(h)} style={{ padding: '6px 8px', textAlign: h === 'Empresa' ? 'left' : 'right', color: active ? 'var(--accent)' : 'var(--text-faint)', fontWeight: 600, borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap', cursor: sortable ? 'pointer' : 'default', userSelect: 'none' }} title={
                     h === 'Coste real' ? 'Coste por acción incluyendo comisiones de compra'
                     : h === 'Cobrado' ? 'Dividendos netos cobrados de esta posición (acumulado)'
                     : h === 'Coste neto' ? 'Coste de compra menos dividendos cobrados. Debajo, el YoC real = renta anual / coste neto.'
-                    : undefined}>{h}</th>
-                ))}
+                    : sortable ? 'Ordenar por esta columna'
+                    : undefined}>{h}{active ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>
+                  )
+                })}
               </tr>
             </thead>
             <tbody>
-              {enriched.map((p, i) => (
+              {sortedRows.map((p, i) => (
                 <tr key={p.id} style={{ background: i % 2 ? 'var(--surface)' : 'transparent' }}>
                   <td style={{ padding: '8px', borderBottom: '1px solid var(--surface-2)' }}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 0 }}>
