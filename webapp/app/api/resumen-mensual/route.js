@@ -50,7 +50,13 @@ async function buildSummary(sb, userId) {
   const { data: uset } = await sb.from('user_settings').select('*').eq('user_id', userId).maybeSingle()
   const whtOverrides = (uset?.wht_overrides && typeof uset.wht_overrides === 'object') ? uset.wht_overrides : null
   const destWHT = resolveDestWHT(uset, summary.totalIncomeEUR)
-  const netAnnual = calcFiscal(enriched, whtOverrides, destWHT).reduce((s, r) => s + (r.net || 0), 0)
+  const fiscalRows = calcFiscal(enriched, whtOverrides, destWHT)
+  const netAnnual = fiscalRows.reduce((s, r) => s + (r.net || 0), 0)
+  const _debug = {
+    destWHT, grossAnnual: Math.round(summary.totalIncomeEUR), netAnnual: Math.round(netAnnual),
+    taxMode: uset?.tax_mode ?? null, dest_wht: uset?.dest_wht ?? null,
+    rows: fiscalRows.map(r => ({ name: r.name, country: r.companyCountry, gross: Math.round(r.gross), originRate: r.sourceRate, effRate: Math.round(r.effectiveRate), net: Math.round(r.net) })),
+  }
 
   const now = new Date()
 
@@ -154,7 +160,7 @@ async function buildSummary(sb, userId) {
     collectedThisMonth, collectedThisMonthTotal,
     recurContributions, recurTotal,
     raised, atRisk, earnings, nextMonthName: MESES[nextStart.getMonth()],
-    portfolioScore, incomeGrowth,
+    portfolioScore, incomeGrowth, _debug,
   }
 }
 
@@ -282,6 +288,10 @@ export async function GET(request) {
     if (!user) return NextResponse.json({ error: 'usuario no encontrado', email: testEmail }, { status: 404 })
     const data = await buildSummary(sb, user.id)
     if (!data) return NextResponse.json({ error: 'el usuario no tiene posiciones', email: testEmail }, { status: 200 })
+    // Depuración: ?debug=1 devuelve el desglose fiscal sin enviar correo.
+    if (new URL(request.url).searchParams.get('debug')) {
+      return NextResponse.json({ debug: true, to: testEmail, ...data._debug })
+    }
     const now2 = new Date()
     const html = buildEmailHTML(testEmail, data)
     const r = await sendEmail(testEmail, `Tu resumen DGI de ${MESES[now2.getMonth()]} — EverDiv (prueba)`, html)
