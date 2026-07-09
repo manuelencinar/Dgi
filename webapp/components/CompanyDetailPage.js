@@ -1552,7 +1552,7 @@ export default function CompanyDetailPage(props) {
     price, change, changePct, dailyPrice, avgCost,
     yld, yldNet, destWHT, divRate, low52, high52,
     peTrailing, peForward, evEbitda, eps, payout, mktCap, priceToBook,
-    divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, originWHT, peHistory, evHistory, evCurrent, valuationMethods,
+    divHistory, cagr, cagr10, streak, updatedAt, dpsPrev, upcomingPayments, nextExDate, nextEarningsDate, originWHT, peHistory, evHistory, evCurrent, valuationMethods,
     paysDividend, noDividendAt,
     healthPanel, moat, dcf, projection, dgiScore, dividendSafety, scoreHistory, insights, roicData, badges, buybacks, ma200,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
@@ -1653,6 +1653,13 @@ export default function CompanyDetailPage(props) {
                     <span style={{ fontSize: 9.5, color: 'var(--text-faintest)' }}>{l.ticker}</span>
                   </span>
                 ))}
+              </div>
+            )}
+            {nextEarningsDate && (
+              <div style={{ marginTop: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', background: 'var(--surface-3)', padding: '3px 9px', borderRadius: 5, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  📅 Próximos resultados: <strong style={{ color: 'var(--text)' }}>{fmtDateEs(nextEarningsDate)}</strong>
+                </span>
               </div>
             )}
             </div>

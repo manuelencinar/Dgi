@@ -78,6 +78,26 @@ export default async function NovedadesPage() {
   const rest = reporters.filter(r => !featuredSet.has(r.t))
     .sort((a, b) => (a.age - b.age) || (b.mcap - a.mcap)).slice(0, 30)
 
+  // 4b. Presentan resultados esta semana (próximos 7 días), por capitalización.
+  // Consulta aparte y TOLERANTE (si la columna next_earnings_date aún no existe, se omite).
+  const todayISO = new Date().toISOString().slice(0, 10)
+  const weekISO  = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
+  const earnMap = {}
+  try {
+    for (let i = 0; i < ctk.length; i += 150) {
+      const { data, error } = await sb.from('company_fundamentals')
+        .select('ticker, next_earnings_date').in('ticker', ctk.slice(i, i + 150))
+      if (error) throw error
+      ;(data || []).forEach(r => { if (r.next_earnings_date) earnMap[r.ticker] = r.next_earnings_date })
+    }
+  } catch { /* columna aún no creada → sin bloque de resultados */ }
+  const earningsWeek = candidates
+    .map(c => ({ c, d: earnMap[c.t] }))
+    .filter(x => x.d && x.d >= todayISO && x.d <= weekISO)
+    .map(x => ({ t: x.c.t, name: x.c.name, cc: x.c.cc, sector: x.c.sector, date: x.d, mcap: x.c.mcap }))
+    .sort((a, b) => (a.date.localeCompare(b.date)) || (b.mcap - a.mcap))
+    .slice(0, 20)
+
   // 5. Eventos personales (notificaciones recientes).
   let events = []
   if (user) {
@@ -92,7 +112,7 @@ export default async function NovedadesPage() {
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <PublicNav active="/novedades" />
       {user && <PortfolioHome />}
-      <NovedadesClient featured={slim(featured)} rest={slim(rest)} events={events} userCC={userCC} hasUser={!!user} />
+      <NovedadesClient featured={slim(featured)} rest={slim(rest)} earningsWeek={earningsWeek} events={events} userCC={userCC} hasUser={!!user} />
     </div>
   )
 }

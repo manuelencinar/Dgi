@@ -1268,6 +1268,8 @@ def fetch_ticker(sym):
         dividend_events = build_dividend_events(div_series)   # fechas ex históricas
         next_ex_date    = ts_to_date(info.get("exDividendDate"))
         next_pay_date   = ts_to_date(info.get("dividendDate"))
+        # Próxima publicación de resultados: ventana estimada (start) o timestamp único.
+        next_earnings_date = ts_to_date(info.get("earningsTimestampStart") or info.get("earningsTimestamp"))
 
         # ── ¿Reparte dividendo? (basado en RECENCIA) ─────────────────────
         # Año del último reparto real (dps>0) según el histórico.
@@ -1470,6 +1472,7 @@ def fetch_ticker(sym):
             "dividend_events":  dividend_events,
             "next_ex_date":     next_ex_date,
             "next_pay_date":    next_pay_date,
+            "next_earnings_date": next_earnings_date,
             "payout_fcf":       payout_fcf,
             "payout_eps":       payout_eps,
             "payout_nii":       payout_nii,

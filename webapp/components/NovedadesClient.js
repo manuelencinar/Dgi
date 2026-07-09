@@ -27,6 +27,12 @@ function timeAgo(date) {
   if (s < 86400) return `hace ${Math.floor(s / 3600)} h`
   return `hace ${Math.floor(s / 86400)} d`
 }
+// 'YYYY-MM-DD' → 'mié 15/07' (día de la semana + día/mes)
+function fmtDay(iso) {
+  const d = new Date(iso + 'T00:00:00'); if (isNaN(d)) return iso
+  const dow = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][d.getDay()]
+  return `${dow} ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
+}
 
 function YoYBadge({ label, v }) {
   if (v == null) return null
@@ -75,7 +81,7 @@ function FeaturedCard({ co }) {
   )
 }
 
-export default function NovedadesClient({ featured, rest, events, userCC, hasUser }) {
+export default function NovedadesClient({ featured, rest, earningsWeek, events, userCC, hasUser }) {
   const c = getCountry(userCC)
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px 64px' }}>
@@ -98,6 +104,27 @@ export default function NovedadesClient({ featured, rest, events, userCC, hasUse
                 </div>
               </Link>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Presentan resultados esta semana */}
+      {earningsWeek?.length > 0 && (
+        <div style={{ ...CARD, marginBottom: 22 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>📅 Presentan resultados esta semana</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 9 }}>
+            {earningsWeek.map(co => {
+              const cc = getCountry(co.cc)
+              return (
+                <Link key={co.t} href={`/empresa/${encodeURIComponent(co.t)}`} style={{ textDecoration: 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                    <span style={{ fontSize: 14, flexShrink: 0 }}>{cc.flag}</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{co.name}</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--accent)', flexShrink: 0, whiteSpace: 'nowrap' }}>{fmtDay(co.date)}</span>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         </div>
       )}

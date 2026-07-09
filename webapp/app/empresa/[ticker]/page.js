@@ -444,6 +444,7 @@ export default async function EmpresaPage({ params, searchParams }) {
   // Solo mostramos la "próxima ex-dividendo" si aún no ha pasado (yfinance la deja obsoleta).
   const _todayMid  = new Date(); _todayMid.setHours(0, 0, 0, 0)
   const nextExDate = (detail?.next_ex_date && new Date(detail.next_ex_date + 'T12:00:00') >= _todayMid) ? detail.next_ex_date : null
+  const nextEarningsDate = (detail?.next_earnings_date && new Date(detail.next_earnings_date + 'T12:00:00') >= _todayMid) ? detail.next_earnings_date : null
   const payoutEps  = detail?.payout_eps ?? null
   const priceToBook = detail?.price_to_book ?? null
   const peHistory  = detail ? await buildPeHistory(detail, supabase, t) : []
@@ -566,6 +567,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         dpsPrev={dpsPrev}
         upcomingPayments={upcomingPayments}
         nextExDate={nextExDate}
+        nextEarningsDate={nextEarningsDate}
         originWHT={originWHT}
         paysDividend={paysDividend}
         noDividendAt={noDividendAt}
