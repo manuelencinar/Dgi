@@ -318,8 +318,14 @@ def compute_div_cagr5(div_history):
     full = [h for h in div_history if not h.get("isPartial") and h.get("dps", 0) > 0]
     if len(full) < 2:
         return None
-    n = min(5, len(full) - 1)
-    v0, vn = full[-1 - n]["dps"], full[-1]["dps"]
+    # Año en curso como punto más reciente si ya supera al último año completo
+    # (misma regla que el dps: reflejar la subida ya materializada).
+    eff = full
+    partial = next((h for h in div_history if h.get("isPartial") and (h.get("dps") or 0) > 0), None)
+    if partial is not None and partial["dps"] > full[-1]["dps"]:
+        eff = full + [partial]
+    n = min(5, len(eff) - 1)
+    v0, vn = eff[-1 - n]["dps"], eff[-1]["dps"]
     if v0 <= 0:
         return None
     try:
@@ -1289,9 +1295,17 @@ def fetch_ticker(sym):
         # Respaldo (solo si no hay año completo en el histórico): dividendRate.
         complete = [h["dps"] for h in div_history
                     if not h.get("isPartial") and (h.get("dps") or 0) > 0]
+        # Año en curso (parcial): si lo ya repartido este año YA supera al último año
+        # completo, es una subida materializada → se usa como referencia (yield/CAGR al
+        # ritmo nuevo, sin esperar a que cierre el año). Si aún no lo supera, se mantiene
+        # el último año completo (un año a medias no debe rebajar el yield).
+        partial_cur = next((h["dps"] for h in div_history
+                            if h.get("isPartial") and (h.get("dps") or 0) > 0), None)
         dps = None
         if recent_div and complete:
             dps = complete[-1]
+            if partial_cur is not None and partial_cur > dps:
+                dps = partial_cur
         if dps is None:
             dps = safe(info.get("dividendRate"))
             if dps is None and recent_div:
