@@ -144,7 +144,15 @@ function businessGrowth(data, revenueOnly = false) {
     gPct = rev != null ? rev : 0
     source = rev != null ? 'revenue_cagr5' : 'cero_por_declive'
   } else if (rev != null && fcf != null) {
-    gPct = (rev + fcf) / 2; source = 'media_fcf_revenue'
+    // Divergencia FCF↔ingresos: si el FCF se DESPLOMA mientras los ingresos CRECEN, la
+    // caída suele ser no recurrente (litigios, contingencias, capex de integración) y no
+    // representa la trayectoria del negocio → usar los ingresos como proxy, no el promedio
+    // que colapsa el valor intrínseco (caso Coca-Cola 2024-25: rev +3,7% / fcf −17,8%).
+    if (rev > 0 && (rev - fcf) >= 15 && fcf < -5) {
+      gPct = rev; source = 'revenue_cagr5_divergencia_fcf'
+    } else {
+      gPct = (rev + fcf) / 2; source = 'media_fcf_revenue'
+    }
   } else if (fcf != null) {
     gPct = fcf; source = 'fcf_cagr5'
   } else if (rev != null) {

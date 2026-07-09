@@ -666,6 +666,12 @@ def _business_growth(rev_cagr5, fcf_cagr5, revenue_only=False):
     if revenue_only:
         return (rev_cagr5, "revenue_cagr5") if rev_cagr5 is not None else (0.0, "cero_por_declive")
     if rev_cagr5 is not None and fcf_cagr5 is not None:
+        # Divergencia FCF↔ingresos: si el FCF se desploma mientras los ingresos crecen,
+        # la caída suele ser no recurrente (litigios, contingencias, capex de integración)
+        # y no representa la trayectoria del negocio → usar ingresos como proxy, no el
+        # promedio que colapsa el valor (caso KO 2024-25: rev +3,7% / fcf −17,8%).
+        if rev_cagr5 > 0 and (rev_cagr5 - fcf_cagr5) >= 15 and fcf_cagr5 < -5:
+            return rev_cagr5, "revenue_cagr5_divergencia_fcf"
         return (rev_cagr5 + fcf_cagr5) / 2, "media_fcf_revenue"
     if fcf_cagr5 is not None:
         return fcf_cagr5, "fcf_cagr5"
