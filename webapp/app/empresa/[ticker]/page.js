@@ -14,7 +14,7 @@ import { sectorInfo, SUPERSECTORS } from '@/lib/supersectors'
 import { industryEs } from '@/lib/taxonomy'
 import { getProfile } from '@/data/profiles'
 import { resolveDestWHT } from '@/lib/fiscal-es'
-import { yieldReversionValue, twoStageDDM, peRelativeValue, epvValue, impliedGrowth } from '@/lib/valuation-methods'
+import { yieldReversionValue, twoStageDDM, peRelativeValue, pAffoRelativeValue, epvValue, impliedGrowth } from '@/lib/valuation-methods'
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
 import { isCreditRiskFinancial, detectSectorType } from '@/lib/dgi-score'
@@ -192,6 +192,23 @@ async function sectorMedianPe(supabase, sector, selfTicker) {
     const { data } = await supabase.from('company_fundamentals').select('ticker, pe_trailing').eq('sector', sector)
     const vals = (data || []).filter(r => r.ticker !== selfTicker && r.pe_trailing != null)
       .map(r => Number(r.pe_trailing)).filter(v => v > 0 && v < 60).sort((a, b) => a - b)
+    if (vals.length < 5) return null
+    const mid = Math.floor(vals.length / 2)
+    return vals.length % 2 ? vals[mid] : (vals[mid - 1] + vals[mid]) / 2
+  } catch { return null }
+}
+
+// Mediana del múltiplo P/AFFO del sector (REITs). El PER no es válido en inmobiliarias,
+// así que el cross-check relativo usa P/AFFO. Se deriva de columnas ya guardadas:
+// P/AFFO = precio ÷ AFFO/acción, y AFFO/acción = dps ÷ (payout_affo/100). null si < 5 pares.
+async function sectorMedianPAffo(supabase, sector, selfTicker) {
+  if (!sector) return null
+  try {
+    const { data } = await supabase.from('company_fundamentals').select('ticker, current_price, dps, payout_affo').eq('sector', sector)
+    const vals = (data || [])
+      .filter(r => r.ticker !== selfTicker && Number(r.current_price) > 0 && Number(r.dps) > 0 && Number(r.payout_affo) > 0)
+      .map(r => Number(r.current_price) * (Number(r.payout_affo) / 100) / Number(r.dps))   // P/AFFO
+      .filter(v => v > 3 && v < 45).sort((a, b) => a - b)
     if (vals.length < 5) return null
     const mid = Math.floor(vals.length / 2)
     return vals.length % 2 ? vals[mid] : (vals[mid - 1] + vals[mid]) / 2
@@ -456,13 +473,20 @@ export default async function EmpresaPage({ params, searchParams }) {
     const dpsAnnual = Number(detail.dps) || null
     const yldPct = (dpsAnnual && price > 0) ? dpsAnnual / price * 100 : null
     const waccPct = dcf?.discount != null ? dcf.discount * 100 : null
-    const medPe = await sectorMedianPe(supabase, detail.sector, t)
     const methods = []
     if (dcf?.available && dcf.intrinsicValue > 0) methods.push({ label: 'DCF sector-aware', value: dcf.intrinsicValue, mos: dcf.mos, note: dcf.methodLabel })
     const add = (label, res, note) => { if (res && res.value > 0) methods.push({ label, value: res.value, mos: res.mos, note }) }
     add('Reversión de yield', yieldReversionValue(dpsAnnual, detail.yield_avg, price), 'Dividendo ÷ yield medio histórico')
     if (dpsAnnual > 0) add('DDM bietápico', twoStageDDM(dpsAnnual, detail.div_cagr5, waccPct, price), 'Dividendos descontados a 2 etapas')
-    if (medPe) add('PER mediana del sector', peRelativeValue(detail.pe_trailing, medPe, price), `Mediana del sector: ${medPe.toFixed(0)}×`)
+    // Múltiplo relativo al sector: en REITs el PER no es válido (la amortización distorsiona
+    // el beneficio) → se usa P/AFFO; en el resto, la mediana de PER.
+    if (dcf?.engine === 'affo') {
+      const medPAffo = await sectorMedianPAffo(supabase, detail.sector, t)
+      if (medPAffo && detail.payout_affo > 0) add('P/AFFO mediana del sector', pAffoRelativeValue(dpsAnnual, detail.payout_affo, medPAffo, price), `Mediana del sector: ${medPAffo.toFixed(1)}× AFFO`)
+    } else {
+      const medPe = await sectorMedianPe(supabase, detail.sector, t)
+      if (medPe) add('PER mediana del sector', peRelativeValue(detail.pe_trailing, medPe, price), `Mediana del sector: ${medPe.toFixed(0)}×`)
+    }
     if (dcf?.engine === 'dcf') add('EPV — valor sin crecimiento', epvValue(dcf.params, price), 'Negocio actual a crecimiento cero')
     const implied = dcf?.engine === 'dcf' ? impliedGrowth(dcf.params, price) : null
     valuationMethods = {

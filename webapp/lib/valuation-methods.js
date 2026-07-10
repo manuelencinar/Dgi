@@ -34,6 +34,18 @@ export function peRelativeValue(peTrailing, sectorMedianPe, price) {
   return { value, mos: mos(value, price) }
 }
 
+// 3b. Múltiplo relativo P/AFFO (REITs): el PER no es válido porque la amortización
+//     inmobiliaria distorsiona el beneficio contable. Se usa el AFFO (flujo de caja
+//     ajustado real). AFFO/acción = dps / (payout_affo/100); valor = AFFO_ps × mediana
+//     de P/AFFO del sector. Equivalente eficiente a la mediana de PER, pero con la
+//     métrica correcta para inmobiliarias.
+export function pAffoRelativeValue(dps, payoutAffoPct, sectorMedianPAffo, price) {
+  if (!(dps > 0) || !(payoutAffoPct > 0) || !(sectorMedianPAffo > 0) || !(price > 0)) return null
+  const affoPs = dps / (payoutAffoPct / 100)
+  const value = affoPs * sectorMedianPAffo
+  return { value, mos: mos(value, price) }
+}
+
 // 4. EPV (Earnings Power Value): valor del negocio SIN crecimiento. Reutiliza los
 //    inputs del DCF general (FCFF base, WACC, deuda neta, acciones) → coherente.
 export function epvValue(params, price) {
