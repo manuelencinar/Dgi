@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server'
 import { createClient as sessionClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
-import { FX } from '@/lib/portfolio'
+import { FX, normalizeGbp } from '@/lib/portfolio'
 import { DICT } from '@/data/dict'
 
 export const dynamic = 'force-dynamic'
@@ -188,6 +188,9 @@ export async function GET(req) {
         // hay cierre del día usamos current_price; nunca current_price para meses pasados.
         let price = lastBefore(priceMap[ticker], monthEnd)
         if (price == null && isCurrent) price = curPrice[ticker] ?? null
+        // daily_prices/current_price de las .L están en PENIQUES → a libras (el avg_cost
+        // ya está en libras, así que la normalización solo aplica al precio de mercado).
+        price = normalizeGbp(price, ticker, cur)
         if (price == null) { price = avgCost; usedFallback = true }
         marketValue += shares * price * rate
         investedCapital += shares * avgCost * rate   // coste de las acciones poseídas ese mes
@@ -215,6 +218,7 @@ export async function GET(req) {
       const rate = rateAt(cur, todayStr)
       const avgCost = n(p.avg_cost)
       let price = lastBefore(priceMap[p.ticker], todayStr) ?? curPrice[p.ticker]
+      price = normalizeGbp(price, p.ticker, cur)   // peniques→libras en las .L
       if (price == null) { price = avgCost; usedFallback = true }
       currentValue += sh * price * rate
       investedTotal += sh * avgCost * rate
