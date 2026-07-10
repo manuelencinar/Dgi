@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { DICT } from '@/data/dict'
 import { countryCodeOf, fiscalWHT, nameOf, COUNTRY_NAMES } from '@/lib/fiscalidad'
 import { detectFreqMonths, monthLabel } from '@/lib/dividends'
+import { isExemptUser } from '@/lib/fiscal-es'
 
 const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }
 const INPUT = { background: 'var(--border)', border: '1px solid rgba(129,140,248,0.4)', borderRadius: 6, padding: '5px 7px', color: 'var(--text-strong)', fontSize: 12, outline: 'none', width: '100%', fontFamily: 'inherit', boxSizing: 'border-box' }
@@ -30,6 +31,7 @@ export default function DividendosPage({ isPremium }) {
   const [funds, setFunds] = useState({})
   const [config, setConfig] = useState({})
   const [destWHT, setDestWHT] = useState(19)
+  const [isExempt, setIsExempt] = useState(false)   // Hacienda le devuelve el IRPF → retención ES recuperable
   const [dividendsToCash, setDividendsToCash] = useState(false)
   const [year, setYear] = useState(new Date().getFullYear())
   const [notice, setNotice] = useState(null)
@@ -52,6 +54,7 @@ export default function DividendosPage({ isPremium }) {
     setPositions(pos || [])
     setConfig(Object.fromEntries((cfg || []).map(c => [c.ticker, c])))
     setDestWHT(settings?.dest_wht != null ? Number(settings.dest_wht) : 19)
+    setIsExempt(isExemptUser(settings))
     setDividendsToCash(!!settings?.dividends_to_cash)
     const tickers = [...new Set((pos || []).map(p => p.ticker))]
     if (tickers.length) {
@@ -104,7 +107,7 @@ export default function DividendosPage({ isPremium }) {
         ))}
       </div>
 
-      {tab === 'cobros' && <Cobros sb={sb} records={records} setRecords={setRecords} positions={positions} funds={funds} year={year} setYear={setYear} destWHT={destWHT} dividendsToCash={dividendsToCash} refresh={refresh} showNotice={showNotice} />}
+      {tab === 'cobros' && <Cobros sb={sb} records={records} setRecords={setRecords} positions={positions} funds={funds} year={year} setYear={setYear} destWHT={destWHT} isExempt={isExempt} dividendsToCash={dividendsToCash} refresh={refresh} showNotice={showNotice} />}
       {tab === 'calendario' && <Calendario records={records} year={year} setYear={setYear} />}
       {tab === 'config' && <Configuracion sb={sb} positions={positions} setPositions={setPositions} funds={funds} config={config} setConfig={setConfig} reload={recalc} />}
     </div>
@@ -112,7 +115,7 @@ export default function DividendosPage({ isPremium }) {
 }
 
 // ───────────────────────── COBROS ─────────────────────────
-function Cobros({ sb, records, setRecords, positions, funds, year, setYear, destWHT = 19, dividendsToCash = false, refresh, showNotice }) {
+function Cobros({ sb, records, setRecords, positions, funds, year, setYear, destWHT = 19, isExempt = false, dividendsToCash = false, refresh, showNotice }) {
   // Al confirmar un cobro en efectivo, si está activo el toggle, su neto entra en el
   // fondo de oportunidad (liquidez). Tolerante a que la tabla aún no exista.
   const routeToCash = async (r, net, date) => {
@@ -152,6 +155,12 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
   const pendientePasado = yearRecs.filter(r => r.status === 'pending' && (r.payment_date_estimated || r.date) <= today).reduce((s, r) => s + netOf(r), 0)
   const esperado = yearRecs.filter(r => r.status === 'pending' && (r.payment_date_estimated || r.date) > today).reduce((s, r) => s + netOf(r), 0)
   const totalAnual = cobrado + pendientePasado + esperado
+  // Retención española RECUPERABLE: si el tipo efectivo del ahorro es 0 (usuario al que
+  // Hacienda le devuelve el IRPF), la retención en destino (española) que le practicaron
+  // se recupera a fin de ejercicio → cuenta como rentabilidad real. Sobre lo YA cobrado.
+  const recuperableES = isExempt
+    ? yearRecs.filter(r => r.status === 'received').reduce((s, r) => s + num(r.withholding_dest), 0)
+    : 0
 
   const filtered = yearRecs.filter(r => filter === 'all' || (filter === 'received' ? r.status === 'received' : r.status === 'pending'))
 
@@ -294,6 +303,10 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
         <Sum label="Pendiente de confirmar" value={fmtEUR(pendientePasado, 0)} col={ORANGE} sub="Neto · ya debería estar cobrado" />
         <Sum label="Esperado resto del año" value={fmtEUR(esperado, 0)} col={BLUE} sub="Neto · pagos futuros" />
         <Sum label={`Total año natural ${year}`} value={fmtEUR(totalAnual, 0)} col="var(--text-strong)" sub="Cobrado + estimado de este año (puede ser menor que el ritmo anual si compraste a mitad de año)" />
+        {recuperableES > 0 && (
+          <Sum label="Retención española recuperable" value={`+${fmtEUR(recuperableES, 0)}`} col={GREEN}
+            sub={`Hacienda te devuelve el IRPF: esta retención se recupera y suma a tu rentabilidad real → ${fmtEUR(cobrado + recuperableES, 0)} efectivos de lo ya cobrado`} />
+        )}
       </div>
 
       <div style={{ ...CARD }}>
