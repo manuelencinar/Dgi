@@ -3,6 +3,7 @@
 // movimientos normalizados, emparejados con un ticker y con la comisión derivada.
 // El parseo del fichero .xls (SheetJS) vive en el componente cliente.
 import { DICT } from '@/data/dict'
+import { getWHT } from '@/lib/screener'
 
 // ── Mercado ING → sufijo de ticker + divisa ────────────────────────────────
 const MARKET_MAP = {
@@ -240,19 +241,28 @@ const ES_DEST_WHT = 19
 
 // Cálculo fiscal de un dividendo. dps = dividendo por acción (= precio en divisa
 // origen). En dividendos en euros se deriva la retención TOTAL (bruto − neto) y se
-// reparte: destino = 19% español sobre el bruto (lo que retiene el bróker español);
-// origen = el resto (retención del país de la empresa). En acción nacional el origen
-// sale 0 (no hay retención extranjera). En divisa extranjera la retención va mezclada
-// con el cambio y no se desglosa.
-export function computeDividend(m, currency) {
+// reparte del modo correcto: la retención en ORIGEN es la ESTATUTARIA del país de la
+// empresa (conocida: FR 25%, DE 26,375%…, con el override del usuario si lo hay), y la
+// parte ESPAÑOLA (destino) es el RESTO de la retención observada. En acción nacional
+// (ES) no hay retención extranjera → origen 0 y todo es español (destino). En divisa
+// extranjera la retención va mezclada con el cambio y no se desglosa.
+// (Antes se fijaba destino = 19% del bruto y origen = resto, lo que descuadraba el
+//  origen en las extranjeras: p.ej. Sanofi salía 20,22% en vez de 25%.)
+export function computeDividend(m, currency, country = null, whtOverrides = null) {
   const shares = m.shares || 0
   const dps = m.priceOrig
   if (currency === 'EUR' && dps != null && shares > 0 && m.totalEur != null) {
     const gross = r2(dps * shares)
     const net = r2(m.totalEur)
     const total = r2(Math.max(0, gross - net))
-    const dest = r2(Math.min(gross * ES_DEST_WHT / 100, total))
-    const origin = r2(Math.max(0, total - dest))
+    let origin, dest
+    if (country === 'ES') {
+      origin = 0; dest = total
+    } else {
+      const originPct = country ? getWHT(country, whtOverrides) : 0
+      origin = r2(Math.min(gross * originPct / 100, total))
+      dest = r2(Math.max(0, total - origin))
+    }
     const pct = v => gross > 0 ? r2(v / gross * 100) : null
     return {
       dps, divGross: gross, divNet: net,
@@ -265,12 +275,12 @@ export function computeDividend(m, currency) {
 }
 
 // Enriquece cada movimiento con ticker, divisa, precio para la app y comisión.
-export function buildImportRows(movements) {
+export function buildImportRows(movements, whtOverrides = null) {
   return movements.map((m, i) => {
     const match = matchSecurity(m.ingName, m.market)
     const mi = marketInfo(m.market)
     const currency = match?.currency || mi?.currency || 'EUR'
-    const fin = m.type === 'dividend' ? computeDividend(m, currency) : computeFinancials(m, currency)
+    const fin = m.type === 'dividend' ? computeDividend(m, currency, match?.country || null, whtOverrides) : computeFinancials(m, currency)
     return {
       id: i,
       date: m.date, type: m.type,

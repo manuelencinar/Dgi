@@ -7,6 +7,7 @@ import { DICT } from '@/data/dict'
 import { weightedAvgCost } from '@/lib/portfolio'
 import { parseIngRows, buildImportRows, computeFinancials, computeDividend,
   tradeSignature, divKey, existingTradeSigs, existingDivIds } from '@/lib/broker-import'
+import { countryCodeOf } from '@/lib/fiscalidad'
 
 // Mapa ticker → { name, currency } del DICT (validación y edición manual).
 const TICKER_MAP = Object.fromEntries(DICT.map(([name, ticker, , currency]) => [ticker, { name, currency }]))
@@ -45,6 +46,7 @@ export default function ImportPage() {
   const [tradeSigs, setTradeSigs] = useState(new Set())
   const [divIds, setDivIds] = useState(new Map())
   const [result, setResult] = useState(null)
+  const [whtOverrides, setWhtOverrides] = useState(null)   // retenciones en origen por usuario/bróker
 
   const handleFile = async (file) => {
     if (!file) return
@@ -60,15 +62,18 @@ export default function ImportPage() {
       if (!movements.length) { setError('No se encontraron movimientos en el fichero.'); setStatus('idle'); return }
 
       const { data: { user } } = await sb.auth.getUser()
-      const [{ data: txs }, { data: divs }] = await Promise.all([
+      const [{ data: txs }, { data: divs }, { data: settings }] = await Promise.all([
         sb.from('transactions').select('ticker, type, shares, date').eq('user_id', user.id),
         sb.from('dividends_received').select('id, ticker, date, amount, amount_net').eq('user_id', user.id),
+        sb.from('user_settings').select('wht_overrides').eq('user_id', user.id).maybeSingle(),
       ])
+      const ov = (settings?.wht_overrides && typeof settings.wht_overrides === 'object') ? settings.wht_overrides : null
+      setWhtOverrides(ov)
       const tsigs = existingTradeSigs(txs || [])
       const dids = existingDivIds(divs || [])
       setTradeSigs(tsigs); setDivIds(dids)
 
-      const built = buildImportRows(movements).map(r => {
+      const built = buildImportRows(movements, ov).map(r => {
         const st = classify(r, tsigs, dids)
         return { ...r, _status: st, include: INCLUDE_DEFAULT.has(st) }
       })
@@ -85,7 +90,7 @@ export default function ImportPage() {
       const tk = ticker.trim().toUpperCase()
       const info = TICKER_MAP[tk]
       const currency = info?.currency || r.currency
-      const fin = r.type === 'dividend' ? computeDividend(r, currency) : computeFinancials(r, currency)
+      const fin = r.type === 'dividend' ? computeDividend(r, currency, countryCodeOf(tk, null), whtOverrides) : computeFinancials(r, currency)
       const next = { ...r, ticker: tk || null, matchedName: info?.name || null, currency, confidence: 'manual', ...fin }
       const st = classify(next, tradeSigs, divIds)
       return { ...next, _status: st, include: INCLUDE_DEFAULT.has(st) }
