@@ -257,9 +257,15 @@ function Cobros({ sb, records, setRecords, positions, funds, year, setYear, dest
 
   const addResults = useMemo(() => {
     const q = addDraft.query.trim().toLowerCase()
-    const tickers = new Set(positions.map(p => p.ticker))
-    if (q.length < 1) return DICT.filter(d => tickers.has(d[1])).slice(0, 8)
-    return DICT.filter(d => tickers.has(d[1]) && (d[0].toLowerCase().includes(q) || d[1].toLowerCase().includes(q))).slice(0, 8)
+    const owned = new Set(positions.map(p => p.ticker))
+    // Sin búsqueda: sugerimos las empresas de tu cartera. Al buscar: TODO el universo,
+    // para poder registrar dividendos de acciones que ya vendiste o que no tienes en
+    // cartera (las de tu cartera aparecen primero).
+    if (q.length < 1) return DICT.filter(d => owned.has(d[1])).slice(0, 8)
+    return DICT
+      .filter(d => d[0].toLowerCase().includes(q) || d[1].toLowerCase().includes(q))
+      .sort((a, b) => (owned.has(b[1]) ? 1 : 0) - (owned.has(a[1]) ? 1 : 0))
+      .slice(0, 8)
   }, [addDraft.query, positions])
   const pickAdd = d => setAddDraft(a => ({ ...a, ticker: d[1], query: d[0], pctO: String(fiscalWHT(d[2])), pctD: d[2] === 'ES' ? '0' : String(destWHT) }))
   const saveAdd = async () => {
