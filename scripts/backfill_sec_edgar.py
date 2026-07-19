@@ -132,13 +132,20 @@ def pick_annual(units, kind):
     for e in units[uk]:
         if e.get("form") not in ANNUAL_FORMS or e.get("fp") != "FY":
             continue
-        fy = e.get("fy")
-        if fy is None or not _period_ok(e):
+        # OJO: el campo `fy` es el del INFORME, no el del periodo — un 10-K incluye las
+        # comparativas de años anteriores con el mismo `fy`. El ejercicio real es el año
+        # de FIN del periodo (`end`); _period_ok garantiza que es un periodo ANUAL.
+        end = e.get("end")
+        if not end or not _period_ok(e):
+            continue
+        try:
+            yr = int(str(end)[:4])
+        except Exception:
             continue
         filed = e.get("filed", "")
-        prev = best.get(fy)
+        prev = best.get(yr)
         if prev is None or filed > prev["filed"]:
-            best[fy] = {"val": e.get("val"), "filed": filed, "form": e.get("form"), "end": e.get("end")}
+            best[yr] = {"val": e.get("val"), "filed": filed, "form": e.get("form"), "end": end}
     return best, currency
 
 def extract_column(facts, tags, kind):
