@@ -10,10 +10,11 @@ import SectorAssignClient from './SectorAssignClient'
 import BankMetricsClient from './BankMetricsClient'
 import InsurerMetricsClient from './InsurerMetricsClient'
 import ReitMetricsClient from './ReitMetricsClient'
+import CoberturaHistoricaClient from './CoberturaHistoricaClient'
 
 const TABS = [
   ['empresas', 'Empresas'], ['sectores', 'Sectores'], ['banca', 'Banca'], ['seguros', 'Seguros'], ['reits', 'REITs'], ['funds', 'ETFs y Fondos'], ['indices', 'Índices'],
-  ['importar', 'Importar Excel'], ['logs', 'Logs'],
+  ['cobertura', 'Cobertura histórica'], ['importar', 'Importar Excel'], ['logs', 'Logs'],
 ]
 
 function LogsView({ logs }) {
@@ -66,6 +67,7 @@ export default function DatosTabs({ companies, sectors, countries, funds, market
       {tab === 'reits' && <ReitMetricsClient />}
       {tab === 'funds' && <EtfsAdminClient funds={funds} />}
       {tab === 'indices' && <MarketsAdminClient markets={markets} />}
+      {tab === 'cobertura' && <CoberturaHistoricaClient />}
       {tab === 'importar' && <ImportExcelClient />}
       {tab === 'logs' && <LogsView logs={logs} />}
     </div>
