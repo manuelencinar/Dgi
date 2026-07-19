@@ -1,0 +1,12 @@
+[
+ {
+  "ticker": "MC.PA",
+  "source": "stockanalysis",
+  "status": "OK",
+  "anos_cruzados": 4,
+  "peor_diff_ingresos_pct": 0.0,
+  "peor_ano": 2022,
+  "posible_error_escala": false,
+  "sanity": null
+ }
+]
