@@ -23,6 +23,11 @@ import os, sys, json, time, argparse
 from datetime import date, datetime
 import requests
 
+try:  # consola Windows (cp1252) — evita UnicodeEncodeError en los prints
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(HERE, "output")
 os.makedirs(OUT_DIR, exist_ok=True)

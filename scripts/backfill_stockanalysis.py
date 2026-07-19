@@ -22,6 +22,11 @@ import os, sys, json, time, argparse, re
 import requests
 from bs4 import BeautifulSoup
 
+try:  # consola Windows (cp1252)
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(HERE, "output")
 os.makedirs(OUT_DIR, exist_ok=True)

@@ -16,6 +16,11 @@ Tras ejecutarlo, revisa la cobertura en el dashboard → Datos → "Cobertura hi
 """
 import os, sys, json, subprocess, argparse
 
+try:  # consola Windows (cp1252)
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(HERE, "output")
 
