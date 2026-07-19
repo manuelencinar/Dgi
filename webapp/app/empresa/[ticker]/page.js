@@ -1,6 +1,8 @@
 import { notFound, redirect } from 'next/navigation'
 import { primaryOf, otherListings } from '@/lib/listings'
 import { createClient as authClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { extendStatements } from '@/lib/financial-history-merge'
 import PublicNav from '@/components/PublicNav'
 import CompanyDetailPage from '@/components/CompanyDetailPage'
 import { DICT } from '@/data/dict'
@@ -464,8 +466,21 @@ export default async function EmpresaPage({ params, searchParams }) {
   const nextEarningsDate = (detail?.next_earnings_date && new Date(detail.next_earnings_date + 'T12:00:00') >= _todayMid) ? detail.next_earnings_date : null
   const payoutEps  = detail?.payout_eps ?? null
   const priceToBook = detail?.price_to_book ?? null
-  const peHistory  = detail ? await buildPeHistory(detail, supabase, t) : []
-  const evData     = detail ? await buildEvEbitdaHistory(detail, supabase, t, price) : { history: [], current: null }
+  // Histórico extendido (backfill financial_history) para ampliar años en los gráficos de
+  // Finanzas y el PER/EV histórico. Prioridad yfinance (solo añade años más antiguos). Se
+  // lee con service_role (financial_history es service-only) y NO toca el `detail` que usan
+  // scoring/valoración (calibrados sobre yfinance).
+  let extStmts = { income: detail?.income_statement_annual ?? null, cashflow: detail?.cashflow_annual ?? null, balance: detail?.balance_sheet_annual ?? null, extraYears: 0 }
+  if (detail && isPremium) {
+    try {
+      const svc = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+      const { data: fh } = await svc.from('financial_history').select('*').eq('ticker', t)
+      if (fh?.length) extStmts = extendStatements(detail, fh)
+    } catch {}
+  }
+  const detailExt = detail ? { ...detail, income_statement_annual: extStmts.income, cashflow_annual: extStmts.cashflow, balance_sheet_annual: extStmts.balance } : detail
+  const peHistory  = detailExt ? await buildPeHistory(detailExt, supabase, t) : []
+  const evData     = detailExt ? await buildEvEbitdaHistory(detailExt, supabase, t, price) : { history: [], current: null }
 
   // ── Valoración por múltiples métodos (triangulación, premium) ──────────────
   let valuationMethods = null
@@ -523,9 +538,9 @@ export default async function EmpresaPage({ params, searchParams }) {
   const healthPub = isPremium ? healthPanel
     : (healthPanel ? { ...healthPanel, cards: (healthPanel.cards || []).map(() => ({})) } : null)
   const financialsPub = {
-    income_statement_annual:    detail?.income_statement_annual    ?? null,
-    balance_sheet_annual:       detail?.balance_sheet_annual       ?? null,
-    cashflow_annual:            detail?.cashflow_annual            ?? null,
+    income_statement_annual:    extStmts.income   ?? null,
+    balance_sheet_annual:       extStmts.balance  ?? null,
+    cashflow_annual:            extStmts.cashflow ?? null,
     income_statement_quarterly: isPremium ? (detail?.income_statement_quarterly ?? null) : null,
     balance_sheet_quarterly:    isPremium ? (detail?.balance_sheet_quarterly    ?? null) : null,
     cashflow_quarterly:         isPremium ? (detail?.cashflow_quarterly         ?? null) : null,
