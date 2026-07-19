@@ -2,6 +2,28 @@
 // subsección "Cobertura histórica" del dashboard. Recibe un cliente con service_role.
 // Pagina con .range() (financial_history puede superar 1000 filas holgadamente).
 
+// Prioridad de fuentes al combinar series (yfinance manda SIEMPRE; el backfill solo
+// aporta años que yfinance no cubre o rellena huecos). yfinance vive en
+// company_fundamentals.income_statement_annual; sec_edgar/stockanalysis en financial_history.
+export const SOURCE_PRIORITY = ['yfinance', 'sec_edgar', 'stockanalysis']
+
+// Dado un año→valor de yfinance (prioritario) y las filas de financial_history de una
+// empresa, devuelve {year: {value, source}} escogiendo la fuente de MAYOR prioridad que
+// tenga dato ese año. Para cuando se consuma el histórico extendido en la app.
+export function mergeYearlySeries(yfinanceByYear, historyRows, field) {
+  const out = {}
+  for (const [y, v] of Object.entries(yfinanceByYear || {})) {
+    if (v != null) out[y] = { value: v, source: 'yfinance' }
+  }
+  const rank = s => { const i = SOURCE_PRIORITY.indexOf(s); return i < 0 ? 99 : i }
+  for (const r of historyRows || []) {
+    const y = String(r.fiscal_year), v = r[field]
+    if (v == null) continue
+    if (!out[y] || rank(r.source) < rank(out[y].source)) out[y] = { value: v, source: r.source }
+  }
+  return out
+}
+
 async function fetchAll(supabase, table, cols) {
   const rows = []
   for (let from = 0; ; from += 1000) {
