@@ -105,7 +105,7 @@ export function detectSectorType(type, sector, industry) {
   return 'general'
 }
 
-function detectIndustryType(sector, industry) {
+export function detectIndustryType(sector, industry) {
   const i = (industry || '').toLowerCase()
   const s = (sector || '').toLowerCase()
   if (i.includes('software') || i.includes('saas') || i.includes('internet') ||
@@ -137,7 +137,7 @@ function gmBreaks(ind) {
     consumer: [[20,4],[35,7],[50,10]] }
   return M[ind] || M.consumer
 }
-function omBreaks(ind) {
+export function omBreaks(ind) {
   const M = { software: [[8,4],[18,7],[28,10]], hardware: [[6,4],[13,7],[22,10]],
     pharma: [[8,4],[18,7],[28,10]], luxury: [[12,4],[22,7],[32,10]],
     grocery: [[1.5,4],[3.5,7],[6,10]], energy: [[8,4],[18,7],[28,10]],
@@ -302,7 +302,7 @@ function inventoryScore(gap) {
   return 1
 }
 
-function exCfoDivCoverage(data) {
+export function exCfoDivCoverage(data) {
   const d = data.cashflow_annual?.data
   if (!d) return null
   const cfo = sRow(d,'Cash Flow Operativo','Operating Cash Flow','Flujo de Caja Operativo','Cash Flow From Continuing Operating Activities','Total Cash From Operating Activities')?.[0]

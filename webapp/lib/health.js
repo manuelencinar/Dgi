@@ -1,7 +1,17 @@
 // Salud financiera — semáforo (nivel 1) + tarjetas detalladas (nivel 2).
 // Módulo PURO (server + cliente): no toca la lógica de cálculo existente,
 // solo consume los campos ya calculados de company_fundamentals.
-import { detectSectorType } from '@/lib/dgi-score'
+import { detectSectorType, detectIndustryType, omBreaks, exCfoDivCoverage } from '@/lib/dgi-score'
+
+// Umbrales de margen operativo por INDUSTRIA (reutiliza omBreaks del scoring → salud y
+// score coherentes). omBreaks devuelve [[t1,4],[t2,7],[t3,10]]; el semáforo usa 2 cortes:
+// rojo < t1, ámbar t1–t2, verde > t2. Solo para sectores con margen "de industria"
+// (no REIT/utilities/banca/seguros, cuyo margen es estructural y tiene su propia tabla).
+function omThresholds(sectorKey, detail) {
+  if (['reit', 'utilities', 'bank', 'insurer'].includes(sectorKey)) return null
+  const br = omBreaks(detectIndustryType(detail?.sector, detail?.industry))
+  return br ? [br[0][0], br[1][0]] : null
+}
 import { resolveRoic } from '@/lib/screener'
 import { computeCDR } from '@/lib/capital-discipline'
 import { debtEbitdaIsArtifact } from '@/lib/helpers'
@@ -178,9 +188,9 @@ export function buildSemaforo(detail, sectorKey, paysDividend) {
     rows.push(row('dividendo', 'Dividendo', c, 'dividendo', fmtVal(payout, '%'), note))
   }
 
-  // 4 · Márgenes (margen operativo)
+  // 4 · Márgenes (margen operativo) — umbrales por INDUSTRIA (omBreaks) cuando aplica.
   {
-    const [t1, t2] = OM_T[sectorKey] || OM_T.general
+    const [t1, t2] = omThresholds(sectorKey, detail) || OM_T[sectorKey] || OM_T.general
     const c = classify(opM, t1, t2, true)
     rows.push(row('margenes', 'Márgenes', c, 'margenes', fmtVal(opM, '%')))
   }
@@ -241,7 +251,7 @@ function cardSpec(id, sectorKey, detail) {
         tooltip: 'Porcentaje de ingresos que queda tras el coste de producción. Cuanto más alto, mayor poder de fijación de precios.' }
     }
     case 'op_margin': {
-      const T = OM_T[sectorKey] || OM_T.general
+      const T = omThresholds(sectorKey, detail) || OM_T[sectorKey] || OM_T.general
       const med = { reit: 35, utilities: 22, energy: 12, luxury: 25, pharma: 22 }[sectorKey] ?? 18
       const max = sectorKey === 'reit' ? 80 : 60
       return { label: 'Margen operativo', unit: '%', higher: true, min: 0, max, t1: T[0], t2: T[1], median: med,
@@ -318,7 +328,7 @@ function cardSpec(id, sectorKey, detail) {
 }
 
 // Valor crudo de cada métrica a partir del detail.
-function cardValue(id, detail) {
+function cardValue(id, detail, sectorKey) {
   switch (id) {
     case 'real_asset_return': return realAssetReturn(detail)
     case 'roic': return resolveRoic(detail)
@@ -327,7 +337,16 @@ function cardValue(id, detail) {
     case 'net_margin': return num(detail.net_margin)
     case 'net_debt_ebitda': return num(detail.net_debt_ebitda) ?? num(detail.debt_ebitda)
     case 'interest_cov': return num(detail.interest_coverage)
-    case 'payout_fcf': return num(detail.payout_fcf)
+    case 'payout_fcf': {
+      // REIT (OCF) y utilities (CFO): payout sobre el flujo de caja OPERATIVO real
+      // (dividendos / CFO), no el payout_fcf almacenado. Respaldo a payout_fcf si no
+      // hay datos de cashflow. payout% = 100 / (CFO ÷ dividendos).
+      if (sectorKey === 'reit' || sectorKey === 'utilities') {
+        const cov = exCfoDivCoverage(detail)
+        if (cov != null && cov > 0) return Math.round(100 / cov * 10) / 10
+      }
+      return num(detail.payout_fcf)
+    }
     case 'payout_eps': return num(detail.payout_eps)
     case 'fcf_cagr5': return num(detail.fcf_cagr5)
     case 'revenue_cagr5': return num(detail.revenue_cagr5)
@@ -383,7 +402,7 @@ export function buildHealthCards(detail, sectorKey) {
   return ids.map(id => {
     const spec = cardSpec(id, sectorKey, detail)
     if (!spec) return null
-    const value = cardValue(id, detail)
+    const value = cardValue(id, detail, sectorKey)
     const color = classify(value, spec.t1, spec.t2, spec.higher)
     const beats = value == null ? null : (spec.higher ? value >= spec.median : value <= spec.median)
     // Deuda/EBITDA disparada (>30x) = EBITDA cercano a cero, no apalancamiento real:

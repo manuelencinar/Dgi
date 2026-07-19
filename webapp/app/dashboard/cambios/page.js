@@ -10,30 +10,9 @@ const PENDING = [
   {
     area: 'Salud financiera',
     type: 'Precisión',
-    title: 'Márgenes del semáforo por industria',
-    detail: 'El semáforo de Márgenes usa una tabla de umbrales por sector simplificada. La spec pedía los umbrales por industria que ya existen en lib/dgi-score.js (omBreaks).',
-    action: 'Exportar omBreaks(industria) desde lib/dgi-score.js y usarlo en lib/health.js mapeando la industria de la empresa.',
-  },
-  {
-    area: 'Salud financiera',
-    type: 'Dato faltante',
-    title: 'Payout OCF / CFO real (REIT y utilities)',
-    detail: 'Las tarjetas “Payout OCF” (REIT) y “Payout CFO” (utilities) muestran la etiqueta correcta, pero el valor usa payout_fcf almacenado, no un payout calculado sobre el flujo operativo.',
-    action: 'Calcular Cash Flow Operativo / dividendos pagados desde cashflow_annual (ya existe exCfoDivCoverage en dgi-score) y usar ese valor en esas dos tarjetas.',
-  },
-  {
-    area: 'Salud financiera',
-    type: 'Precisión',
     title: 'Energía: medias de 4 años',
-    detail: 'En el sector energía/materias primas la spec pedía ROIC y margen operativo como media de 4 ejercicios (suaviza el ciclo). Ahora las tarjetas usan el valor del último ejercicio.',
-    action: 'Calcular la media de 4 años de EBIT/Ingresos y de ROIC desde los estados financieros y usarla solo para el sector energía.',
-  },
-  {
-    area: 'Dividendo',
-    type: 'Dato faltante',
-    title: 'Próximos pagos: fechas reales',
-    detail: 'La tabla de próximos pagos es una estimación por frecuencia inferida de la divisa. No guardamos fechas ex-dividendo ni de pago reales.',
-    action: 'Añadir una fuente de calendario de dividendos (yfinance dividends/calendar) y guardarla para mostrar fechas e importes oficiales.',
+    detail: 'En el sector energía/materias primas la spec pedía ROIC y margen operativo como media de 4 ejercicios (suaviza el ciclo). Las tarjetas (y el propio score, cuyas etiquetas dicen "(ciclo)") usan el escalar del último ejercicio almacenado, no una media real de 4 años.',
+    action: 'Calcular la media de 4 años de EBIT/Ingresos y de ROIC por ejercicio desde los estados financieros y usarla para energía, tanto en el score como en las tarjetas de salud.',
   },
   {
     area: 'Valoración',
