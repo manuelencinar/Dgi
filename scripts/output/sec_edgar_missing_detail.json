@@ -1,1 +1,6548 @@
-[]
+[
+ {
+  "ticker": "0001.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "0002.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "000270.KS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "0003.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "000333.SZ",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "0006.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "000660.KS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "000858.SZ",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "0011.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "002594.SZ",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "0027.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "005380.KS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "005490.KS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "0291.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "035420.KS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "035720.KS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "0388.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "051910.KS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "055550.KS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "066570.KS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "068270.KS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "0688.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "0762.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "0823.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "0914.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "0939.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "0941.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "105560.KS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "1088.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "1113.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "1211.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "1398.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "1812.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "1COV.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "207940.KS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "2301.TW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "2318.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "2330.TW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "2331.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "2357.TW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "2377.TW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "2454.TW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "2502.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "2503.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "2628.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "2638.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "2802.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "2914.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "300750.SZ",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "3034.TW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "3690.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "3968.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "3IN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "4063.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "4188.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "4519.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "4523.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "4568.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "4689.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "4901.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "4911.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "4IG.BD",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "4IG.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "5108.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "5401.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "600030.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "600036.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "600276.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "600519.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "601012.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "601288.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "601318.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "601398.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "601939.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "601988.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6098.HK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6098.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6273.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6326.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6367.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6502.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6503.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6701.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6702.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6723.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6752.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6857.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6861.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6869.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6902.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6920.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6954.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "6981.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "7203.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "7267.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "7269.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "7733.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "7741.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "7751.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "7974.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "8002.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "8031.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "8035.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "8053.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "8058.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "8113.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "8306.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "8316.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "8411.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "8591.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "8766.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "8801.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "8TRA.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "9020.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "9022.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "9432.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "9433.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "9983.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "9984.T",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "A17U.SI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "A2A.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "A2M.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "A3M.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AAF.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AAS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ABB.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ABBN.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ABBN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ABC.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ABDN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ABEV3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ABF.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ABI.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ABN.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AC.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AC.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AC.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ACKB.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ACLN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ACO-X.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ACP.WA",
+  "reason": "sin_revenue_eps",
+  "cik": "0001503290"
+ },
+ {
+  "ticker": "ACS.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ACX.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ADANIENT.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ADANIPORTS.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ADEN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ADS.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ADX.MC",
+  "reason": "sin_revenue_eps",
+  "cik": "0000002230"
+ },
+ {
+  "ticker": "ADYEN.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ADZ.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AED.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AED.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AEDAS.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AEFES.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AENA.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AFI.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AFX.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AGHOL.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AGN.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AGS.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AGT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AGUAS-A.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AHELR.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AIBG.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AIE.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AJB.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AKBNK.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AKE.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AKER.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AKKO.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AKRBP.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AKSA.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AKSEN.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AKSO.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AKVA.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AKZA.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALA.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALARK.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALE.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALFA.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALFA.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALFAA.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALFEN.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALIVsdb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALLN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALO.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALPHA.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALQ.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALR.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALSEA.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALTEO.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALTNY.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALTR.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALU.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALUA.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALUP11.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ALW.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AMBU-B.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AML.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AMUN.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AMXB.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ANA.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ANDINA-B.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ANDR.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ANE.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ANIM.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ANN.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ANORA.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ANSGR.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ANSS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ANTO.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ANZ.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AO.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AP-UN.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "APE.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "APN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "APPEN.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AQZ.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ARB.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ARCAD.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ARCG.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ARCLK.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ARF.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ARISE.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ARJOb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ARZ.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ASAI3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ASELS.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ASHM.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ASIANPAINT.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ASL.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ASRNL.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ASSA-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ASSAB.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AST.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ASTOR.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ASURB.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ATCO-A.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ATCO-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ATCOA.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ATCOB.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ATD.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ATEA.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ATRL.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ATRY.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ATT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ATTO.MC",
+  "reason": "sin_revenue_eps",
+  "cik": "0002058707"
+ },
+ {
+  "ticker": "ATYM.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AURE3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AUTO.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AUTOW.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AUTOW.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AV.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AVJ.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AVON.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AWC.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AXISBANK.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AZE.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AZJ.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AZK.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AZM.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AZUL4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "AZZO3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "B3SA3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BAB.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BAG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BAIN.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BAJAJ-AUTO.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BAJFINANCE.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BAKKA.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BALDb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BALN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BALSU.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BAMI.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BAMNB.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BANB.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BARC.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BAS.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BATS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BAVA.CO",
+  "reason": "sin_revenue_eps",
+  "cik": "0002086017"
+ },
+ {
+  "ticker": "BAYN.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BBAJIOO.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BBAS3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BBDC4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BBOX.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BBSE3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BBU-UN.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BBVA.MC",
+  "reason": "sin_revenue_eps",
+  "cik": "0000842180"
+ },
+ {
+  "ticker": "BCI.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BCP.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BDEV.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BEEF3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BEI.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BEIJb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BEKB.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BELA.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BEP-UN.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BESI.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BEZ.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BF.B",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BGA.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BGEO.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BGFD.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BGN.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BHARTIARTL.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BHMG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BIF.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BILIAb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BIM.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BIMAS.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BIMBOA.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BIP-UN.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BIRG.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BKC.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BKCC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BKG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BKL.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BKS.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BKT.MC",
+  "reason": "sin_revenue_eps",
+  "cik": "0000832327"
+ },
+ {
+  "ticker": "BKY.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BLD.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BMA.BA",
+  "reason": "sin_revenue_eps",
+  "cik": "0001347426"
+ },
+ {
+  "ticker": "BME.L",
+  "reason": "sin_revenue_eps",
+  "cik": "0001314966"
+ },
+ {
+  "ticker": "BMED.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BMW.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BNKR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BNP.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BNZL.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BOL.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BOL.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BOLSAA.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BONEX.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BOOZT.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BOQ.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BOSS.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BOY.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BPAC11.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BPCR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BPE.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BPSO.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BPT.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BPT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRAP4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRAV.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRBY.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRE.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BREE.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRFS3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRG.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRG.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRGE.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRI.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRK.B",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRKM5.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRSAN.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRSC.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRWM.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BRYAT.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BSANTANDER.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BSIF.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BSL.AX",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "BSOKE.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BT-A.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BTCIM.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BTO.TO",
+  "reason": "sin_revenue_eps",
+  "cik": "0000925683"
+ },
+ {
+  "ticker": "BTRW.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BUOU.SI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BUT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BVA.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BVI.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BVXP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BWLPG.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BWP.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BWX.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BWY.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BXB.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BYG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BYIT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BYMA.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "BZU.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "C38U.SI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "C5H.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "C6L.SI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CA.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CABK.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CAF.MC",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "CANTE.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CAP.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CAP.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CARL-B.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CAST.ST",
+  "reason": "sin_revenue_eps",
+  "cik": "0001633369"
+ },
+ {
+  "ticker": "CATE.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CBA.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CBAV.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CBG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CCH.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CCOLA.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CCRO3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CDI.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CDR.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CEMEXCPO.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CENCOMALLS.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CENCOSUD.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CENER.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CEV.MC",
+  "reason": "sin_revenue_eps",
+  "cik": "0001074692"
+ },
+ {
+  "ticker": "CEZ.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CGCBV.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CGT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CHC.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CHDRAUIB.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CHG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CHILE.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CHP-UN.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CIE.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CIEL3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CIGP.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CIMSA.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CKN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CLASB.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CLDN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CLNX.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CMA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CMCX.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CMIG4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CMPC.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CMW.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CNHI.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CNI.AX",
+  "reason": "sin_revenue_eps",
+  "cik": "0000016868"
+ },
+ {
+  "ticker": "CNU.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COA.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COALINDIA.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COFB.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COGN3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COH.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COL.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COL.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COLBUN.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COLO-B.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COLR.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COLT.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COME.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CONCHATORO.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COPEC.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COREB.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "COSCO.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CPDI.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CPFE3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CPG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CPR.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CPU.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CPX.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CQR.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CRBN.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CRDA.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CRES.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CRFB3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CRN.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CS.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CS.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CSAN3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CSG.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CSN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CSNA3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CSU.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CTAAL.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CTC-A.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CTD.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CTEC.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CTLT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CTRA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CTT.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CTY.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CU.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CUERVO.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CURY.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CURY3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CVC.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CVCB3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CVKMD.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CVSG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CWENE.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CWN.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CWR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "CYRE3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "D05.SI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DAPGM.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DATA.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DB1.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DBK.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DCC.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DEG.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DEH.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DELTA.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DELTA.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DEMANT.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DFS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DGE.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DHER.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DHG.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DHL.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DIA.MC",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "DIA.MI",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "DIE.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DIM.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DIR-UN.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DIRR3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DLE.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DLG.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DLN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DMP.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DNB.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DNLM.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DNP.WA",
+  "reason": "sin_revenue_eps",
+  "cik": "0000806628"
+ },
+ {
+  "ticker": "DOAS.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DOCO.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DOHOL.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DOL.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DOM.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DOM.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DOM.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DOMI.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DPH.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DPLM.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DQ7.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DRR.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DRW3.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DRX.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DSCV.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DSFIR.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DSG.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DSM.AS",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "DSPW.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DSTKF.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DSV.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DTED",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DUE.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DXCO3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "DXS.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EBRO.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ECILC.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ECON.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ECOR3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ECR.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EDEN.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EDIN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EDP.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EDPR.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EDR.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EDRE.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EDV.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EDV.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EGEEN.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EGIE3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EGL.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EHL.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EIF.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EKGYO.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EKTAb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ELD.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ELET3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ELET6.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ELI.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ELISA.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ELKEM.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ELLAKTOR.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ELM.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ELPE.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ELPL3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ELUX-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ELUXb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EMBR3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EMG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EMMN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EMP-A.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EMPR.V",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EMSN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EN.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENAV.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENBR3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENC.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENEL.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENELAM.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENELCHILE.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENER.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENEV3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENG.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENG.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENGI.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENGI11.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENI.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENJSA.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENKAI.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENO.MC",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "ENOG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENT.L",
+  "reason": "sin_revenue_eps",
+  "cik": "0002028464"
+ },
+ {
+  "ticker": "ENTEL.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ENX.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EOAN.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EPIA.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EPIB.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EPROb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EQTL3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ERA.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ERBAG.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EREGL.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ERF.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ERG.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ERIC-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ERICb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ERST.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ESCT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ESSITY-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ESSITYB.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ETE.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ETEL.CA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EUPWR.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EUREN.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EUROB.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EVK.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EVN.AX",
+  "reason": "sin_revenue_eps",
+  "cik": "0001074540"
+ },
+ {
+  "ticker": "EVN.VI",
+  "reason": "sin_revenue_eps",
+  "cik": "0001074540"
+ },
+ {
+  "ticker": "EVT.DE",
+  "reason": "sin_revenue_eps",
+  "cik": "0001253327"
+ },
+ {
+  "ticker": "EWG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EWI.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EXM.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EXOR.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EXPN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EXRE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EYDAP.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EZE.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EZJ.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "EZTC3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FAE.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FAG.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FALABELLA.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FBD.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FCC.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FCH.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FCIT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FCSS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FCT.MI",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "FDR.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FDXF",
+  "reason": "sin_revenue_eps",
+  "cik": "0002082247"
+ },
+ {
+  "ticker": "FEML.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FEMSAUBD.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FENER.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FEV.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FEX.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FFH.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FGEN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FGP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FGR.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FGT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FI-N.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FILA.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FLRY3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FLT.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FLTR.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FLTR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FLU.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FM.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FME.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FMG.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FNAC.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FNM.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FOI.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FORTUM.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FOYRK.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FRAS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FRE.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FRES.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FROTO.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FRVIA.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FSG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FSKRS.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "FTT.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "G1A.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GALE.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GALP.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GALQ.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GAMA.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GAPB.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GARAN.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GAW.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GBG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GBL.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GBLB.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GCARSOA1.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GCC.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GCC.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GCP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GDWN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GEA.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GEBN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GEKTERNA.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GENIL.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GESAN.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GEST.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GETI-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GETIb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GFINBURO.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GFNORTEO.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GFRD.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GFTU.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GGBR4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GIB-A.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GIVN.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GIVN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GJF.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GJFG.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GL9.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GLA1V.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GLEN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GLK.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GLRMK.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GMAT3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GMEXICOB.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GMG.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GN.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GNC.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GNC.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GNG.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GOAU4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GOLL4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GOZ.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GPE.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GPT.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GPW.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GRE.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GREG.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GRF-P.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GRF.MC",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "GRG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GRN.IR",
+  "reason": "sin_revenue_eps",
+  "cik": "0000312070"
+ },
+ {
+  "ticker": "GRSEL.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GRT-UN.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GRTHO.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GRUMAB.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GSCT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GSF.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GSJ.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GSPARK.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GSRAY.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GTT.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GUBRF.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GVP.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "GWO.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HAFNI.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HALKB.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HANA.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HAPV3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HAUTO.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HAV.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HBR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HBRN.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HBX.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HCLTECH.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HDFCBANK.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HDFCLIFE.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HEIA.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HEIO.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HEKTS.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HELN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HEN3.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HER.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HES",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HEXA-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HEXAb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HFG.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HFG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HGT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HHFA.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HICL.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HIK.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HILS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HINDUNILVR.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HLMA.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HLUN-B.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HM-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HMb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HME.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HMS.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HMSO.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HNR1.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HNS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HNSA.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HO.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HOC.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HOLMb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HOLN.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HOLN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HOME.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HOT.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HPOLb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HR-UN.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HSBA.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HSI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HSX.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HTG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HTWS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HUB.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HUH1V.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HUSQb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HVPE.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HWDN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HWG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "HYPE3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IAM.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IAT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IBE.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IBS.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IBST.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ICGT.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ICICIBANK.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ICOS.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ICP.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ICP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IDIA.SW",
+  "reason": "sin_revenue_eps",
+  "cik": "0001997389"
+ },
+ {
+  "ticker": "IDL.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IFC.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IFX.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IG.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IGD.MI",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "IGG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IGO.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IGTI11.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IIA.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IL0A.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ILC.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ILU.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IMB.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IMCD.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IMD.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IMI.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "INCH.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "INDUc.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "INF.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "INGA.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "INPST.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "INS.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "INTRK.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "INVE-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "INVEb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "INVP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "INW.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "INWI.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IPL.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IPN.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IPS.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IR5B.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IRE.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IRE.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IRES.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ISATR.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ISCTR.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ISMEN.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ISP.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ISS.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ISUR.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ITAUCL.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ITC.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ITH.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ITRK.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ITSA4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ITUB3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ITUB4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ITX.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IVC.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IVG.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IVN.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IVSO.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "IZENR.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JAM.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JBH.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JBSS3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JDW.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JEC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JEDT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JEN.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JFJ.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JGGI.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JHSF3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JLEN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JMAT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JMG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JMT.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JNPR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JSW.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JUN3.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JUP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JUST.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JWN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "JYSK.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "K",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "K.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KAMBI.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KAP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KAR.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KARIN.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KBC.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KBX.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KCAER.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KCHOL.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KCO.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KCR.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KDR.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KEMIRA.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KER.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KESKOB.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KGF.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KGH.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KGN.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KIMBERA.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KIN.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KINV-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KLBN11.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KLR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KLRHO.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KNEBV.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KNEV.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KNIN.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KNIN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KNOS.L",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "KOFOL.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KOFUBL.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KOG.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KOJAMO.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KOMB.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KONTR.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KOTAKBANK.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KPN.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KRDMD.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KRU.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KRX.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KRZ.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KTCG.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KTLEV.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KTY.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KUYAS.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "KWS.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LACOMERU.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LAMDA.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LASITIOSB.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LDA.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LDO.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LEI.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LENV.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LEON.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LGEN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LHA.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LIFCOb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LIGHT.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LISN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LIVEPOLC.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LKE.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LLC.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LLOY.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LMP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LNK.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LNZ.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LOG.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LOGN.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LONN.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LONN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LOOMIS.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LOTB.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LPP.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LR.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LREN3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LSEG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LSG.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LT.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LUMI.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LUN.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LWDB.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LXI.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LXS.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "LYC.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "M&M.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "M44U.SI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MAB.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MACF.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MAERSK-A.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MAERSK-B.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MAGEN.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MAH.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MAIRE.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MALLPLAZA.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MAP.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MARS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MARUTI.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MASI.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MASTER.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MATR.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MAVI.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MBG.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MBH.BD",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MBK.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MC.PA",
+  "reason": "sin_revenue_eps",
+  "cik": "0001596967"
+ },
+ {
+  "ticker": "MCI.IR",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "MCM.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MCRO.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MDF.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MEGACPO.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MEGP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MEL.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MELE.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "METR.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "METSO.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MF.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MFEA.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MGLU3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MGNS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MGROS.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MIATK.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MIN.AX",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "MIO.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MIRG.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MKS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ML.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MLC.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MMAM.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MMB.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MMC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MMK.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MNDI.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MNG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MNKS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MOL.BD",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MOL.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MONC.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MONET.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MONY.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MOWI.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MP1.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MPARK.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MPL.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MQG.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MRC.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MRCH.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MRFG3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MRL.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MRO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MRO.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MRU.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MRVE3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MSLH.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MTBA.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MTELEKOM.BD",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MTO.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MTS.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MULT3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MUT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MUV2.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MVC.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MWY.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MYI.L",
+  "reason": "sin_revenue_eps",
+  "cik": "0000883412"
+ },
+ {
+  "ticker": "MYR.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "MYTIL.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "N2IU.SI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NAB.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NAN.AX",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "NAS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NAS.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NDA-DK.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NDA-FI.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NDA-SE.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NEA.MC",
+  "reason": "sin_revenue_eps",
+  "cik": "0001195737"
+ },
+ {
+  "ticker": "NEL.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NESF.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NESN.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NESN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NESTE.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NESTLEIND.NS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NETW.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NEX.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NEX.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NEXI.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NHF.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NHY.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NIBE-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NIBEb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NK.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NKT.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NOD.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NOKIA.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NOLAb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NOS.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NOVN.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NOVN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NOVO-B.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NPI.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NRR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NSIS-B.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NSR.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NST.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NTCO3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NTGY.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NTH.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NUF.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NVG.LS",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "NYE.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "NZYM-B.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "O39.SI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OBAMS.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OCDO.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OCI.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OCI.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ODAS.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OHLA.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OIZ.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OLE.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OML.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OMV.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ONEX.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OPAP.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OPDE.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OPL.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OPUS.BD",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ORBIA.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ORE.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ORG.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ORIT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ORK.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ORM.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ORNBV.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ORSTED.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ORY.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OSB.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OTKAR.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OTP.BD",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OTP.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OUT1V.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OVB.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OXIG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "OYAKC.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "P911.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PAH3.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PAMP.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PANN.BD",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PANNERGY.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PARA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PARAUCO.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PASEU.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PATEK.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PDN.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PE&OLES.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PENP.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PEO.WA",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "PETKM.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PETR3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PETR4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PFC.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PFLT",
+  "reason": "sin_revenue_eps",
+  "cik": "0001504619"
+ },
+ {
+  "ticker": "PGE.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PGH.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PGHN.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PGHN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PGN.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PGS.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PGSUS.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PHIA.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PHMR.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PHNX.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PHP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PIN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PINFRA.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PINFRAL.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PIRC.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PKI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PKI.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PKN.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PKO.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PLS.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PME.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PNDORA.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PNL.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PNN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PNV.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "POW.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PPR.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PRIO3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PRIUA.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PRN.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PRR.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PRT.MI",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "PRX.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PRY.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PSG.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PSGYO.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PSH.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PSI.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PSON.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PST.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PTR.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PTSB.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PUB.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PUIG.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PUM.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PURMO.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PVA.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PXA.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PXD",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PZCC.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "PZU.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "QAN.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "QBE.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "QBR-B.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "QIA.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "QLT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "QQ.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "QTCOM.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "QUAGR.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "QUB.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "QUINENCO.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "R4.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RA.MX",
+  "reason": "sin_revenue_eps",
+  "cik": "0001655099"
+ },
+ {
+  "ticker": "RAA.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RABA.BD",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RABA.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RABA.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RAIL3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RAIZ4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RALYH.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RAPT4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RAT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RBI.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RCI-B.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RCO.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RCP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RDOR3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "REA.AX",
+  "reason": "sin_revenue_eps",
+  "cik": "0002095743"
+ },
+ {
+  "ticker": "REC.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RECV3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RED.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "REDD.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "REEDR.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "REI-UN.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "REL.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "REN.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "REN.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "REN.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RENE.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RENT3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RENT4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "REP.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RHC.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RHIM.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RHM.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RI.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RICA.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RICHT.BD",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RICHT.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RIPLEY.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RK.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RLIA.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RMS.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RMV.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RNO.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RO.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ROCK-B.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ROR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ROVI.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RRL.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RSW.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RWC.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RWE.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RWE.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RWI.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "RYA.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "S32.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "S63.SI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "S68.SI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SAA1V.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SAAB-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SAB.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SAF.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SAHOL.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SAIN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SALFACORP.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SAMI.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SAMPO.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SANB11.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SAND.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SAPR11.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SARKY.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SAS.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SASA.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SATS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SBMO.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SBO.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SBRY.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SBSP3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SCA-A.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SCA-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SCAb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SCF.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SCHB.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SCHP.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SCIN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SCMN.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SCMN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SCR.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SCT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SCYR.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SDF.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SDP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SDR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SDZ.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SDZ.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SEB-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SEBA.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SECU-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SECUB.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SEE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SEK.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SEM.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SEM.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SFR.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SFSN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SFZN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SGE.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SGM.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SGO.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SGRE.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SGRO.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SGSN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SHB-A.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SHBA.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SHED.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SHL.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SHL.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SHUR.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SIE.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SIGMA.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SIKA.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SIKA.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SINCH.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SISE.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SIV.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SIVBQ",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SKA-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SKAb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SKBNK.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SKC.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SKF-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SKFb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SKG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SKI.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SKODA.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SLCE3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SLHN.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SLHN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SLR.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SLR.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SMH",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SMIN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SMT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SMTO3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SMU.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SMWH.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SNC.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SNR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SNZ.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SOBI.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SOF.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SOI.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SOKM.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SOL.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SOL.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SOLB.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SOLG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SONI.LS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SOON.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SOON.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SPI.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SPI.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SPIE.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SPL.WA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SPLK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SPM.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SPSN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SPX.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SQ",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SQM-B.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SQRL.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SRBANK.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SREN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SRENH.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SRN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SRP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SRS.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SRT3.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SRU-UN.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SSABb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SSABBH.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SSE.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SSON.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SSPG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "STAE.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "STAN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "STB.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "STEAV.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "STJ.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "STLAM.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "STLAP.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "STMN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "STMPA.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "STO.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "STOCK.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "STR.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SUBC.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SUL.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SUPR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SUZB3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SVS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SVT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SVW.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SWED-A.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SWEDA.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SWR.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SWR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SXL.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SXS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SY1.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SYDB.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SYENS.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SYNC.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SYR.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "SZU.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TABAK.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TABGD.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TABK.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TAEE11.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TAH.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TASA4.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TATE.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TAVHL.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TBCG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TCAP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TCELL.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TCL.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TEC.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TECK-B.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TECO2.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TEF.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TEL2-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TEL2b.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TELEC.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TELIA.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TENERGY.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TEP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TEP.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TETT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TETY.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TGNO4.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TGR.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TGSU2.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "THRL.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "THYAO.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TIETO.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TIFS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TIH.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TIMS3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TIT.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TKA.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TKA.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TKFEN.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TKWY.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TLGO.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TMPL.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TMV.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TOASO.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TOKMAN.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TOM.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TOT.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TOU.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TPEIR.AT",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TPK.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TPM.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TPT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TRALT.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TRAN.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TRE.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TRELb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TRENJ.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TRG.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TRIG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TRMET.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TRY.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TRYG.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TSKB.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TTKOM.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TTRAK.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TUB.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TUI.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TUI1.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TUKAS.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TUPRS.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TWE.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TXAR.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TYR.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TYR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "TYRES.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "U11.SI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UBSG.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UBSG.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UCG.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UCI.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UGPA3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UHR.SS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UKCM.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UKW.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ULKER.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ULVR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UMG.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UMI.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UN01.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UNA.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UNI.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UNIP.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UPH.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UPM.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UQA.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "URW.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "URW.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "USA.L",
+  "reason": "sin_revenue_eps",
+  "cik": "0000799195"
+ },
+ {
+  "ticker": "USIM5.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "UTG.L",
+  "reason": "sin_revenue_eps",
+  "cik": "0001263994"
+ },
+ {
+  "ticker": "UU.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VACN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VAIAS.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VAIG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VAKBN.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VALE3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VALMT.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VAPORES.SN",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VBBR3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VCT.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VCT.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VCX.AX",
+  "reason": "sin_revenue_eps",
+  "cik": "0001867090"
+ },
+ {
+  "ticker": "VEA.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VER.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VESTA.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VESTL.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VID.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VIE.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VIG.PR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VIG.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VIRP.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VIS.MC",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VIVT3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VLE.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VNA.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VNA.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VOC.MC",
+  "reason": "http_404"
+ },
+ {
+  "ticker": "VOE.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VOF.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VOLCARb.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VOLV-B.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VOLVB.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VOS.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VOW3.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VPK.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VSVS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VTI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VTWR.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VTY.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VUK.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VWS.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "VZN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WABER.BU",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WABERERS.BD",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WAC.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WAF.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WALLB.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WALMEX.MX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WAM.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WBA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WBC.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WCH.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WCP.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WDP.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WDP.BR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WEB.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WEGE3.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WEIR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WIE.VI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WIHL.ST",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WISE.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WIZZ.BD",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WIZZ.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WKL.AS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WKP.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WLN.PA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WN.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WOSG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WOW.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WRK",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WRT1V.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WSON33.SA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WSP.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WTAN.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WTB.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WTC.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "WWH.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "X.TO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "XAR.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "XOM",
+  "reason": "sin_revenue_eps",
+  "cik": "0002115436"
+ },
+ {
+  "ticker": "XPS.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "XRO.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "YAL.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "YAR.OL",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "YIT.HE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "YKBNK.IS",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "YPFD.BA",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "Z74.SI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ZAL.DE",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ZEAL.CO",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ZEG.L",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ZNO.AX",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ZOD.IR",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ZURN.SW",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ZV.MI",
+  "reason": "sin_cik"
+ },
+ {
+  "ticker": "ZWACK.BU",
+  "reason": "sin_cik"
+ }
+]
