@@ -24,10 +24,12 @@ export default function DashboardSidebar() {
         const active = l.exact ? path === l.href : path.startsWith(l.href)
         return (
           <Link key={l.href} href={l.href} onClick={() => setOpen(false)} style={{
-            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8,
-            textDecoration: 'none', fontSize: 14, fontWeight: active ? 700 : 500,
+            display: 'flex', alignItems: 'center', gap: 10, padding: '9px 13px', borderRadius: 9,
+            textDecoration: 'none', fontSize: 13.5, fontWeight: active ? 700 : 500,
             color: active ? 'var(--accent)' : 'var(--text-muted)',
-            background: active ? 'rgba(99,102,241,0.12)' : 'transparent',
+            background: active ? 'var(--accent-bg)' : 'transparent',
+            boxShadow: active ? 'inset 3px 0 0 var(--accent)' : 'none',
+            transition: 'background .12s ease, color .12s ease',
           }}>
             <span style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{l.icon}</span>
             {l.label}
@@ -38,9 +40,12 @@ export default function DashboardSidebar() {
   )
 
   const header = (
-    <div style={{ marginBottom: 24 }}>
-      <p style={{ fontSize: 15, fontWeight: 900, color: 'var(--text-strong)' }}>EverDiv</p>
-      <p style={{ fontSize: 10, fontWeight: 700, color: '#fb923c', letterSpacing: '0.1em', marginTop: 2 }}>ADMIN</p>
+    <div style={{ marginBottom: 22, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: '#fff', flexShrink: 0 }}>E</div>
+      <div>
+        <p style={{ fontSize: 14.5, fontWeight: 900, color: 'var(--text-strong)', lineHeight: 1 }}>EverDiv</p>
+        <p style={{ fontSize: 9.5, fontWeight: 800, color: '#fb923c', letterSpacing: '0.12em', marginTop: 3 }}>ADMIN</p>
+      </div>
     </div>
   )
 

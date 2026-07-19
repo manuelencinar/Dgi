@@ -11,11 +11,13 @@ export default async function DashboardLayout({ children }) {
   if (!isAdmin) redirect('/')
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080b14', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', flex: 1 }}>
         <DashboardSidebar />
-        <main style={{ flex: 1, minWidth: 0, padding: '28px 28px 64px' }}>
-          {children}
+        <main style={{ flex: 1, minWidth: 0, padding: '30px 32px 72px' }}>
+          <div style={{ maxWidth: 1160, margin: '0 auto' }}>
+            {children}
+          </div>
         </main>
       </div>
     </div>
