@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
+import { resolveEvent } from '@/lib/event-tracking'
 
-export async function proxy(request) {
+export async function proxy(request, event) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -84,6 +85,26 @@ export async function proxy(request) {
     url.pathname = '/novedades'
     return NextResponse.redirect(url)
   }
+
+  // Tracking de actividad (server-side, sin JS de cliente). Fire-and-forget con
+  // waitUntil para no añadir latencia; try/catch silencioso para que un fallo de
+  // logging nunca rompa la petición. Solo usuarios autenticados y rutas whitelisteadas.
+  try {
+    if (user && event?.waitUntil) {
+      const ev = resolveEvent(pathname, request.method)
+      if (ev) {
+        event.waitUntil(
+          supabase.from('user_events').insert({
+            user_id: user.id,
+            section: ev.section,
+            event_name: ev.event_name || 'page_view',
+            path: pathname,
+            metadata: ev.metadata ?? null,
+          }).then(() => {}, () => {})
+        )
+      }
+    }
+  } catch {}
 
   return supabaseResponse
 }
