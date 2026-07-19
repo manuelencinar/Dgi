@@ -165,12 +165,21 @@ def parse_statement(html, kind):
                 out.setdefault(years[i], {})[col] = v
     return out
 
+COLS_ALL = [
+    "ticker", "fiscal_year", "source", "currency", "form_type", "filed_date",
+    "revenue", "gross_profit", "operating_income", "net_income", "eps_diluted",
+    "total_assets", "total_liabilities", "stockholders_equity", "long_term_debt", "cash_and_equivalents",
+    "operating_cash_flow", "capex", "free_cash_flow", "dividends_paid_total", "buybacks_total", "dividend_per_share",
+    "shares_diluted", "shares_basic", "raw_concepts",
+]
+
 def upsert(rows):
     if not rows:
         return
+    payload = [{c: r.get(c) for c in COLS_ALL} for r in rows]
     url = f"{SUPA_URL}/rest/v1/financial_history?on_conflict=ticker,fiscal_year,source"
     h = {**SB_H, "Prefer": "resolution=merge-duplicates,return=minimal"}
-    r = requests.post(url, headers=h, data=json.dumps(rows), timeout=120)
+    r = requests.post(url, headers=h, data=json.dumps(payload), timeout=120)
     if r.status_code >= 300:
         print(f"    upsert error {r.status_code}: {r.text[:200]}")
 

@@ -141,14 +141,24 @@ def pick_annual(units, kind):
             best[fy] = {"val": e.get("val"), "filed": filed, "form": e.get("form"), "end": e.get("end")}
     return best, currency
 
-def find_concept(facts, tags):
-    """Primer tag disponible (us-gaap primero, luego ifrs-full)."""
-    for ns in ("us-gaap", "ifrs-full"):
-        block = facts.get(ns) or {}
-        for tag in tags:
-            if tag in block and block[tag].get("units"):
-                return block[tag]["units"]
-    return None
+def extract_column(facts, tags, kind):
+    """Valor anual por ejercicio, fusionando los tags por PRIORIDAD por año: para cada
+    fiscal_year se usa el primer tag (en orden de la lista, us-gaap antes que ifrs) que
+    tenga dato ese año. Evita que un tag legacy que existe pero está vacío en años
+    recientes (p.ej. 'Revenues' en Apple) tape al tag que sí trae los datos actuales."""
+    merged = {}
+    currency = None
+    for tag in tags:
+        for ns in ("us-gaap", "ifrs-full"):
+            node = (facts.get(ns) or {}).get(tag)
+            if not node or not node.get("units"):
+                continue
+            best, cur = pick_annual(node["units"], kind)
+            if cur and not currency:
+                currency = cur
+            for fy, info in best.items():
+                merged.setdefault(fy, info)   # primer tag con dato ese año gana
+    return merged, currency
 
 def all_annual_raw(facts):
     """Todos los conceptos con valor anual FY (para raw_concepts por año). {fy: {tag: val}}."""
@@ -168,11 +178,9 @@ def build_rows(ticker, facts):
     cols = {}       # col -> {fy: info}
     currency = None
     for col, (tags, kind) in COLMAP.items():
-        units = find_concept(facts, tags)
-        if not units:
-            continue
-        best, cur = pick_annual(units, kind)
-        cols[col] = best
+        best, cur = extract_column(facts, tags, kind)
+        if best:
+            cols[col] = best
         if cur and not currency:
             currency = cur
     # Años presentes
@@ -198,12 +206,23 @@ def build_rows(ticker, facts):
         rows.append(row)
     return rows
 
+# Todas las columnas persistibles — PostgREST exige que todas las filas del insert
+# masivo tengan EXACTAMENTE las mismas claves, así que se normaliza cada fila.
+COLS_ALL = [
+    "ticker", "fiscal_year", "source", "currency", "form_type", "filed_date",
+    "revenue", "gross_profit", "operating_income", "net_income", "eps_diluted",
+    "total_assets", "total_liabilities", "stockholders_equity", "long_term_debt", "cash_and_equivalents",
+    "operating_cash_flow", "capex", "free_cash_flow", "dividends_paid_total", "buybacks_total", "dividend_per_share",
+    "shares_diluted", "shares_basic", "raw_concepts",
+]
+
 def upsert(rows):
     if not rows:
         return
+    payload = [{c: r.get(c) for c in COLS_ALL} for r in rows]
     url = f"{SUPA_URL}/rest/v1/financial_history?on_conflict=ticker,fiscal_year,source"
     h = {**SB_H, "Prefer": "resolution=merge-duplicates,return=minimal"}
-    r = requests.post(url, headers=h, data=json.dumps(rows), timeout=120)
+    r = requests.post(url, headers=h, data=json.dumps(payload), timeout=120)
     if r.status_code >= 300:
         print(f"    upsert error {r.status_code}: {r.text[:200]}")
 
