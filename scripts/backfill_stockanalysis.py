@@ -82,6 +82,11 @@ MATCHERS = {
 }
 STMT_PATH = {"income": "financials", "balance-sheet": "financials/balance-sheet",
              "cash-flow-statement": "financials/cash-flow-statement"}
+# Filas "trampa" a ignorar (contienen la subcadena de una métrica pero NO son el importe):
+# p.ej. "Revenue Growth (YoY)", "Cost of Revenue", "Operating Margin", "EPS Growth"…
+BAD_ROW = ("growth", "margin", "yoy", "cost of", "ratio", "% of", "as %", "per employee", "/ sh")
+# Columnas por-acción (NO se escalan a millones; el resto de importes vienen en millones).
+PER_SHARE = {"eps_diluted", "dividend_per_share"}
 
 def sa_symbol(ticker):
     """Devuelve (url_base, ok). Base tipo https://stockanalysis.com/stocks/AAPL o /quote/LSE/SHEL."""
@@ -150,6 +155,8 @@ def parse_statement(html, kind):
         if len(cells) < 2:
             continue
         label = cells[0].get_text(" ", strip=True).lower()
+        if any(b in label for b in BAD_ROW):
+            continue
         col = None
         for needle, c in MATCHERS[kind]:
             if needle in label:
@@ -161,8 +168,13 @@ def parse_statement(html, kind):
             if i >= len(years) or years[i] is None:
                 continue
             v = parse_num(cell.get_text(strip=True))
-            if v is not None:
-                out.setdefault(years[i], {})[col] = v
+            if v is None:
+                continue
+            # stockanalysis muestra los importes en MILLONES → a valor absoluto (como la
+            # SEC). Los per-share (EPS, dividendo/acción) ya vienen en unidad absoluta.
+            if col not in PER_SHARE:
+                v *= 1_000_000
+            out.setdefault(years[i], {}).setdefault(col, v)   # primera fila válida gana
     return out
 
 COLS_ALL = [
