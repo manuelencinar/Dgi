@@ -207,10 +207,14 @@ def main():
     ap.add_argument("--write", action="store_true")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--ticker", default=None)
+    ap.add_argument("--file", default=None, help="JSON con una lista de tickers a procesar")
     args = ap.parse_args()
 
     if args.ticker:
         tickers = [args.ticker]
+    elif args.file:
+        with open(args.file, encoding="utf-8") as f:
+            tickers = json.load(f)
     else:
         try:
             with open(os.path.join(OUT_DIR, "sec_edgar_missing.json"), encoding="utf-8") as f:
