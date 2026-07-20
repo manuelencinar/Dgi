@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { findDictEntry } from '@/lib/dict'
-import { toFmpSymbol, fetchFmpEstimates, extractRealHistory, buildEstimateSeries } from '@/lib/analyst-estimates'
+import { toFmpSymbol, fetchFmpEstimates, extractRealHistory, buildEstimateSeries, mergeRealHistory } from '@/lib/analyst-estimates'
 import { fetchYahooEstimates } from '@/lib/yahoo-estimates'
 
 export const dynamic     = 'force-dynamic'
@@ -34,8 +35,20 @@ export async function GET(request, { params }) {
       const { data } = await supabase.from('company_fundamentals').select('income_statement_annual').eq('ticker', t).maybeSingle()
       row = data
     }
-    const realRows = extractRealHistory(row?.income_statement_annual)
+    let realRows = extractRealHistory(row?.income_statement_annual)
     const currency = entry?.[3] || null
+
+    // Amplía el histórico real con los ejercicios antiguos del backfill (financial_history,
+    // service-only). yfinance manda; el backfill solo aporta años anteriores.
+    try {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY
+      if (url && key) {
+        const svc = createServiceClient(url, key)
+        const { data: fh } = await svc.from('financial_history')
+          .select('fiscal_year, source, revenue, eps_diluted').eq('ticker', t)
+        if (fh?.length) realRows = mergeRealHistory(realRows, fh)
+      }
+    } catch { /* sin backfill → histórico de yfinance tal cual */ }
 
     // Estimaciones: preferimos las precargadas en BD (sin gastar llamada). Solo si la
     // empresa todavía no se ha procesado (status null) se consulta a FMP en vivo.
@@ -56,7 +69,9 @@ export async function GET(request, { params }) {
     }
 
     if ((realRows && realRows.length) || (estRows && estRows.length)) {
-      const rows = buildEstimateSeries(realRows, estRows)
+      // histYears alto → se incluyen TODOS los años reales disponibles (los antiguos se
+      // pliegan en un desplegable en la UI); las estimaciones futuras siguen limitadas.
+      const rows = buildEstimateSeries(realRows, estRows, { histYears: 100 })
       payload = {
         hasData: rows.length > 0,
         hasEstimates: rows.some(r => !r.actual),

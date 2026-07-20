@@ -1565,6 +1565,7 @@ export default function CompanyDetailPage(props) {
 
   const urlTab = searchParams.get('tab')
   const [tab, setTab] = useState(TAB_IDS.includes(initialTab) ? initialTab : 'resumen')
+  const [finRange, setFinRange] = useState(8)   // rango de años común a los gráficos de Finanzas (4 / 8 / Máx)
 
   // Sincroniza con la URL (back/forward, enlaces compartidos)
   useEffect(() => {
@@ -1819,12 +1820,26 @@ export default function CompanyDetailPage(props) {
         {/* ═══ FINANZAS ═══ */}
         {tab === 'finanzas' && (
           <div style={{ display: 'grid', gap: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>Años en los gráficos:</span>
+              <div style={{ display: 'inline-flex', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', background: 'var(--surface)' }}>
+                {[[4, '4 años'], [8, '8 años'], ['max', 'Máx']].map(([val, label]) => (
+                  <button key={label} onClick={() => setFinRange(val)}
+                    style={{ padding: '5px 12px', fontSize: 12, fontWeight: finRange === val ? 700 : 500, cursor: 'pointer', border: 'none',
+                      background: finRange === val ? 'var(--accent-bg)' : 'transparent',
+                      color: finRange === val ? 'var(--accent)' : 'var(--text-muted)' }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <Card>
               <StatementCharts
                 income={financials?.income_statement_annual}
                 cashflow={financials?.cashflow_annual}
                 balance={financials?.balance_sheet_annual}
                 type={type}
+                maxYears={finRange}
                 bankNpl={isBank ? (bankMetrics?.nplHistory || []) : undefined}
               />
             </Card>
@@ -1870,6 +1885,7 @@ export default function CompanyDetailPage(props) {
                 scalars={finScalars}
                 isPremium={isPremium}
                 insurer={isInsurer ? insurerMetrics : null}
+                maxYears={finRange}
               />
             </Card>
           </div>

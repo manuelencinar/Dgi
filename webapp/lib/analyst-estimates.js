@@ -95,6 +95,26 @@ export function extractRealHistory(isa) {
   return out
 }
 
+// Fusiona el histórico real de yfinance (extractRealHistory) con los ejercicios ANTIGUOS
+// del backfill (financial_history) para ampliar los años de la tabla/gráfico de estimaciones.
+// yfinance MANDA para los años que ya cubre; el backfill solo aporta los anteriores.
+// fhRows: filas de financial_history [{fiscal_year, source, revenue, eps_diluted}].
+export function mergeRealHistory(realRows, fhRows) {
+  const byYear = {}
+  for (const r of realRows || []) if (r?.year != null) byYear[r.year] = { year: r.year, revenue: r.revenue, eps: r.eps }
+  const rank = s => { const i = ['sec_edgar', 'stockanalysis', 'macrotrends'].indexOf(s); return i < 0 ? 99 : i }
+  const fhBest = {}
+  for (const r of fhRows || []) {
+    const y = r?.fiscal_year
+    if (y == null || byYear[y]) continue                    // año ya cubierto por yfinance → se ignora
+    if (!fhBest[y] || rank(r.source) < rank(fhBest[y].source)) fhBest[y] = r
+  }
+  for (const r of Object.values(fhBest)) {
+    byYear[r.fiscal_year] = { year: Number(r.fiscal_year), revenue: num(r.revenue), eps: num(r.eps_diluted) }
+  }
+  return Object.values(byYear).sort((a, b) => a.year - b.year)
+}
+
 // Construye la serie continua real → estimado y calcula el crecimiento YoY de
 // ingresos sobre TODA la serie (para que el primer año mostrado también tenga YoY).
 //   realRows / estRows: [{year, revenue, eps, ...}]

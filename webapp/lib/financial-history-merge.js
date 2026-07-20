@@ -19,6 +19,10 @@ const CASHFLOW_MAP = {
 const BALANCE_MAP = {
   total_assets: 'Total Assets', total_liabilities: 'Total Liabilities Net Minority Interest',
   stockholders_equity: 'Stockholders Equity', cash_and_equivalents: 'Cash And Cash Equivalents',
+  // financial_history no guarda la deuda total (corto+largo); usamos la deuda a largo como
+  // aproximación para los años antiguos del gráfico de deuda (los recientes de yfinance
+  // conservan su Total Debt real). Domina el total en la mayoría de grandes empresas.
+  long_term_debt: 'Total Debt',
 }
 
 // Un registro por ejercicio, escogiendo la fuente de MAYOR prioridad del backfill.

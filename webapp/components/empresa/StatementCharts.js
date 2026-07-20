@@ -128,7 +128,10 @@ function ChartCard({ title, data, children }) {
 
 // ── componente principal ────────────────────────────────────────────────────
 
-export default function StatementCharts({ income, cashflow, balance, type, bankNpl }) {
+// Recorta a los últimos N ejercicios (los datos vienen ordenados ascendente por año).
+function lastN(arr, n) { return (!n || n === 'max' || arr.length <= n) ? arr : arr.slice(-n) }
+
+export default function StatementCharts({ income, cashflow, balance, type, bankNpl, maxYears = 'max' }) {
   const isBank = Array.isArray(bankNpl)
   const nplData = isBank ? bankNpl.map(h => ({ period: h.period, npl: h.value })) : []
   const isUtility = type === 'utilities'
@@ -173,8 +176,8 @@ export default function StatementCharts({ income, cashflow, balance, type, bankN
     return { results, fcf, bal }
   }, [income, cashflow, balance, isUtility])
 
-  // Mostramos todos los años disponibles (la BD guarda 4 ejercicios anuales).
-  const rData = results, fData = fcf, bData = bal
+  // Recorte según el selector de rango (4 / 8 / Máx) compartido de la pestaña Finanzas.
+  const rData = lastN(results, maxYears), fData = lastN(fcf, maxYears), bData = lastN(bal, maxYears)
 
   const rUnit = chartUnit([...rData.map(d => d.revenue), ...rData.map(d => d.net_income)])
   const fUnit = chartUnit([...fData.map(d => d.cfo), ...fData.map(d => d.fcf)])

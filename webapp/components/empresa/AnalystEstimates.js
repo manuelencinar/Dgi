@@ -57,9 +57,12 @@ function ChartTooltip({ active, payload, currency }) {
   )
 }
 
+const RECENT_REAL = 4   // ejercicios reales recientes visibles en la tabla; los anteriores se pliegan
+
 export default function AnalystEstimates({ ticker }) {
   const [status, setStatus] = useState('loading')   // loading | ok | none
   const [data, setData] = useState(null)
+  const [showOlder, setShowOlder] = useState(false)
 
   useEffect(() => {
     if (!ticker) { setStatus('none'); return }
@@ -103,6 +106,16 @@ export default function AnalystEstimates({ ticker }) {
     }))
     return { chartData: cd, unit: u }
   }, [rows])
+
+  // Tabla: los últimos ejercicios reales + estimaciones siempre visibles; los años
+  // anteriores (histórico ampliado del backfill) se pliegan en un desplegable.
+  const { tableRows, olderCount } = useMemo(() => {
+    if (!rows?.length) return { tableRows: [], olderCount: 0 }
+    const real = rows.filter(r => r.actual)
+    const est = rows.filter(r => !r.actual)
+    const nOld = Math.max(0, real.length - RECENT_REAL)
+    return { tableRows: showOlder ? rows : [...real.slice(nOld), ...est], olderCount: nOld }
+  }, [rows, showOlder])
 
   // Sin estimaciones (típico fuera de EE. UU. o sin cobertura de FMP) → no se muestra.
   if (status === 'loading' || status === 'none') return null
@@ -162,7 +175,17 @@ export default function AnalystEstimates({ ticker }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map(r => (
+          {olderCount > 0 && (
+            <tr>
+              <td colSpan={4} style={{ padding: '4px 8px' }}>
+                <button onClick={() => setShowOlder(v => !v)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 11.5, fontWeight: 600, padding: '2px 0' }}>
+                  {showOlder ? '▾ Ocultar años anteriores' : `▸ Ver ${olderCount} ejercicio${olderCount > 1 ? 's' : ''} anterior${olderCount > 1 ? 'es' : ''}`}
+                </button>
+              </td>
+            </tr>
+          )}
+          {tableRows.map(r => (
             <tr key={r.year} style={{ background: r.actual ? 'transparent' : 'rgba(99,102,241,0.06)', borderBottom: '1px solid var(--surface-2)' }}>
               <td style={{ padding: '7px 8px', whiteSpace: 'nowrap' }}>
                 <span style={{ color: r.actual ? 'var(--text)' : 'var(--accent)', fontWeight: 700 }}>{r.year}</span>

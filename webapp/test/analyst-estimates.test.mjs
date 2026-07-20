@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { toFmpSymbol, extractRealHistory, buildEstimateSeries } from '../lib/analyst-estimates.js'
+import { toFmpSymbol, extractRealHistory, buildEstimateSeries, mergeRealHistory } from '../lib/analyst-estimates.js'
 
 test('toFmpSymbol — acción US sin sufijo pasa tal cual', () => {
   assert.equal(toFmpSymbol('AAPL'), 'AAPL')
@@ -81,4 +81,19 @@ test('buildEstimateSeries — sin estimados devuelve solo reales', () => {
   const series = buildEstimateSeries(real, null)
   assert.equal(series.length, 2)
   assert.ok(series.every(r => r.actual))
+})
+
+test('mergeRealHistory — añade años antiguos del backfill sin pisar yfinance', () => {
+  const real = [{ year: 2023, revenue: 100, eps: 4 }, { year: 2024, revenue: 110, eps: 4.4 }]
+  const fh = [
+    { fiscal_year: 2024, source: 'sec_edgar', revenue: 999, eps_diluted: 9 },   // solapa → se ignora
+    { fiscal_year: 2020, source: 'stockanalysis', revenue: 80, eps_diluted: 3 },
+    { fiscal_year: 2020, source: 'sec_edgar', revenue: 82, eps_diluted: 3.2 },   // mejor fuente gana
+    { fiscal_year: 2018, source: 'stockanalysis', revenue: 70, eps_diluted: 2.5 },
+  ]
+  const out = mergeRealHistory(real, fh)
+  assert.deepEqual(out.map(r => r.year), [2018, 2020, 2023, 2024])
+  assert.equal(out.find(r => r.year === 2024).revenue, 110)   // yfinance intacto
+  assert.equal(out.find(r => r.year === 2020).revenue, 82)    // sec_edgar > stockanalysis
+  assert.equal(out.find(r => r.year === 2018).eps, 2.5)
 })

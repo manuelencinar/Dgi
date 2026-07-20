@@ -33,6 +33,8 @@ function years(...maps) {
   maps.forEach(m => Object.keys(m || {}).forEach(y => s.add(Number(y))))
   return [...s].filter(y => !isNaN(y)).sort((a, b) => a - b)
 }
+// Recorta a los últimos N ejercicios (datos ordenados ascendente por año).
+const lastN = (arr, n) => (!n || n === 'max' || (arr?.length ?? 0) <= n) ? (arr || []) : arr.slice(-n)
 const num = v => (v != null && !isNaN(v)) ? Number(v) : null
 function pctChange(cur, prev) { return (cur == null || prev == null || prev === 0) ? null : ((cur - prev) / Math.abs(prev)) * 100 }
 function cagr(map) {
@@ -218,7 +220,7 @@ function PremiumGate() {
   )
 }
 
-export default function FinanzasDeepDive({ income, cashflow, balance, divHistory, currency, scalars = {}, isPremium, insurer = null }) {
+export default function FinanzasDeepDive({ income, cashflow, balance, divHistory, currency, scalars = {}, isPremium, insurer = null, maxYears = 'max' }) {
   const d = useMemo(() => {
     const f = buildFin(income, cashflow, balance, divHistory)
 
@@ -273,6 +275,14 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
     return { margins, debt, intcov, profit, capital, share, f, cdr }
   }, [income, cashflow, balance, divHistory, scalars])
 
+  // Vistas recortadas al rango elegido (4 / 8 / Máx) — selector compartido de Finanzas.
+  const mView = lastN(d.margins, maxYears)
+  const debtView = lastN(d.debt, maxYears)
+  const intcovView = lastN(d.intcov, maxYears)
+  const profitView = lastN(d.profit, maxYears)
+  const capitalView = lastN(d.capital, maxYears)
+  const shareView = lastN(d.share, maxYears)
+
   // tendencias texto
   const marginTrend = trendText(d.margins, 'operativo', 'márgenes')
   const roicNote = (() => {
@@ -281,8 +291,8 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
       ? 'ROIC sostenidamente superior al coste de capital — señal de ventaja competitiva duradera.' : null
   })()
 
-  const mUnit = chartUnit(d.debt.flatMap(r => [r.deuda, r.caja]))
-  const capUnit = chartUnit(d.capital.flatMap(r => [r.dividends, r.buybacks, r.acquisitions, r.fcf]))
+  const mUnit = chartUnit(debtView.flatMap(r => [r.deuda, r.caja]))
+  const capUnit = chartUnit(capitalView.flatMap(r => [r.dividends, r.buybacks, r.acquisitions, r.fcf]))
 
   // resúmenes
   const lastDebt = d.debt[d.debt.length - 1]
@@ -314,9 +324,9 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
 
       {/* MÁRGENES */}
       <Section title="Evolución de márgenes">
-        {d.margins.length < 1 ? <Placeholder /> : <>
+        {mView.length < 1 ? <Placeholder /> : <>
           <Chart h={200}>
-            <AreaChart data={d.margins} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
+            <AreaChart data={mView} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
               {grid}
               <XAxis dataKey="year" {...axis} />
               <YAxis {...axis} width={38} domain={[0, 100]} tickFormatter={v => v + '%'} />
@@ -383,9 +393,9 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
         <div className="fin-2col">
           <div>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>Deuda vs caja</p>
-            {d.debt.length < 1 ? <Placeholder /> : (
+            {debtView.length < 1 ? <Placeholder /> : (
               <Chart h={180}>
-                <ComposedChart data={d.debt} margin={{ top: 6, right: 6, left: 0, bottom: 0 }} barGap={2}>
+                <ComposedChart data={debtView} margin={{ top: 6, right: 6, left: 0, bottom: 0 }} barGap={2}>
                   {grid}
                   <XAxis dataKey="year" {...axis} />
                   <YAxis {...axis} width={42} tickFormatter={v => fmtU(v, mUnit)} />
@@ -403,9 +413,9 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
           </div>
           <div>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>Cobertura de intereses</p>
-            {d.intcov.length < 1 ? <Placeholder /> : (
+            {intcovView.length < 1 ? <Placeholder /> : (
               <Chart h={180}>
-                <BarChart data={d.intcov} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
+                <BarChart data={intcovView} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
                   {grid}
                   <XAxis dataKey="year" {...axis} />
                   <YAxis {...axis} width={34} tickFormatter={v => v + '×'} />
@@ -414,7 +424,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
                   ]) : null} cursor={{ fill: 'var(--surface-2)' }} />
                   <ReferenceLine y={3} stroke="var(--negative)" strokeDasharray="4 4" strokeOpacity={0.6} />
                   <Bar dataKey="cov" name="Cobertura" radius={[2, 2, 0, 0]}>
-                    {d.intcov.map((r, i) => <Cell key={i} fill={covColor(r.cov)} />)}
+                    {intcovView.map((r, i) => <Cell key={i} fill={covColor(r.cov)} />)}
                   </Bar>
                 </BarChart>
               </Chart>
@@ -431,9 +441,9 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
 
       {/* RENTABILIDAD */}
       <Section title="Rentabilidad histórica">
-        {d.profit.length < 1 ? <Placeholder /> : <>
+        {profitView.length < 1 ? <Placeholder /> : <>
           <Chart h={200}>
-            <AreaChart data={d.profit} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
+            <AreaChart data={profitView} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
               {grid}
               <XAxis dataKey="year" {...axis} />
               <YAxis {...axis} width={38} tickFormatter={v => v + '%'} />
@@ -454,9 +464,9 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
 
       {/* CAPITAL ALLOCATION */}
       <Section title="¿Cómo usa la empresa su dinero?" subtitle="Distribución del flujo de caja libre por año">
-        {d.capital.length < 1 ? <Placeholder /> : <>
+        {capitalView.length < 1 ? <Placeholder /> : <>
           <Chart h={220}>
-            <ComposedChart data={d.capital} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
+            <ComposedChart data={capitalView} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
               {grid}
               <XAxis dataKey="year" {...axis} />
               <YAxis {...axis} width={42} tickFormatter={v => fmtU(v, capUnit)} />
@@ -492,9 +502,9 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
 
       {/* POR ACCIÓN */}
       <Section title="Por acción">
-        {d.share.length < 1 ? <Placeholder /> : <>
+        {shareView.length < 1 ? <Placeholder /> : <>
           <Chart h={200}>
-            <BarChart data={d.share} margin={{ top: 6, right: 6, left: 0, bottom: 0 }} barGap={1}>
+            <BarChart data={shareView} margin={{ top: 6, right: 6, left: 0, bottom: 0 }} barGap={1}>
               {grid}
               <XAxis dataKey="year" {...axis} />
               <YAxis {...axis} width={38} tickFormatter={v => fmtNum(v, 0)} />
