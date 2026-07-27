@@ -45,7 +45,7 @@ export async function GET(request) {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="EverDiv-${ticker}.pdf"`,
-      'Cache-Control': 'private, max-age=43200',
+      'Cache-Control': 'no-store, must-revalidate',
     },
   })
 }

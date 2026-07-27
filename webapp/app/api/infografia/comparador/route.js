@@ -48,7 +48,9 @@ export async function GET(request) {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${filename}"`,
-      'Cache-Control': 'private, max-age=43200',
+      // El navegador NO debe cachear (el diseño/datos cambian); la caché de coste vive
+      // en memoria del servidor (arriba).
+      'Cache-Control': 'no-store, must-revalidate',
     },
   })
 }

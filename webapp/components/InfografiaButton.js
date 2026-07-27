@@ -18,7 +18,8 @@ export default function InfografiaButton({ kind, tickers, ticker, isPremium = tr
   const download = async () => {
     setErr(null); setLoading(true)
     try {
-      const res = await fetch(href)
+      // Parámetro anti-caché: evita que el navegador sirva un PDF cacheado antiguo.
+      const res = await fetch(`${href}&_=${Date.now()}`, { cache: 'no-store' })
       if (res.status === 403) {
         setErr('La infografía en PDF es una función Premium.')
         return
