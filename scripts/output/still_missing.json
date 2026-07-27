@@ -1,3154 +1,374 @@
 [
  {
-  "ticker": "000333.SZ",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "000858.SZ",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "002594.SZ",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "0914.HK",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "1COV.DE",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "2318.HK",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "300750.SZ",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "3968.HK",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "3IN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "4IG.BD",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "4IG.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "600030.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "600036.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "600276.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "600519.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "601012.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "601288.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "601318.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "601398.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "601939.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "601988.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "6502.T",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "A2M.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AAF.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AAS.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ABB.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ABBN.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ABC.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ABDN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ABF.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ACO-X.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AED.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AEFES.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "AGHOL.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "AGT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AGUAS-A.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "AHELR.AT",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AIBG.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AIE.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AJB.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AKBNK.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "AKKO.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "AKSA.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "AKSEN.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ALARK.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ALFA.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ALFAA.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ALIVsdb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ALTEO.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ALTNY.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ALU.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ALUA.BA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ALUP11.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ALW.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AMBU-B.CO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AML.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AMXB.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ANDINA-B.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ANSGR.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ANTO.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AO.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AP-UN.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "APN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "APPEN.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ARCG.BR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ARCLK.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ARJOb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ARZ.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ASELS.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ASHM.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ASL.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ASSA-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ASSAB.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AST.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ASTOR.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ASURB.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ATCO-A.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ATCO-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ATCOA.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ATCOB.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ATT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ATTO.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ATYM.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AUTO.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AUTOW.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "AUTOW.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "AV.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AVJ.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AVON.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AWC.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "AZZO3.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BAB.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BAG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BAJAJ-AUTO.NS",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BALDb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BALN.SW",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BALSU.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "BARC.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BATS.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BBAJIOO.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BBOX.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BBU-UN.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BCI.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "BDEV.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BEIJb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BEP-UN.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BEZ.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BF.B",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "BGEO.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BGFD.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BHMG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BIF.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "BILIAb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BIMAS.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "BIMBOA.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BIP-UN.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BKC.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BKCC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BKG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BKL.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BKY.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BLD.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BMA.BA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "BME.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BNKR.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BNZL.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BOLSAA.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BOY.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BPCR.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BPT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BRAP4.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BRBY.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BREE.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BRFS3.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BRGE.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BRI.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BRK.B",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "BRSAN.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "BRSC.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BRWM.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BRYAT.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "BSANTANDER.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "BSIF.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BSOKE.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "BT-A.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BTCIM.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "BTRW.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BUT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BVA.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BVXP.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BWX.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BWY.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BYG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BYIT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "BYMA.BA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "C5H.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CANTE.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "CAP.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "CARL-B.CO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CBG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CCH.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CCOLA.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "CEMEXCPO.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CENCOMALLS.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "CENCOSUD.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "CENER.AT",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CGT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CHDRAUIB.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CHG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CHILE.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "CHP-UN.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CIEL3.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CIGP.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "CIMSA.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "CKN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CLASB.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CLDN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CMCX.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CMPC.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "CNHI.MI",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CNU.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "COA.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "COLBUN.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "COLO-B.CO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "COLT.PR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "COME.BA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "CONCHATORO.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "COPEC.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "COREB.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "COSCO.AT",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CPDI.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CPG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CRDA.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CRES.BA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "CRFB3.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CRN.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CSG.PR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CSN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CTAAL.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CTC-A.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CTEC.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CTY.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CURY.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CVKMD.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "CVSG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CWENE.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "CWN.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "CWR.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DAPGM.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "DATA.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DCC.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DEG.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DEH.AT",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DELTA.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "DELTA.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "DFS",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DGE.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DHG.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DIR-UN.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DLE.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DLN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DNLM.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DOAS.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "DOCO.VI",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DOHOL.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "DOM.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DOMI.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DPH.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DPLM.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DQ7.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DRX.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DSCV.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DSM.AS",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "DSTKF.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "DTED",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ECILC.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ECON.BR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EDIN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EDRE.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EDV.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EGEEN.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "EKGYO.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "EKTAb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ELKEM.OL",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ELM.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ELPL3.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ELUX-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ELUXb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EMBR3.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EMG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EMP-A.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EMPR.V",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ENBR3.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ENELAM.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ENELCHILE.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ENJSA.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ENKAI.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ENOG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ENT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ENTEL.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "EPIA.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EPIB.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EPROb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ERBAG.PR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EREGL.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ERIC-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ERICb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ERST.PR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ESCT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ESSITY-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ESSITYB.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ETEL.CA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "EUPWR.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "EUREN.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "EWG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EWI.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EXOR.AS",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EXPN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EXRE",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "EZJ.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FALABELLA.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "FBD.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FCH.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FCIT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FCSS.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FEML.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FEMSAUBD.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FENER.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "FEV.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FGEN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FGP.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FGT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FI",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FI-N.SW",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FLTR.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FLTR.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FOI.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FRAS.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FRES.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "FROTO.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "FSG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GALQ.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GAMA.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GAPB.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GARAN.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "GAW.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GBG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GBL.BR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GCARSOA1.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GCC.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GCP.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GDWN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GEA.DE",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GENIL.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "GESAN.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "GETI-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GETIb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GFINBURO.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GFRD.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GFTU.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GIB-A.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GIVN.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "GJFG.OL",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GLEN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GLK.DE",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GLRMK.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "GMEXICOB.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GNC.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GNC.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GPE.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GREG.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GRF-P.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GRG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GRN.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GRSEL.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "GRT-UN.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GRTHO.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "GRUMAB.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GSCT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "GSPARK.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "GSRAY.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "GUBRF.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "GVP.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HALKB.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "HANA.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HAV.AS",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HBR.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HBRN.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HEKTS.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "HES",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HEXA-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HEXAb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HFG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HGT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HICL.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HIK.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HILS.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HLMA.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HLUN-B.CO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HM-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HMb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HME.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HMSO.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HNS.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HOC.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HOLMb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HOLN.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "HPOLb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HR-UN.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HSBA.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HSI",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HSX.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HTG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HTWS.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HUSQb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HVPE.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HWDN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "HWG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "IAM.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "IAT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "IBST.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ICGT.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ICP.BR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ICP.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "IGG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "IL0A.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ILC.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "IMB.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "IMI.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "INCH.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "INDUc.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "INF.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "INS.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "INVE-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "INVEb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "INVP.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "IR5B.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ISATR.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ISCTR.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ISMEN.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ITAUCL.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ITH.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ITRK.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ITUB3.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "IVC.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "IZENR.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "JAM.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "JDW.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "JEC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "JEDT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "JFJ.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "JGGI.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "JLEN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "JMAT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "JMG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "JUP.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "JUST.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "KAP.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "KARIN.PR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "KCAER.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "KCHOL.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "KDR.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "KGF.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "KIMBERA.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "KINV-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "KLR.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "KLRHO.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "KNEV.HE",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "KNIN.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "KNOS.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "KOFUBL.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "KOJAMO.HE",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "KONTR.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "KRDMD.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "KTLEV.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "KUYAS.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "LACOMERU.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "LASITIOSB.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "LEI.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "LENV.VI",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "LGEN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "LIFCOb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "LIVEPOLC.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "LLOY.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "LMP.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "LNK.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "LOGN.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "LONN.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "LSEG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "LUMI.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "LWDB.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "LXI.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MAB.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MACF.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MAERSK-A.CO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MAERSK-B.CO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MAGEN.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "MALLPLAZA.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "MARS.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MASTER.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "MAVI.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "MBH.BD",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "MCI.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MCRO.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MEGACPO.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MEGP.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "METR.BA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "MFEA.MI",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MGNS.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MGROS.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "MIATK.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "MIO.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MIRG.BA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "MKS.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MMAM.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MNDI.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MNG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MNKS.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MOL.BD",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "MOL.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "MONY.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MPARK.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "MRC.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MRCH.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MRFG3.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MRO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MRO.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MSLH.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MTBA.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MTELEKOM.BD",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "MTO.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MTS.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MUT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MWY.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "MYI.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NAS.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NDA-DK.CO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NDA-FI.HE",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NDA-SE.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NESF.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NESN.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "NETW.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NEX.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NIBE-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NIBEb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NOLAb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NOVN.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "NOVO-B.CO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NRR.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NSIS-B.CO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NTCO3.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "NZYM-B.CO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "OBAMS.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "OCDO.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "OCI.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ODAS.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "OPAP.AT",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "OPDE.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "OPUS.BD",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ORE.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ORIT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ORM.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "OSB.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "OTKAR.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "OTP.BD",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "OTP.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "OVB.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "OXIG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "OYAKC.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "PAMP.BA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "PANN.BD",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "PANNERGY.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "PARAUCO.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "PASEU.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "PATEK.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "PENP.PR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PETKM.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "PETR3.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PFC.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PGH.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PGHN.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "PGN.WA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PGS.OL",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PGSUS.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "PHMR.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PHNX.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PHP.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PIN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PINFRAL.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PNL.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PNN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PPR.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PRR.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PSGYO.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "PSH.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PSI.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PSON.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PTR.IR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PURMO.HE",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "PZCC.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "QBR-B.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "QIA.DE",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "QLT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "QQ.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "QUAGR.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "QUINENCO.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "RA.MX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "RABA.BD",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "RABA.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "RABA.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "RAIZ4.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "RALYH.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "RAT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "RCI-B.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "RCP.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "REDD.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "REEDR.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "REI-UN.TO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "REL.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "REN.AS",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "REN.LS",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "RENT4.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "RHIM.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "RICA.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "RICHT.BD",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "RICHT.BU",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "RIPLEY.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "RK.OL",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "RMV.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "RO.SW",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ROCK-B.CO",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "ROR.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "RSW.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "RWE.PR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "RWI.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SAA1V.HE",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SAAB-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SAHOL.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "SAIN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SALFACORP.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "SAMI.BA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "SARKY.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "SAS.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SASA.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "SBRY.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SCA-A.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SCA-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SCAb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SCF.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SCHB.OL",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SCHP.SW",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SCIN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SCMN.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "SCT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SDP.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SDR.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SDZ.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "SEB-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SEBA.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SECU-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SECUB.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SGE.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SGRE.MC",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SGRO.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SHB-A.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SHBA.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SHED.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SIGMA.PR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SIKA.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "SISE.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "SIV.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SIVBQ",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SKA-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SKAb.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SKBNK.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "SKC.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SKF-B.ST",
+  "ticker": "ADM.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SKFb.ST",
+  "ticker": "AEP.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SKG.L",
+  "ticker": "AMC.AX",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SKI.AX",
+  "ticker": "APAM.MC",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SKODA.PR",
+  "ticker": "BA.L",
   "reason": "sin_datos"
- },
- {
-  "ticker": "SLHN.SS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "SLR.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SMH",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SMIN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SMT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SMU.SN",
-  "reason": "sin_mapeo_mercado"
  },
  {
-  "ticker": "SMWH.L",
+  "ticker": "BBY.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SNR.L",
+  "ticker": "BCG.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SNZ.AX",
+  "ticker": "BLND.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SOI.L",
+  "ticker": "BMY.L",
   "reason": "sin_datos"
- },
- {
-  "ticker": "SOKM.IS",
-  "reason": "sin_mapeo_mercado"
  },
  {
-  "ticker": "SOLG.L",
+  "ticker": "CNA.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SONI.LS",
+  "ticker": "COST.L",
   "reason": "sin_datos"
- },
- {
-  "ticker": "SOON.SS",
-  "reason": "sin_mapeo_mercado"
  },
  {
-  "ticker": "SPI.L",
+  "ticker": "CWK.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SPI.VI",
+  "ticker": "DOCS.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SPX.L",
+  "ticker": "ECO.MC",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SQM-B.SN",
+  "ticker": "ECL.SN",
   "reason": "sin_mapeo_mercado"
  },
  {
-  "ticker": "SRBANK.OL",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SRENH.SS",
+  "ticker": "EFOR.IS",
   "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "SRN.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "SRP.L",
-  "reason": "sin_datos"
  },
  {
-  "ticker": "SRS.MI",
+  "ticker": "FOUR.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SRU-UN.TO",
+  "ticker": "FPH.AX",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SSABb.ST",
+  "ticker": "GEN.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SSABBH.HE",
+  "ticker": "GNS.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SSE.L",
+  "ticker": "HAS.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SSON.L",
+  "ticker": "HRI.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SSPG.L",
+  "ticker": "IAG.MC",
   "reason": "sin_datos"
  },
  {
-  "ticker": "STAE.DE",
+  "ticker": "IAG.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "STAN.L",
+  "ticker": "ICG.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "STEAV.HE",
+  "ticker": "III.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "STJ.L",
+  "ticker": "JD.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "STLAP.PA",
+  "ticker": "LAND.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "STOCK.PR",
+  "ticker": "NWG.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SUPR.L",
+  "ticker": "MGAM.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SVS.L",
+  "ticker": "NG.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SVT.L",
+  "ticker": "AAL.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SVW.AX",
+  "ticker": "NXT.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SWED-A.ST",
+  "ticker": "PAC.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SWEDA.ST",
+  "ticker": "PAG.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SWR.IR",
+  "ticker": "PAY.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SWR.L",
+  "ticker": "PHI.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SXS.L",
+  "ticker": "PETS.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "SYNC.L",
+  "ticker": "PRU.L",
   "reason": "sin_datos"
- },
- {
-  "ticker": "TABGD.IS",
-  "reason": "sin_mapeo_mercado"
  },
  {
-  "ticker": "TABK.PR",
+  "ticker": "PSN.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "TATE.L",
+  "ticker": "RR.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "TAVHL.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "TBCG.L",
+  "ticker": "SAFE.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "TCAP.L",
+  "ticker": "SHC.L",
   "reason": "sin_datos"
- },
- {
-  "ticker": "TCELL.IS",
-  "reason": "sin_mapeo_mercado"
  },
  {
-  "ticker": "TEC.MC",
+  "ticker": "SN.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "TECK-B.TO",
+  "ticker": "SRE.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "TECO2.BA",
+  "ticker": "SUPV.BA",
   "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "TEL2-B.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "TEL2b.ST",
-  "reason": "sin_datos"
  },
  {
-  "ticker": "TELEC.PR",
+  "ticker": "TEM.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "TENERGY.AT",
+  "ticker": "TSCO.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "TEP.L",
+  "ticker": "TW.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "TETT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "TETY.ST",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "TGNO4.BA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "TGR.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "TGSU2.BA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "THRL.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "THYAO.IS",
+  "ticker": "CEPU.BA",
   "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "TIFS.L",
-  "reason": "sin_datos"
  },
  {
-  "ticker": "TKFEN.IS",
+  "ticker": "EDN.BA",
   "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "TMPL.L",
-  "reason": "sin_datos"
  },
  {
-  "ticker": "TOASO.IS",
+  "ticker": "LOMA.BA",
   "reason": "sin_mapeo_mercado"
  },
  {
-  "ticker": "TOT.IR",
+  "ticker": "AIR.MC",
   "reason": "sin_datos"
  },
  {
-  "ticker": "TPK.L",
+  "ticker": "AHG.AX",
   "reason": "sin_datos"
- },
- {
-  "ticker": "TPM.AX",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "TPT.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "TRALT.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "TRAN.BA",
-  "reason": "sin_mapeo_mercado"
  },
  {
-  "ticker": "TRELb.ST",
+  "ticker": "AHT.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "TRENJ.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "TRIG.L",
+  "ticker": "AIR.DE",
   "reason": "sin_datos"
  },
  {
-  "ticker": "TRMET.IS",
+  "ticker": "ALC.SS",
   "reason": "sin_mapeo_mercado"
  },
  {
-  "ticker": "TRY.L",
+  "ticker": "AMCR.AX",
   "reason": "sin_datos"
- },
- {
-  "ticker": "TSKB.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "TTKOM.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "TTRAK.IS",
-  "reason": "sin_mapeo_mercado"
  },
  {
-  "ticker": "TUI.L",
+  "ticker": "APPS.MC",
   "reason": "sin_datos"
  },
  {
-  "ticker": "TUKAS.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "TUPRS.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "TXAR.BA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "TYR.L",
+  "ticker": "APT.AX",
   "reason": "sin_datos"
  },
  {
-  "ticker": "UBSG.SS",
+  "ticker": "BBAR.BA",
   "reason": "sin_mapeo_mercado"
  },
  {
-  "ticker": "UCI.MC",
+  "ticker": "CMBT.OL",
   "reason": "sin_datos"
- },
- {
-  "ticker": "UHR.SS",
-  "reason": "sin_mapeo_mercado"
  },
  {
-  "ticker": "UKCM.L",
+  "ticker": "CAKE.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "UKW.L",
+  "ticker": "CAT.MC",
   "reason": "sin_datos"
  },
  {
-  "ticker": "ULKER.IS",
+  "ticker": "CFR.SS",
   "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ULVR.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "UN01.DE",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "UNA.AS",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "UNIP.PR",
-  "reason": "sin_datos"
  },
  {
-  "ticker": "UPH.IR",
+  "ticker": "CIM.AX",
   "reason": "sin_datos"
  },
  {
-  "ticker": "URW.AS",
+  "ticker": "CLH.AX",
   "reason": "sin_datos"
  },
  {
-  "ticker": "USA.L",
+  "ticker": "COE.AX",
   "reason": "sin_datos"
  },
  {
-  "ticker": "UTG.L",
+  "ticker": "CRH.IR",
   "reason": "sin_datos"
  },
  {
-  "ticker": "UU.L",
+  "ticker": "CSR.AX",
   "reason": "sin_datos"
  },
  {
-  "ticker": "VAIG.L",
+  "ticker": "FSV.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "VAKBN.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "VAPORES.SN",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "VCT.L",
+  "ticker": "GCO.MC",
   "reason": "sin_datos"
  },
  {
-  "ticker": "VESTL.IS",
+  "ticker": "GGAL.BA",
   "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "VIG.PR",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "VLE.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "VNA.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "VOF.L",
-  "reason": "sin_datos"
  },
  {
-  "ticker": "VOLCARb.ST",
+  "ticker": "GRI.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "VOLV-B.ST",
+  "ticker": "HL.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "VOLVB.ST",
+  "ticker": "ING.AS",
   "reason": "sin_datos"
  },
  {
-  "ticker": "VP.L",
+  "ticker": "KB.PR",
   "reason": "sin_datos"
  },
  {
-  "ticker": "VSVS.L",
+  "ticker": "LRE.MC",
   "reason": "sin_datos"
  },
  {
-  "ticker": "VTI",
+  "ticker": "MAGN.AS",
   "reason": "sin_datos"
  },
  {
-  "ticker": "VTWR.DE",
+  "ticker": "MT.PA",
   "reason": "sin_datos"
  },
  {
-  "ticker": "VTY.L",
+  "ticker": "PRI.MC",
   "reason": "sin_datos"
  },
  {
-  "ticker": "VUK.AX",
+  "ticker": "PRAA.PR",
   "reason": "sin_datos"
- },
- {
-  "ticker": "WABER.BU",
-  "reason": "sin_mapeo_mercado"
  },
  {
-  "ticker": "WABERERS.BD",
+  "ticker": "ROG.SS",
   "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "WALLB.ST",
-  "reason": "sin_datos"
  },
  {
-  "ticker": "WAM.AX",
+  "ticker": "RKT.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "WDP.AS",
+  "ticker": "ROG.SW",
   "reason": "sin_datos"
  },
  {
-  "ticker": "WEIR.L",
+  "ticker": "RTO.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "WG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "WISE.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "WIZZ.BD",
+  "ticker": "SAN.SN",
   "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "WIZZ.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "WKP.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "WOSG.L",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "WRK",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "WSON33.SA",
-  "reason": "sin_datos"
- },
- {
-  "ticker": "WTAN.L",
-  "reason": "sin_datos"
  },
  {
-  "ticker": "WTB.L",
+  "ticker": "SER.L",
   "reason": "sin_datos"
  },
  {
-  "ticker": "WWH.L",
+  "ticker": "SHEL.AS",
   "reason": "sin_datos"
  },
  {
-  "ticker": "XAR.L",
+  "ticker": "SQM.MC",
   "reason": "sin_datos"
  },
  {
-  "ticker": "XPS.L",
+  "ticker": "STM.MI",
   "reason": "sin_datos"
  },
  {
-  "ticker": "YKBNK.IS",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "YPFD.BA",
-  "reason": "sin_mapeo_mercado"
- },
- {
-  "ticker": "ZEG.L",
+  "ticker": "SW.IR",
   "reason": "sin_datos"
  },
  {
-  "ticker": "ZOD.IR",
+  "ticker": "ZTS.AX",
   "reason": "sin_datos"
- },
- {
-  "ticker": "ZWACK.BU",
-  "reason": "sin_mapeo_mercado"
  }
 ]

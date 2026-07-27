@@ -8,6 +8,7 @@ import FinancialTables from '@/components/empresa/FinancialTables'
 import StatementCharts from '@/components/empresa/StatementCharts'
 import FinanzasDeepDive, { FinanzasKpis } from '@/components/empresa/FinanzasSections'
 import FollowButton from '@/components/watchlist/FollowButton'
+import InfografiaButton from '@/components/InfografiaButton'
 import ScoreHistory from '@/components/empresa/ScoreHistory'
 import AnalystEstimates from '@/components/empresa/AnalystEstimates'
 import IncomeSankey from '@/components/empresa/IncomeSankey'
@@ -1700,6 +1701,7 @@ export default function CompanyDetailPage(props) {
           <Link href={`/cartera/nueva-posicion?ticker=${encodeURIComponent(ticker)}`} style={{ fontSize: 12, fontWeight: 700, color: 'var(--positive)', background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.25)', padding: '6px 12px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>+ Cartera</Link>
           <FollowButton ticker={ticker} name={name} currency={currency} isAuthed={isAuthed} isPremium={isPremium} entry={watchEntry} />
           <Link href={`/comparador?tickers=${encodeURIComponent(ticker)}`} style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', padding: '6px 12px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>Comparar →</Link>
+          <InfografiaButton kind="empresa" ticker={ticker} isPremium={isPremium} style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', padding: '6px 12px', borderRadius: 8, whiteSpace: 'nowrap', fontFamily: 'inherit' }} />
           {dailyPrice && (
             <span style={{ fontSize: 10, color: 'var(--text-faint)', marginLeft: 'auto' }}>
               {dailyPrice.isToday

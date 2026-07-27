@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts'
 import { project10y, paybackYear, getWHT, RADAR_METRICS } from '@/lib/screener'
 import { getCountry, streakBadge, debtEbitdaIsArtifact } from '@/lib/helpers'
+import InfografiaButton from '@/components/InfografiaButton'
 
 const CC = ['var(--positive)', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6']
 
@@ -321,9 +322,12 @@ export default function ComparadorClient({ initialCompanies = [], options = [], 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-strong)' }}>Comparador de empresas</h1>
         {companies.length > 0 && (
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <button onClick={exportCSV} style={miniBtn}>↓ CSV</button>
             <button onClick={exportPNG} style={miniBtn}>↓ PNG</button>
+            {companies.length >= 2 && (
+              <InfografiaButton kind="comparador" tickers={companies.slice(0, 2).map(c => c.ticker)} isPremium={isPremium} style={miniBtn} />
+            )}
             <button onClick={clearAll} style={{ ...miniBtn, color: 'var(--negative)' }}>✕ Limpiar</button>
           </div>
         )}
