@@ -2,7 +2,6 @@
 // serverless de Vercel). Reutiliza una única instancia de navegador entre invocaciones
 // para minimizar arranques en frío. En local usa el Chrome/Chromium del sistema si existe.
 import puppeteerCore from 'puppeteer-core'
-import chromium from '@sparticuz/chromium'
 
 let browserPromise = null
 
@@ -11,9 +10,28 @@ function localExecutable() {
   const envPath = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH
   if (envPath) return envPath
   const p = process.platform
-  if (p === 'win32') return 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+  if (p === 'win32') return 'C:/Program Files/Google/Chrome/Application/chrome.exe'
   if (p === 'darwin') return '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
   return '/usr/bin/google-chrome'
+}
+
+// @sparticuz/chromium decide si extrae sus librerías compartidas (libnss3, etc.) y fija
+// LD_LIBRARY_PATH según AWS_EXECUTION_ENV / AWS_LAMBDA_JS_RUNTIME. En Vercel esas variables
+// no coinciden con lo que espera → NO extrae las librerías y Chromium falla con
+// "libnss3.so: cannot open shared object file". Forzamos la rama AL2023 (glibc moderna,
+// la de Vercel) fijando la variable ANTES de importar el módulo, y por eso el import es
+// dinámico dentro de getBrowser (garantiza el orden respecto al setup de nivel de módulo).
+async function launchServerless() {
+  if (!process.env.AWS_EXECUTION_ENV && !process.env.AWS_LAMBDA_JS_RUNTIME) {
+    process.env.AWS_LAMBDA_JS_RUNTIME = 'nodejs20.x'
+  }
+  const chromium = (await import('@sparticuz/chromium')).default
+  return puppeteerCore.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: true,
+  })
 }
 
 async function getBrowser() {
@@ -26,12 +44,7 @@ async function getBrowser() {
   }
   const isServerless = !!process.env.AWS_LAMBDA_FUNCTION_NAME || !!process.env.VERCEL
   browserPromise = isServerless
-    ? puppeteerCore.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: true,
-      })
+    ? launchServerless()
     : puppeteerCore.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
         executablePath: localExecutable(),
