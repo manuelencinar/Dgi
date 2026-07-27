@@ -8,6 +8,7 @@
 // imposición del 15%), vía netYield/effectiveDivTax. Se muestran bruto y neto.
 import { createClient } from '@supabase/supabase-js'
 import { DICT } from '@/data/dict'
+import { PROFILES } from '@/data/profiles'
 import { buildComparadorCompanies } from '@/lib/comparador'
 import { dividendSafety } from '@/lib/dividend-safety'
 import { detectSectorType } from '@/lib/dgi-score'
@@ -17,9 +18,10 @@ import { SUPERSECTORS } from '@/lib/supersectors'
 // España fija para la infografía (decisión de producto).
 export const ES_DEST_WHT = 19
 
-// Colores de columna por POSICIÓN (garantiza dos columnas distinguibles aunque las dos
-// empresas sean del mismo sector). El sector se muestra como chip en su color de supersector.
-export const COLUMN_COLORS = ['#818cf8', '#2dd4bf', '#fbbf24', '#f472b6', '#60a5fa']
+// Colores de columna por POSICIÓN (garantiza dos columnas distinguibles). Azul vs rojo
+// para el caso de 2 empresas (contraste tipo "hoja de comparación"). El sector se muestra
+// como chip en su color de supersector.
+export const COLUMN_COLORS = ['#1d4ed8', '#dc2626', '#d97706', '#0d9488', '#7c3aed']
 
 const num = v => (v != null && !isNaN(v)) ? parseFloat(v) : null
 const clampStar = n => Math.max(1, Math.min(5, Math.round(n)))
@@ -51,8 +53,55 @@ function starsIncrease(payout, streak, safetyScore) {
 }
 
 // Enriquecimiento extra (no está en el modelo del comparador): seguridad del dividendo,
-// yield medio histórico y % de reducción de acciones (política de recompra).
-const EXTRA_FIELDS = 'ticker, sector, industry, div_history, div_streak, payout_fcf, payout_eps, net_debt_ebitda, debt_ebitda, interest_coverage, yield_avg, yield_avg_years, shares_reduced_pct, revenue_cagr5, fcf_cagr5'
+// yield medio histórico, % de reducción de acciones (política de recompra) y fechas de
+// resultados.
+const EXTRA_FIELDS = 'ticker, sector, industry, div_history, div_streak, payout_fcf, payout_eps, net_debt_ebitda, debt_ebitda, interest_coverage, yield_avg, yield_avg_years, shares_reduced_pct, revenue_cagr5, fcf_cagr5, gross_margin, roic_display, market_cap_m, next_earnings_date, last_report_period, last_report_date'
+
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+function fmtDate(d) {
+  if (!d) return null
+  const dt = new Date(d)
+  if (isNaN(dt)) return null
+  return `${dt.getDate()} ${MESES[dt.getMonth()]} ${dt.getFullYear()}`
+}
+function fmtCap(m) {
+  const v = num(m)
+  if (v == null) return null
+  if (v >= 1e6) return `${(v / 1e6).toFixed(1)} B`   // millones → billones (europeos)
+  if (v >= 1e3) return `${(v / 1e3).toFixed(1)} MM`
+  return `${Math.round(v)} M`
+}
+
+// Fortalezas (señales positivas) derivadas de datos — hasta 4.
+function buildStrengths(c, ex) {
+  const out = []
+  if (c.moat === 'wide') out.push('Ventaja competitiva amplia y duradera')
+  else if (c.moat === 'narrow') out.push('Ventaja competitiva presente')
+  if (c.streak >= 50) out.push(`Rey del dividendo: ${c.streak} años subiéndolo`)
+  else if (c.streak >= 25) out.push(`Aristócrata: ${c.streak} años subiendo el dividendo`)
+  else if (c.streak >= 10) out.push(`Aspirante: ${c.streak} años consecutivos de subidas`)
+  if (c.roic != null && c.roic > 15) out.push(`Rentabilidad del capital elevada (ROIC ${c.roic.toFixed(0)}%)`)
+  if (c.grossMargin != null && c.grossMargin > 45) out.push(`Márgenes brutos sólidos (${c.grossMargin.toFixed(0)}%)`)
+  if (c.cagr != null && c.cagr > 8) out.push(`Dividendo creciendo al ${c.cagr.toFixed(1)}%/año`)
+  if (c.mos != null && c.mos > 15) out.push(`Cotiza un ${c.mos.toFixed(0)}% por debajo de su valor`)
+  const sr = num(ex.shares_reduced_pct)
+  if (sr != null && sr > 1) out.push(`Recompra acciones (−${sr.toFixed(1)}% en circulación)`)
+  return out.slice(0, 4)
+}
+
+// Riesgos (señales negativas) derivados de datos — hasta 3.
+function buildRisks(c, ex) {
+  const out = []
+  if (c.debt != null && c.debt > 4) out.push(`Deuda elevada (${c.debt.toFixed(1)}× EBITDA)`)
+  if (c.revCagr != null && c.revCagr < 0) out.push(`Ingresos en declive (${c.revCagr.toFixed(1)}%)`)
+  const payout = num(ex.payout_fcf) ?? num(ex.payout_eps)
+  if (payout != null && payout > 85) out.push(`Payout alto (${payout.toFixed(0)}%): poco margen`)
+  if (c.mos != null && c.mos < -15) out.push(`Cotiza un ${Math.abs(c.mos).toFixed(0)}% por encima de su valor`)
+  if (c.safety && c.safety.score < 50) out.push(`Seguridad del dividendo a vigilar (${c.safety.score}/100)`)
+  if (c.cagr != null && c.cagr >= 0 && c.cagr < 2) out.push('Crecimiento del dividendo muy bajo')
+  if (!out.length) out.push('Sin riesgos destacables en los datos')
+  return out.slice(0, 3)
+}
 
 async function fetchExtra(tickers) {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -111,19 +160,27 @@ export async function buildInfographicModels(tickers) {
       total: c.score,
     }
 
-    // Filas de la tabla comparativa (icono + etiqueta + valor por empresa).
+    const recompra = sharesRed != null
+      ? (sharesRed > 0.5 ? `−${sharesRed.toFixed(1)}%` : (sharesRed < -0.5 ? `+${Math.abs(sharesRed).toFixed(1)}% (dilución)` : '≈ 0%'))
+      : '—'
+
+    // Filas de la tabla financiera central (icono + etiqueta + valor por empresa).
     const metrics = [
-      { icon: '💰', label: 'Yield bruto',        value: yieldGross != null ? `${yieldGross.toFixed(2)}%` : '—' },
-      { icon: '🇪🇸', label: 'Yield neto (ES)',     value: yieldNet != null ? `${yieldNet.toFixed(2)}%` : '—' },
-      { icon: '📅', label: 'Años consecutivos',   value: c.streak != null ? `${c.streak}` : '—' },
-      { icon: '📈', label: 'CAGR dividendo 5a',   value: c.cagr != null ? `${c.cagr.toFixed(1)}%` : '—' },
-      { icon: '🧾', label: 'Payout',              value: payout != null ? `${payout.toFixed(0)}%` : '—' },
-      { icon: '⚙️', label: 'ROIC',                value: c.roic != null ? `${c.roic.toFixed(1)}%` : '—' },
-      { icon: '📊', label: 'Margen operativo',    value: c.opMargin != null ? `${c.opMargin.toFixed(1)}%` : '—' },
-      { icon: '🏦', label: 'Deuda neta / EBITDA', value: c.debt != null ? `${c.debt.toFixed(1)}×` : '—' },
-      { icon: '🔁', label: 'Recompra (acciones)', value: sharesRed != null ? (sharesRed > 0.5 ? `−${sharesRed.toFixed(1)}%` : (sharesRed < -0.5 ? `+${Math.abs(sharesRed).toFixed(1)}% (dilución)` : '≈0%')) : '—' },
-      { icon: '🌱', label: 'Crecim. ingresos 5a', value: c.revCagr != null ? `${c.revCagr.toFixed(1)}%` : '—' },
+      { icon: '💰', label: 'Rentabilidad bruta',   value: yieldGross != null ? `${yieldGross.toFixed(2)}%` : '—' },
+      { icon: '🇪🇸', label: 'Rentab. neta (ES)',    value: yieldNet != null ? `${yieldNet.toFixed(2)}%` : '—' },
+      { icon: '📅', label: 'Años subiendo dividendo', value: c.streak != null ? `${c.streak}` : '—' },
+      { icon: '🧾', label: 'Payout',               value: payout != null ? `${payout.toFixed(0)}%` : '—' },
+      { icon: '📈', label: 'Crecim. dividendo 5a',  value: c.cagr != null ? `${c.cagr.toFixed(1)}%` : '—' },
+      { icon: '🌱', label: 'Crecim. ingresos 5a',   value: c.revCagr != null ? `${c.revCagr.toFixed(1)}%` : '—' },
+      { icon: '📊', label: 'Margen operativo',      value: c.opMargin != null ? `${c.opMargin.toFixed(1)}%` : '—' },
+      { icon: '⚙️', label: 'ROIC',                  value: c.roic != null ? `${c.roic.toFixed(1)}%` : '—' },
+      { icon: '🏦', label: 'Deuda neta / EBITDA',   value: c.debt != null ? `${c.debt.toFixed(1)}×` : '—' },
+      { icon: '🔁', label: 'Recompra de acciones',  value: recompra },
     ]
+
+    const safetyLite = safety?.available ? { score: safety.score, grade: safety.grade, color: safety.color } : null
+    const strengths = buildStrengths(c, ex)
+    const risks = buildRisks({ ...c, safety: safetyLite }, ex)
 
     return {
       ticker: c.ticker,
@@ -134,8 +191,13 @@ export async function buildInfographicModels(tickers) {
       superKey, superLabel: superMeta.label, superColor: superMeta.color,
       columnColor: COLUMN_COLORS[i % COLUMN_COLORS.length],
       moat: c.moat,
+      profile: PROFILES[c.ticker] || null,
+      marketCap: fmtCap(ex.market_cap_m),
+      nextEarnings: fmtDate(ex.next_earnings_date),
+      lastReport: ex.last_report_period || null,
+      strengths, risks,
       yieldGross, yieldNet, yieldVsAvg,
-      safety: safety?.available ? { score: safety.score, grade: safety.grade, color: safety.color } : null,
+      safety: safetyLite,
       mos: c.mos,
       pe: c.pe,
       stars, scores, metrics,
@@ -143,6 +205,19 @@ export async function buildInfographicModels(tickers) {
       _score: c.score, _mos: c.mos, _yieldVsAvg: yieldVsAvg, _safety: safetyScore,
     }
   })
+}
+
+// Resumen rápido (checkmarks) — puntos en COMÚN de ambas empresas, solo datos.
+export function buildCommonNotes(models) {
+  if (!models || models.length < 2) return []
+  const [a, b] = models
+  const out = []
+  if (a._score != null && b._score != null && Math.min(a._score, b._score) >= 7) out.push('Ambas obtienen una puntuación DGI alta.')
+  if (a.moat !== 'none' && b.moat !== 'none') out.push('Ambas tienen ventaja competitiva identificada.')
+  if (a.safety && b.safety && Math.min(a.safety.score, b.safety.score) >= 70) out.push('El dividendo es seguro en las dos.')
+  if (a._mos != null && b._mos != null && Math.min(a._mos, b._mos) > 0) out.push('Las dos cotizan por debajo de su valor estimado.')
+  if (!out.length) out.push('Ambas son empresas de referencia para el inversor DGI.')
+  return out.slice(0, 3)
 }
 
 // Veredicto "¿cuál compraría hoy?" — SOLO derivado de datos, sin frases subjetivas.

@@ -1,172 +1,318 @@
 // Plantilla HTML/CSS de la infografía (se convierte a PDF con Puppeteer). Separada del
-// endpoint y reutilizable. Estilo "hoja de comparación financiera": columnas con color de
-// marca por posición + chip de sector, tabla comparativa fila a fila, estrellas de
-// dividendo, tabla de puntuación /10 y veredicto derivado solo de datos. Sin logos.
-import { buildVerdict, buildSingleVerdict } from '@/lib/infografia-data'
+// endpoint y reutilizable. Estilo "hoja de comparación financiera" (horizontal, 3 columnas):
+// empresa A a la izquierda + tabla financiera central + empresa B a la derecha, cada una
+// con su color de marca. Secciones Negocio / Fortalezas / Riesgos / Próximos resultados,
+// estrellas de dividendo, tabla de puntuación /10 y veredicto. Sin logos.
+import { buildVerdict, buildSingleVerdict, buildCommonNotes } from '@/lib/infografia-data'
 
 const DISCLAIMER = 'Este documento tiene fines informativos y no constituye asesoramiento financiero ni recomendación de inversión.'
 
 const esc = s => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
-// Estrellas ★ (llenas) / ☆ (vacías) — n de 1..5, null → guion.
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+function hoyLargo() {
+  const d = new Date()
+  return `${MESES[d.getMonth()]} de ${d.getFullYear()}`
+}
+
+// Estrellas ★ / ☆ — n de 1..5.
 function stars(n, color) {
   if (n == null) return '<span class="star-na">—</span>'
   let out = ''
-  for (let i = 1; i <= 5; i++) out += `<span class="star" style="color:${i <= n ? color : 'rgba(148,163,184,.35)'}">${i <= n ? '★' : '☆'}</span>`
+  for (let i = 1; i <= 5; i++) out += `<span class="star" style="color:${i <= n ? color : '#d7deea'}">${i <= n ? '★' : '☆'}</span>`
   return out
 }
-
 function scoreColor(v) {
   if (v == null) return '#94a3b8'
-  return v >= 8 ? '#34d399' : v >= 6.5 ? '#a3e635' : v >= 5 ? '#fbbf24' : v >= 3.5 ? '#fb923c' : '#f87171'
+  return v >= 8 ? '#16a34a' : v >= 6.5 ? '#65a30d' : v >= 5 ? '#d97706' : v >= 3.5 ? '#ea580c' : '#dc2626'
 }
+function moatLabel(m) { return m === 'wide' ? 'Ventaja amplia' : m === 'narrow' ? 'Ventaja presente' : 'Sin foso claro' }
 
-const BASE_CSS = `
+const CSS = `
+  @page { size: A4 landscape; margin: 0; }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Figtree','Segoe UI',system-ui,sans-serif; color:#0f172a; background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  .page { width:794px; min-height:1123px; margin:0 auto; padding:34px 38px 70px; position:relative; }
-  .brandbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
-  .brand { font-size:20px; font-weight:800; letter-spacing:-.02em; }
-  .brand .dot { color:#818cf8; }
-  .subtitle { font-size:11px; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:.12em; }
-  .cols { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px; }
-  .col1 { grid-template-columns:1fr; }
-  .cardhead { border-radius:14px; padding:16px 18px; color:#fff; position:relative; overflow:hidden; }
-  .cardhead .tk { font-size:13px; font-weight:700; opacity:.9; letter-spacing:.04em; }
-  .cardhead .nm { font-size:21px; font-weight:800; line-height:1.1; margin-top:2px; }
-  .chip { display:inline-block; margin-top:9px; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px; background:rgba(255,255,255,.22); }
-  .totbox { position:absolute; top:14px; right:16px; text-align:center; background:rgba(255,255,255,.16); border-radius:10px; padding:6px 10px; }
-  .totbox .v { font-size:22px; font-weight:800; line-height:1; }
-  .totbox .l { font-size:8.5px; font-weight:700; opacity:.85; letter-spacing:.08em; }
-  h2 { font-size:13px; font-weight:800; color:#334155; margin:20px 0 9px; display:flex; align-items:center; gap:7px; }
-  h2:before { content:''; width:4px; height:14px; border-radius:2px; background:#818cf8; display:inline-block; }
+  body { font-family:'Figtree','Segoe UI',system-ui,sans-serif; color:#1e293b; background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .page { width:1123px; min-height:794px; margin:0 auto; padding:22px 26px 54px; position:relative; }
+  /* Cabecera */
+  .hero { display:grid; grid-template-columns:1fr 2fr 1fr; align-items:center; border-bottom:2px solid #e5e9f0; padding-bottom:12px; margin-bottom:14px; }
+  .hero .side { font-size:19px; font-weight:900; letter-spacing:-.01em; }
+  .hero .side.r { text-align:right; }
+  .hero .mid { text-align:center; }
+  .hero .mid .t { font-size:23px; font-weight:900; letter-spacing:-.02em; line-height:1.05; }
+  .hero .mid .t .vs { color:#94a3b8; font-weight:800; margin:0 8px; }
+  .hero .mid .s { font-size:10.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.14em; margin-top:4px; }
+  .hero .mid .d { font-size:9.5px; color:#94a3b8; margin-top:3px; }
+  .brandmark { font-size:12px; font-weight:800; color:#818cf8; }
+  /* Rejilla principal 3 columnas */
+  .grid3 { display:grid; grid-template-columns:1fr 1.15fr 1fr; gap:16px; }
+  /* Columnas laterales */
+  .side-col .sec { margin-bottom:11px; }
+  .side-col .sec .h { display:flex; align-items:center; gap:7px; font-size:10.5px; font-weight:900; text-transform:uppercase; letter-spacing:.06em; margin-bottom:5px; }
+  .side-col .sec .h .ic { width:19px; height:19px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff; flex:0 0 auto; }
+  .side-col .sec p { font-size:10.5px; line-height:1.5; color:#334155; }
+  .side-col .sec ul { list-style:none; }
+  .side-col .sec li { font-size:10px; line-height:1.42; color:#334155; padding-left:13px; position:relative; margin-bottom:3px; }
+  .side-col .sec li:before { content:''; position:absolute; left:2px; top:5px; width:5px; height:5px; border-radius:50%; background:#94a3b8; }
+  .side-col .sec ul.pos-list li:before { background:#16a34a; }
+  .side-col .sec ul.neg-list li:before { background:#f59e0b; }
+  .side-head { border-radius:12px; padding:11px 13px; color:#fff; margin-bottom:12px; }
+  .side-head .tk { font-size:11px; font-weight:800; opacity:.85; letter-spacing:.05em; }
+  .side-head .nm { font-size:18px; font-weight:900; line-height:1.08; margin-top:1px; }
+  .side-head .meta { font-size:9.5px; opacity:.9; margin-top:5px; font-weight:600; }
+  .side-head .chip { display:inline-block; margin-top:7px; font-size:9px; font-weight:800; padding:2px 8px; border-radius:999px; background:rgba(255,255,255,.22); }
+  /* Columna central */
+  .center .block { border:1px solid #e5e9f0; border-radius:12px; overflow:hidden; margin-bottom:12px; }
+  .center .block .title { font-size:11px; font-weight:900; text-align:center; text-transform:uppercase; letter-spacing:.08em; color:#334155; padding:8px; background:#f6f8fb; border-bottom:1px solid #e5e9f0; }
   table { width:100%; border-collapse:collapse; }
-  .cmp td, .cmp th { padding:8px 10px; font-size:12.5px; }
-  .cmp thead th { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#94a3b8; text-align:right; font-weight:700; }
-  .cmp thead th.lbl { text-align:left; }
-  .cmp tbody tr { border-top:1px solid #eef2f7; }
-  .cmp .lbl { text-align:left; color:#475569; font-weight:600; }
-  .cmp .lbl .ic { margin-right:6px; }
-  .cmp .val { text-align:right; font-weight:700; font-variant-numeric:tabular-nums; }
-  .stars-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; }
-  .col1 .stars-grid { grid-template-columns:1fr; }
-  .starrow { display:flex; align-items:center; justify-content:space-between; padding:7px 12px; background:#f8fafc; border:1px solid #eef2f7; border-radius:9px; }
-  .starrow .lab { font-size:11.5px; color:#475569; font-weight:600; }
-  .star { font-size:14px; }
-  .star-na { color:#94a3b8; }
-  .scoretab td { padding:7px 10px; font-size:12.5px; border-top:1px solid #eef2f7; }
-  .scoretab .cat { color:#475569; font-weight:600; }
-  .scoretab .sc { text-align:right; font-weight:800; font-variant-numeric:tabular-nums; }
-  .bar { height:6px; border-radius:3px; background:#eef2f7; overflow:hidden; margin-top:3px; }
-  .bar > span { display:block; height:100%; border-radius:3px; }
-  .verdict { margin-top:18px; background:#f1f5f9; border:1px solid #e2e8f0; border-left:4px solid #818cf8; border-radius:10px; padding:14px 16px; }
-  .verdict h3 { font-size:12.5px; font-weight:800; color:#1e293b; margin-bottom:7px; }
-  .verdict p { font-size:11.5px; color:#334155; line-height:1.55; margin-bottom:4px; }
-  .footer { position:absolute; bottom:26px; left:38px; right:38px; border-top:1px solid #e2e8f0; padding-top:9px; display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
-  .footer .disc { font-size:8.5px; color:#94a3b8; line-height:1.4; max-width:560px; }
-  .footer .mk { font-size:9px; color:#64748b; font-weight:700; white-space:nowrap; }
+  .cmp .colh { display:grid; grid-template-columns:1.35fr 1fr 1fr; }
+  .cmp .colh span { text-align:center; font-size:10px; font-weight:900; color:#fff; padding:5px 4px; }
+  .cmp .row { display:grid; grid-template-columns:1.35fr 1fr 1fr; align-items:center; border-top:1px solid #eef2f7; }
+  .cmp .row:nth-child(even) { background:#fbfcfe; }
+  .cmp .lbl { font-size:9.7px; color:#475569; font-weight:700; padding:6px 8px; display:flex; align-items:center; gap:5px; }
+  .cmp .lbl .ic { font-size:11px; }
+  .cmp .v { text-align:center; font-size:11.5px; font-weight:800; font-variant-numeric:tabular-nums; padding:6px 4px; }
+  .qual { display:grid; grid-template-columns:1fr 1fr; }
+  .qual .c { text-align:center; padding:9px 6px; }
+  .qual .c.b { border-left:1px solid #eef2f7; }
+  .qual .c .n { font-size:17px; font-weight:900; }
+  .qual .c .st { font-size:12px; margin-top:2px; }
+  .qual .c .lb { font-size:8.5px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+  .summary { padding:9px 12px; }
+  .summary li { list-style:none; font-size:10px; color:#334155; line-height:1.4; padding-left:17px; position:relative; margin-bottom:4px; }
+  .summary li:before { content:'✓'; position:absolute; left:0; top:0; color:#16a34a; font-weight:900; }
+  /* Franja inferior */
+  .bottom { display:grid; grid-template-columns:1fr 1.1fr 1fr; gap:16px; margin-top:2px; }
+  .panel { border:1px solid #e5e9f0; border-radius:12px; overflow:hidden; }
+  .panel .title { font-size:10.5px; font-weight:900; text-transform:uppercase; letter-spacing:.07em; color:#334155; padding:8px 10px; background:#f6f8fb; border-bottom:1px solid #e5e9f0; text-align:center; }
+  .scoretab { width:100%; }
+  .scoretab .hr { display:grid; grid-template-columns:1.4fr 1fr 1fr; }
+  .scoretab .hr span { text-align:center; font-size:9px; font-weight:900; color:#fff; padding:4px; }
+  .scoretab .rw { display:grid; grid-template-columns:1.4fr 1fr 1fr; align-items:center; border-top:1px solid #eef2f7; }
+  .scoretab .rw.tot { background:#f6f8fb; font-weight:900; }
+  .scoretab .cat { font-size:9.5px; color:#475569; font-weight:700; padding:5px 9px; }
+  .scoretab .sc { text-align:center; font-size:11px; font-weight:800; padding:5px; font-variant-numeric:tabular-nums; }
+  .scoretab .sc.win { position:relative; }
+  .verdict { padding:11px 13px; text-align:center; }
+  .verdict .trophy { font-size:22px; }
+  .verdict .win { font-size:14px; font-weight:900; margin:3px 0 6px; }
+  .verdict p { font-size:9.7px; color:#334155; line-height:1.45; margin-bottom:4px; text-align:left; }
+  .divstars { padding:9px 11px; }
+  .divstars .r { display:grid; grid-template-columns:1.2fr 1fr 1fr; align-items:center; padding:4px 0; border-top:1px solid #eef2f7; }
+  .divstars .r:first-child { border-top:none; }
+  .divstars .lab { font-size:9.3px; color:#475569; font-weight:700; }
+  .divstars .st { text-align:center; font-size:11px; }
+  .divstars .hd { display:grid; grid-template-columns:1.2fr 1fr 1fr; padding-bottom:3px; }
+  .divstars .hd span { text-align:center; font-size:9px; font-weight:900; }
+  .footer { position:absolute; bottom:16px; left:26px; right:26px; border-top:1px solid #e5e9f0; padding-top:7px; display:flex; justify-content:space-between; gap:16px; }
+  .footer .disc { font-size:8px; color:#94a3b8; line-height:1.35; max-width:640px; }
+  .footer .mk { font-size:8.5px; color:#64748b; font-weight:800; white-space:nowrap; }
 `
 
-function cardHead(m, showTotal = true) {
-  return `
-  <div class="cardhead" style="background:linear-gradient(135deg,${m.columnColor},${m.columnColor}cc)">
+// Cabecera de columna lateral (nombre + sector + capitalización).
+function sideHead(m) {
+  return `<div class="side-head" style="background:linear-gradient(135deg,${m.columnColor},${m.columnColor}cc)">
     <div class="tk">${esc(m.ticker)}</div>
     <div class="nm">${esc(m.name)}</div>
-    <span class="chip" style="border:1px solid ${m.superColor}">${esc(m.sectorLabel)}</span>
-    ${showTotal && m.scores.total != null ? `<div class="totbox"><div class="v">${m.scores.total.toFixed(1)}</div><div class="l">DGI /10</div></div>` : ''}
+    <div class="meta">${esc(m.sectorLabel)}${m.marketCap ? ` · Cap. ${esc(m.marketCap)} ${esc(m.currency)}` : ''}</div>
+    <span class="chip">${moatLabel(m.moat)}</span>
   </div>`
 }
 
-function starRows(m) {
-  const c = m.columnColor
-  const rows = [
-    ['Rentabilidad', m.stars.rentabilidad],
-    ['Seguridad', m.stars.seguridad],
-    ['Crecimiento histórico', m.stars.crecimiento],
-    ['Prob. de seguir subiendo', m.stars.incremento],
-  ]
-  return rows.map(([lab, n]) => `<div class="starrow"><span class="lab">${lab}</span><span>${stars(n, c)}</span></div>`).join('')
+// Secciones cualitativas de una columna lateral.
+function sideSections(m) {
+  const col = m.columnColor
+  const icon = t => `<span class="ic" style="background:${col}">${t}</span>`
+  return `
+    ${m.profile ? `<div class="sec"><div class="h" style="color:${col}">${icon('🏢')} Negocio</div><p>${esc(m.profile)}</p></div>` : ''}
+    <div class="sec"><div class="h" style="color:${col}">${icon('✓')} Fortalezas</div>
+      <ul class="pos-list">${m.strengths.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>
+    <div class="sec"><div class="h" style="color:${col}">${icon('!')} Riesgos</div>
+      <ul class="neg-list">${m.risks.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>
+    ${(m.nextEarnings || m.lastReport) ? `<div class="sec"><div class="h" style="color:${col}">${icon('📅')} Resultados</div>
+      <p>${m.lastReport ? `Últimos: <b>${esc(m.lastReport)}</b>` : ''}${m.lastReport && m.nextEarnings ? ' · ' : ''}${m.nextEarnings ? `Próximos: <b>${esc(m.nextEarnings)}</b>` : ''}</p></div>` : ''}
+  `
 }
 
-function scoreTable(m) {
-  const rows = [
-    ['Calidad del negocio', m.scores.calidad],
-    ['Dividendo', m.scores.dividendo],
-    ['Solidez financiera', m.scores.solidez],
-    ['Valoración', m.scores.valoracion],
-    ['Puntuación DGI final', m.scores.total],
-  ]
-  return `<table class="scoretab">${rows.map(([cat, v], i) => {
-    const col = scoreColor(v)
-    const bold = i === rows.length - 1 ? 'font-weight:800' : ''
-    return `<tr><td class="cat" style="${bold}">${cat}</td><td class="sc" style="color:${col};${bold}">${v != null ? v.toFixed(1) : '—'}<div class="bar"><span style="width:${v != null ? v * 10 : 0}%;background:${col}"></span></div></td></tr>`
-  }).join('')}</table>`
+function sideCol(m, sideClass) {
+  return `<div class="side-col ${sideClass}">${sideHead(m)}${sideSections(m)}</div>`
 }
-
-const shell = (title, inner, marker) => `<!doctype html><html lang="es"><head><meta charset="utf-8"><style>${BASE_CSS}</style></head><body><div class="page">
-  <div class="brandbar"><div class="brand">Ever<span class="dot">Div</span></div><div class="subtitle">${esc(title)}</div></div>
-  ${inner}
-  <div class="footer"><div class="disc">${DISCLAIMER}</div><div class="mk">everdiv.com · ${marker}</div></div>
-</div></body></html>`
 
 // ── COMPARADOR (2 empresas) ──────────────────────────────────────────────────
 export function renderComparadorHtml(models) {
   const [a, b] = models
   const verdict = buildVerdict(models)
-  const metricRows = a.metrics.map((row, i) => {
+  const notes = buildCommonNotes(models)
+
+  const finRows = a.metrics.map((row, i) => {
     const bv = b.metrics[i]
-    return `<tr><td class="lbl"><span class="ic">${row.icon}</span>${esc(row.label)}</td>
-      <td class="val" style="color:${a.columnColor}">${esc(row.value)}</td>
-      <td class="val" style="color:${b.columnColor}">${esc(bv ? bv.value : '—')}</td></tr>`
+    return `<div class="row">
+      <div class="lbl"><span class="ic">${row.icon}</span>${esc(row.label)}</div>
+      <div class="v" style="color:${a.columnColor}">${esc(row.value)}</div>
+      <div class="v" style="color:${b.columnColor}">${esc(bv ? bv.value : '—')}</div>
+    </div>`
   }).join('')
 
+  const scoreRows = [
+    ['Calidad del negocio', a.scores.calidad, b.scores.calidad],
+    ['Dividendo', a.scores.dividendo, b.scores.dividendo],
+    ['Solidez financiera', a.scores.solidez, b.scores.solidez],
+    ['Valoración', a.scores.valoracion, b.scores.valoracion],
+    ['Puntuación DGI final', a.scores.total, b.scores.total],
+  ].map(([cat, va, vb], i) => {
+    const tot = i === 4
+    const wa = va != null && vb != null && va >= vb, wb = vb != null && va != null && vb >= va
+    return `<div class="rw${tot ? ' tot' : ''}">
+      <div class="cat">${cat}</div>
+      <div class="sc" style="color:${scoreColor(va)};${wa ? 'font-weight:900' : ''}">${va != null ? va.toFixed(1) : '—'}</div>
+      <div class="sc" style="color:${scoreColor(vb)};${wb ? 'font-weight:900' : ''}">${vb != null ? vb.toFixed(1) : '—'}</div>
+    </div>`
+  }).join('')
+
+  const divStarRows = [
+    ['Rentabilidad', 'rentabilidad'],
+    ['Seguridad', 'seguridad'],
+    ['Crecimiento histórico', 'crecimiento'],
+    ['Prob. de seguir subiendo', 'incremento'],
+  ].map(([lab, k]) => `<div class="r"><div class="lab">${lab}</div>
+      <div class="st">${stars(a.stars[k], a.columnColor)}</div>
+      <div class="st">${stars(b.stars[k], b.columnColor)}</div></div>`).join('')
+
   const inner = `
-    <div class="cols">${cardHead(a)}${cardHead(b)}</div>
-
-    <h2>Comparativa financiera</h2>
-    <table class="cmp">
-      <thead><tr><th class="lbl">Métrica</th><th>${esc(a.ticker)}</th><th>${esc(b.ticker)}</th></tr></thead>
-      <tbody>${metricRows}</tbody>
-    </table>
-
-    <h2>Dividendo de un vistazo</h2>
-    <div class="cols">
-      <div><div style="font-size:11px;font-weight:800;color:${a.columnColor};margin-bottom:6px">${esc(a.ticker)}</div><div class="stars-grid" style="grid-template-columns:1fr">${starRows(a)}</div></div>
-      <div><div style="font-size:11px;font-weight:800;color:${b.columnColor};margin-bottom:6px">${esc(b.ticker)}</div><div class="stars-grid" style="grid-template-columns:1fr">${starRows(b)}</div></div>
+    <div class="hero">
+      <div class="side" style="color:${a.columnColor}">${esc(a.name)}</div>
+      <div class="mid">
+        <div class="t">${esc(a.name)}<span class="vs">vs</span>${esc(b.name)}</div>
+        <div class="s">Comparativa DGI · ${esc(hoyLargo())}</div>
+        <div class="d">Datos verificados a fecha actual</div>
+      </div>
+      <div class="side r" style="color:${b.columnColor}">${esc(b.name)}</div>
     </div>
 
-    <h2>Puntuación sobre 10</h2>
-    <div class="cols"><div>${scoreTable(a)}</div><div>${scoreTable(b)}</div></div>
+    <div class="grid3">
+      ${sideCol(a, 'left')}
 
-    ${verdict ? `<div class="verdict"><h3>¿Cuál compraría hoy?</h3>${verdict.lines.map(l => `<p>${esc(l)}</p>`).join('')}</div>` : ''}
+      <div class="center">
+        <div class="block cmp">
+          <div class="colh"><span style="background:#64748b">Métrica</span><span style="background:${a.columnColor}">${esc(a.ticker)}</span><span style="background:${b.columnColor}">${esc(b.ticker)}</span></div>
+          ${finRows}
+        </div>
+        <div class="block">
+          <div class="title">Calidad del negocio</div>
+          <div class="qual">
+            <div class="c"><div class="n" style="color:${a.columnColor}">${a.scores.calidad != null ? a.scores.calidad.toFixed(1) : '—'}<span style="font-size:10px;color:#94a3b8">/10</span></div><div class="st">${stars(a.scores.calidad != null ? Math.round(a.scores.calidad / 2) : null, a.columnColor)}</div><div class="lb">${esc(a.ticker)}</div></div>
+            <div class="c b"><div class="n" style="color:${b.columnColor}">${b.scores.calidad != null ? b.scores.calidad.toFixed(1) : '—'}<span style="font-size:10px;color:#94a3b8">/10</span></div><div class="st">${stars(b.scores.calidad != null ? Math.round(b.scores.calidad / 2) : null, b.columnColor)}</div><div class="lb">${esc(b.ticker)}</div></div>
+          </div>
+        </div>
+        ${notes.length ? `<div class="block"><div class="title">Resumen rápido</div><ul class="summary">${notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>` : ''}
+      </div>
+
+      ${sideCol(b, 'right')}
+    </div>
+
+    <div class="bottom">
+      <div class="panel">
+        <div class="title">Puntuación final (sobre 10)</div>
+        <div class="scoretab">
+          <div class="hr"><span style="background:#64748b"> </span><span style="background:${a.columnColor}">${esc(a.ticker)}</span><span style="background:${b.columnColor}">${esc(b.ticker)}</span></div>
+          ${scoreRows}
+        </div>
+      </div>
+      <div class="panel">
+        <div class="title">¿Cuál compraría hoy?</div>
+        <div class="verdict">
+          <div class="trophy">🏆</div>
+          ${verdict ? `<div class="win" style="color:${(verdict.winner === a.name ? a : b).columnColor}">${esc(verdict.winner)}</div>${verdict.lines.map(l => `<p>${esc(l)}</p>`).join('')}` : ''}
+        </div>
+      </div>
+      <div class="panel">
+        <div class="title">Dividendos</div>
+        <div class="divstars">
+          <div class="hd"><span></span><span style="color:${a.columnColor}">${esc(a.ticker)}</span><span style="color:${b.columnColor}">${esc(b.ticker)}</span></div>
+          ${divStarRows}
+        </div>
+      </div>
+    </div>
   `
-  return shell('Comparativa DGI', inner, `${a.ticker} vs ${b.ticker}`)
+  return shell(inner, `${a.ticker} vs ${b.ticker}`)
 }
 
-// ── FICHA (1 empresa) ─────────────────────────────────────────────────────────
+function shell(inner, marker) {
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><style>${CSS}</style></head><body><div class="page">
+  ${inner}
+  <div class="footer"><div class="disc">${DISCLAIMER}</div><div class="mk">everdiv.com · ${esc(marker)}</div></div>
+</div></body></html>`
+}
+
+// ── FICHA (1 empresa) — variante vertical de una sola columna ─────────────────
+const CSS_PORTRAIT = CSS.replace('size: A4 landscape', 'size: A4 portrait')
+  .replace('width:1123px; min-height:794px', 'width:794px; min-height:1123px')
+
 export function renderEmpresaHtml(m) {
   const verdict = buildSingleVerdict(m)
-  const metricRows = m.metrics.map(row =>
-    `<tr><td class="lbl"><span class="ic">${row.icon}</span>${esc(row.label)}</td><td class="val" style="color:${m.columnColor}">${esc(row.value)}</td></tr>`
-  ).join('')
+  const col = m.columnColor
+  const icon = t => `<span class="ic" style="background:${col}">${t}</span>`
+
+  const finRows = m.metrics.map(row => `<div class="row" style="grid-template-columns:1.6fr 1fr">
+    <div class="lbl"><span class="ic">${row.icon}</span>${esc(row.label)}</div>
+    <div class="v" style="color:${col}">${esc(row.value)}</div></div>`).join('')
+
+  const scoreRows = [
+    ['Calidad del negocio', m.scores.calidad],
+    ['Dividendo', m.scores.dividendo],
+    ['Solidez financiera', m.scores.solidez],
+    ['Valoración', m.scores.valoracion],
+    ['Puntuación DGI final', m.scores.total],
+  ].map(([cat, v], i) => `<div class="rw${i === 4 ? ' tot' : ''}" style="grid-template-columns:1.6fr 1fr">
+    <div class="cat">${cat}</div><div class="sc" style="color:${scoreColor(v)}">${v != null ? v.toFixed(1) : '—'}</div></div>`).join('')
+
+  const divStarRows = [
+    ['Rentabilidad', 'rentabilidad'], ['Seguridad', 'seguridad'],
+    ['Crecimiento histórico', 'crecimiento'], ['Prob. de seguir subiendo', 'incremento'],
+  ].map(([lab, k]) => `<div class="r" style="grid-template-columns:1.4fr 1fr"><div class="lab">${lab}</div><div class="st">${stars(m.stars[k], col)}</div></div>`).join('')
 
   const inner = `
-    <div class="cols col1">${cardHead(m)}</div>
+    <div class="hero" style="grid-template-columns:1fr">
+      <div class="mid">
+        <div class="t">${esc(m.name)}</div>
+        <div class="s">Análisis DGI · ${esc(m.ticker)} · ${esc(hoyLargo())}</div>
+        <div class="d">${esc(m.sectorLabel)}${m.marketCap ? ` · Cap. ${esc(m.marketCap)} ${esc(m.currency)}` : ''} · ${moatLabel(m.moat)}</div>
+      </div>
+    </div>
 
-    <h2>Métricas clave</h2>
-    <table class="cmp">
-      <thead><tr><th class="lbl">Métrica</th><th>${esc(m.ticker)}</th></tr></thead>
-      <tbody>${metricRows}</tbody>
-    </table>
+    <div class="grid3" style="grid-template-columns:1fr 1fr; gap:16px">
+      <div class="side-col left">
+        <div class="side-head" style="background:linear-gradient(135deg,${col},${col}cc)">
+          <div class="tk">${esc(m.ticker)} · Puntuación DGI</div>
+          <div class="nm">${m.scores.total != null ? m.scores.total.toFixed(1) + ' / 10' : '—'}</div>
+        </div>
+        ${sideSections(m)}
+      </div>
+      <div class="center">
+        <div class="block cmp">
+          <div class="colh" style="grid-template-columns:1.6fr 1fr"><span style="background:#64748b">Métrica</span><span style="background:${col}">${esc(m.ticker)}</span></div>
+          ${finRows}
+        </div>
+        <div class="block">
+          <div class="title">Dividendo de un vistazo</div>
+          <div class="divstars">${divStarRows}</div>
+        </div>
+      </div>
+    </div>
 
-    <h2>Dividendo de un vistazo</h2>
-    <div class="stars-grid">${starRows(m)}</div>
-
-    <h2>Puntuación sobre 10</h2>
-    ${scoreTable(m)}
-
-    ${verdict ? `<div class="verdict"><h3>Resumen</h3>${verdict.lines.map(l => `<p>${esc(l)}</p>`).join('')}</div>` : ''}
+    <div class="bottom" style="grid-template-columns:1fr 1fr">
+      <div class="panel">
+        <div class="title">Puntuación (sobre 10)</div>
+        <div class="scoretab">${scoreRows}</div>
+      </div>
+      <div class="panel">
+        <div class="title">Resumen</div>
+        <div class="verdict" style="text-align:left">${verdict ? verdict.lines.map(l => `<p>${esc(l)}</p>`).join('') : ''}</div>
+      </div>
+    </div>
   `
-  return shell('Análisis DGI', inner, m.ticker)
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><style>${CSS_PORTRAIT}</style></head><body><div class="page">
+    ${inner}
+    <div class="footer"><div class="disc">${DISCLAIMER}</div><div class="mk">everdiv.com · ${esc(m.ticker)}</div></div>
+  </div></body></html>`
 }

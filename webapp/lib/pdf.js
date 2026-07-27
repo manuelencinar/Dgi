@@ -60,7 +60,7 @@ export async function htmlToPdf(html) {
   try {
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 20000 })
     const pdf = await page.pdf({
-      format: 'A4',
+      preferCSSPageSize: true,   // respeta @page (landscape en comparador, portrait en ficha)
       printBackground: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' },
     })
