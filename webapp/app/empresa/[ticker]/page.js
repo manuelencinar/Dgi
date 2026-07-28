@@ -471,11 +471,17 @@ export default async function EmpresaPage({ params, searchParams }) {
   // lee con service_role (financial_history es service-only) y NO toca el `detail` que usan
   // scoring/valoración (calibrados sobre yfinance).
   let extStmts = { income: detail?.income_statement_annual ?? null, cashflow: detail?.cashflow_annual ?? null, balance: detail?.balance_sheet_annual ?? null, extraYears: 0 }
+  let quarterlyRows = []
   if (detail && isPremium) {
     try {
       const svc = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
-      const { data: fh } = await svc.from('financial_history').select('*').eq('ticker', t)
+      const [{ data: fh }, { data: fhq }] = await Promise.all([
+        svc.from('financial_history').select('*').eq('ticker', t),
+        // Histórico trimestral permanente (acumulativo) para TTM + YoY en la ficha.
+        svc.from('financial_history_quarterly').select('*').eq('ticker', t).order('period', { ascending: true }),
+      ])
       if (fh?.length) extStmts = extendStatements(detail, fh)
+      if (fhq?.length) quarterlyRows = fhq
     } catch {}
   }
   const detailExt = detail ? { ...detail, income_statement_annual: extStmts.income, cashflow_annual: extStmts.cashflow, balance_sheet_annual: extStmts.balance } : detail
@@ -635,6 +641,7 @@ export default async function EmpresaPage({ params, searchParams }) {
         fcfHistory={detail?.fcf_history            ?? null}
         epsHistory={detail?.eps_history            ?? null}
         financials={financialsPub}
+        quarterlyRows={isPremium ? quarterlyRows : []}
       />
     </div>
   )

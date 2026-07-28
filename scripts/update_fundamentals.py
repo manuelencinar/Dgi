@@ -174,6 +174,73 @@ def df_to_stmt(df, n=4):
     except Exception:
         return None
 
+# ── Histórico trimestral permanente (financial_history_quarterly) ───────────
+# Etiquetas inglesas de yfinance → columna de la tabla. Se leen del JSON ya construido
+# (income/balance/cashflow trimestral), así que no re-golpea la API.
+_QH_INCOME = {
+    "revenue": ["Total Revenue", "Total Revenues", "Operating Revenue"],
+    "gross_profit": ["Gross Profit"],
+    "operating_income": ["Operating Income"],
+    "net_income": ["Net Income", "Net Income Common Stockholders"],
+    "eps_diluted": ["Diluted EPS"],
+    "eps_basic": ["Basic EPS"],
+}
+_QH_BALANCE = {
+    "total_assets": ["Total Assets"],
+    "total_liabilities": ["Total Liabilities Net Minority Interest", "Total Liabilities"],
+    "stockholders_equity": ["Stockholders Equity", "Total Stockholder Equity", "Common Stock Equity"],
+    "long_term_debt": ["Long Term Debt", "Total Debt"],
+    "cash_and_equivalents": ["Cash And Cash Equivalents", "Cash Cash Equivalents And Short Term Investments"],
+}
+_QH_CASHFLOW = {
+    "operating_cash_flow": ["Operating Cash Flow", "Cash Flow From Continuing Operating Activities"],
+    "capex": ["Capital Expenditure"],
+    "free_cash_flow": ["Free Cash Flow"],
+}
+
+def _stmt_val(stmt, labels, i):
+    """Valor de la columna i (trimestre) buscando la primera etiqueta presente."""
+    if not stmt:
+        return None
+    data = stmt.get("data") or {}
+    for lab in labels:
+        arr = data.get(lab)
+        if isinstance(arr, list) and i < len(arr) and arr[i] is not None:
+            return arr[i]
+    return None
+
+def build_quarterly_rows(ticker, currency, is_q, bs_q, cf_q):
+    """Filas por trimestre para financial_history_quarterly desde los JSON ya construidos."""
+    cols = (is_q or {}).get("columns") or (bs_q or {}).get("columns") or (cf_q or {}).get("columns") or []
+    rows = []
+    for i, period in enumerate(cols):
+        row = {"ticker": ticker, "period": str(period)[:10], "period_end": str(period)[:10],
+               "source": "yfinance", "currency": currency}
+        for col, labels in _QH_INCOME.items():   row[col] = _stmt_val(is_q, labels, i)
+        for col, labels in _QH_BALANCE.items():   row[col] = _stmt_val(bs_q, labels, i)
+        for col, labels in _QH_CASHFLOW.items():  row[col] = _stmt_val(cf_q, labels, i)
+        # FCF de respaldo si falta: OCF − |capex|
+        if row.get("free_cash_flow") is None and row.get("operating_cash_flow") is not None and row.get("capex") is not None:
+            try: row["free_cash_flow"] = row["operating_cash_flow"] - abs(row["capex"])
+            except Exception: pass
+        # Solo filas con algo de sustancia
+        if any(row.get(k) is not None for k in ("revenue", "net_income", "total_assets", "operating_cash_flow")):
+            rows.append(sanitize(row))
+    return rows
+
+def upsert_quarterly_history(sb, ticker, data):
+    """UPSERT ACUMULATIVO de los trimestres a financial_history_quarterly. NO borra nada:
+    los trimestres antiguos (fuera de la ventana viva de company_fundamentals) permanecen."""
+    try:
+        rows = build_quarterly_rows(
+            ticker, data.get("currency"),
+            data.get("income_statement_quarterly"), data.get("balance_sheet_quarterly"),
+            data.get("cashflow_quarterly"))
+        if rows:
+            sb.table("financial_history_quarterly").upsert(rows, on_conflict="ticker,period,source").execute()
+    except Exception as exc:
+        print(f"    [{ticker}] aviso: histórico trimestral no guardado ({exc})")
+
 # ── Dividend history ───────────────────────────────────────────────────────
 
 def build_div_history(dividends_series):
@@ -1546,9 +1613,12 @@ def fetch_ticker(sym):
             "income_statement_annual":    is_annual,
             "balance_sheet_annual":       bs_annual,
             "cashflow_annual":            cf_annual,
-            "income_statement_quarterly": df_to_stmt(q_income, 4),
-            "balance_sheet_quarterly":    df_to_stmt(q_balance, 4),
-            "cashflow_quarterly":         df_to_stmt(q_cashflow, 4),
+            # Ventana viva ampliada a 8 trimestres (para YoY: trimestre vs mismo del año
+            # anterior). El histórico permanente y acumulativo vive en
+            # financial_history_quarterly (upsert_quarterly_history), que NO se borra nunca.
+            "income_statement_quarterly": df_to_stmt(q_income, 8),
+            "balance_sheet_quarterly":    df_to_stmt(q_balance, 8),
+            "cashflow_quarterly":         df_to_stmt(q_cashflow, 8),
             "updated_at": datetime.now(timezone.utc).isoformat(),
         })
 
@@ -1770,6 +1840,8 @@ def upsert_company(sb, ticker, ttl_days, force):
 
     try:
         sb.table("company_fundamentals").upsert(data, on_conflict="ticker").execute()
+        # Histórico trimestral permanente (acumulativo, nunca borra).
+        upsert_quarterly_history(sb, ticker, data)
         price  = data.get("current_price", "?")
         streak = data.get("div_streak", 0)
         cagr   = data.get("div_cagr5", "?")

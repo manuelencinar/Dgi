@@ -9,6 +9,7 @@ import StatementCharts from '@/components/empresa/StatementCharts'
 import FinanzasDeepDive, { FinanzasKpis } from '@/components/empresa/FinanzasSections'
 import FollowButton from '@/components/watchlist/FollowButton'
 // import InfografiaButton from '@/components/InfografiaButton' // oculto temporalmente
+import QuarterlyTrends from '@/components/empresa/QuarterlyTrends'
 import ScoreHistory from '@/components/empresa/ScoreHistory'
 import AnalystEstimates from '@/components/empresa/AnalystEstimates'
 import IncomeSankey from '@/components/empresa/IncomeSankey'
@@ -1557,7 +1558,7 @@ export default function CompanyDetailPage(props) {
     paysDividend, noDividendAt,
     healthPanel, moat, dcf, projection, dgiScore, dividendSafety, scoreHistory, insights, roicData, badges, buybacks, ma200,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
-    manualImport, finScalars, initialTab,
+    manualImport, finScalars, initialTab, quarterlyRows,
   } = props
 
   const router       = useRouter()
@@ -1846,6 +1847,17 @@ export default function CompanyDetailPage(props) {
                 bankNpl={isBank ? (bankMetrics?.nplHistory || []) : undefined}
               />
             </Card>
+            {isPremium && (
+              <Card>
+                <SectionTitle>Evolución trimestral e interanual (YoY)</SectionTitle>
+                <QuarterlyTrends
+                  historyRows={quarterlyRows}
+                  incomeQuarterly={financials?.income_statement_quarterly}
+                  cashflowQuarterly={financials?.cashflow_quarterly}
+                  currency={currency}
+                />
+              </Card>
+            )}
             <IncomeSankey income={financials?.income_statement_annual} incomeQuarterly={financials?.income_statement_quarterly} currency={currency} />
             <AnalystEstimates ticker={ticker} />
             {isBank ? (
