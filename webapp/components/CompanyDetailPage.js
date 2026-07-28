@@ -10,6 +10,10 @@ import FinanzasDeepDive, { FinanzasKpis } from '@/components/empresa/FinanzasSec
 import FollowButton from '@/components/watchlist/FollowButton'
 // import InfografiaButton from '@/components/InfografiaButton' // oculto temporalmente
 import QuarterlyTrends from '@/components/empresa/QuarterlyTrends'
+import SectorPositioning from '@/components/empresa/SectorPositioning'
+import BuyPriceCard from '@/components/empresa/BuyPriceCard'
+import DividendResilience from '@/components/empresa/DividendResilience'
+import QualityTrend from '@/components/empresa/QualityTrend'
 import ScoreHistory from '@/components/empresa/ScoreHistory'
 import AnalystEstimates from '@/components/empresa/AnalystEstimates'
 import IncomeSankey from '@/components/empresa/IncomeSankey'
@@ -1559,6 +1563,7 @@ export default function CompanyDetailPage(props) {
     healthPanel, moat, dcf, projection, dgiScore, dividendSafety, scoreHistory, insights, roicData, badges, buybacks, ma200,
     revenueHistory, netIncomeHistory, fcfHistory, epsHistory, financials,
     manualImport, finScalars, initialTab, quarterlyRows,
+    buyPriceModel, qualityTrend, sectorPositioning,
   } = props
 
   const router       = useRouter()
@@ -1791,6 +1796,13 @@ export default function CompanyDetailPage(props) {
               <ResumenProjection yld={yld} cagr={cagr} country={country} currency={currency} destWHT={destWHT} />
 
               <StrengthsRisks insights={insights} onSeeAll={() => goTab('salud')} />
+
+              {sectorPositioning?.metrics?.length > 0 && (
+                <Card><SectionTitle>Posición dentro de su sector</SectionTitle><SectorPositioning positioning={sectorPositioning} /></Card>
+              )}
+              {qualityTrend && (
+                <Card><SectionTitle>¿Está mejorando o empeorando?</SectionTitle><QualityTrend trend={qualityTrend} /></Card>
+              )}
             </div>
           </div>
           </>
@@ -1813,6 +1825,7 @@ export default function CompanyDetailPage(props) {
                   <MiniMetric label="Payout" value={payout != null ? (payout * 100).toFixed(0) + '%' : '—'} sub={props.payoutEps != null ? `EPS ${props.payoutEps.toFixed(0)}%` : 'FCF'} color={payout > 0.8 ? 'var(--negative)' : payout > 0.6 ? 'var(--warning)' : 'var(--positive)'} />
                 </div>
                 <DividendHistorySection divHistory={divHistory} streak={streak} cagr={cagr} currency={currency} />
+                {isPremium && <DividendResilience divHistory={divHistory} />}
                 <UpcomingPayments payments={upcomingPayments} currency={currency} nextExDate={nextExDate} originWHT={originWHT} destWHT={destWHT} isDomestic={country === 'ES'} />
                 <RentaProjection yld={yld} cagr={cagr} country={country} currency={currency} dpsScenarios={projection} destWHT={destWHT} />
                 <BuybackSection buybacks={buybacks} />
@@ -1909,6 +1922,12 @@ export default function CompanyDetailPage(props) {
         {/* ═══ VALORACIÓN ═══ */}
         {tab === 'valoracion' && (
           <div style={{ display: 'grid', gap: 16 }}>
+            {isPremium && buyPriceModel && (
+              <Card>
+                <SectionTitle>Precio de compra DGI</SectionTitle>
+                <BuyPriceCard model={buyPriceModel} ticker={ticker} name={name} currency={currency} isAuthed={isAuthed} isPremium={isPremium} />
+              </Card>
+            )}
             <DCFSection dcf={dcf} ticker={ticker} isPremium={isPremium} ma200={ma200} />
             <ValuationMethodsPanel vm={valuationMethods} currency={currency} price={price} isPremium={isPremium} />
             <MultiplesGrid valuationMetrics={valuationMetrics} isPremium={isPremium} />

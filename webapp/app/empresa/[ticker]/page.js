@@ -20,6 +20,9 @@ import { yieldReversionValue, twoStageDDM, peRelativeValue, pAffoRelativeValue, 
 import { computeBankMetrics, effectiveBankMetrics } from '@/lib/bank-metrics'
 import { computeInsurerMetrics, effectiveInsurerMetrics } from '@/lib/insurer-metrics'
 import { isCreditRiskFinancial, detectSectorType } from '@/lib/dgi-score'
+import { computeBuyPrice } from '@/lib/buy-price'
+import { buildQualityTrend } from '@/lib/quality-trend'
+import { buildSectorPositioning } from '@/lib/sector-percentiles'
 import { dividendSafety } from '@/lib/dividend-safety'
 import { buildReitMetrics } from '@/lib/reit-metrics'
 import { computeOilBreakeven } from '@/lib/energy-breakeven'
@@ -453,6 +456,35 @@ export default async function EmpresaPage({ params, searchParams }) {
   const buybacks   = computeBuybacks(detail)
   const healthPanel = buildHealthPanel(detail, type, paysDividend)
 
+  // ── Extras de ficha: precio de compra DGI, tendencia de calidad, percentiles de sector ──
+  const buyPriceModel = detail ? computeBuyPrice({
+    intrinsic: dcf?.available ? dcf.intrinsicValue : null, price, score: dgiScore?.total,
+    reliableMos: !!dcf?.available, yieldAvg: detail.yield_avg, dps: detail.dps,
+  }) : null
+  const qualityTrend = detail ? buildQualityTrend(detail, scoreHistory) : null
+  let sectorPositioning = null
+  if (detail && isPremium && detail.sector) {
+    try {
+      const { data: peersRaw } = await supabase.from('company_fundamentals')
+        .select('roic_display, operating_margin, payout_fcf, payout_eps, revenue_cagr5, div_cagr5, div_streak, net_debt_ebitda, dps, current_price')
+        .eq('sector', detail.sector).range(0, 999)
+      const nn = v => (v != null && !isNaN(v)) ? Number(v) : null
+      // Payout comparable entre peers: preferimos el de BPA (más consistente y menos
+      // artefactos que el de FCF, que puede superar el 100% por caja no recurrente).
+      const sanePayout = f => { const e = nn(f.payout_eps), c = nn(f.payout_fcf); return (e != null && e > 0 && e <= 150) ? e : (c != null && c > 0 && c <= 150 ? c : null) }
+      const toMetrics = (f, ownPrice) => {
+        const p = ownPrice ?? nn(f.current_price), d = nn(f.dps)
+        return {
+          roic: nn(f.roic_display), yield: (p > 0 && d > 0) ? d / p * 100 : null,
+          divCagr: nn(f.div_cagr5), revCagr: nn(f.revenue_cagr5), opMargin: nn(f.operating_margin),
+          payout: sanePayout(f), debt: nn(f.net_debt_ebitda), streak: nn(f.div_streak),
+        }
+      }
+      const peers = (peersRaw || []).map(f => toMetrics(f))
+      sectorPositioning = buildSectorPositioning(toMetrics(detail, price), peers, sectorInfo(detail.sector)?.es || detail.sector, peers.length)
+    } catch {}
+  }
+
   // Datos derivados para las pestañas
   const yldNet     = yld != null ? netYield(yld * 100, getWHT(country), destWHT) : null
   const cagr10     = divCagr(divHistory, 10)
@@ -642,6 +674,9 @@ export default async function EmpresaPage({ params, searchParams }) {
         epsHistory={detail?.eps_history            ?? null}
         financials={financialsPub}
         quarterlyRows={isPremium ? quarterlyRows : []}
+        buyPriceModel={isPremium ? buyPriceModel : null}
+        qualityTrend={isPremium ? qualityTrend : null}
+        sectorPositioning={sectorPositioning}
       />
     </div>
   )
