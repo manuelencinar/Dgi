@@ -112,16 +112,11 @@ function BalanceTooltip({ active, payload, unit }) {
 const axisProps = { tick: { fontSize: 10, fill: 'var(--text-faint)' }, axisLine: { stroke: 'var(--surface-3)' }, tickLine: false }
 
 function ChartCard({ title, data, children }) {
+  if (!data || data.length === 0) return null   // gráfico vacío → no se muestra
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 12px 6px' }}>
       <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>{title}</p>
-      {data.length === 0 ? (
-        <div className="stmt-chart" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p style={{ fontSize: 11, color: 'var(--text-faint)', textAlign: 'center', padding: '0 12px' }}>Datos no disponibles — puedes añadirlos desde la plantilla Excel.</p>
-        </div>
-      ) : (
-        <div className="stmt-chart"><ResponsiveContainer width="100%" height="100%">{children}</ResponsiveContainer></div>
-      )}
+      <div className="stmt-chart"><ResponsiveContainer width="100%" height="100%">{children}</ResponsiveContainer></div>
     </div>
   )
 }
@@ -183,6 +178,10 @@ export default function StatementCharts({ income, cashflow, balance, type, bankN
   const fUnit = chartUnit([...fData.map(d => d.cfo), ...fData.map(d => d.fcf)])
   const bUnit = chartUnit([...bData.map(d => d.assets), ...bData.map(d => d.liabilities), ...bData.map(d => d.equity)])
 
+  // Si no hay ningún gráfico con datos, no mostramos el bloque.
+  const middleEmpty = isBank ? nplData.length === 0 : fData.length === 0
+  if (rData.length === 0 && bData.length === 0 && middleEmpty) return null
+
   return (
     <div>
       <style>{`
@@ -212,27 +211,21 @@ export default function StatementCharts({ income, cashflow, balance, type, bankN
           </BarChart>
         </ChartCard>
 
-        {/* 2 — En banca: evolución del NPL (morosidad). Resto: FCF. */}
-        {isBank ? (
+        {/* 2 — En banca: evolución del NPL (morosidad, solo si hay datos). Resto: FCF. */}
+        {isBank ? (nplData.length > 0 && (
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 12px 6px' }}>
             <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Morosidad (NPL)</p>
-            {nplData.length === 0 ? (
-              <div className="stmt-chart" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <p style={{ fontSize: 11, color: 'var(--text-faint)', textAlign: 'center', padding: '0 12px' }}>Pendiente de introducir por trimestre (Dashboard → Datos → Banca).</p>
-              </div>
-            ) : (
-              <div className="stmt-chart"><ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={nplData} margin={{ top: 6, right: 4, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-2)" vertical={false} />
-                  <XAxis dataKey="period" {...axisProps} />
-                  <YAxis {...axisProps} width={42} tickFormatter={v => v + '%'} />
-                  <Tooltip cursor={{ fill: 'var(--surface-2)' }} contentStyle={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 11 }} formatter={v => [v.toFixed(2) + '%', 'NPL']} />
-                  <Line dataKey="npl" name="NPL %" stroke="var(--negative)" strokeWidth={2} dot={{ r: 3, fill: 'var(--negative)' }} />
-                </ComposedChart>
-              </ResponsiveContainer></div>
-            )}
+            <div className="stmt-chart"><ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={nplData} margin={{ top: 6, right: 4, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-2)" vertical={false} />
+                <XAxis dataKey="period" {...axisProps} />
+                <YAxis {...axisProps} width={42} tickFormatter={v => v + '%'} />
+                <Tooltip cursor={{ fill: 'var(--surface-2)' }} contentStyle={{ background: 'var(--bg-elev)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 11 }} formatter={v => [v.toFixed(2) + '%', 'NPL']} />
+                <Line dataKey="npl" name="NPL %" stroke="var(--negative)" strokeWidth={2} dot={{ r: 3, fill: 'var(--negative)' }} />
+              </ComposedChart>
+            </ResponsiveContainer></div>
           </div>
-        ) : (
+        )) : (
           <ChartCard title="Flujo de caja libre" data={fData}>
             <BarChart data={fData} margin={{ top: 6, right: 4, left: 0, bottom: 0 }} barGap={2}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-2)" vertical={false} />

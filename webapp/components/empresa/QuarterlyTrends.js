@@ -66,13 +66,7 @@ export default function QuarterlyTrends({ historyRows, incomeQuarterly, cashflow
     return buildQuarterlyModel(qs)
   }, [historyRows, incomeQuarterly, cashflowQuarterly])
 
-  if (!model.available) {
-    return (
-      <div style={{ padding: '14px 0', fontSize: 12, color: 'var(--text-faint)' }}>
-        Acumulando histórico trimestral — las comparativas interanuales aparecerán a medida que se registren más trimestres.
-      </div>
-    )
-  }
+  if (!model.available) return null   // sin histórico trimestral suficiente → no se muestra
 
   const q = model.quarters
   const rUnit = chartUnit(q.flatMap(x => [x.revenue, x.netIncome]))
@@ -80,10 +74,11 @@ export default function QuarterlyTrends({ historyRows, incomeQuarterly, cashflow
   const cur = currency ? ` ${currency}` : ''
 
   return (
-    <div style={{ display: 'grid', gap: 22 }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, display: 'grid', gap: 22 }}>
       <style>{`.qt-chart{height:210px}@media(max-width:768px){.qt-chart{height:170px}}
         .qt-2col{display:grid;grid-template-columns:1fr;gap:16px}@media(min-width:820px){.qt-2col{grid-template-columns:1fr 1fr}}
         .qt-3m{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}`}</style>
+      <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-strong)', margin: '-2px 0 -8px' }}>Evolución trimestral e interanual (YoY)</p>
 
       {/* 1 — Resumen YoY del último trimestre */}
       <Section title="Último trimestre vs. mismo trimestre del año anterior" subtitle={`Cierre ${model.latest.period}`}>

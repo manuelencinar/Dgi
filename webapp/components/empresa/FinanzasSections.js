@@ -72,7 +72,8 @@ function tipBox(title, rows, note) {
   )
 }
 
-function Section({ title, subtitle, children, height }) {
+function Section({ title, subtitle, children, height, empty }) {
+  if (empty) return null   // sección sin datos → no se muestra (ni el título)
   return (
     <div>
       <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: subtitle ? 2 : 10 }}>{title}</p>
@@ -82,14 +83,8 @@ function Section({ title, subtitle, children, height }) {
   )
 }
 
-function Placeholder() {
-  return (
-    <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 }}>
-      <p style={{ fontSize: 12, color: 'var(--text-faint)', textAlign: 'center' }}>Datos no disponibles.</p>
-      <Link href="/dashboard/datos" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>Añadir desde la plantilla Excel →</Link>
-    </div>
-  )
-}
+// Gráfico sin datos → no se muestra nada (antes un placeholder "Datos no disponibles").
+function Placeholder() { return null }
 
 function Chart({ children, h = 200 }) {
   return <div className="fin-chart" style={{ ['--h']: `${h}px` }}><ResponsiveContainer width="100%" height="100%">{children}</ResponsiveContainer></div>
@@ -323,7 +318,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
       `}</style>
 
       {/* MÁRGENES */}
-      <Section title="Evolución de márgenes">
+      <Section title="Evolución de márgenes" empty={mView.length < 1}>
         {mView.length < 1 ? <Placeholder /> : <>
           <Chart h={200}>
             <AreaChart data={mView} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
@@ -347,9 +342,9 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
 
       {/* SOLVENCIA (aseguradoras) o DEUDA (resto) */}
       {insurer ? (
-        <Section title="Análisis de solvencia">
+        <Section title="Análisis de solvencia" empty={!(insurer.solvencyHistory?.length) && !(insurer.lossHistory?.length) && insurer.solvency == null && insurer.loss == null && insurer.combined == null}>
           <div className="fin-2col">
-            <div>
+            {(insurer.solvencyHistory?.length > 0) && <div>
               <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>Solvencia (Solvency II / RBC)</p>
               {!(insurer.solvencyHistory?.length) ? <Placeholder /> : (
                 <Chart h={180}>
@@ -363,8 +358,8 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
                   </ComposedChart>
                 </Chart>
               )}
-            </div>
-            <div>
+            </div>}
+            {(insurer.lossHistory?.length > 0) && <div>
               <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>Loss ratio</p>
               {!(insurer.lossHistory?.length) ? <Placeholder /> : (
                 <Chart h={180}>
@@ -377,7 +372,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
                   </ComposedChart>
                 </Chart>
               )}
-            </div>
+            </div>}
           </div>
           <div className="fin-3m" style={{ marginTop: 14 }}>
             <Mini label="Solvencia" value={insurer.solvency != null ? insurer.solvency.toFixed(0) + '%' : '–'} />
@@ -389,9 +384,9 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
           </p>
         </Section>
       ) : (
-      <Section title="Análisis de la deuda">
+      <Section title="Análisis de la deuda" empty={debtView.length < 1 && intcovView.length < 1 && scalars.net_debt_ebitda == null}>
         <div className="fin-2col">
-          <div>
+          {debtView.length > 0 && <div>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>Deuda vs caja</p>
             {debtView.length < 1 ? <Placeholder /> : (
               <Chart h={180}>
@@ -410,8 +405,8 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
                 </ComposedChart>
               </Chart>
             )}
-          </div>
-          <div>
+          </div>}
+          {intcovView.length > 0 && <div>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>Cobertura de intereses</p>
             {intcovView.length < 1 ? <Placeholder /> : (
               <Chart h={180}>
@@ -429,7 +424,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
                 </BarChart>
               </Chart>
             )}
-          </div>
+          </div>}
         </div>
         <div className="fin-3m" style={{ marginTop: 14 }}>
           <Mini label="Deuda neta" value={fmtMoney(ndNow)} />
@@ -440,7 +435,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
       )}
 
       {/* RENTABILIDAD */}
-      <Section title="Rentabilidad histórica">
+      <Section title="Rentabilidad histórica" empty={profitView.length < 1}>
         {profitView.length < 1 ? <Placeholder /> : <>
           <Chart h={200}>
             <AreaChart data={profitView} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
@@ -463,7 +458,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
       </Section>
 
       {/* CAPITAL ALLOCATION */}
-      <Section title="¿Cómo usa la empresa su dinero?" subtitle="Distribución del flujo de caja libre por año">
+      <Section title="¿Cómo usa la empresa su dinero?" subtitle="Distribución del flujo de caja libre por año" empty={capitalView.length < 1}>
         {capitalView.length < 1 ? <Placeholder /> : <>
           <Chart h={220}>
             <ComposedChart data={capitalView} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
@@ -501,7 +496,7 @@ export default function FinanzasDeepDive({ income, cashflow, balance, divHistory
       </Section>
 
       {/* POR ACCIÓN */}
-      <Section title="Por acción">
+      <Section title="Por acción" empty={shareView.length < 1}>
         {shareView.length < 1 ? <Placeholder /> : <>
           <Chart h={200}>
             <BarChart data={shareView} margin={{ top: 6, right: 6, left: 0, bottom: 0 }} barGap={1}>

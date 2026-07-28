@@ -1864,15 +1864,12 @@ export default function CompanyDetailPage(props) {
               />
             </Card>
             {isPremium && (
-              <Card>
-                <SectionTitle>Evolución trimestral e interanual (YoY)</SectionTitle>
-                <QuarterlyTrends
-                  historyRows={quarterlyRows}
-                  incomeQuarterly={financials?.income_statement_quarterly}
-                  cashflowQuarterly={financials?.cashflow_quarterly}
-                  currency={currency}
-                />
-              </Card>
+              <QuarterlyTrends
+                historyRows={quarterlyRows}
+                incomeQuarterly={financials?.income_statement_quarterly}
+                cashflowQuarterly={financials?.cashflow_quarterly}
+                currency={currency}
+              />
             )}
             <IncomeSankey income={financials?.income_statement_annual} incomeQuarterly={financials?.income_statement_quarterly} currency={currency} />
             <AnalystEstimates ticker={ticker} />
