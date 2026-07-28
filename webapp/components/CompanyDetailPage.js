@@ -14,6 +14,8 @@ import SectorPositioning from '@/components/empresa/SectorPositioning'
 import BuyPriceCard from '@/components/empresa/BuyPriceCard'
 import DividendResilience from '@/components/empresa/DividendResilience'
 import QualityTrend from '@/components/empresa/QualityTrend'
+import BacktestCard from '@/components/empresa/BacktestCard'
+import ValuationSensitivity from '@/components/empresa/ValuationSensitivity'
 import ScoreHistory from '@/components/empresa/ScoreHistory'
 import AnalystEstimates from '@/components/empresa/AnalystEstimates'
 import IncomeSankey from '@/components/empresa/IncomeSankey'
@@ -1754,6 +1756,7 @@ export default function CompanyDetailPage(props) {
           <div className="cdp-2col">
             <div style={{ display: 'grid', gap: 16, alignContent: 'start' }}>
               <Card><PriceChart ticker={ticker} currency={currency} avgCost={avgCost} divHistory={divHistory} /></Card>
+              {isPremium && <BacktestCard ticker={ticker} currency={currency} divHistory={divHistory} />}
               {divHistory?.length > 0 && <DividendHistorySection divHistory={divHistory} streak={streak} cagr={cagr} currency={currency} />}
               <DGIScoreCard dgiScore={dgiScore} isPremium={isPremium} compact />
               <Card>
@@ -1929,6 +1932,9 @@ export default function CompanyDetailPage(props) {
               </Card>
             )}
             <DCFSection dcf={dcf} ticker={ticker} isPremium={isPremium} ma200={ma200} />
+            {isPremium && dcf?.engine === 'dcf' && (
+              <Card><SectionTitle>Análisis de sensibilidad</SectionTitle><ValuationSensitivity dcf={dcf} /></Card>
+            )}
             <ValuationMethodsPanel vm={valuationMethods} currency={currency} price={price} isPremium={isPremium} />
             <MultiplesGrid valuationMetrics={valuationMetrics} isPremium={isPremium} />
             <Card>
