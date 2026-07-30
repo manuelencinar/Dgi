@@ -23,6 +23,7 @@ import { isCreditRiskFinancial, detectSectorType } from '@/lib/dgi-score'
 import { computeBuyPrice } from '@/lib/buy-price'
 import { buildQualityTrend } from '@/lib/quality-trend'
 import { buildSectorPositioning } from '@/lib/sector-percentiles'
+import { fromHistoryRows, buildQuarterlyModel } from '@/lib/quarterly'
 import { dividendSafety } from '@/lib/dividend-safety'
 import { buildReitMetrics } from '@/lib/reit-metrics'
 import { computeOilBreakeven } from '@/lib/energy-breakeven'
@@ -445,6 +446,24 @@ export default async function EmpresaPage({ params, searchParams }) {
   const oilBreakeven = detail ? computeOilBreakeven(detail) : null
 
   const roicData   = detail ? calculateROIC({ ...detail, type }, currency) : null
+
+  // Histórico trimestral (permanente) — se carga ANTES de la valoración para inyectar el
+  // crecimiento interanual reciente en el DCF (que la valoración esté al día, no anclada a
+  // la ventana anual de 5 años). También alimenta los gráficos trimestrales.
+  let quarterlyRows = []
+  if (detail && isPremium) {
+    try {
+      const svc = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+      const { data: fhq } = await svc.from('financial_history_quarterly').select('*').eq('ticker', t).order('period', { ascending: true })
+      if (fhq?.length) {
+        quarterlyRows = fhq
+        const qm = buildQuarterlyModel(fromHistoryRows(fhq))
+        const recent = qm.ttm?.revenueYoY ?? qm.latest?.revenueYoY
+        if (recent != null) detail._recentRevYoY = recent
+      }
+    } catch {}
+  }
+
   const moat       = computeMoat(detail, streak)
   const dcf        = computeValuation(detail, moat?.width ?? 'none', type, currency)
   const projection = computeProjection(divHistory, cagr)
@@ -503,17 +522,11 @@ export default async function EmpresaPage({ params, searchParams }) {
   // lee con service_role (financial_history es service-only) y NO toca el `detail` que usan
   // scoring/valoración (calibrados sobre yfinance).
   let extStmts = { income: detail?.income_statement_annual ?? null, cashflow: detail?.cashflow_annual ?? null, balance: detail?.balance_sheet_annual ?? null, extraYears: 0 }
-  let quarterlyRows = []
   if (detail && isPremium) {
     try {
       const svc = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
-      const [{ data: fh }, { data: fhq }] = await Promise.all([
-        svc.from('financial_history').select('*').eq('ticker', t),
-        // Histórico trimestral permanente (acumulativo) para TTM + YoY en la ficha.
-        svc.from('financial_history_quarterly').select('*').eq('ticker', t).order('period', { ascending: true }),
-      ])
+      const { data: fh } = await svc.from('financial_history').select('*').eq('ticker', t)
       if (fh?.length) extStmts = extendStatements(detail, fh)
-      if (fhq?.length) quarterlyRows = fhq
     } catch {}
   }
   const detailExt = detail ? { ...detail, income_statement_annual: extStmts.income, cashflow_annual: extStmts.cashflow, balance_sheet_annual: extStmts.balance } : detail

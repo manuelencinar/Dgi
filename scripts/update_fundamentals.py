@@ -174,6 +174,35 @@ def df_to_stmt(df, n=4):
     except Exception:
         return None
 
+# Crecimiento interanual reciente (%) desde el estado de resultados TRIMESTRAL: TTM vs TTM
+# anterior si hay ≥8 trimestres; si no, último trimestre vs el mismo del año anterior (≥5).
+# None si no hay suficientes. Espejo de buildQuarterlyModel (lib/quarterly.js) — alimenta el
+# momentum reciente del DCF para que la valoración no quede anclada a la ventana anual.
+def _recent_rev_yoy(q_income):
+    if q_income is None or getattr(q_income, "empty", True):
+        return None
+    try:
+        import pandas as pd
+        row = None
+        for lab in ("Total Revenue", "Total Revenues", "Operating Revenue"):
+            if lab in q_income.index:
+                row = q_income.loc[lab]; break
+        if row is None:
+            return None
+        vals = [None if pd.isna(v) else float(v) for v in row.tolist()]   # más reciente primero
+        def seg_sum(a, b):
+            s = vals[a:b]
+            return None if (len(s) < b - a or any(v is None for v in s)) else sum(s)
+        if len(vals) >= 8:
+            cur, prev = seg_sum(0, 4), seg_sum(4, 8)
+            if cur is not None and prev not in (None, 0):
+                return (cur - prev) / abs(prev) * 100
+        if len(vals) >= 5 and vals[0] is not None and vals[4] not in (None, 0):
+            return (vals[0] - vals[4]) / abs(vals[4]) * 100
+    except Exception:
+        pass
+    return None
+
 # ── Histórico trimestral permanente (financial_history_quarterly) ───────────
 # Etiquetas inglesas de yfinance → columna de la tabla. Se leen del JSON ya construido
 # (income/balance/cashflow trimestral), así que no re-golpea la API.
@@ -728,7 +757,7 @@ def _adjusted_cagr(df, names, fallback):
             return (pow(end / start, 1 / yrs) - 1) * 100
     return fallback
 
-def _business_growth(rev_cagr5, fcf_cagr5, revenue_only=False):
+def _business_growth(rev_cagr5, fcf_cagr5, revenue_only=False, recent_yoy=None):
     # Corrección 1 — nunca usa div_cagr5
     if revenue_only:
         return (rev_cagr5, "revenue_cagr5") if rev_cagr5 is not None else (0.0, "cero_por_declive")
@@ -738,13 +767,28 @@ def _business_growth(rev_cagr5, fcf_cagr5, revenue_only=False):
         # y no representa la trayectoria del negocio → usar ingresos como proxy, no el
         # promedio que colapsa el valor (caso KO 2024-25: rev +3,7% / fcf −17,8%).
         if rev_cagr5 > 0 and (rev_cagr5 - fcf_cagr5) >= 15 and fcf_cagr5 < -5:
-            return rev_cagr5, "revenue_cagr5_divergencia_fcf"
-        return (rev_cagr5 + fcf_cagr5) / 2, "media_fcf_revenue"
-    if fcf_cagr5 is not None:
-        return fcf_cagr5, "fcf_cagr5"
-    if rev_cagr5 is not None:
-        return rev_cagr5, "revenue_cagr5"
-    return 0.0, "cero_por_declive"
+            gpct, src = rev_cagr5, "revenue_cagr5_divergencia_fcf"
+        else:
+            gpct, src = (rev_cagr5 + fcf_cagr5) / 2, "media_fcf_revenue"
+    elif fcf_cagr5 is not None:
+        gpct, src = fcf_cagr5, "fcf_cagr5"
+    elif rev_cagr5 is not None:
+        gpct, src = rev_cagr5, "revenue_cagr5"
+    else:
+        gpct, src = 0.0, "cero_por_declive"
+
+    # Momentum reciente (trimestres frescos): mezcla al 50% el crecimiento interanual
+    # reciente (TTM o último trimestre vs el mismo del año anterior) para que la valoración
+    # no quede anclada a una ventana anual estancada (Apple: CAGR 5a plano, últimos
+    # trimestres +doble dígito). Espejo de businessGrowth en lib/valuation.js.
+    if recent_yoy is not None:
+        capped = max(-15.0, min(15.0, recent_yoy))
+        gpct = gpct * 0.5 + capped * 0.5
+        src = src + "+reciente"
+    # Suelo: negocio que crece (ingresos 5a o reciente) no se valora con decrecimiento perpetuo.
+    if (rev_cagr5 is not None and rev_cagr5 > 0) or (recent_yoy is not None and recent_yoy > 0):
+        gpct = max(gpct, 0.0)
+    return gpct, src
 
 def _run_dcf(base, g1, g2, gT, r):
     total, cf = 0.0, base
@@ -879,7 +923,8 @@ def compute_moat_width(roic_reported, roic_legacy, roic_tangible, gm, om,
 
 def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_cagr5,
                       div_cagr5, dps, sector, industry, roic, streak, currency,
-                      roe=None, pb=None, payout_eps=None, ticker=None, moat_width=None):
+                      roe=None, pb=None, payout_eps=None, ticker=None, moat_width=None,
+                      recent_yoy=None):
     """Devuelve (intrinsic_value, valuation_warning, growth_input_used)."""
     s = (sector or "").lower()
     i = (industry or "").lower()
@@ -996,7 +1041,7 @@ def compute_valuation(income, balance, cashflow, shares, price, rev_cagr5, fcf_c
     # CAGR ajustado por año de inicio deprimido (outlier) antes del crecimiento blended.
     rev_c = _adjusted_cagr(income, ["Total Revenue", "Total Revenues", "Ingresos Totales"], rev_cagr5)
     fcf_c = _adjusted_cagr(cashflow, ["Free Cash Flow", "Flujo de Caja Libre"], fcf_cagr5)
-    gpct, src = _business_growth(rev_c, fcf_c, revenue_only)
+    gpct, src = _business_growth(rev_c, fcf_c, revenue_only, recent_yoy)
     # Corrección 3 — límites
     g1 = max(-0.15, min(gpct / 100, cap))
     if g1 >= 0:        g2 = g1 / 2
@@ -1523,7 +1568,8 @@ def fetch_ticker(sym):
                 income, balance, cashflow, shares, price, rev_cagr5, fcf_cagr5,
                 div_cagr5, dps, info.get("sector"), info.get("industry"),
                 roic, div_streak, info.get("currency"),
-                roe=roe, pb=pb, payout_eps=payout_eps, ticker=sym, moat_width=mw)
+                roe=roe, pb=pb, payout_eps=payout_eps, ticker=sym, moat_width=mw,
+                recent_yoy=_recent_rev_yoy(q_income))
         except Exception:
             pass
 

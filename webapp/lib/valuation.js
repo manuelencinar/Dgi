@@ -136,9 +136,10 @@ function adjustedCagr(data, key, names, fallback) {
 // ── Business growth hierarchy (Corrección 1) ───────────────────────────────
 // Nunca usa div_cagr5. Devuelve gPct en %, fuente, y rev/fcf crudos.
 
-function businessGrowth(data, revenueOnly = false) {
+export function businessGrowth(data, revenueOnly = false) {
   const rev = adjustedCagr(data, 'income_statement_annual', REV_NAMES, n(data.revenue_cagr5))
   const fcf = adjustedCagr(data, 'cashflow_annual', FCF_NAMES, n(data.fcf_cagr5))
+  const recentYoY = n(data._recentRevYoY)   // % interanual reciente inyectado por el llamador
   let gPct, source
   if (revenueOnly) {
     gPct = rev != null ? rev : 0
@@ -159,6 +160,24 @@ function businessGrowth(data, revenueOnly = false) {
     gPct = rev; source = 'revenue_cagr5'
   } else {
     gPct = 0; source = 'cero_por_declive'
+  }
+
+  // Momentum reciente (trimestres frescos): la ventana anual de 5 años puede estar
+  // estancada mientras el negocio ya crece de nuevo (p.ej. Apple: CAGR 5a plano por el
+  // pico de FCF de 2022, pero últimos trimestres +doble dígito interanual). Si tenemos el
+  // crecimiento interanual reciente (TTM o último trimestre vs el mismo del año anterior),
+  // se mezcla al 50% para que la valoración esté al día. `_recentRevYoY` lo inyecta quien
+  // llama (ficha / script) desde los estados trimestrales.
+  if (!revenueOnly && recentYoY != null) {
+    const capped = clamp(recentYoY, -15, 15)
+    gPct = gPct * 0.5 + capped * 0.5
+    source = source + '+reciente'
+  }
+  // Suelo: un negocio cuyos ingresos crecen (a 5 años o en los trimestres recientes) no
+  // debe valorarse asumiendo decrecimiento perpetuo — evita el colapso del DCF por un FCF
+  // CAGR negativo puntual (Apple pasaba a valor intrínseco absurdo por growth −1%).
+  if ((rev != null && rev > 0) || (recentYoY != null && recentYoY > 0)) {
+    gPct = Math.max(gPct, 0)
   }
   return { gPct, source, rev, fcf }
 }
