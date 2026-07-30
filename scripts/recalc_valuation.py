@@ -43,6 +43,42 @@ def ccy_of(ticker):
         return "USD"
     return _SUFFIX_CCY.get(ticker.split(".")[-1].upper(), "USD")
 
+# Crecimiento interanual reciente (%) desde financial_history_quarterly, para el momentum
+# del DCF (mismo criterio que _recent_rev_yoy / buildQuarterlyModel). vals = ingresos por
+# trimestre, MÁS RECIENTE PRIMERO.
+def _yoy_from_vals_desc(vals):
+    def seg(a, b):
+        s = vals[a:b]
+        return None if (len(s) < b - a or any(v is None for v in s)) else sum(s)
+    if len(vals) >= 8:
+        cur, prev = seg(0, 4), seg(4, 8)
+        if cur is not None and prev not in (None, 0):
+            return (cur - prev) / abs(prev) * 100
+    if len(vals) >= 5 and vals[0] is not None and vals[4] not in (None, 0):
+        return (vals[0] - vals[4]) / abs(vals[4]) * 100
+    return None
+
+def load_fhq_yoy():
+    """{ticker: crecimiento interanual reciente %} desde el histórico trimestral permanente."""
+    rows, offset = [], 0
+    while True:
+        q = f"{URL}/rest/v1/financial_history_quarterly?select=ticker,period,revenue&offset={offset}&limit=1000"
+        page = json.load(urllib.request.urlopen(urllib.request.Request(q, headers=H)))
+        rows.extend(page)
+        if len(page) < 1000:
+            break
+        offset += 1000
+    by = {}
+    for r in rows:
+        by.setdefault(r["ticker"], []).append((r["period"], r.get("revenue")))
+    out = {}
+    for t, lst in by.items():
+        lst.sort(key=lambda x: x[0], reverse=True)   # más reciente primero
+        yoy = _yoy_from_vals_desc([v for _, v in lst])
+        if yoy is not None:
+            out[t] = yoy
+    return out
+
 def stmt_df(j):
     if not isinstance(j, dict) or "data" not in j or "columns" not in j:
         return pd.DataFrame()
@@ -64,6 +100,9 @@ def upsert(batch):
     data = json.dumps(batch).encode()
     req = urllib.request.Request(URL + "/rest/v1/company_fundamentals", data=data, headers={**H, "Prefer": "resolution=merge-duplicates,return=minimal"}, method="POST")
     urllib.request.urlopen(req).read()
+
+fhq_yoy = load_fhq_yoy()
+print(f"Crecimiento reciente (trimestral) disponible para {len(fhq_yoy)} empresas")
 
 rows, offset = [], 0
 while True:
@@ -87,7 +126,7 @@ for f in rows:
             f.get("revenue_cagr5"), f.get("fcf_cagr5"), f.get("div_cagr5"), f.get("dps"),
             f.get("sector"), f.get("industry"), f.get("roic"), f.get("div_streak"), cur,
             roe=f.get("roe"), pb=f.get("price_to_book"), payout_eps=f.get("payout_eps"),
-            ticker=f["ticker"], moat_width=mw)
+            ticker=f["ticker"], moat_width=mw, recent_yoy=fhq_yoy.get(f["ticker"]))
     except Exception as e:
         continue
     old = f.get("intrinsic_value")
