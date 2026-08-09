@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import AlertsSettings from '@/components/cartera/AlertsSettings'
 import { useTheme } from '@/components/ThemeToggle'
+import { useChartStyle } from '@/components/ChartStyle'
 import { WHT_DEFAULTS } from '@/lib/sectors'
 import { COUNTRY_INFO } from '@/lib/helpers'
 import { exemptionThreshold, PERSONAL_EXEMPTION } from '@/lib/fiscal-es'
@@ -143,6 +144,7 @@ export default function AjustesGlobalPage() {
   const router = useRouter()
   const sb     = createClient()
   const themePref = useTheme()
+  const chartPref = useChartStyle()
 
   const [user,     setUser]     = useState(null)
   const [loading,  setLoading]  = useState(true)
@@ -297,7 +299,7 @@ export default function AjustesGlobalPage() {
         </div>
       )}
 
-      {/* ── SECCIÓN APARIENCIA: tema claro/oscuro ────────────────────────── */}
+      {/* ── SECCIÓN APARIENCIA: tema claro/oscuro + densidad de gráficos ─── */}
       <div style={CARD}>
         <p style={SEC_TIT}>Apariencia</p>
         <Toggle
@@ -305,6 +307,12 @@ export default function AjustesGlobalPage() {
           onChange={v => themePref.setTheme(v ? 'light' : 'dark')}
           label="Modo claro"
           description="Alterna entre el tema oscuro (por defecto) y el claro."
+        />
+        <Toggle
+          value={chartPref.compact}
+          onChange={v => chartPref.setStyle(v ? 'barra' : 'donut')}
+          label="Gráficos compactos"
+          description="Sustituye los donuts de la cartera (posiciones, sector, zona y divisa) por una barra apilada con la leyenda en línea: los mismos datos en un tercio del alto."
         />
       </div>
 
