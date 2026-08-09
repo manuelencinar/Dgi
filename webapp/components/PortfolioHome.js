@@ -9,6 +9,7 @@ import { buildDividendCalendar, MONTHS_ES } from '@/lib/dividend-calendar'
 import { estimateMonthInterest } from '@/lib/cash-fund'
 import { getLatestExchangeRate } from '@/lib/currency'
 import { computeMilestones, newlyReached, tierLabel } from '@/lib/milestones'
+import { shouldReplacePrice } from '@/lib/market-days'
 
 const CARD = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 20 }
 const LABEL = { fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.09em' }
@@ -54,7 +55,7 @@ export default function PortfolioHome() {
       const stockTickers = [...new Set(positions.filter(p => (p.asset_type || 'stock') === 'stock').map(p => p.ticker))]
       const fundTickers = [...new Set(positions.filter(p => (p.asset_type || 'stock') !== 'stock').map(p => p.ticker))]
 
-      const COLS = 'ticker,current_price,dps,payout_fcf,payout_eps,div_cagr5,div_history,dividend_events,next_ex_date,next_pay_date,sector,country'
+      const COLS = 'ticker,current_price,updated_at,dps,payout_fcf,payout_eps,div_cagr5,div_history,dividend_events,next_ex_date,next_pay_date,sector,country'
       const [{ data: funds }, { data: fundsData }, settingsRes, cashRes, notifRes] = await Promise.all([
         stockTickers.length ? sb.from('company_fundamentals').select(COLS).in('ticker', stockTickers) : Promise.resolve({ data: [] }),
         fundTickers.length ? sb.from('funds').select('*').in('ticker', fundTickers) : Promise.resolve({ data: [] }),
@@ -70,9 +71,10 @@ export default function PortfolioHome() {
         const res = await fetch('/api/precios', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tickers: [...stockTickers, ...fundTickers] }) })
         const json = await res.json().catch(() => ({}))
         for (const t of Object.keys(json.prices || {})) {
-          const dp = json.prices[t]; if (dp?.price == null) continue
-          if (fundMap[t]) fundMap[t] = { ...fundMap[t], current_price: dp.price }
-          if (fundsMap[t]) fundsMap[t] = { ...fundsMap[t], current_price: dp.price }
+          const dp = json.prices[t]
+          // Solo si es igual de reciente o más que el precio que ya teníamos.
+          if (fundMap[t]  && shouldReplacePrice(dp, fundMap[t].updated_at))  fundMap[t]  = { ...fundMap[t],  current_price: dp.price }
+          if (fundsMap[t] && shouldReplacePrice(dp, fundsMap[t].updated_at)) fundsMap[t] = { ...fundsMap[t], current_price: dp.price }
         }
       } catch {}
 

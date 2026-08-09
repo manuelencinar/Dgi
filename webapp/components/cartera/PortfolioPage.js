@@ -11,6 +11,7 @@ import {
   calcPositionWeights,
 } from '@/lib/portfolio'
 import { projectIncome } from '@/lib/portfolio-calc'
+import { shouldReplacePrice } from '@/lib/market-days'
 import { DEFAULT_PROFILE, INVESTOR_PROFILES } from '@/lib/supersectors'
 import { resolveDestWHT, isExemptUser } from '@/lib/fiscal-es'
 import SectorBreakdown, { DonutBreakdown } from '@/components/cartera/SectorBreakdown'
@@ -906,7 +907,7 @@ export default function PortfolioPage({ isPremium }) {
 
     // Tolerante a columnas que aún no existan en BD (payout_affo/payout_nii): si el
     // select falla, reintenta sin ellas. Así no rompe antes de ejecutar el SQL.
-    const BASE_COLS = 'ticker, current_price, dps, payout_fcf, payout_eps, debt_ebitda, interest_coverage, fcf_cagr5, div_cagr5, div_history, sector, industry, country'
+    const BASE_COLS = 'ticker, current_price, updated_at, dps, payout_fcf, payout_eps, debt_ebitda, interest_coverage, fcf_cagr5, div_cagr5, div_history, sector, industry, country'
     const loadStockFunds = async () => {
       if (!stockTickers.length) return []
       let res = await sb.from('company_fundamentals').select(`${BASE_COLS}, payout_affo, payout_nii`).in('ticker', stockTickers)
@@ -934,12 +935,14 @@ export default function PortfolioPage({ isPremium }) {
       dailyPricesMap = json.prices || {}
     } catch {}
 
-    // Inyectar precios frescos en fundMap y fundsMap
+    // Inyectar precios frescos en fundMap y fundsMap. Si el refresco falló y el
+    // cierre guardado es más viejo que el precio que ya teníamos, se conserva el
+    // nuestro (shouldReplacePrice) — si no, la cartera podía RETROCEDER a un
+    // precio de hace días.
     for (const ticker of Object.keys(dailyPricesMap)) {
       const dp = dailyPricesMap[ticker]
-      if (dp?.price == null) continue
-      if (fundMap[ticker])  fundMap[ticker]  = { ...fundMap[ticker],  current_price: dp.price }
-      if (fundsMap[ticker]) fundsMap[ticker] = { ...fundsMap[ticker], current_price: dp.price }
+      if (fundMap[ticker]  && shouldReplacePrice(dp, fundMap[ticker].updated_at))  fundMap[ticker]  = { ...fundMap[ticker],  current_price: dp.price }
+      if (fundsMap[ticker] && shouldReplacePrice(dp, fundsMap[ticker].updated_at)) fundsMap[ticker] = { ...fundsMap[ticker], current_price: dp.price }
     }
 
     // Coste real por acción (incluye comisiones de compra) + YoC sobre coste real

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { expectedCloseDate, isPriceFresh } from '@/lib/market-days'
 
 export const dynamic     = 'force-dynamic'
 export const maxDuration = 30
@@ -9,8 +10,7 @@ export const maxDuration = 30
 // se archivan en daily_prices. Pensado para la cartera, que necesita el precio
 // actual de sus posiciones sin tener que visitar cada ficha.
 
-const UA         = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-const FRESH_DAYS = 2
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
 
 function sb() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -63,13 +63,8 @@ export async function POST(request) {
     if (!latest[r.ticker]) latest[r.ticker] = { price: Number(r.close_price), date: r.date }
   }
 
-  // Tickers sin precio o con precio de hace más de FRESH_DAYS
-  const stale = tickers.filter(t => {
-    const l = latest[t]
-    if (!l) return true
-    const age = Math.round((new Date(today) - new Date(l.date)) / 86400000)
-    return age > FRESH_DAYS
-  })
+  // Tickers sin precio o cuyo último cierre es anterior al que ya debería existir
+  const stale = tickers.filter(t => !isPriceFresh(latest[t]?.date))
 
   if (stale.length) {
     try {
@@ -90,5 +85,13 @@ export async function POST(request) {
     } catch { /* si Yahoo falla, devolvemos lo que haya en daily_prices */ }
   }
 
-  return NextResponse.json({ prices: latest })
+  // `fresh` dice si el precio corresponde al último cierre que ya debería
+  // existir. Si es false (no se pudo refrescar), quien lo consuma debe quedarse
+  // con el precio que ya tuviera si es más reciente — un cierre viejo de
+  // daily_prices NO debe pisar uno más nuevo.
+  const expected = expectedCloseDate()
+  const prices = {}
+  for (const [t, l] of Object.entries(latest)) prices[t] = { ...l, fresh: l.date >= expected }
+
+  return NextResponse.json({ prices, expected })
 }

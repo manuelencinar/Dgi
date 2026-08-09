@@ -2,8 +2,12 @@ name: Actualizar datos Mi Índice DGI
 
 on:
   schedule:
-    # Precios diarios — lunes a viernes, cierre Europa y cierre EEUU
-    - cron: '0 16 * * 1-5'
+    # Precios diarios — lunes a viernes, cierre Europa y cierre EEUU.
+    # 17:00 UTC cubre el cierre europeo TODO el año (17:30 CEST = 15:30 UTC en
+    # verano, 17:30 CET = 16:30 UTC en invierno); a las 16:00 UTC se capturaba
+    # precio intradía de octubre a marzo. 22:00 UTC va tras el cierre de EEUU
+    # (16:00 ET = 20:00 UTC en verano, 21:00 UTC en invierno).
+    - cron: '0 17 * * 1-5'
     - cron: '0 22 * * 1-5'
     # Fundamentales — domingos 6:00 UTC
     - cron: '0 6 * * 0'
@@ -25,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'prices' || github.event.inputs.job == 'all')) ||
-      (github.event_name == 'schedule' && (github.event.schedule == '0 16 * * 1-5' || github.event.schedule == '0 22 * * 1-5'))
+      (github.event_name == 'schedule' && (github.event.schedule == '0 17 * * 1-5' || github.event.schedule == '0 22 * * 1-5'))
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

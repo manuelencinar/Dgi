@@ -53,17 +53,28 @@ def get_client():
     from supabase import create_client
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
+def _select_all(client, table: str, column: str, page: int = 1000) -> list[str]:
+    """
+    Lee una columna entera paginando. PostgREST corta en 1000 filas por
+    respuesta: sin paginar, company_fundamentals (2500+ empresas) devolvía solo
+    las 1000 primeras y el resto del universo NUNCA recibía precio diario.
+    """
+    out, start = [], 0
+    while True:
+        r = client.table(table).select(column).order(column).range(start, start + page - 1).execute()
+        rows = r.data or []
+        out.extend(row[column] for row in rows)
+        if len(rows) < page:
+            return out
+        start += page
+
 def get_all_tickers() -> list[str]:
     """Obtiene todos los tickers de company_fundamentals y funds."""
     try:
         client = get_client()
-        # Empresas
-        r1 = client.table("company_fundamentals").select("ticker").execute()
-        stocks = [row["ticker"] for row in (r1.data or [])]
-        # ETFs y fondos
-        r2 = client.table("funds").select("ticker").execute()
-        funds = [row["ticker"] for row in (r2.data or [])]
-        all_tickers = list(set(stocks + funds))
+        stocks = _select_all(client, "company_fundamentals", "ticker")
+        funds  = _select_all(client, "funds", "ticker")
+        all_tickers = sorted(set(stocks + funds))
         log.info(f"Tickers: {len(stocks)} empresas + {len(funds)} ETFs/fondos = {len(all_tickers)} total")
         return all_tickers
     except Exception as e:
