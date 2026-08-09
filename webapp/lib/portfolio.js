@@ -191,6 +191,41 @@ export function calcConcentration(enriched) {
   }
 }
 
+// ── Peso de cada posición ──────────────────────────────────────────────────
+// Reparto del valor de la cartera empresa a empresa. Las posiciones muy
+// pequeñas se agrupan en "Resto" para que la leyenda siga siendo legible.
+// maxItems = 12 → coincide con la paleta del donut (no se repiten colores).
+export function calcPositionWeights(enriched, maxItems = 12) {
+  const total = enriched.reduce((s, p) => s + (p.valueEUR ?? 0), 0)
+  if (!total) return { rows: [], count: 0, top1: 0, top5: 0, equalWeight: 0 }
+
+  const all = enriched
+    .filter(p => (p.valueEUR ?? 0) > 0)
+    .map(p => ({ name: p.name || p.ticker, ticker: p.ticker, value: (p.valueEUR ?? 0) / total * 100 }))
+    .sort((a, b) => b.value - a.value)
+
+  if (!all.length) return { rows: [], count: 0, top1: 0, top5: 0, equalWeight: 0 }
+
+  let rows = all
+  if (all.length > maxItems) {
+    const head = all.slice(0, maxItems - 1)
+    const tail = all.slice(maxItems - 1)
+    rows = [...head, {
+      name: `Resto (${tail.length} posiciones)`,
+      ticker: null,
+      value: tail.reduce((s, r) => s + r.value, 0),
+    }]
+  }
+
+  return {
+    rows,
+    count: all.length,
+    top1: all[0].value,
+    top5: all.slice(0, 5).reduce((s, r) => s + r.value, 0),
+    equalWeight: 100 / all.length,
+  }
+}
+
 // ── Diversificación por supersectores de Morningstar ────────────────────────
 // Devuelve los 3 grandes supersectores (Cíclico/Sensible/Defensivo, + Otros) con
 // su peso %, y dentro de cada uno el peso de cada sector particular.

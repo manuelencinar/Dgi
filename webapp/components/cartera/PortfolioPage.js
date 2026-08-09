@@ -8,6 +8,7 @@ import CompanyLogo from '@/components/CompanyLogo'
 import {
   enrichPositions, calcSummary, calcConcentration, calcAlerts,
   calcDiversificationScore, calcDividendRisks, calcFiscal, calcSectorBreakdown, calcGeoBreakdown, calcProfileFit, calcDividendGrowth,
+  calcPositionWeights,
 } from '@/lib/portfolio'
 import { projectIncome } from '@/lib/portfolio-calc'
 import { DEFAULT_PROFILE, INVESTOR_PROFILES } from '@/lib/supersectors'
@@ -598,10 +599,27 @@ function PositionsTable({ enriched, isPremium, onEdit, onDelete }) {
 }
 
 // ── Section 3: Concentration ───────────────────────────────────────────────
-function ConcentrationSection({ concentration, sectorBreakdown, geoBreakdown, alerts, isPremium }) {
+function ConcentrationSection({ concentration, positionWeights, sectorBreakdown, geoBreakdown, alerts, isPremium }) {
   const inner = (
     <div style={{ ...CARD, marginBottom: 16 }}>
       <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>Análisis de concentración</p>
+
+      {/* Peso de cada posición dentro de la cartera */}
+      {positionWeights?.rows?.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <DonutBreakdown
+            title="Peso de cada posición"
+            hint="Reparto del valor de la cartera empresa a empresa"
+            data={positionWeights.rows}
+          />
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 18px', marginTop: 10, paddingLeft: 2 }}>
+            <MobileStat label="Mayor posición" value={`${positionWeights.top1.toFixed(1)}%`} />
+            <MobileStat label="Top 5" value={`${positionWeights.top5.toFixed(1)}%`} />
+            <MobileStat label="Posiciones" value={positionWeights.count} />
+            <MobileStat label="Si fuese equiponderada" value={`${positionWeights.equalWeight.toFixed(1)}%`} />
+          </div>
+        </div>
+      )}
 
       {/* Diversificación por supersectores de Morningstar (sector + detalle) */}
       <div style={{ marginBottom: 20 }}>
@@ -1013,6 +1031,7 @@ export default function PortfolioPage({ isPremium }) {
   // renta del ahorro real del usuario (= sus dividendos anuales). 0 si está exento.
   const destWHT       = useMemo(() => resolveDestWHT(taxSettings, summary.totalIncomeEUR), [taxSettings, summary.totalIncomeEUR])
   const concentration = useMemo(() => calcConcentration(enriched), [enriched])
+  const positionWeights = useMemo(() => calcPositionWeights(enriched), [enriched])
   const sectorBreakdown = useMemo(() => calcSectorBreakdown(enriched), [enriched])
   const geoBreakdown    = useMemo(() => calcGeoBreakdown(enriched), [enriched])
   const profileFit    = useMemo(() => calcProfileFit(enriched, profile), [enriched, profile])
@@ -1100,7 +1119,7 @@ export default function PortfolioPage({ isPremium }) {
       {enriched.length > 0 && (
         <>
           {/* Section 3: Concentration */}
-          <ConcentrationSection concentration={concentration} sectorBreakdown={sectorBreakdown} geoBreakdown={geoBreakdown} alerts={alerts} isPremium={isPremium} />
+          <ConcentrationSection concentration={concentration} positionWeights={positionWeights} sectorBreakdown={sectorBreakdown} geoBreakdown={geoBreakdown} alerts={alerts} isPremium={isPremium} />
 
           {/* Perfil de inversor: reparto por supersectores vs objetivo */}
           <InvestorProfileSection fit={profileFit} profileKey={profile} onChange={changeProfile} isPremium={isPremium} />
